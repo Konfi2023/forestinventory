@@ -1,0 +1,676 @@
+{
+  "Team": {
+    "title": "Team & Rechte",
+    "subtitle": "Verwalte Mitarbeiter, Rollen und Zugriffsrechte.",
+    "tabMembers": "Mitarbeiter",
+    "tabRoles": "Rollen & Rechte",
+    "invite": "Mitarbeiter einladen",
+    "table": {
+      "user": "Benutzer",
+      "role": "Rolle",
+      "joined": "Dabei seit",
+      "actions": "Aktionen"
+    },
+    "roles": {
+      "admin": "Administrator",
+      "forester": "Förster",
+      "viewer": "Beobachter",
+      "save": "Rechte speichern",
+      "desc": "Definiere hier, welche Rolle welche Aktionen im System ausführen darf."
+    },
+    "permissions": {
+      "forest": { "view": "Wald sehen", "edit": "Wald bearbeiten", "delete": "Wald löschen" },
+      "harvest": { "view": "Ernte sehen", "create": "Ernte erfassen", "edit": "Ernte bearbeiten" },
+      "docs": { "view": "Dokumente sehen", "upload": "Uploaden" },
+      "finance": { "view": "Finanzen einsehen" },
+      "team": { "manage": "Team verwalten" },
+      "roles": { "manage": "Rollen bearbeiten" }
+    }
+  },
+  "CookieConsent": {
+    "title": "Wir nutzen Cookies",
+    "text": "Für den optimalen Betrieb von Forest-Inventory nutzen wir technisch notwendige Cookies (z.B. Login & Warenkorb). Durch die Nutzung der Seite stimmst du dem zu.",
+    "link": "Datenschutzerklärung",
+    "accept": "Verstanden!"
+  },
+  "Metadata": {
+    "title": "Forest-Inventory | Digitale Waldverwaltung & Forstkarten",
+    "description": "Die moderne Software für Waldbesitzer. Interaktive Flurkarten, Holzernte-Planung, GPS-Ortung und Dokumentenmanagement. Jetzt kostenlos testen.",
+    "keywords": "Forstsoftware, Waldverwaltung, Flurkarte, Holzernte, Polter App, Forstwirtschaft, Wald App"
+  },
+  "Tour": {
+    "next": "Weiter",
+    "prev": "Zurück",
+    "done": "Fertig",
+    "steps": {
+      "step1Title": "Wälder verwalten",
+      "step1Desc": "Hier kannst du neue Wälder anlegen oder zwischen deinen bestehenden Flächen wechseln.",
+      "step2Title": "Daten & Import",
+      "step2Desc": "Benenne deinen Wald, importiere KML-Dateien oder exportiere deine gezeichneten Flächen.",
+      "step3Title": "Objekte & Wege",
+      "step3Desc": "Platziere wichtige Marker wie Hochsitze oder Hütten und zeichne Wege ein.",
+      "step4Title": "Flächen zeichnen",
+      "step4Desc": "Nutze diese Werkzeuge, um Pflanzungen, Maßnahmen oder Kalamitäten als Polygone einzuzeichnen.",
+      "step5Title": "Übersicht & Hierarchie",
+      "step5Desc": "Hier siehst du alle Elemente. Du kannst sie auswählen, heranzoomen, umbenennen oder löschen.",
+      "step6Title": "Speichern",
+      "step6Desc": "Vergiss nicht, deine Arbeit regelmäßig zu speichern! Ungespeicherte Änderungen gehen beim Verlassen verloren."
+    }
+  },
+  "General": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "back": "Zurück",
+    "next": "Weiter",
+    "close": "Schließen",
+    "loading": "Laden...",
+    "success": "Erfolgreich",
+    "error": "Fehler",
+    "saveChanges": "Änderungen speichern",
+    "saving": "Speichert...",
+    "confirmDelete": "Wirklich löschen?",
+    "yes": "Ja",
+    "no": "Nein",
+    "date": "Datum",
+    "actions": "Aktionen",
+    "unknown": "Unbekannt",
+    "appName": "Forest-Inventory",
+    "login": "Anmelden",
+    "logout": "Abmelden"
+  },
+  "Settings": {
+    "pricing": {
+      "monthPrice": "19 €",
+      "yearPrice": "189 €"
+    },
+    "title": "Einstellungen",
+    "subtitle": "Verwalte dein Profil, Rechnungsdaten und dein Abonnement.",
+    "tabs": {
+      "profile": "Profil & Daten",
+      "subscription": "Abonnement",
+      "team": "Team & Rechte"
+    },
+    "language": {
+      "title": "Sprache",
+      "desc": "Wähle deine bevorzugte Sprache für die Oberfläche."
+    },
+    "profile": {
+      "title": "Stammdaten",
+      "desc": "Diese Daten erscheinen auf deinen Rechnungen.",
+      "typePrivate": "Privat",
+      "typeCompany": "Firma",
+      "modalPlaceholder": "E-Mail eingeben...",
+      "companyName": "Firmenname",
+      "vatId": "USt-ID",
+      "street": "Straße & Hausnummer",
+      "zip": "PLZ",
+      "city": "Stadt",
+      "save": "Speichern",
+      "saved": "Gespeichert!",
+      "deleteAccount": "Account löschen",
+      "deleteWarning": "Warnung: Diese Aktion löscht dein Konto endgültig. Alle Wälder, hochgeladenen Dokumente und Verläufe werden unwiderruflich entfernt."
+    },
+    "sub": {
+      "status": "Aktueller Status",
+      "pro": "PRO Mitglied",
+      "trial": "Testphase",
+      "ends": "Endet am",
+      "canceled": "Gekündigt",
+      "manage": "Verwalten & Kündigen",
+      "reactivate": "Reaktivieren",
+      "changePlan": "Plan ändern",
+      "recommended": "Empfohlen",
+      "planMonthly": "Flexible",
+      "planYearly": "Pro Annual",
+      "perMonth": "/ Monat",
+      "perYear": "/ Jahr zzgl. 19% MwSt.",
+      "saveText": "Spare 2 Monate",
+      "btnMonthly": "Monatlich",
+      "btnYearly": "Jährlich",
+      "active": "Dein Plan",
+      "choose": "Wählen",
+      "switch": "Wechseln",
+      "accessUntil": "Zugriff bis {date}",
+      "nextPayment": "Nächste Zahlung am {date}",
+      "trialEnds": "Endet am {date}",
+      "activeSimple": "Aktiv",
+      "tiers": {
+        "small": {
+          "title": "Starter",
+          "desc": "Bis 25 Hektar",
+          "price": "9€"
+        },
+        "medium": {
+          "title": "Standard",
+          "desc": "Bis 100 Hektar",
+          "price": "19€"
+        },
+        "large": {
+          "title": "Premium",
+          "desc": "Bis 250 Hektar",
+          "price": "29€"
+        }
+      },
+      "enterprise": {
+        "title": "Enterprise & Verbände",
+        "sub": "Kommunen & Verbände",
+        "priceLabel": "Individuell",
+        "sizeLabel": "Ab 250 Hektar",
+        "desc": "Für Flächen über 250 Hektar, Forstbetriebsgemeinschaften (FBG) oder Kommunen bieten wir individuelle Lösungen.",
+        "cta": "Kontakt aufnehmen"
+      },
+      "features": {
+        "0": "Unbegrenzte Waldflächen (im Rahmen des Limits)",
+        "1": "Alle Karten-Funktionen",
+        "2": "Dokumenten-Upload",
+        "3": "E-Mail Support",
+        "4": "Regelmäßige Updates"
+      }
+    }
+  },
+  "Trees": {
+    "searchPlaceholder": "Baumart suchen...",
+    "noResults": "Keine Baumart gefunden.",
+    "select": "Baumart wählen",
+    "WALDKIEFER": "Waldkiefer",
+    "GEMEINE_FICHTE": "Gemeine Fichte",
+    "WEISSTANNE": "Weißtanne",
+    "EUROPAEISCHE_LAERCHE": "Europäische Lärche",
+    "EIBE": "Eibe",
+    "WACHOLDER": "Wacholder",
+    "DOUGLASIE": "Douglasie",
+    "SCHWARZKIEFER": "Schwarzkiefer",
+    "JAPANISCHE_LAERCHE": "Japanische Lärche",
+    "HYBRIDLAERCHE": "Hybridlärche",
+    "ROTBUCHE": "Rotbuche",
+    "STIELEICHE": "Stieleiche",
+    "TRAUBENEICHE": "Traubeneiche",
+    "BERGAHORN": "Bergahorn",
+    "SPITZAHORN": "Spitzahorn",
+    "FELDAHORN": "Feldahorn",
+    "ESCHE": "Esche",
+    "HAINBUCHE": "Hainbuche",
+    "WINTERLINDE": "Winterlinde",
+    "SOMMERLINDE": "Sommerlinde",
+    "BERGULME": "Bergulme",
+    "FELDULME": "Feldulme",
+    "FLATTERULME": "Flatterulme",
+    "SANDBIRKE": "Sandbirke",
+    "MOORBIRKE": "Moorbirke",
+    "SCHWARZERLE": "Schwarzerle",
+    "GRAUERLE": "Grauerle",
+    "VOGELBEERE": "Vogelbeere (Eberesche)",
+    "ZITTERPAPPEL": "Zitterpappel",
+    "SCHWARZPAPPEL": "Schwarzpappel",
+    "SILBERPAPPEL": "Silberpappel",
+    "WEISSWEIDE": "Weißweide",
+    "BRUCHWEIDE": "Bruchweide",
+    "VOGELKIRSCHE": "Vogelkirsche",
+    "WILDAPFEL": "Wildapfel",
+    "WILDBIRNE": "Wildbirne",
+    "SPEIERLING": "Speierling",
+    "ELSBEERE": "Elsbeere",
+    "MEHLBEERE": "Mehlbeere",
+    "ROBINIE": "Robinie",
+    "ROTEICHE": "Roteiche",
+    "TRAUBENKIRSCHE": "Traubenkirsche (spätblühend)",
+    "MIXED": "Mischwald",
+    "OAK": "Eiche (Allg.)",
+    "SPRUCE": "Fichte (Allg.)",
+    "PINE": "Kiefer (Allg.)"
+  },
+  "Sidebar": {
+    "mainMenu": "Hauptmenü",
+    "map": "Waldkarte",
+    "management": "Verwaltung",
+    "overview": "Übersicht",
+    "harvest": "Holzeinschlag",
+    "planting": "Pflanzungen",
+    "documents": "Dokumente",
+    "teaser": "Wir bauen Forest-Inventory für dich. Fehlt dir eine Funktion?",
+    "feedback": "Feedback geben",
+    "settings": "Einstellungen",
+    "logout": "Abmelden",
+    "soon": "Bald"
+  },
+  "Feedback": {
+    "title": "Feedback & Ideen",
+    "teaserText": "Hast du einen Bug gefunden oder wünschst du dir ein bestimmtes Feature?",
+    "nameLabel": "Dein Name (Optional)",
+    "namePlaceholder": "Max Mustermann",
+    "messageLabel": "Nachricht",
+    "messagePlaceholder": "Ich würde mir wünschen, dass...",
+    "submit": "Absenden",
+    "sending": "Sende...",
+    "successTitle": "Danke!",
+    "successText": "Deine Nachricht wurde gesendet.",
+    "errorText": "Fehler beim Senden.",
+    "feedbackButton": "Feedback geben"
+  },
+  "LanguageSwitcher": {
+    "de": "Deutsch",
+    "en": "English",
+    "fr": "Français",
+    "hr": "Hrvatski"
+  },
+  "PaymentSuccess": {
+    "upgradeTitle": "Vielen Dank!",
+    "upgradeText": "Dein Account wurde erfolgreich auf <b>PRO</b> geupgradet.",
+    "benefitsTitle": "Deine Vorteile sind jetzt aktiv:",
+    "benefit1": "Unbegrenzte Waldflächen",
+    "benefit2": "Dokumenten-Cloud",
+    "benefit3": "Priorisierter Support",
+    "buttonDashboard": "Zum Dashboard",
+    "redirecting": "Automatische Weiterleitung in {s} Sekunden..."
+  },
+  "Dashboard": {
+    "welcome": "Willkommen",
+    "subtitle": "Überblick über das laufende Forstwirtschaftsjahr.",
+    "kpiArea": "Waldfläche",
+    "kpiRevenue": "Umsatz (lfd. Jahr)",
+    "kpiHarvest": "Einschlag (lfd. Jahr)",
+    "kpiPolter": "Offene Polter",
+    "chartTitle": "Holzarten Verteilung",
+    "noChartData": "Keine Erntedaten für dieses Jahr.",
+    "recentDocs": "Neueste Dokumente",
+    "viewAll": "Alle ansehen",
+    "noDocs": "Keine Dokumente abgelegt.",
+    "activeProjects": "Aktive Projekte",
+    "planning": "Planung",
+    "noProjects": "Keine aktiven Maßnahmen.",
+    "typeHarvest": "Ernte",
+    "typePlanting": "Pflanzung",
+    "newOperation": "Neue Maßnahme"
+  },
+  "MapEditor": {
+    "selector": {
+      "newForest": "Neuer Wald erstellen"
+    },
+    "controls": {
+      "searchPlaceholder": "Ort suchen...",
+      "cadastral": "Flurstücke",
+      "newArea": "Neue Fläche"
+    },
+    "limitModal": {
+      "title": "Flächenlimit erreicht",
+      "text": "Du nutzt aktuell <b>{current} ha</b>, aber dein Paket erlaubt nur <b>{limit} ha</b>.",
+      "upgrade": "Jetzt upgraden",
+      "back": "Zurück & Fläche verkleinern"
+    },
+    "types": {
+      "object": "Objekt",
+      "path": "Weg",
+      "area": "Fläche",
+      "planting": "Pflanzung",
+      "maintenance": "Maßnahme",
+      "calamity": "Kalamität / Schaden",
+      "habitat": "Biotop / Habitat",
+      "hunting": "Jagdbezirk"
+    },
+    "stats": {
+      "totalArea": "GESAMTFLÄCHE"
+    },
+    "actions": {
+      "import": "Import",
+      "export": "Export",
+      "saveChanges": "Änderungen Speichern",
+      "saveAndClose": "Speichern & Schließen",
+      "createForest": "Wald Anlegen",
+      "deleteForest": "Wald Löschen",
+      "delete": "Löschen",
+      "cancel": "Abbrechen",
+      "copyCoords": "Koordinaten kopieren",
+      "move": "Versetzen",
+      "sendEmail": "Auftrag senden",
+      "sending": "Sende..."
+    },
+    "tools": {
+      "objects": "OBJEKTE & INFRASTRUKTUR",
+      "areas": "FLÄCHEN ZEICHNEN",
+      "editAreas": "FLÄCHEN BEARBEITEN / ZEICHNEN",
+      "finishEdit": "Bearbeiten beenden",
+      "drawPlanting": "Pflanzung einzeichnen",
+      "drawMaintenance": "Einschlag & Pflege",
+      "drawCalamity": "Schaden / Kalamität",
+      "drawHabitat": "Biotop erfassen",
+      "drawHunting": "Jagdbezirk"
+    },
+    "toolNames": {
+      "huntingStand": "Hochsitz",
+      "hut": "Hütte",
+      "barrier": "Schranke",
+      "storage": "Holzlager",
+      "road": "LKW Weg",
+      "skidTrail": "Rückegasse",
+      "water": "Gewässer",
+      "poi": "Objekt",
+      "path": "Weg"
+    },
+    "hierarchy": {
+      "title": "HIERARCHIE",
+      "areaPlaceholder": "Fläche {n}",
+      "unnamed": "Unbenannt",
+      "empty": "Keine Objekte in der Szene."
+    },
+    "properties": {
+      "title": "EIGENSCHAFTEN",
+      "name": "Bezeichnung",
+      "namePlaceholder": "Wald Name",
+      "flurPlaceholder": "Flurstück",
+      "position": "Position",
+      "private": "Privat",
+      "community": "Kommune",
+      "area": "Fläche",
+      "count": "Stückzahl",
+      "cause": "Ursache",
+      "status": "Status",
+      "amount": "Menge (FM)",
+      "protection": "Schutzstatus",
+      "pachter": "Pächter",
+      "dateEnd": "Pachtende",
+      "notes": "Notizen / Beschreibung"
+    },
+    "deleteModal": {
+      "titleForest": "Wald löschen",
+      "titleItem": "Objekt entfernen",
+      "warning": "Diese Aktion kann nicht rückgängig gemacht werden. Bitte bestätigen.",
+      "confirmLabel": "Zur Bestätigung E-Mail eingeben:",
+      "inputPlaceholder": "E-Mail Adresse..."
+    },
+    "emailModal": {
+      "title": "Auftrag versenden",
+      "recipientsLabel": "Empfänger:",
+      "placeholder": "E-Mail Adresse eingeben & Enter drücken",
+      "send": "Jetzt senden",
+      "successTitle": "Versand erfolgreich!",
+      "successText": "Der Arbeitsauftrag wurde an alle Empfänger verschickt.",
+      "close": "Schließen"
+    },
+    "modals": {
+      "successTitle": "Erfolgreich",
+      "errorTitle": "Hinweis",
+      "saveSuccess": "Der Wald wurde erfolgreich gespeichert.",
+      "deleteSuccess": "Der Wald wurde erfolgreich gelöscht.",
+      "emailSuccess": "Der Auftrag wurde erfolgreich versendet.",
+      "validationName": "Bitte geben Sie einen Namen für den Wald ein.",
+      "validationMap": "Die Karte ist leer. Bitte zeichnen Sie mindestens eine Fläche oder fügen Sie Objekte hinzu.",
+      "ok": "Verstanden"
+    },
+    "unsavedChanges": {
+      "title": "Ungespeicherte Änderungen",
+      "text": "Du hast Änderungen vorgenommen, die noch nicht gespeichert wurden. Möchtest du diese jetzt speichern?",
+      "saveAndSwitch": "Speichern & Wechseln",
+      "discardAndSwitch": "Verwerfen & Wechseln"
+    },
+    "feedback": {
+      "placePoint": "Punkt setzen...",
+      "drawPath": "Pfad zeichnen...",
+      "editingMode": "Flächen bearbeiten",
+      "movingMode": "Icon verschieben...",
+      "errorTitle": "Fehler"
+    },
+    "activities": {
+      "harvest": "Holzernte / Einschlag",
+      "thinning": "Durchforstung",
+      "cleaning": "Jungbestandspflege",
+      "planting_prep": "Pflanzvorbereitung",
+      "road_work": "Wegebau / Instandsetzung",
+      "protection": "Zaunbau / Einzelschutz"
+    },
+    "habitat": {
+      "deadwood": "Totholz",
+      "wetland": "Feuchtbiotop",
+      "nest": "Horstbaum",
+      "other": "Sonstiges"
+    },
+    "hunting": {
+      "district": "Jagdbezirk"
+    },
+    "calamityTypes": {
+      "beetle": "Borkenkäfer",
+      "wind": "Sturm / Windwurf",
+      "snow": "Schneebruch",
+      "drought": "Dürre",
+      "ash_dieback": "Eschentriebsterben",
+      "other": "Sonstiges"
+    }
+  },
+  "Onboarding": {
+    "title": "Willkommen",
+    "subtitle": "Bitte vervollständige dein Profil, um fortzufahren.",
+    "private": "Privatperson",
+    "company": "Unternehmen",
+    "next": "Weiter",
+    "back": "Zurück",
+    "planTitle": "Wähle deinen Plan",
+    "planSubtitle": "Flexible Laufzeiten für jeden Bedarf.",
+    "choose": "Wählen",
+    "startTrial": "Kostenlos testen (30 Tage)",
+    "validationAddress": "Bitte Adresse ausfüllen.",
+    "mostPopular": "Bestseller",
+    "enterpriseBtn": "Kontakt aufnehmen",
+    "trialCard": {
+      "badge": "30 Tage Gratis",
+      "title": "Trial",
+      "subtitle": "Testen ohne Risiko",
+      "price": "0€",
+      "highlight": "Alle Premium Features",
+      "feat1": "Voller Funktionsumfang",
+      "feat2": "Keine Kreditkarte nötig",
+      "feat3": "Automatisches Ende",
+      "cta": "Jetzt testen"
+    },
+    "form": {
+      "companyName": "Firma",
+      "vatId": "USt-ID",
+      "street": "Straße & Nr.",
+      "zip": "PLZ",
+      "city": "Stadt"
+    }
+  },
+  "Landing": {
+    "nav": {
+      "features": "Funktionen",
+      "pricing": "Preise",
+      "login": "Login",
+      "dashboard": "Zum Dashboard"
+    },
+    "hero": {
+      "title": "Dein Wald.",
+      "titleHighlight": "Digital verwaltet.",
+      "subtitle": "Die moderne Software für Waldbesitzer. Karten, Holzeinschlag, Pflanzungen und Dokumente an einem Ort.",
+      "cta": "Jetzt kostenlos testen",
+      "demo": "Live Demo ansehen"
+    },
+    "features": {
+      "title": "Alles, was du brauchst",
+      "mapTitle": "Interaktive Waldkarte",
+      "mapDesc": "Zeichne Flurstücke, Polter und Pflanzflächen präzise ein. Inklusive GPS-Ortung im Wald.",
+      "harvestTitle": "Holzernte & Logistik",
+      "harvestDesc": "Erfasse Mengen, erstelle Polterlisten und sende GPS-Standorte direkt an den LKW-Fahrer.",
+      "plantTitle": "Pflanz-Management",
+      "plantDesc": "Dokumentiere Aufforstungen, Baumarten und Herkünfte für Förderanträge.",
+      "docTitle": "Dokumenten-Cloud",
+      "docDesc": "Speichere Rechnungen, Gutachten und Katasterkarten sicher und direkt verknüpft mit deinem Wald."
+    },
+    "pricing": {
+      "title": "Preise, die mitwachsen",
+      "subtitle": "Wähle das Modell, das zu deiner Waldfläche passt. Voller Funktionsumfang in allen Paketen.",
+      "monthly": "Monatlich",
+      "yearly": "Jährlich",
+      "save": "Spare 2 Monate",
+      "perMonth": "/ Monat",
+      "perYear": "/ Jahr zzgl. 19% MwSt.",
+      "billedMonthly": "Monatlich abgerechnet",
+      "billedYearly": "Jährlich abgerechnet",
+      "cta": "Jetzt starten",
+      "tiers": {
+        "small": {
+          "title": "Small",
+          "price": "9",
+          "priceYear": "89",
+          "desc": "Bis 25 Hektar",
+          "sub": "Für kleine Privatwälder"
+        },
+        "medium": {
+          "title": "Medium",
+          "price": "19",
+          "priceYear": "189",
+          "desc": "Bis 100 Hektar",
+          "sub": "Unser Bestseller"
+        },
+        "large": {
+          "title": "Large",
+          "price": "29",
+          "priceYear": "289",
+          "desc": "Bis 250 Hektar",
+          "sub": "Für große Betriebe"
+        }
+      },
+      "enterprise": {
+        "title": "Enterprise",
+        "sub": "Kommunen & Verbände",
+        "priceLabel": "Individuell",
+        "sizeLabel": "Ab 250 Hektar",
+        "desc": "Für Flächen über 250 Hektar, Forstbetriebsgemeinschaften (FBG) oder Kommunen bieten wir individuelle Lösungen.",
+        "cta": "Kontakt aufnehmen"
+      },
+      "features": {
+        "0": "Alle Karten-Funktionen",
+        "1": "Holzernte & Logistik",
+        "2": "Dokumenten-Upload",
+        "3": "GPS-Tracking App",
+        "4": "E-Mail Support"
+      }
+    },
+    "footer": {
+      "rights": "Alle Rechte vorbehalten.",
+      "imprint": "Impressum",
+      "privacy": "Datenschutz",
+      "terms": "AGB",
+      "legal": "Rechtliches",
+      "product": "Produkt",
+      "company": "Unternehmen"
+    }
+  },
+  "Admin": {
+    "title": "Admin Cockpit",
+    "export": "CSV Export",
+    "accessDenied": "Zugriff verweigert",
+    "retry": "Erneut versuchen",
+    "deleteUserTitle": "User löschen?",
+    "deleteUserConfirm": "Dies löscht den User aus Datenbank, Keycloak und stoppt Zahlungen. Tippe zur Bestätigung:",
+    "ghost": "GHOST / KC ONLY",
+    "auto": "Auto",
+    "default": "Basis",
+    "stats": {
+      "mrr": "MRR (Geschätzt)",
+      "subs": "Aktive Abos",
+      "users": "User Gesamt",
+      "canceled": "Gekündigt"
+    },
+    "table": {
+      "search": "User suchen...",
+      "colUser": "User / Email",
+      "colType": "Typ & Adresse",
+      "colStatus": "Status & Plan",
+      "colEnd": "Laufzeit bis",
+      "colStripe": "Stripe",
+      "colForests": "Wälder",
+      "colActions": "Aktionen",
+      "private": "Privat",
+      "forests": "Wälder"
+    }
+  },
+  "Shared": {
+    "invalidTitle": "Link ungültig oder abgelaufen",
+    "invalidText": "Dieser Zugriffslink ist nicht mehr gültig. Bitte kontaktieren Sie den Auftraggeber für einen neuen Link."
+  },
+  "Legal": {
+    "imprint": {
+      "title": "Impressum",
+      "h1": "Angaben gemäß § 5 TMG",
+      "address": "natureport UG (haftungsbeschränkt)\nWilly-Brandt-Straße 23\n20457 Hamburg\nDeutschland",
+      "h2": "Vertreten durch",
+      "ceo": "Geschäftsführer: Dr. Ing. Leonhard Vidal",
+      "h3": "Kontakt",
+      "contact": "E-Mail: info@natureport.eu",
+      "h4": "Registereintrag",
+      "register": "Eintragung im Handelsregister.\nRegistergericht: Amtsgericht Hamburg\nRegisternummer: HRB 194200",
+      "h5": "Umsatzsteuer-ID",
+      "vat": "Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:\nDE457114766",
+      "h6": "Streitschlichtung EU",
+      "dispute": "Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: <link>https://ec.europa.eu/consumers/odr/</link>.\nUnsere E-Mail-Adresse finden Sie oben im Impressum.",
+      "h7": "Verbraucherstreitbeilegung",
+      "consumer_dispute": "Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.",
+      "h8": "Inhaltlich Verantwortlicher",
+      "content_responsible": "Inhaltlich Verantwortlich gemäß § 55 Abs. 2 RStV:\nnatureport UG\nWilly-Brandt-Straße 23\n20457 Hamburg",
+      "liability": "Haftungshinweis: Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich."
+    },
+    "privacy": {
+      "title": "Datenschutzerklärung",
+      "intro": "Der Schutz Ihrer Daten ist uns wichtig. Nachfolgend informieren wir Sie über den Umgang mit personenbezogenen Daten bei der Nutzung von Forest-Inventory.eu.",
+      "sections": {
+        "1": {
+          "title": "1. Verantwortlicher",
+          "content": "natureport UG (haftungsbeschränkt)\nWilly-Brandt-Str. 23, 20457 Hamburg\nE-Mail: info@natureport.eu"
+        },
+        "2": {
+          "title": "2. Hosting & Logfiles",
+          "content": "Bei jedem Zugriff auf unsere Seite werden automatisch Daten durch unseren Provider erfasst (Server-Logfiles). Dazu gehören IP-Adresse, Browser, Betriebssystem und Uhrzeit. Dies dient der technischen Sicherheit (Art. 6 Abs. 1 lit. f DSGVO)."
+        },
+        "3": {
+          "title": "3. Registrierung & Authentifizierung (Keycloak)",
+          "content": "Für den Login nutzen wir den Identity-Service <b>Keycloak</b>. Dabei werden Name, E-Mail-Adresse und Passwort (verschlüsselt) gespeichert. Dies ist zur Vertragserfüllung notwendig (Art. 6 Abs. 1 lit. b DSGVO)."
+        },
+        "4": {
+          "title": "4. Zahlungsabwicklung (Stripe)",
+          "content": "Zahlungen werden über <b>Stripe Payments Europe, Ltd.</b> abgewickelt. Ihre Zahlungsdaten werden direkt an Stripe übermittelt. Wir speichern selbst keine vollständigen Kreditkartendaten. Rechtsgrundlage: Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)."
+        },
+        "5": {
+          "title": "5. Kartendienste & Geodaten",
+          "content": "Zur Darstellung von Waldflächen nutzen wir Satelliten- und Kartendaten (u.a. Sentinel Hub, ALKIS/INSPIRE). Zur Anzeige der Karten-Kacheln wird Ihre IP-Adresse technisch bedingt an den Kartenserver übertragen. Die von Ihnen gezeichneten Geometrien werden in unserer Datenbank gespeichert."
+        },
+        "6": {
+          "title": "6. Cloud-Speicher & E-Mail",
+          "content": "Hochgeladene Dokumente und Fotos werden verschlüsselt auf <b>AWS S3</b> (Serverstandort bevorzugt EU) gespeichert. System-E-Mails (z.B. Passwort-Reset) werden über den Dienstleister <b>Resend</b> versendet."
+        },
+        "7": {
+          "title": "7. Ihre Rechte",
+          "content": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten. Sie können Ihre Daten jederzeit in den Account-Einstellungen löschen."
+        }
+      }
+    },
+    "terms": {
+      "title": "Allgemeine Geschäftsbedingungen (AGB)",
+      "sections": {
+        "1": {
+          "title": "1. Geltungsbereich",
+          "content": "Diese AGB gelten für die Nutzung der Software 'Forest-Inventory.eu' der natureport UG durch Verbraucher und Unternehmer."
+        },
+        "2": {
+          "title": "2. Leistungsgegenstand",
+          "content": "Der Anbieter stellt eine SaaS-Lösung zur Verwaltung von Waldflächen zur Verfügung. Der Funktionsumfang richtet sich nach dem gewählten Abonnement."
+        },
+        "3": {
+          "title": "3. Geodaten & Lizenz (CC BY-ND 4.0)",
+          "content": "Die Software nutzt öffentliche Geodaten (z.B. ALKIS, INSPIRE), die teilweise unter der Lizenz <licenseLink>Creative Commons Namensnennung - Keine Bearbeitung 4.0 (CC BY-ND 4.0)</licenseLink> stehen. Der Nutzer darf diese Karten zur Visualisierung und Überlagerung eigener Daten verwenden. Eine technische Veränderung oder Extraktion der Basiskarten zur Erstellung eigener abgeleiteter Kartenwerke ist gemäß der Lizenzbedingungen untersagt. Die Bereitstellung dieser Flurkarten erfolgt unentgeltlich und außerhalb des vertraglich geschuldeten Leistungsumfangs. Sie sind nicht Bestandteil des kostenpflichtigen Abonnements und begründen keinen Anspruch auf bestimmte Inhalte, Aktualität oder Verfügbarkeit. \n Der Anbieter übernimmt keine Gewähr dafür, dass Flurkarten für alle Regionen, flächendeckend oder dauerhaft zur Verfügung stehen. \nDie Verfügbarkeit kann insbesondere von regionalen Datenquellen, rechtlichen Vorgaben oder technischen Rahmenbedingungen abhängen."
+        },
+        "4": {
+          "title": "4. Laufzeit & Kündigung",
+          "content": "Kostenpflichtige Abos verlängern sich automatisch um den gewählten Zeitraum. Eine Kündigung ist jederzeit über das Dashboard zum Laufzeitende möglich."
+        },
+        "5": {
+          "title": "5. Haftung",
+          "content": "Der Anbieter haftet unbeschränkt für Vorsatz und grobe Fahrlässigkeit. Bei leichter Fahrlässigkeit ist die Haftung auf die Verletzung wesentlicher Vertragspflichten beschränkt. Die Haftung für Datenverlust wird auf den typischen Wiederherstellungsaufwand begrenzt."
+        },
+        "6": {
+          "title": "6. Widerrufsrecht",
+          "content": "Verbrauchern steht ein gesetzliches Widerrufsrecht von 14 Tagen zu. Das Recht erlischt vorzeitig, wenn die Dienstleistung vollständig erbracht wurde oder der Nutzer vor Ablauf der Frist mit der Ausführung begonnen hat."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,761 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- IAM & MANDANTEN ---
+
+model Organization {
+  id                 String       @id @default(uuid())
+  name               String
+  slug               String       @unique
+  defaultLanguage    String       @default("de")
+  stripeCustomerId   String?
+  subscriptionStatus String?      @default("FREE")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  members            Membership[]
+  roles              Role[]
+  invites            Invite[]
+  auditLogs          AuditLog[]
+  forests            Forest[]
+  // Globale Listen für CRM/Verkauf auf Org-Ebene
+  timberSales        TimberSale[]
+  legalName          String? // Offizieller Firmenname
+  orgType            OrgType      @default(PRIVATE_OWNER)
+  totalHectares      Float? // Betriebsgröße
+  // Adresse & Rechnung
+  billingEmail       String?
+  vatId              String? // USt-IdNr.
+  street             String?
+  zip                String?
+  city               String?
+  country            String?      @default("Deutschland")
+  Event              Event[]
+}
+
+model User {
+  id                 String       @id @default(uuid())
+  keycloakId         String       @unique
+  email              String       @unique
+  firstName          String?
+  lastName           String?
+  isSystemAdmin      Boolean      @default(false)
+  companyName        String?
+  vatId              String?
+  street             String?
+  zip                String?
+  calendarToken String? @unique
+  city               String?
+  country            String?      @default("Deutschland")
+  preferredLanguage  String       @default("de")
+  onboardingComplete Boolean      @default(false)
+  lastActiveOrgId    String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  memberships        Membership[]
+  auditLogs          AuditLog[]
+  invoices           Invoice[]
+  accessibleForests  Forest[]     @relation("ForestAccess")
+  
+
+  // --- NEU: Zuweisungen & Tracking ---
+  assignedTasks         Task[]         @relation("TaskAssignee")
+  createdTasks          Task[]         @relation("TaskCreator")
+  createdSchedules      TaskSchedule[] @relation("ScheduleCreator")
+  createdEvents         Event[]
+  timeEntries           TimeEntry[]
+  taskComments          TaskComment[]
+  watchedTasks          Task[]         @relation("TaskWatchers")
+  receivedNotifications Notification[] @relation("NotifReceiver")
+  sentNotifications     Notification[] @relation("NotifActor")
+  TaskSchedule          TaskSchedule[]
+}
+
+model Membership {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  roleId         String
+  role           Role         @relation(fields: [roleId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Role {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  permissions    String[]
+  isSystemRole   Boolean      @default(false)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        Membership[]
+  invites        Invite[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([name, organizationId])
+}
+
+model Invite {
+  id             String       @id @default(uuid())
+  email          String
+  token          String       @unique
+  expiresAt      DateTime
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  roleId         String
+  role           Role         @relation(fields: [roleId], references: [id])
+  inviterId      String?
+  status         String       @default("PENDING")
+  createdAt      DateTime     @default(now())
+}
+
+model Event {
+  id          String  @id @default(uuid())
+  title       String
+  description String?
+
+  start  DateTime
+  end    DateTime?
+  allDay Boolean   @default(false)
+
+  // Farbe für den Kalender (optional, sonst Standard)
+  color String? @default("#10b981") // Standard Grün
+
+  // Verknüpfungen
+  forestId String? // Optional: Termin gehört zu einem Wald
+  forest   Forest? @relation(fields: [forestId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  action         String
+  entityId       String?
+  entityType     String?
+  metadata       Json?
+  actorId        String
+  user           User         @relation(fields: [actorId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+// --- DOMAIN: FORST (GIS & BESTÄNDE) ---
+
+model Forest {
+  id             String       @id @default(uuid())
+  name           String
+  location       String?
+  description    String?
+  geoJson        Json?        @db.JsonB
+  areaHa         Float?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  color          String?      @default("#10b981")
+
+  // GIS Layer
+  paths       ForestPath[]
+  pois        ForestPoi[]
+  plantings   ForestPlanting[]
+  maintenance ForestMaintenance[]
+  calamities  ForestCalamity[]
+  habitats    ForestHabitat[]
+  hunting     ForestHunting[]
+  skidTrails  SkidTrail[]
+
+  // Operative Daten
+  operations    Operation[]
+  tasks         Task[] // Aufgaben hängen direkt am Wald
+  taskSchedules TaskSchedule[]
+  documents     Document[]
+  images        Image[]
+  treeRecords   TreeRecord[]
+  animalRecords AnimalRecord[]
+  grantedUsers  User[]         @relation("ForestAccess")
+  Event         Event[]
+}
+
+// ... (Hier folgen die bestehenden GIS-Modelle unverändert) ...
+
+model ForestHabitat {
+  id               String  @id @default(uuid())
+  geoJson          Json    @db.JsonB
+  areaHa           Float?
+  type             String?
+  protectionStatus String?
+  description      String?
+  note             String?
+  forestId         String
+  forest           Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model ForestHunting {
+  id       String  @id @default(uuid())
+  geoJson  Json    @db.JsonB
+  areaHa   Float?
+  name     String?
+  pachter  String?
+  endsAt   String?
+  note     String?
+  forestId String
+  forest   Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model ForestCalamity {
+  id          String  @id @default(uuid())
+  geoJson     Json    @db.JsonB
+  areaHa      Float?
+  cause       String?
+  status      String?
+  amount      Float?
+  description String?
+  note        String?
+  forestId    String
+  forest      Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model ForestMaintenance {
+  id          String     @id @default(uuid())
+  geoJson     Json       @db.JsonB
+  areaHa      Float?
+  description String?
+  activities  Json?      @db.JsonB
+  note        String?
+  operation   Operation?
+  forestId    String
+  forest      Forest     @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model ForestPlanting {
+  id          String  @id @default(uuid())
+  treeSpecies String
+  description String?
+  note        String?
+  content     Json?   @db.JsonB
+  geoJson     Json    @db.JsonB
+  areaHa      Float?
+  forestId    String
+  forest      Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model ForestPath {
+  id       String  @id @default(uuid())
+  type     String
+  name     String?
+  geoJson  Json    @db.JsonB
+  lengthM  Float?
+  note     String?
+  forestId String
+  forest   Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model ForestPoi {
+  id       String  @id @default(uuid())
+  type     String
+  name     String?
+  lat      Float
+  lng      Float
+  tasks    Task[]
+  note     String?
+  forestId String
+  forest   Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model SkidTrail {
+  id       String  @id @default(uuid())
+  name     String?
+  geoJson  Json    @db.JsonB
+  lengthM  Float?
+  forestId String
+  forest   Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+// --- DOMAIN: OPERATIONS & PROZESSE ---
+
+// Operation dient jetzt als "Container" oder "Epic" für größere Maßnahmen (z.B. "Jahresplanung 2026")
+model Operation {
+  id          String          @id @default(uuid())
+  title       String
+  year        Int
+  status      OperationStatus @default(PLANNED) // Geändert zu Enum
+  description String?
+  type        OperationType   @default(HARVEST)
+
+  forestId String
+  forest   Forest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+
+  // Optionale Verknüpfung zu einem GIS-Objekt
+  maintenanceId String?            @unique
+  maintenance   ForestMaintenance? @relation(fields: [maintenanceId], references: [id])
+
+  // Relationen
+  tasks       Task[] // Eine Operation hat viele Aufgaben
+  harvests    Harvest[]
+  logPiles    LogPile[]
+  plantings   Planting[]
+  costs       Cost[]
+  shareTokens OperationToken[]
+  timeEntries TimeEntry[]
+  // Bilanzierung
+  timberSales TimberSale[] // Verkaufskontrakte zu dieser Maßnahme
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OperationToken {
+  id          String    @id @default(uuid())
+  token       String    @unique
+  expiresAt   DateTime
+  operationId String
+  operation   Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+}
+
+// --- NEU: TASK MANAGEMENT (JIRA-STYLE) ---
+
+model Task {
+  id            String       @id @default(uuid())
+  title         String
+  description   String?
+  status        TaskStatus   @default(OPEN)
+  priority      TaskPriority @default(MEDIUM)
+  estimatedTime Int?
+  dueDate       DateTime?
+  scheduledDate    DateTime?    // START: Wann mache ich es?
+  scheduledEndDate DateTime? 
+  images        Image[]
+  documents     Document[]
+  poiId         String?
+  poi           ForestPoi? @relation(fields: [poiId], references: [id], onDelete: SetNull)
+
+  // Georeferenzierung (Optional): Wo genau ist die Aufgabe?
+  lat Float?
+  lng Float?
+
+  // Verknüpfung
+  forestId String
+  forest   Forest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+
+  operationId String? // Optional: Gehört zu einer großen Maßnahme
+  operation   Operation? @relation(fields: [operationId], references: [id])
+
+  // Zuweisung
+  assigneeId    String?
+  assignee      User?          @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creatorId     String
+  creator       User           @relation("TaskCreator", fields: [creatorId], references: [id])
+  watchers      User[]         @relation("TaskWatchers")
+  notifications Notification[]
+
+  // Sub-Ressourcen
+  timeEntries TimeEntry[]
+  comments    TaskComment[]
+
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  scheduleId String?
+  schedule   TaskSchedule? @relation(fields: [scheduleId], references: [id])
+}
+
+model Notification {
+  id      String           @id @default(uuid())
+  type    NotificationType
+  title   String
+  message String?
+  isRead  Boolean          @default(false)
+
+  // Wer bekommt es?
+  userId String
+  user   User   @relation("NotifReceiver", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Wer hat es ausgelöst?
+  actorId String?
+  actor   User?   @relation("NotifActor", fields: [actorId], references: [id])
+
+  // Kontext
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model TaskSchedule {
+  id String @id @default(uuid())
+
+  // Was soll erstellt werden? (Template Daten)
+  title       String
+  description String?
+  priority    TaskPriority @default(MEDIUM)
+  forestId    String
+  forest      Forest       @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?        @relation(fields: [assigneeId], references: [id])
+  creatorId   String
+  creator     User         @relation("ScheduleCreator", fields: [creatorId], references: [id])
+
+  // Die Wiederholungs-Regel
+  interval Int // z.B. 2
+  unit     RecurrenceUnit // z.B. WEEKS (Alle 2 Wochen)
+
+  startDate DateTime // Wann geht es los?
+  endDate   DateTime? // Wann hört es auf? (Optional)
+
+  lastGeneratedAt DateTime? // Wann wurde die letzte Aufgabe generiert?
+  nextRunAt       DateTime // Wann ist die nächste fällig?
+
+  // Relationen
+  tasks  Task[] // Alle Aufgaben, die hieraus entstanden sind
+  active Boolean @default(true) // Serie pausieren
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  content   String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// --- NEU: ZEITERFASSUNG & RESSOURCEN ---
+
+model TimeEntry {
+  id              String    @id @default(uuid())
+  description     String? // Was wurde gemacht?
+  startTime       DateTime
+  endTime         DateTime? // Null wenn Timer noch läuft
+  durationMinutes Int? // Berechnet oder manuell eingetragen
+
+  category TimeCategory @default(MANUAL_WORK)
+
+  // Verknüpfung (Entweder Task oder Operation oder beides)
+  taskId      String?
+  task        Task?      @relation(fields: [taskId], references: [id])
+  operationId String?
+  operation   Operation? @relation(fields: [operationId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// --- DOMAIN: HOLZ & BILANZIERUNG ---
+
+// Harvest ist die "Planung" oder "Meldung" des Einschlags
+model Harvest {
+  id          String      @id @default(uuid())
+  date        DateTime    @default(now())
+  harvestType HarvestType
+  woodType    WoodType
+  treeSpecies String
+  quality     String?
+
+  amount Float // Menge (fm)
+  unit   String // fm, rm, srm
+
+  revenue Decimal? @db.Decimal(10, 2) // Geplanter Erlös
+  isSold  Boolean  @default(false)
+
+  note        String?
+  operationId String
+  operation   Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+}
+
+// LogPile ist das physische Polter im Wald (Inventur)
+model LogPile {
+  id     String       @id @default(uuid())
+  name   String? // z.B. "Polter A1"
+  status PolterStatus @default(PILED)
+
+  // Geo
+  lat Float
+  lng Float
+
+  // Mengen (Waldmaß)
+  estimatedAmount Float? // Geschätzt vom Förster
+  measuredAmount  Float? // Exakt vermessen (Sektionsraummaß/Klammer)
+  logLength       Float? // z.B. 5.10m
+  unit            String? // fm o.R.
+
+  // Qualität
+  woodType     WoodType?
+  treeSpecies  String?
+  qualityClass String? // B, C, D, IL
+
+  imageUrl String?
+  note     String?
+
+  operationId String
+  operation   Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+
+  // --- NEU: Verkauf ---
+  timberSaleId String? // Gehört zu diesem Verkaufskontrakt
+  timberSale   TimberSale? @relation(fields: [timberSaleId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- NEU: VERKAUF & LOGISTIK ---
+
+model TimberSale {
+  id             String           @id @default(uuid())
+  contractNumber String? // Vertragsnummer beim Sägewerk
+  buyerName      String // Käufer (Sägewerk/Händler)
+  status         TimberSaleStatus @default(DRAFT)
+  date           DateTime         @default(now())
+
+  // Preise
+  pricePerUnit Decimal? @db.Decimal(10, 2)
+  currency     String   @default("EUR")
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  operationId String? // Optional: Wenn Verkauf nur zu einer Maßnahme gehört
+  operation   Operation? @relation(fields: [operationId], references: [id])
+
+  // Inhalte
+  logPiles         LogPile[] // Welche Polter gehören dazu?
+  transportTickets TransportTicket[] // Abfuhrscheine (Lieferscheine)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TransportTicket {
+  id           String   @id @default(uuid())
+  ticketNumber String // Lieferschein-Nr.
+  plateNumber  String? // LKW Kennzeichen
+  driverName   String?
+  pickupDate   DateTime
+
+  // Werksmaß (Werkseingang) - Das ist die "Wahrheit" für die Abrechnung
+  factoryAmount Float // Menge im Werk gemessen
+  factoryUnit   String // fm o.R.
+
+  timberSaleId String
+  timberSale   TimberSale @relation(fields: [timberSaleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+// --- ANDERE MODELLE (Unverändert) ---
+
+model Planting {
+  id             String    @id @default(uuid())
+  date           DateTime  @default(now())
+  treeSpecies    String
+  scientificName String?
+  provenance     String?
+  sortiment      String?
+  plantType      String?
+  count          Int
+  geoJson        Json?     @db.JsonB
+  areaHa         Float?
+  note           String?
+  operationId    String
+  operation      Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+}
+
+model Cost {
+  id          String    @id @default(uuid())
+  title       String
+  amount      Decimal   @db.Decimal(10, 2)
+  date        DateTime  @default(now())
+  category    String
+  operationId String
+  operation   Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  name      String
+  s3Key     String
+  url       String
+  type      String
+  category  String
+  date      DateTime @default(now())
+  note      String?
+  forestId  String?
+  forest    Forest?  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model Image {
+  id        String   @id @default(uuid())
+  name      String
+  s3Key     String
+  url       String
+  lat       Float?
+  lng       Float?
+  forestId  String?
+  forest    Forest?  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model TreeRecord {
+  id         String   @id @default(uuid())
+  species    String
+  count      Int?
+  volume     Float?
+  health     String?
+  recordedAt DateTime @default(now())
+  forestId   String
+  forest     Forest   @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model AnimalRecord {
+  id         String           @id @default(uuid())
+  species    String
+  count      Int
+  type       AnimalRecordType @default(SIGHTING)
+  recordedAt DateTime         @default(now())
+  forestId   String
+  forest     Forest           @relation(fields: [forestId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  invoiceNumber String
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("EUR")
+  status        String
+  pdfUrl        String?
+  issuedAt      DateTime
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+}
+
+// --- ENUMS ---
+
+enum OperationType {
+  HARVEST
+  PLANTING
+  MAINTENANCE
+  PLANNING // Neu
+  MONITORING // Neu
+}
+
+enum OperationStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  REVIEW
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RecurrenceUnit {
+  DAYS
+  WEEKS
+  MONTHS
+  YEARS
+}
+
+enum TimeCategory {
+  MANUAL_WORK // Handarbeit (Pflanzen, Zaunbau)
+  MACHINE_WORK // Maschinenzeit (Harvester, Mulcher)
+  PLANNING // Büro/Planung
+  TRAVEL // Anfahrt
+  INSPECTION // Begehung/Kontrolle
+}
+
+enum HarvestType {
+  REGULAR
+  CALAMITY
+  SAFETY
+  THINNING // Durchforstung (Neu)
+}
+
+enum WoodType {
+  LOG // Stammholz
+  INDUSTRIAL // Industrieholz
+  ENERGY // Energieholz/Hackschnitzel
+  PULP // Papierholz
+}
+
+enum PolterStatus {
+  PILED // Liegt im Wald (Gepoltert)
+  MEASURED // Vermessen (Aufgenommen)
+  SOLD // Verkauft (Vertraglich gebunden)
+  COLLECTED // Abgefahren (Lieferschein vorhanden)
+}
+
+enum TimberSaleStatus {
+  DRAFT
+  NEGOTIATION
+  CONTRACT_SIGNED
+  COMPLETED
+  CANCELLED
+}
+
+enum AnimalRecordType {
+  SIGHTING
+  HUNTING
+  INVENTORY
+  DAMAGE // Wildschaden (Neu)
+}
+
+enum NotificationType {
+  ASSIGNED
+  STATUS_CHANGE
+  COMMENT
+  MENTION
+  DUE_SOON
+}
+
+enum OrgType {
+  PRIVATE_OWNER // Privatwaldbesitzer
+  FORESTRY_COMPANY // Forstbetrieb / GmbH
+  SERVICE_PROVIDER // Lohnunternehmer / Dienstleister
+  ASSOCIATION // FBch / WBV (Zusammenschluss)
+  PUBLIC // Kommune / Staat
+}

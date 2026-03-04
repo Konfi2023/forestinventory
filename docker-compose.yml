@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: forest_db
+    restart: always
+    environment:
+      POSTGRES_USER: forest_user
+      POSTGRES_PASSWORD: forest_password
+      POSTGRES_DB: forest_inventory
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: forest_iam
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+    ports:
+      - "8080:8080"
+    # Wir lassen das Volume erstmal weg, um Fehlerquellen auszuschließen
+
+volumes:
+  postgres_data:

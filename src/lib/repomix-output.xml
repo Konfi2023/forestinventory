@@ -1,0 +1,658 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+admin-auth.ts
+auth.ts
+forest-access.ts
+map-helpers.ts
+notifications.ts
+permissions.ts
+prisma.ts
+scheduler.ts
+storage.ts
+utils.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="admin-auth.ts">
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+
+export async function requireSystemAdmin() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.email) {
+    redirect("/api/auth/signin");
+  }
+
+  // Live-Check gegen die DB (Session könnte alt sein)
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { isSystemAdmin: true },
+  });
+
+  if (!user || !user.isSystemAdmin) {
+    // Entweder 404 oder Redirect zur Startseite
+    redirect("/"); 
+  }
+
+  return session;
+}
+</file>
+
+<file path="auth.ts">
+import { NextAuthOptions } from "next-auth";
+import KeycloakProvider from "next-auth/providers/keycloak";
+import { prisma } from "@/lib/prisma";
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    KeycloakProvider({
+      clientId: process.env.KEYCLOAK_CLIENT_ID!,
+      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
+      issuer: process.env.KEYCLOAK_ISSUER!,
+    }),
+  ],
+  callbacks: {
+    // 1. JWT Callback: Hier landen die Daten von Keycloak
+    async jwt({ token, profile, account }) {
+      if (profile && account) {
+        const email = token.email;
+        const keycloakId = token.sub;
+
+        // Sicherheitscheck: Ohne Email/ID können wir nichts tun
+        if (!email || !keycloakId) return token;
+
+        // A. Versuche User per Keycloak-ID zu finden (Normalfall)
+        let dbUser = await prisma.user.findUnique({
+          where: { keycloakId },
+        });
+
+        // B. Wenn nicht gefunden, suche per E-Mail (Account Linking Fall)
+        // Das verhindert den "Unique Constraint Error", wenn du dich über die IP neu einloggst
+        if (!dbUser) {
+          const existingUserByEmail = await prisma.user.findUnique({
+            where: { email },
+          });
+
+          if (existingUserByEmail) {
+            // User existiert, aber Keycloak-ID fehlte oder war anders -> Updaten!
+            console.log("🔗 Verknüpfe existierenden User mit neuer Keycloak-ID...");
+            dbUser = await prisma.user.update({
+              where: { id: existingUserByEmail.id },
+              data: { keycloakId },
+            });
+          } else {
+            // C. Ganz neuer User -> Erstellen
+            console.log("🆕 Neuer User erkannt. Erstelle DB-Eintrag...");
+            dbUser = await prisma.user.create({
+              data: {
+                keycloakId,
+                email,
+                firstName: profile.name?.split(" ")[0] || "User",
+                lastName: profile.name?.split(" ")[1] || "",
+              },
+            });
+
+            // DEV-HELPER: Der allererste User wird automatisch Admin der Demo-Org
+            // (Damit du dich nicht aussperrst beim Testen)
+            const userCount = await prisma.user.count();
+            if (userCount === 1) {
+              const demoOrg = await prisma.organization.findUnique({ where: { slug: "demo-forst" } });
+              const adminRole = await prisma.role.findFirst({ where: { name: "Administrator", organizationId: demoOrg?.id } });
+              
+              if (demoOrg && adminRole) {
+                await prisma.membership.create({
+                  data: {
+                    userId: dbUser.id,
+                    organizationId: demoOrg.id,
+                    roleId: adminRole.id
+                  }
+                });
+                console.log("👑 Erster User wurde zum Admin der Demo-Org gemacht.");
+              }
+            }
+          }
+        }
+
+        // DB-Daten ins Token schreiben, damit sie in der Session verfügbar sind
+        if (dbUser) {
+          token.dbId = dbUser.id;
+          token.lastActiveOrgId = dbUser.lastActiveOrgId;
+        }
+      }
+      return token;
+    },
+
+    // 2. Session Callback: Das ist das, was im Frontend ankommt
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        // Erweitere das Session-Objekt um unsere DB-Daten
+        session.user.id = token.dbId as string; 
+      }
+      return session;
+    },
+  },
+  // Debugging an, falls was schief geht
+  debug: true, 
+};
+</file>
+
+<file path="forest-access.ts">
+import { prisma } from "@/lib/prisma";
+
+/**
+ * Holt alle Wälder, die ein bestimmter User sehen darf.
+ * - Org-Admins sehen ALLE Wälder der Org.
+ * - Normale User sehen nur die, die ihnen zugewiesen sind (via ForestAccess).
+ */
+export async function getAccessibleForests(orgId: string, userId: string) {
+  // 1. Rolle des Users in dieser Org prüfen
+  const membership = await prisma.membership.findFirst({
+    where: { userId, organizationId: orgId },
+    include: { role: true }
+  });
+
+  if (!membership) return [];
+
+  // 2. Admin-Check (System-Admin Rolle oder Name 'Administrator')
+  // Wir gehen davon aus, dass 'Administrator' immer alles darf.
+  const isAdmin = membership.role.name === "Administrator" || membership.role.permissions.includes("forest:view_all");
+
+  if (isAdmin) {
+    // Admin sieht ALLES in der Org
+    return await prisma.forest.findMany({
+      where: { organizationId: orgId },
+      orderBy: { name: 'asc' }
+    });
+  } else {
+    // Normaler User sieht nur zugewiesene Wälder
+    return await prisma.forest.findMany({
+      where: {
+        organizationId: orgId,
+        grantedUsers: { some: { id: userId } } // <--- Der Filter
+      },
+      orderBy: { name: 'asc' }
+    });
+  }
+}
+</file>
+
+<file path="map-helpers.ts">
+import { Feature, Geometry, Position } from 'geojson';
+
+/**
+ * Konvertiert GeoJSON Koordinaten [lng, lat] in Leaflet [lat, lng].
+ * Behandelt Polygon und MultiPolygon.
+ */
+export function geoJSONToLeaflet(geoJson: any): { lat: number; lng: number }[][] {
+  if (!geoJson || !geoJson.geometry) return [];
+
+  const type = geoJson.geometry.type;
+  const coords = geoJson.geometry.coordinates;
+
+  const flip = (pair: number[]) => ({ lat: pair[1], lng: pair[0] });
+
+  try {
+    if (type === 'Polygon') {
+      // Ein Polygon ist ein Array von Ringen (Außenring + Löcher)
+      // Wir nehmen hier vereinfacht den Außenring [0]
+      return [coords[0].map(flip)];
+    } 
+    else if (type === 'MultiPolygon') {
+      // Ein MultiPolygon ist ein Array von Polygonen
+      return coords.map((poly: any[]) => poly[0].map(flip));
+    }
+    // Fallback für LineStrings (Wege)
+    else if (type === 'LineString') {
+      return [coords.map(flip)];
+    }
+  } catch (e) {
+    console.error("GeoJSON Parse Error:", e);
+    return [];
+  }
+  
+  return [];
+}
+
+/**
+ * Berechnet den Mittelpunkt (Centroid) für Auto-Zoom
+ */
+export function getCenterOfBounds(polygons: { lat: number; lng: number }[][]): [number, number] | null {
+  if (polygons.length === 0 || polygons[0].length === 0) return null;
+  
+  let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+
+  polygons.flat().forEach(p => {
+    if (p.lat < minLat) minLat = p.lat;
+    if (p.lat > maxLat) maxLat = p.lat;
+    if (p.lng < minLng) minLng = p.lng;
+    if (p.lng > maxLng) maxLng = p.lng;
+  });
+
+  return [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
+}
+</file>
+
+<file path="notifications.ts">
+import { prisma } from "@/lib/prisma";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const SENDER_EMAIL = process.env.RESEND_FROM || "onboarding@resend.dev";
+const BASE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+type NotifParams = {
+  type: "ASSIGNED" | "STATUS_CHANGE" | "COMMENT" | "MENTION";
+  taskId: string;
+  actorId: string;
+  title: string;
+  message?: string;
+  forceRecipients?: string[];
+};
+
+export async function sendNotification({ type, taskId, actorId, title, message, forceRecipients }: NotifParams) {
+  // 1. Task laden inkl. Org-Slug für den Link
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      watchers: true,
+      assignee: true,
+      forest: {
+        include: { organization: true } // WICHTIG: Wir brauchen den Slug
+      }
+    }
+  });
+
+  if (!task) return;
+
+  // 2. Empfänger ermitteln (Logik bleibt gleich)
+  const recipientIds = new Set<string>();
+  if (forceRecipients && forceRecipients.length > 0) {
+    forceRecipients.forEach(id => recipientIds.add(id));
+  } else {
+    task.watchers.forEach(u => recipientIds.add(u.id));
+    if (task.assigneeId) recipientIds.add(task.assigneeId);
+  }
+  recipientIds.delete(actorId); // Anti-Spam: Sich selbst entfernen
+
+  if (recipientIds.size === 0) return;
+
+  // 3. Datenbank-Einträge & E-Mail
+  const recipients = await prisma.user.findMany({
+    where: { id: { in: Array.from(recipientIds) } }
+  });
+
+  // DB Benachrichtigungen erstellen
+  await prisma.notification.createMany({
+    data: recipients.map(user => ({
+      userId: user.id,
+      actorId,
+      taskId,
+      type,
+      title,
+      message
+    }))
+  });
+
+  // 4. Der "Magische Link"
+  // ?taskId=... sorgt dafür, dass das Frontend das Ticket öffnet
+  const deepLink = `${BASE_URL}/dashboard/org/${task.forest.organization.slug}/tasks?taskId=${task.id}`;
+
+  // Emails senden
+  recipients.forEach(user => {
+    if (!user.email) return;
+
+    resend.emails.send({
+      from: SENDER_EMAIL,
+      to: user.email,
+      subject: `[ForestDB] ${title}`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #166534;">${title}</h2>
+          <p>Es gibt Neuigkeiten zur Aufgabe <strong>"${task.title}"</strong> im Bestand <em>${task.forest.name}</em>:</p>
+          
+          <blockquote style="border-left: 4px solid #ddd; padding-left: 10px; margin: 20px 0; color: #555;">
+            ${message || 'Keine Details.'}
+          </blockquote>
+
+          <a href="${deepLink}" style="background-color: #166534; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+            Aufgabe öffnen
+          </a>
+          
+          <p style="font-size: 12px; color: #888; margin-top: 30px;">
+            Dieser Link öffnet die App oder den Browser direkt beim Ticket.
+          </p>
+        </div>
+      `
+    }).catch(err => console.error("Email error", err));
+  });
+}
+
+// addWatcher bleibt unverändert...
+export async function addWatcher(taskId: string, userId: string) {
+    // ... (Code wie vorher)
+    const exists = await prisma.task.findFirst({
+        where: { id: taskId, watchers: { some: { id: userId } } }
+    });
+    if (!exists) {
+        await prisma.task.update({
+            where: { id: taskId },
+            data: { watchers: { connect: { id: userId } } }
+        });
+    }
+}
+</file>
+
+<file path="permissions.ts">
+// src/lib/permissions.ts
+
+export const PERMISSION_GROUPS = {
+  USER_MANAGEMENT: {
+    label: "Benutzerverwaltung",
+    permissions: [
+      { key: "users:view", label: "Benutzer sehen" },
+      { key: "users:invite", label: "Benutzer einladen" },
+      { key: "users:edit", label: "Benutzer bearbeiten" },
+      { key: "users:delete", label: "Benutzer entfernen" },
+    ]
+  },
+  ROLE_MANAGEMENT: {
+    label: "Rollen & Rechte",
+    permissions: [
+      { key: "roles:view", label: "Rollen einsehen" },
+      { key: "roles:manage", label: "Rollen verwalten" },
+    ]
+  },
+  FOREST_INVENTORY: {
+    label: "Forstinventur & Karten",
+    permissions: [
+      { key: "forest:view", label: "Karten & Bestände sehen" },
+      { key: "forest:edit", label: "Geodaten bearbeiten" },
+    ]
+  },
+  // --- NEU: OPERATIVE PROZESSE ---
+  OPERATIONS: {
+    label: "Arbeitsaufträge & Planung",
+    permissions: [
+      { key: "tasks:view", label: "Aufgaben einsehen" },
+      { key: "tasks:create", label: "Aufgaben erstellen" },
+      { key: "tasks:edit", label: "Aufgaben bearbeiten & Status ändern" },
+      { key: "tasks:assign", label: "Aufgaben zuweisen" },
+      { key: "tasks:delete", label: "Aufgaben löschen" },
+      { key: "schedules:manage", label: "Wiederkehrende Pläne verwalten" }, // NEU
+      { key: "time:track", label: "Arbeitszeiten erfassen" },
+      { key: "financials:view_costs", label: "Kosten/Erlöse einsehen" },
+    ]
+  }
+} as const;
+
+export const ALL_PERMISSIONS = Object.values(PERMISSION_GROUPS)
+  .flatMap(group => group.permissions.map(p => p.key));
+
+export const ROLE_TEMPLATES = {
+  ADMIN: {
+    name: "Administrator",
+    description: "Voller Zugriff auf die Organisation",
+    permissions: ALL_PERMISSIONS 
+  },
+  FORESTER: {
+    name: "Förster / Betriebsleiter",
+    description: "Operative Planung und Steuerung",
+    permissions: [
+      "forest:view", "forest:edit", "users:view",
+      "tasks:view", "tasks:create", "tasks:edit", "tasks:assign", "tasks:delete",
+      "schedules:manage", // Darf Serien anlegen
+      "time:track"
+    ]
+  },
+  FOREST_WORKER: {
+    name: "Waldarbeiter",
+    description: "Führt Aufgaben aus und erfasst Zeiten",
+    permissions: [
+      "forest:view", 
+      "tasks:view", 
+      "tasks:edit",  // Darf Status auf DONE setzen
+      "time:track"
+    ]
+  },
+  VIEWER: {
+    name: "Beobachter",
+    description: "Nur Lesezugriff",
+    permissions: ["forest:view", "tasks:view"]
+  }
+};
+</file>
+
+<file path="prisma.ts">
+import { PrismaClient } from "@prisma/client"
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+</file>
+
+<file path="scheduler.ts">
+import { prisma } from "@/lib/prisma";
+import { RecurrenceUnit, TaskSchedule } from "@prisma/client";
+import { addDays, addWeeks, addMonths, addYears } from "date-fns";
+
+/**
+ * Berechnet das nächste Datum basierend auf Intervall und Einheit
+ */
+function calculateNextDate(currentDate: Date, unit: RecurrenceUnit, interval: number): Date {
+  switch (unit) {
+    case "DAYS": return addDays(currentDate, interval);
+    case "WEEKS": return addWeeks(currentDate, interval);
+    case "MONTHS": return addMonths(currentDate, interval);
+    case "YEARS": return addYears(currentDate, interval);
+    default: return addDays(currentDate, interval);
+  }
+}
+
+/**
+ * Der Generator: Erzeugt Aufgaben für fällige Serien
+ * Dies sollte idealerweise von einem Cron-Job (z.B. Vercel Cron) 1x täglich aufgerufen werden.
+ */
+export async function generateRecurringTasks() {
+  const now = new Date();
+
+  // 1. Finde alle aktiven Serien, die fällig sind (nextRunAt <= heute)
+  const dueSchedules = await prisma.taskSchedule.findMany({
+    where: {
+      active: true,
+      nextRunAt: { lte: now },
+      OR: [
+        { endDate: null },
+        { endDate: { gte: now } }
+      ]
+    }
+  });
+
+  console.log(`🔄 Prüfe Serien: ${dueSchedules.length} fällig.`);
+
+  for (const schedule of dueSchedules) {
+    // Transaction: Aufgabe erstellen UND Serie updaten (atomar)
+    await prisma.$transaction(async (tx) => {
+      
+      // A. Aufgabe erstellen
+      await tx.task.create({
+        data: {
+          title: schedule.title,
+          description: schedule.description,
+          priority: schedule.priority,
+          forestId: schedule.forestId,
+          assigneeId: schedule.assigneeId,
+          creatorId: schedule.creatorId,
+          scheduleId: schedule.id,
+          status: "OPEN",
+          dueDate: schedule.nextRunAt, // Fälligkeit ist das Berechnungsdatum
+        }
+      });
+
+      // B. Nächstes Datum berechnen
+      const nextDate = calculateNextDate(schedule.nextRunAt, schedule.unit, schedule.interval);
+
+      // C. Serie aktualisieren
+      await tx.taskSchedule.update({
+        where: { id: schedule.id },
+        data: {
+          lastGeneratedAt: new Date(),
+          nextRunAt: nextDate
+        }
+      });
+    });
+  }
+}
+</file>
+
+<file path="storage.ts">
+import fs from "node:fs/promises";
+import path from "node:path";
+import { randomUUID } from "crypto";
+
+/**
+ * Speichert eine Datei. 
+ * DEV: Lokal im Dateisystem public/uploads
+ * PROD: Hier würde der S3 Upload stehen
+ */
+export async function uploadFile(file: File, folder: string = "general"): Promise<{ url: string; key: string }> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const ext = file.name.split(".").pop();
+  const uniqueName = `${randomUUID()}.${ext}`;
+  
+  // Pfad-Logik für lokalen Speicher
+  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
+  
+  // Ordner erstellen falls nicht existent
+  try {
+    await fs.access(uploadDir);
+  } catch {
+    await fs.mkdir(uploadDir, { recursive: true });
+  }
+
+  const filePath = path.join(uploadDir, uniqueName);
+  await fs.writeFile(filePath, buffer);
+
+  // URL für den Browser zurückgeben
+  return {
+    url: `/uploads/${folder}/${uniqueName}`,
+    key: `${folder}/${uniqueName}` // Für S3 wäre das der Key
+  };
+}
+
+/**
+ * Löscht eine Datei
+ */
+export async function deleteFile(key: string) {
+  // S3 Implementierung wäre hier: await s3.deleteObject(...)
+  
+  // Lokale Implementierung:
+  const filePath = path.join(process.cwd(), "public", "uploads", key);
+  try {
+    await fs.unlink(filePath);
+  } catch (e) {
+    console.error("Fehler beim Löschen der Datei:", e);
+  }
+}
+</file>
+
+<file path="utils.ts">
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// --- NEU: Helper für Avatare & Farben ---
+
+export function getUserColor(name?: string | null) {
+  const colors = [
+    "bg-red-100 text-red-700 border-red-200",
+    "bg-green-100 text-green-700 border-green-200",
+    "bg-blue-100 text-blue-700 border-blue-200",
+    "bg-orange-100 text-orange-700 border-orange-200",
+    "bg-purple-100 text-purple-700 border-purple-200",
+    "bg-pink-100 text-pink-700 border-pink-200",
+    "bg-indigo-100 text-indigo-700 border-indigo-200",
+    "bg-teal-100 text-teal-700 border-teal-200",
+  ];
+  
+  if (!name) return "bg-slate-100 text-slate-700 border-slate-200";
+  
+  // Einfacher Hash-Algorithmus für konsistente Farben
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
+
+export function getInitials(first?: string | null, last?: string | null) {
+  const f = first?.[0] || "";
+  const l = last?.[0] || "";
+  return (f + l).toUpperCase() || "?";
+}
+
+// Optional: Auch die Task-Farben zentralisieren
+export function getTaskColor(priority: string) {
+  switch (priority) {
+      case 'URGENT': return '#ef4444';
+      case 'HIGH': return '#f97316';
+      case 'MEDIUM': return '#3b82f6';
+      default: return '#94a3b8';
+  }
+}
+</file>
+
+</files>

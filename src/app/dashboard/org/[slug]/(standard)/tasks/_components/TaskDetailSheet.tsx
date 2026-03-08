@@ -263,7 +263,7 @@ export function TaskDetailSheet({ task, open, onClose, orgSlug, members, current
   const isWatching = watchers.some((w: any) => w.id === currentUserId);
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
+    <Sheet open={open} onOpenChange={onClose} modal={false}>
       <SheetContent className="sm:max-w-xl w-full flex flex-col h-full p-0 gap-0">
         
         {/* HEADER */}
@@ -466,11 +466,12 @@ export function TaskDetailSheet({ task, open, onClose, orgSlug, members, current
             <Separator />
 
             {/* 5. ZEITERFASSUNG */}
-            <TimeTrackingSection 
-                orgSlug={orgSlug}
+            <TimeTrackingSection
                 taskId={task.id}
-                entries={timeEntries}
-                onUpdate={fetchLatestData}
+                estimatedTime={(task as any).estimatedTime ?? null}
+                timeEntries={timeEntries}
+                currentUserId={currentUserId}
+                onRefresh={fetchLatestData}
             />
 
             <Separator />

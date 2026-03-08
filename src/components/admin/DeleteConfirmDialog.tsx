@@ -12,11 +12,12 @@ interface Props {
   trigger: React.ReactNode;
   title: string;
   description: string;
-  confirmString: string; // Die E-Mail des Admins
+  confirmString: string;
   onConfirm: () => Promise<void>;
+  children?: React.ReactNode; // Optionaler Slot für zusätzliche Infos (z.B. Child-Counts)
 }
 
-export function DeleteConfirmDialog({ trigger, title, description, confirmString, onConfirm }: Props) {
+export function DeleteConfirmDialog({ trigger, title, description, confirmString, onConfirm, children }: Props) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +56,8 @@ export function DeleteConfirmDialog({ trigger, title, description, confirmString
         </DialogHeader>
 
         <div className="py-4 space-y-3">
-          <Label>Zur Bestätigung bitte deine E-Mail eingeben:</Label>
+          {children}
+          <Label>Zur Bestätigung bitte den Namen eingeben:</Label>
           <div className="p-2 bg-slate-100 rounded text-sm font-mono text-center select-all">
             {confirmString}
           </div>

@@ -7,6 +7,10 @@ import { useEffect, useState } from 'react';
 // Sub-Components
 import { ForestDetailView } from './detail-panel/ForestDetailView';
 import { PoiDetailView } from './detail-panel/PoiDetailView';
+import { PathDetailView } from './detail-panel/PathDetailView';
+import { PlantingDetailView } from './detail-panel/PlantingDetailView';
+import { HuntingDetailView } from './detail-panel/HuntingDetailView';
+import { CalamityDetailView } from './detail-panel/CalamityDetailView';
 
 interface Props {
   forests: any[]; 
@@ -31,13 +35,44 @@ export function MapDetailPanel({ forests, tasks, members, orgSlug, onForestDelet
   // --- DATEN FINDEN ---
   const selectedForest = selectedType === 'FOREST' ? forests?.find(f => f.id === selectedId) : null;
   
-  const selectedPoi = selectedType === 'POI' 
-    ? forests?.flatMap(f => f.pois || []).find(p => p.id === selectedId) 
+  const selectedPoi = selectedType === 'POI'
+    ? forests?.flatMap(f => f.pois || []).find(p => p.id === selectedId)
+    : null;
+
+  const selectedPath = selectedType === 'PATH'
+    ? forests?.flatMap(f => f.paths || []).find(p => p.id === selectedId)
+    : null;
+  const selectedPathForest = selectedPath
+    ? forests?.find(f => f.id === selectedPath.forestId)
+    : null;
+
+  const selectedPlanting = selectedType === 'PLANTING'
+    ? forests?.flatMap(f => f.plantings || []).find(p => p.id === selectedId)
+    : null;
+  const selectedPlantingForest = selectedPlanting
+    ? forests?.find(f => f.id === selectedPlanting.forestId)
+    : null;
+
+  const selectedHunting = selectedType === 'HUNTING'
+    ? forests?.flatMap(f => f.hunting || []).find(h => h.id === selectedId)
+    : null;
+  const selectedHuntingForest = selectedHunting
+    ? forests?.find(f => f.id === selectedHunting.forestId)
+    : null;
+
+  const selectedCalamity = selectedType === 'CALAMITY'
+    ? forests?.flatMap(f => f.calamities || []).find(c => c.id === selectedId)
+    : null;
+  const selectedCalamityForest = selectedCalamity
+    ? forests?.find(f => f.id === selectedCalamity.forestId)
     : null;
 
   // --- ANIMATION STEUERN ---
   useEffect(() => {
-    const hasSelection = !!selectedId && (selectedType === 'FOREST' || selectedType === 'POI');
+    const hasSelection = !!selectedId && (
+      selectedType === 'FOREST' || selectedType === 'POI' || selectedType === 'PATH' ||
+      selectedType === 'PLANTING' || selectedType === 'HUNTING' || selectedType === 'CALAMITY'
+    );
     setIsVisible(hasSelection);
   }, [selectedId, selectedType]);
 
@@ -89,6 +124,69 @@ export function MapDetailPanel({ forests, tasks, members, orgSlug, onForestDelet
               forests={forests} // Wichtig für das Dropdown im Task Dialog
           />
       );
+  }
+
+  if (selectedType === 'PATH' && selectedPath) {
+    return (
+      <PathDetailView
+        key={selectedPath.id}
+        path={selectedPath}
+        forest={selectedPathForest}
+        onClose={handleClose}
+        onRefresh={refreshData}
+        onDeleteSuccess={() => { refreshData(); handleClose(); }}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
+    );
+  }
+
+  if (selectedType === 'PLANTING' && selectedPlanting) {
+    return (
+      <PlantingDetailView
+        key={selectedPlanting.id}
+        planting={selectedPlanting}
+        forest={selectedPlantingForest}
+        orgSlug={orgSlug}
+        onClose={handleClose}
+        onRefresh={refreshData}
+        onDeleteSuccess={() => { refreshData(); handleClose(); }}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
+    );
+  }
+
+  if (selectedType === 'HUNTING' && selectedHunting) {
+    return (
+      <HuntingDetailView
+        key={selectedHunting.id}
+        hunting={selectedHunting}
+        forest={selectedHuntingForest}
+        orgSlug={orgSlug}
+        onClose={handleClose}
+        onRefresh={refreshData}
+        onDeleteSuccess={() => { refreshData(); handleClose(); }}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
+    );
+  }
+
+  if (selectedType === 'CALAMITY' && selectedCalamity) {
+    return (
+      <CalamityDetailView
+        key={selectedCalamity.id}
+        calamity={selectedCalamity}
+        forest={selectedCalamityForest}
+        orgSlug={orgSlug}
+        onClose={handleClose}
+        onRefresh={refreshData}
+        onDeleteSuccess={() => { refreshData(); handleClose(); }}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
+    );
   }
 
   return null;

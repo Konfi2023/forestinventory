@@ -45,13 +45,27 @@ export async function getMapDataBySlug(slug: string) {
       include: {
         // Wir laden direkt die Unter-Objekte mit, damit wir sie im Frontend haben
         paths: true,
-        pois: true,
+        pois: {
+          include: {
+            vehicle: true,
+            tree: true,
+            logPile: true,
+            operationLogPiles: {
+              include: { operation: { select: { id: true, title: true } } },
+            },
+          },
+        },
         plantings: true,
         maintenance: true,
-        calamities: true,
+        calamities: {
+          include: {
+            operation: { select: { id: true, title: true } },
+          },
+        },
         habitats: true,
         hunting: true,
-        grantedUsers: { select: { id: true } }
+        grantedUsers: { select: { id: true } },
+        biomassSnapshots: { orderBy: { date: 'desc' }, take: 10 }
       }
     });
 

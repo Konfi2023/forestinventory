@@ -11,6 +11,7 @@ export function SettingsTabsClient({ slug }: { slug: string }) {
     { href: `/dashboard/org/${slug}/settings`, label: "Allgemein", exact: true },
     { href: `/dashboard/org/${slug}/settings/members`, label: "Team & Mitglieder", exact: false },
     { href: `/dashboard/org/${slug}/settings/roles`, label: "Rollen & Rechte", exact: false },
+    { href: `/dashboard/org/${slug}/settings/eudr`, label: "EUDR-Compliance", exact: false },
   ];
 
   return (

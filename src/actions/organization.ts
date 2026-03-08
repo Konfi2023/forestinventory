@@ -131,3 +131,29 @@ export async function updateOrganization(currentSlug: string, formData: FormData
   revalidatePath(`/dashboard/org/${currentSlug}/settings`);
   return { success: true };
 }
+
+export async function updateEudrSettings(currentSlug: string, formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Nicht eingeloggt");
+
+  const org = await prisma.organization.findUnique({
+    where: { slug: currentSlug },
+    include: { members: { where: { userId: session.user.id }, include: { role: true } } }
+  });
+
+  if (!org || !org.members[0]) throw new Error("Kein Zugriff");
+  if (org.members[0].role.name !== "Administrator") {
+    throw new Error("Nur Administratoren können diese Einstellungen ändern.");
+  }
+
+  const eudrActivityType = formData.get("eudrActivityType") as string;
+  const eoriNumber = (formData.get("eoriNumber") as string)?.trim() || null;
+
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: { eudrActivityType, eoriNumber },
+  });
+
+  revalidatePath(`/dashboard/org/${currentSlug}/settings/eudr`);
+  return { success: true };
+}

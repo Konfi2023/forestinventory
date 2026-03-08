@@ -35,6 +35,18 @@ model Organization {
   zip                String?
   city               String?
   country            String?      @default("Deutschland")
+  // EUDR-Compliance
+  eudrActivityType   String?      @default("DOMESTIC")
+  eoriNumber         String?
+  eudrStatements     DueDiligenceStatement[]
+
+  // EUDR-API Verbindung (TRACES NT)
+  eudrApiUrl         String?   // Endpunkt-URL des SOAP-Dienstes
+  eudrApiUsername    String?   // TRACES NT Benutzername
+  eudrApiPassword    String?   // TRACES NT Passwort
+  eudrApiClientId    String?   @default("eudr-test")    // WebServiceClientId
+  eudrApiEnvironment String?   @default("ACCEPTANCE")   // ACCEPTANCE | PRODUCTION
+  eudrApiEnabled     Boolean   @default(false)
   Event              Event[]
 }
 
@@ -177,7 +189,11 @@ model Forest {
   color          String?      @default("#10b981")
 
   // GIS Layer
-  paths       ForestPath[]
+  paths            ForestPath[]
+  biomassSnapshots ForestBiomassSnapshot[]
+  polygonSnapshots ForestPolygonSnapshot[]
+  weatherSnapshots ForestWeatherSnapshot[]
+  s1Snapshots      ForestS1Snapshot[]
   pois        ForestPoi[]
   plantings   ForestPlanting[]
   maintenance ForestMaintenance[]
@@ -225,16 +241,18 @@ model ForestHunting {
 }
 
 model ForestCalamity {
-  id          String  @id @default(uuid())
-  geoJson     Json    @db.JsonB
-  areaHa      Float?
-  cause       String?
-  status      String?
-  amount      Float?
-  description String?
-  note        String?
-  forestId    String
-  forest      Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  id           String     @id @default(uuid())
+  geoJson      Json       @db.JsonB
+  areaHa       Float?
+  cause        String?
+  status       String?
+  amount       Float?
+  description  String?
+  note         String?
+  trackBiomass Boolean    @default(false)
+  forestId     String
+  forest       Forest     @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  operation    Operation? // verknüpfte Maßnahme (1:1, optional)
 }
 
 model ForestMaintenance {
@@ -250,21 +268,23 @@ model ForestMaintenance {
 }
 
 model ForestPlanting {
-  id          String  @id @default(uuid())
-  treeSpecies String
-  description String?
-  note        String?
-  content     Json?   @db.JsonB
-  geoJson     Json    @db.JsonB
-  areaHa      Float?
-  forestId    String
-  forest      Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  id           String  @id @default(uuid())
+  treeSpecies  String
+  description  String?
+  note         String?
+  content      Json?   @db.JsonB
+  geoJson      Json    @db.JsonB
+  areaHa       Float?
+  trackBiomass Boolean @default(false)
+  forestId     String
+  forest       Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
 }
 
 model ForestPath {
   id       String  @id @default(uuid())
   type     String
   name     String?
+  color    String?
   geoJson  Json    @db.JsonB
   lengthM  Float?
   note     String?
@@ -273,7 +293,7 @@ model ForestPath {
 }
 
 model ForestPoi {
-  id       String  @id @default(uuid())
+  id       String             @id @default(uuid())
   type     String
   name     String?
   lat      Float
@@ -281,7 +301,171 @@ model ForestPoi {
   tasks    Task[]
   note     String?
   forestId String
-  forest   Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  forest   Forest             @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  vehicle           ForestPoiVehicle?
+  tree              ForestPoiTree?
+  logPile           ForestPoiLogPile?
+  operationLogPiles LogPile[]
+}
+
+model ForestPoiLogPile {
+  id           String    @id @default(uuid())
+  poiId        String    @unique
+  poi          ForestPoi @relation(fields: [poiId], references: [id], onDelete: Cascade)
+  volumeFm     Float?    // Festmeter (fm)
+  logLength    Float?    // Stammlänge in Metern
+  treeSpecies  String?   // Baumart
+  woodType     String?   @default("LOG") // LOG | INDUSTRIAL | ENERGY | PULP
+  qualityClass String?   // A, B, C, D, IL, E
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model ForestPoiVehicle {
+  id             String      @id @default(uuid())
+  poiId          String      @unique
+  poi            ForestPoi   @relation(fields: [poiId], references: [id], onDelete: Cascade)
+  vehicleType    VehicleType @default(OTHER)
+  serialNumber   String?
+  yearBuilt      Int?
+  lastInspection DateTime?
+  nextInspection DateTime?
+  imageKey       String?
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([nextInspection])
+}
+
+model ForestPoiTree {
+  id         String     @id @default(uuid())
+  poiId      String     @unique
+  poi        ForestPoi  @relation(fields: [poiId], references: [id], onDelete: Cascade)
+  species    String?
+  age        Int?
+  diameter   Float?
+  height     Float?
+  co2Storage Float?
+  health     TreeHealth @default(HEALTHY)
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([species])
+}
+
+// Biomasse-Zeitreihe: periodisch gespeicherte NDVI-Werte pro Waldfläche
+// Vorbereitung für Biomasse- und Abholzungs-Tracking (Sidebar "Biomasse")
+// Befüllung via: Sentinel Hub Statistical API (POST /api/biomass/snapshot)
+model ForestBiomassSnapshot {
+  id         String   @id @default(uuid())
+  forestId   String
+  forest     Forest   @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  date       DateTime // Datum des Sentinel-2 Referenzbildes
+  meanNdvi   Float?   // Mittlerer NDVI (-1 bis 1), Proxy für Biomasseentwicklung
+  minNdvi    Float?
+  maxNdvi    Float?
+  cloudPct   Float?   // Wolkenbedeckung in % (Qualitätsindikator)
+  source     String   @default("SENTINEL2_L2A")
+  createdAt  DateTime @default(now())
+
+  @@index([forestId, date])
+}
+
+// Tägliche Wetterdaten pro Wald (Open-Meteo, kein API-Key nötig)
+model ForestWeatherSnapshot {
+  id              String   @id @default(uuid())
+  forestId        String
+  forest          Forest   @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  date            DateTime // Tag (00:00:00 UTC)
+
+  // Temperatur
+  maxTempC        Float?   // Tagesmaximum °C
+  minTempC        Float?   // Tagesminimum °C
+  avgTempC        Float?   // (max+min)/2
+
+  // Niederschlag & Verdunstung
+  precipMm        Float?   // Tagesniederschlag mm
+  et0Mm           Float?   // FAO-56 Referenz-Evapotranspiration mm
+  waterBalanceMm  Float?   // precip - et0 (negativ = Trockenheitsdefizit)
+
+  // Wind & Sonne
+  windMaxKmh      Float?   // Max. Windböen km/h
+  windAvgKmh      Float?   // Tagesmittel Windgeschwindigkeit km/h
+  windDirDeg      Float?   // Mittlere Windrichtung (° meteorologisch, 0=N, 90=O, 180=S, 270=W)
+  isStorm         Boolean  @default(false) // windMaxKmh >= 62 (Bft 8 Sturm)
+  sunshineDurationH Float? // Sonnenstundendauer h
+
+  // Bodenfeuchte (0–7 cm Tiefe, m³/m³)
+  soilMoisture    Float?
+
+  // Abgeleitete Indikatoren
+  isFrost         Boolean  @default(false) // minTemp < 0
+  isHeatStress    Boolean  @default(false) // maxTemp > 30
+  barkBeetleRisk  Boolean  @default(false) // avgTemp ≥ 16.5 AND precipMm < 2
+
+  source          String   @default("OPEN_METEO")
+  createdAt       DateTime @default(now())
+
+  @@unique([forestId, date])
+  @@index([forestId, date])
+}
+
+// Tägliche Sentinel-1 SAR Rückstreuungs-Snapshots pro Wald
+model ForestS1Snapshot {
+  id          String   @id @default(uuid())
+  forestId    String
+  forest      Forest   @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  date        DateTime // Aufnahmedatum (00:00:00 UTC)
+
+  // VH Polarisation (Volumen-Streuung, sensitiv für Biomasse)
+  vhMean      Float?   // Linearer Mittelwert
+  vhStd       Float?   // Standardabweichung
+  vhMeanDb    Float?   // In dB (10*log10)
+
+  // VV Polarisation (Oberflächen-Streuung)
+  vvMean      Float?
+  vvStd       Float?
+  vvMeanDb    Float?
+
+  // Abgeleitete Indikatoren
+  ratio       Float?   // VH/VV (sensitiv für Vegetationsstruktur)
+  baselineDb  Float?   // Rollendes 6-Snapshot Median VH (dB) zum Zeitpunkt der Aufnahme
+  changeDb    Float?   // Abweichung vom Baseline (baselineDb - vhMeanDb)
+  isAnomaly   Boolean  @default(false) // |changeDb| > 3 dB
+
+  sceneCount  Int      @default(1)     // Anzahl S1-Szenen im Zeitfenster
+  source      String   @default("SENTINEL1_GRD")
+  createdAt   DateTime @default(now())
+
+  @@unique([forestId, date])
+  @@index([forestId, date])
+  @@index([isAnomaly])
+}
+
+// Sentinel-1 SAR Snapshots für einzelne Polygon-Flächen (Pflanzungen, Kalamitäten)
+model ForestPolygonSnapshot {
+  id          String   @id @default(uuid())
+  polygonId   String   // ID der ForestPlanting oder ForestCalamity
+  polygonType String   // 'PLANTING' | 'CALAMITY'
+  forestId    String
+  forest      Forest   @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  date        DateTime
+
+  vhMeanDb    Float?
+  vvMeanDb    Float?
+  changeDb    Float?
+  baselineDb  Float?
+  isAnomaly   Boolean  @default(false)
+  sceneCount  Int      @default(1)
+  source      String   @default("SENTINEL1_GRD")
+  createdAt   DateTime @default(now())
+
+  @@unique([polygonId, date])
+  @@index([polygonId, date])
+  @@index([polygonType, isAnomaly])
 }
 
 model SkidTrail {
@@ -310,6 +494,9 @@ model Operation {
   // Optionale Verknüpfung zu einem GIS-Objekt
   maintenanceId String?            @unique
   maintenance   ForestMaintenance? @relation(fields: [maintenanceId], references: [id])
+
+  calamityId    String?            @unique
+  calamity      ForestCalamity?    @relation(fields: [calamityId], references: [id], onDelete: SetNull)
 
   // Relationen
   tasks       Task[] // Eine Operation hat viele Aufgaben
@@ -497,8 +684,12 @@ model LogPile {
   status PolterStatus @default(PILED)
 
   // Geo
-  lat Float
-  lng Float
+  lat Float?
+  lng Float?
+
+  // Optional: verknüpft mit einem ForestPoi (LOG_PILE) auf der Karte
+  forestPoiId String?
+  forestPoi   ForestPoi? @relation(fields: [forestPoiId], references: [id], onDelete: SetNull)
 
   // Mengen (Waldmaß)
   estimatedAmount Float? // Geschätzt vom Förster
@@ -544,6 +735,9 @@ model TimberSale {
   operationId String? // Optional: Wenn Verkauf nur zu einer Maßnahme gehört
   operation   Operation? @relation(fields: [operationId], references: [id])
 
+  // EUDR-Compliance (Verordnung EU 2023/1115)
+  eudrReference String? // DDS-Referenznummer — gilt für alle Abfuhrscheine dieses Verkaufs
+
   // Inhalte
   logPiles         LogPile[] // Welche Polter gehören dazu?
   transportTickets TransportTicket[] // Abfuhrscheine (Lieferscheine)
@@ -554,19 +748,30 @@ model TimberSale {
 
 model TransportTicket {
   id           String   @id @default(uuid())
-  ticketNumber String // Lieferschein-Nr.
-  plateNumber  String? // LKW Kennzeichen
-  driverName   String?
-  pickupDate   DateTime
+  ticketNumber String   // Lieferschein-Nr.
+  plateNumber  String?  // LKW Kennzeichen
+  driverName   String?  // Fahrername
+  carrierName  String?  // Spediteur / Frachtführer
+  pickupDate   DateTime // Abfuhrdatum
 
-  // Werksmaß (Werkseingang) - Das ist die "Wahrheit" für die Abrechnung
-  factoryAmount Float // Menge im Werk gemessen
-  factoryUnit   String // fm o.R.
+  // Waldmaß (Forstmaß) — vom Förster gemessene Menge
+  forestAmount Float?
+  forestUnit   String?  @default("fm")
+
+  // Werksmaß (Werkseingang) — maßgeblich für Abrechnung
+  factoryAmount Float
+  factoryUnit   String  @default("fm")
+
+  // EUDR-Pflichtfeld (Verordnung EU 2023/1115)
+  eudrReference String? // DDS-Referenznummer
+
+  note      String?  // interne Bemerkungen
 
   timberSaleId String
   timberSale   TimberSale @relation(fields: [timberSaleId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // --- ANDERE MODELLE (Unverändert) ---
@@ -758,4 +963,132 @@ enum OrgType {
   SERVICE_PROVIDER // Lohnunternehmer / Dienstleister
   ASSOCIATION // FBch / WBV (Zusammenschluss)
   PUBLIC // Kommune / Staat
+}
+
+enum VehicleType {
+  EXCAVATOR   // Bagger
+  HARVESTER   // Harvester / Vollernter
+  FORWARDER   // Forwarder / Rückefahrzeug
+  TRACTOR     // Traktor / Schlepper
+  SKIDDER     // Seilschlepper / Rückezug
+  CRANE_TRUCK // LKW mit Ladekran
+  MULCHER     // Mulcher
+  CHAINSAW    // Motorsäge
+  TRAILER     // Anhänger
+  OTHER       // Sonstiges
+}
+
+enum TreeHealth {
+  HEALTHY             // Gesund
+  DAMAGED             // Geschädigt
+  DEAD                // Abgestorben
+  MARKED_FOR_FELLING  // Zum Fällen markiert
+}
+
+// --- ALARM-QUITTIERUNGEN ---
+
+model AlertAcknowledgement {
+  id          String   @id @default(uuid())
+  alertId     String   // ID des S1/Weather-Snapshots
+  alertType   String   // 'SAR_ANOMALY' | 'STORM'
+  forestId    String
+  forestName  String
+  userId      String
+  userEmail   String
+  isTest      Boolean  @default(false)
+  dismissedAt DateTime @default(now())
+
+  @@unique([alertId, userId])
+  @@index([dismissedAt])
+  @@index([userId])
+}
+
+// --- SYSTEM HEALTH MONITORING ---
+
+model SystemHealthCheck {
+  id            String   @id @default(uuid())
+  runAt         DateTime @default(now())
+
+  // Gesamtstatus: 'OK' | 'WARN' | 'ERROR'
+  overall       String
+
+  // Einzelne Service-Status
+  dbOk          Boolean  @default(false)
+  openMeteoOk   Boolean  @default(false)
+  sentinelOk    Boolean  @default(false)
+  s3Ok          Boolean  @default(false)
+
+  // Detaillierter Bericht (Latenzen, Fehlermeldungen, Datenfreshness)
+  report        Json
+
+  // Test-Alarm IDs (zur Verifikation im Monitoring-Dashboard)
+  testAlertS1Id String?
+  testAlertWxId String?
+
+  @@index([runAt])
+}
+
+// --- EUDR-COMPLIANCE ---
+
+model DueDiligenceStatement {
+  id              String    @id @default(uuid())
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  status          String    @default("DRAFT") // DRAFT | SUBMITTED | ACCEPTED | RETRACTED
+  activityType    String    // DOMESTIC | IMPORT | EXPORT
+  internalNote    String?
+
+  // Von der EUDR-API zurück
+  referenceNumber    String?
+  verificationNumber String?   // Zweite Nummer aus der API-Antwort
+  tracesNtId         String?   // Interne ID im TRACES NT System
+  submittedAt        DateTime?
+
+  // Erntedaten (Pflichtfeld für API-Einreichung)
+  harvestStartDate DateTime?
+  harvestEndDate   DateTime?
+
+  // Compliance-Snapshot (eingefroren beim Einreichen)
+  snapshotGeoJson Json?
+  snapshotRisk    Json?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  products        EudrProduct[]
+  documents       EudrDocument[]
+
+  @@index([orgId, status])
+}
+
+model EudrProduct {
+  id               String   @id @default(uuid())
+  statementId      String
+  statement        DueDiligenceStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  hsCode           String   // 4403 | 4407 | 4408 | 4412 | 4418
+  description      String?
+  scientificName   String?  // Picea abies
+  treeSpecies      String?  // Verweis auf internen Species-Key (SPRUCE etc.)
+
+  quantityM3       Float?
+  quantityKg       Float?
+
+  countryOfHarvest String   @default("DE")
+
+  // Verknüpfte Flächen aus dem eigenen System
+  forestId         String?
+  polygonIds       String[] @default([])
+}
+
+model EudrDocument {
+  id          String   @id @default(uuid())
+  statementId String
+  statement   DueDiligenceStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  docType     String   // CERTIFICATE | OWNERSHIP | LEGAL_BASIS | OTHER
+  filename    String
+  s3Key       String
+  uploadedAt  DateTime @default(now())
 }

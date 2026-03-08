@@ -25,7 +25,11 @@ export type FeatureType =
   | 'HABITAT'
   | 'HUNTING';
 
-export type PoiType = 'HUNTING_STAND' | 'HUT' | 'LOG_PILE' | 'BARRIER' | null;
+export type PoiType = 'HUNTING_STAND' | 'HUT' | 'LOG_PILE' | 'BARRIER' | 'VEHICLE' | 'TREE' | null;
+export type PathType = 'ROAD' | 'SKID_TRAIL' | 'WATER' | null;
+
+// Sentinel Hub Satelliten-Layer
+export type SatelliteLayerId = 'NONE' | 'TRUE_COLOR' | 'NDVI' | 'EVI' | 'VH-BACKSCATTER' | 'RGB-KOMPOSIT';
 
 export interface MapState {
   // 1. View State
@@ -43,13 +47,38 @@ export interface MapState {
   selectedFeatureType: FeatureType | null;
   hoveredFeatureId: string | null;
   
-  // Interaktions-Modus (NEU: MOVE_POI hinzugefügt)
-  interactionMode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI';
-  
+  // Interaktions-Modus
+  interactionMode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY';
+
   // Hält das GeoJSON-Objekt oder die POI-Daten, die gerade bearbeitet werden
   editingFeatureData: any | null;
 
-  activePoiType: PoiType; 
+  activePoiType: PoiType;
+  activePathType: PathType;
+  lastForestId: string | null;
+
+  // Satellitendaten (Sentinel Hub WMS)
+  satelliteLayer: SatelliteLayerId;
+  satelliteDate: string;       // YYYY-MM-DD (Enddatum des 30-Tage-Fensters)
+  satelliteOpacity: number;    // 0–1
+  satellitePlaying: boolean;
+  setSatelliteLayer: (layer: SatelliteLayerId) => void;
+  setSatelliteDate: (date: string) => void;
+  setSatelliteOpacity: (opacity: number) => void;
+  setSatellitePlaying: (playing: boolean) => void;
+
+  // Wetterkarte (RainViewer Niederschlagsradar)
+  weatherRadar: boolean;
+  weatherRadarOpacity: number;
+  weatherRadarFrameIndex: number;
+  weatherRadarPlaying: boolean;
+  weatherRadarFrames: Array<{ time: number; path: string; isPast: boolean }>;
+  weatherRadarHost: string;
+  setWeatherRadar: (active: boolean) => void;
+  setWeatherRadarOpacity: (v: number) => void;
+  setWeatherRadarFrameIndex: (idx: number) => void;
+  setWeatherRadarPlaying: (playing: boolean) => void;
+  setWeatherRadarData: (host: string, frames: Array<{ time: number; path: string; isPast: boolean }>) => void;
 
   // 4. Data Sync
   dataVersion: number;
@@ -64,15 +93,27 @@ export interface MapState {
   selectFeature: (id: string | null, type: FeatureType | null) => void;
   setHoveredFeature: (id: string | null) => void;
   
-  setInteractionMode: (mode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI') => void;
+  setInteractionMode: (mode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY') => void;
   setEditingFeature: (data: any | null) => void;
   setActivePoiType: (type: PoiType) => void;
+  setActivePathType: (type: PathType) => void;
 
   refreshData: () => void;
 
+  // Task-Sidebar
+  taskSidebarOpen: boolean;
+  setTaskSidebarOpen: (open: boolean) => void;
+  hoveredTaskId: string | null;
+  setHoveredTaskId: (id: string | null) => void;
+
+  // Windy Wetterkarte
+  windyOpen: boolean;
+  setWindyOpen: (open: boolean) => void;
+
   // Map Movement
   flyTo: (coords: [number, number], zoom?: number) => void;
-  fitBounds: (bounds: any) => void; 
+  fitBounds: (bounds: any) => void;
+  invalidateSize: () => void;
 }
 
 export const useMapStore = create<MapState>()(
@@ -92,8 +133,25 @@ export const useMapStore = create<MapState>()(
     interactionMode: 'VIEW',
     editingFeatureData: null,
     activePoiType: null,
-    
+    activePathType: null,
+    lastForestId: null,
+
+    satelliteLayer: 'NONE',
+    satelliteDate: new Date().toISOString().split('T')[0],
+    satelliteOpacity: 0.85,
+    satellitePlaying: false,
+
+    weatherRadar: false,
+    weatherRadarOpacity: 0.75,
+    weatherRadarFrameIndex: 0,
+    weatherRadarPlaying: false,
+    weatherRadarFrames: [],
+    weatherRadarHost: '',
+
     dataVersion: 0,
+
+    taskSidebarOpen: false,
+    hoveredTaskId: null,
 
     setMapReady: (ready) => set({ isReady: ready }),
     setBaseMap: (id) => set({ activeBaseMap: id }),
@@ -118,10 +176,11 @@ export const useMapStore = create<MapState>()(
       return {};
     }),
 
-    selectFeature: (id, type) => set({ 
-      selectedFeatureId: id, 
-      selectedFeatureType: type 
-    }),
+    selectFeature: (id, type) => set(state => ({
+      selectedFeatureId: id,
+      selectedFeatureType: type,
+      ...(type === 'FOREST' && id ? { lastForestId: id } : {}),
+    })),
     
     setHoveredFeature: (id) => set({ hoveredFeatureId: id }),
 
@@ -130,10 +189,29 @@ export const useMapStore = create<MapState>()(
     setEditingFeature: (data) => set({ editingFeatureData: data }),
 
     setActivePoiType: (type) => set({ activePoiType: type }),
+    setActivePathType: (type) => set({ activePathType: type }),
+
+    setSatelliteLayer:   (layer)   => set({ satelliteLayer: layer }),
+    setSatelliteDate:    (date)    => set({ satelliteDate: date }),
+    setSatelliteOpacity: (opacity) => set({ satelliteOpacity: opacity }),
+    setSatellitePlaying: (playing) => set({ satellitePlaying: playing }),
+
+    setWeatherRadar:        (active)  => set({ weatherRadar: active }),
+    setWeatherRadarOpacity: (v)       => set({ weatherRadarOpacity: v }),
+    setWeatherRadarFrameIndex: (idx)  => set({ weatherRadarFrameIndex: idx }),
+    setWeatherRadarPlaying: (playing) => set({ weatherRadarPlaying: playing }),
+    setWeatherRadarData:    (host, frames) => set({ weatherRadarHost: host, weatherRadarFrames: frames }),
 
     refreshData: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
-    
+
+    setTaskSidebarOpen: (open) => set({ taskSidebarOpen: open }),
+    setHoveredTaskId: (id) => set({ hoveredTaskId: id }),
+
+    windyOpen: false,
+    setWindyOpen: (open) => set({ windyOpen: open }),
+
     flyTo: (coords, zoom) => console.warn("Map not initialized yet", coords, zoom),
-    fitBounds: (bounds) => console.warn("Map not initialized yet", bounds), 
+    fitBounds: (bounds) => console.warn("Map not initialized yet", bounds),
+    invalidateSize: () => console.warn("Map not initialized yet"),
   }))
 );

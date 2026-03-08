@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TreeHealth" ADD VALUE 'MARKED_FOR_FELLING';

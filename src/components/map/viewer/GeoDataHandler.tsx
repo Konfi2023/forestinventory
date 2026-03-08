@@ -1,16 +1,44 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { useMapStore, MapState } from '../stores/useMapStores'; 
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useMapStore, MapState, SatelliteLayerId } from '../stores/useMapStores';
 import { LAYER_REGISTRY } from '../registry/LayerRegistry';
 import { Polygon, Marker, Polyline, Tooltip, useMapEvents, useMap } from 'react-leaflet';
-import { geoJSONToLeaflet } from '@/lib/map-helpers';
+import { geoJSONToLeaflet, geoJSONLineToLeaflet, calculatePathLengthM } from '@/lib/map-helpers';
+import { getSpeciesColor, getSpeciesLabel, getDominantSpecies } from '@/lib/tree-species';
 import L from 'leaflet';
 import { createPoi } from '@/actions/poi';
 import { toast } from 'sonner';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { point } from '@turf/helpers';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Ab diesem Zoom-Level werden POIs angezeigt.
-const POI_VISIBILITY_THRESHOLD = 14; 
+const POI_VISIBILITY_THRESHOLD = 14;
+
+// Sentinel Hub WMS-Proxy
+const SENTINEL_INSTANCE_ID = process.env.NEXT_PUBLIC_SENTINEL_INSTANCE_ID ?? '671a490f-2a09-4ff0-87b8-151f8775ab85';
+const WMS_BASE_URL = `/api/wms/${SENTINEL_INSTANCE_ID}`;
+
+// Sentinel-Layer-IDs in der Sentinel Hub Konfiguration
+const SENTINEL_LAYER_MAP: Record<Exclude<SatelliteLayerId, 'NONE'>, { id: string; format: string }> = {
+  // Sentinel-2
+  TRUE_COLOR:       { id: 'TRUE_COLOR',       format: 'image/jpeg' },
+  NDVI:             { id: 'VEGETATION_INDEX', format: 'image/png'  },
+  EVI:              { id: 'VEGETATION_INDEX', format: 'image/png'  },
+  // Sentinel-1
+  'VH-BACKSCATTER': { id: 'VH-BACKSCATTER',  format: 'image/png' },
+  'RGB-KOMPOSIT':    { id: 'RGB-KOMPOSIT',      format: 'image/png' },
+};
+
+// Berechnet 30-Tage-Zeitfenster: "YYYY-MM-DD/YYYY-MM-DD"
+function toTimeRange(dateStr: string): string {
+  const end   = new Date(dateStr);
+  const start = new Date(dateStr);
+  start.setDate(end.getDate() - 30);
+  return `${start.toISOString().split('T')[0]}/${end.toISOString().split('T')[0]}`;
+}
 
 const COLORS = {
     PLANTING: '#22c55e',
@@ -66,8 +94,31 @@ const createTaskIcon = (priority: string, status: string, isSelected: boolean) =
 };
 
 
+// Baum-Icon: kleines Kreuz, Farbe abhängig vom Gesundheitszustand
+const createTreeIcon = (isSelected: boolean, hasOpenTask: boolean, health?: string) => {
+    const color =
+        health === 'DAMAGED'            ? '#f97316' :
+        health === 'DEAD'               ? '#ef4444' :
+        health === 'MARKED_FOR_FELLING' ? '#3b82f6' :
+                                          '#86efac'; // HEALTHY (default)
+
+    const size   = isSelected ? 18 : 10;
+    const bar    = isSelected ? 4  : 2;
+    const anchor = size / 2;
+
+    const html = `
+      <div style="position:relative; width:${size}px; height:${size}px; filter:drop-shadow(0 0 2px rgba(0,0,0,0.9));">
+        <div style="position:absolute;top:50%;left:0;transform:translateY(-50%);width:100%;height:${bar}px;background:${color};border-radius:1px;"></div>
+        <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:${bar}px;height:100%;background:${color};border-radius:1px;"></div>
+        ${isSelected ? `<div style="position:absolute;inset:-3px;border:2px solid rgba(255,255,255,0.8);border-radius:2px;"></div>` : ''}
+        ${hasOpenTask ? `<div style="position:absolute;top:-3px;right:-3px;width:6px;height:6px;background:#ef4444;border:1px solid white;border-radius:50%;"></div>` : ''}
+      </div>
+    `;
+    return L.divIcon({ className: 'bg-transparent border-none', html, iconSize: [size, size], iconAnchor: [anchor, anchor] });
+};
+
 // NEU: POI Icon mit Indikator (Roter Punkt)
-const createPoiIcon = (type: string, isSelected: boolean, hasOpenTask: boolean) => {
+const createPoiIcon = (type: string, isSelected: boolean, hasOpenTask: boolean, isHovered = false) => {
     let color = '#9ca3af'; 
     let iconChar = '📍';
 
@@ -76,21 +127,26 @@ const createPoiIcon = (type: string, isSelected: boolean, hasOpenTask: boolean) 
         case 'LOG_PILE': color = '#3b82f6'; iconChar = '🪵'; break;
         case 'HUT': color = '#f97316'; iconChar = '🏠'; break;
         case 'BARRIER': color = '#ef4444'; iconChar = '⛔'; break;
+        case 'VEHICLE': color = '#6b7280'; iconChar = '🚜'; break;
+        case 'TREE': color = '#22c55e'; iconChar = '🌲'; break;
     }
     
-    const size = isSelected ? 36 : 24;
+    const size = isSelected ? 36 : isHovered ? 30 : 24;
     const anchor = size / 2;
+    const glowStyle = isHovered && !isSelected
+        ? `box-shadow: 0 0 0 3px ${color}55, 0 0 12px ${color}88;`
+        : 'box-shadow: 0 2px 5px rgba(0,0,0,0.3);';
 
     const html = `
       <div style="position: relative; width: ${size}px; height: ${size}px;">
         <div style="
-          background-color: ${color}; 
-          width: 100%; height: 100%; 
-          border-radius: 50%; 
-          border: ${isSelected ? '3px' : '2px'} solid white; 
-          display: flex; align-items: center; justify-content: center; 
-          box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
-          font-size: ${isSelected ? 18 : 12}px;
+          background-color: ${color};
+          width: 100%; height: 100%;
+          border-radius: 50%;
+          border: ${isSelected ? '3px' : '2px'} solid white;
+          display: flex; align-items: center; justify-content: center;
+          ${glowStyle}
+          font-size: ${isSelected ? 18 : isHovered ? 15 : 12}px;
           ${isSelected ? 'transform: scale(1.1); transition: transform 0.2s;' : ''}
         ">
           ${iconChar}
@@ -115,9 +171,47 @@ const createPoiIcon = (type: string, isSelected: boolean, hasOpenTask: boolean) 
 };
 
 
+// Dialog: POI außerhalb Waldgrenzen → Wald manuell zuweisen
+function ForestAssignDialog({ forests, onConfirm, onCancel }: {
+  forests: any[];
+  onConfirm: (forestId: string) => void;
+  onCancel: () => void;
+}) {
+  const [selectedForestId, setSelectedForestId] = useState('');
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 space-y-4">
+        <div>
+          <h3 className="font-semibold text-slate-900 text-base">Objekt außerhalb eines Waldes</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Dieses Objekt liegt außerhalb aller eingezeichneten Waldflächen. Bitte weisen Sie es einem Wald zu.
+          </p>
+        </div>
+        <Select onValueChange={setSelectedForestId} value={selectedForestId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Wald auswählen…" />
+          </SelectTrigger>
+          <SelectContent>
+            {forests.map((f: any) => (
+              <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" size="sm" onClick={onCancel}>Abbrechen</Button>
+          <Button size="sm" disabled={!selectedForestId} onClick={() => onConfirm(selectedForestId)}>
+            Zuweisen & Speichern
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
+  const [pendingPoi, setPendingPoi] = useState<{ lat: number; lng: number; type: string } | null>(null);
 
   const activeLayers = useMapStore((s: MapState) => s.activeLayers);
   const selectFeature = useMapStore((s: MapState) => s.selectFeature);
@@ -128,13 +222,172 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
   const interactionMode = useMapStore((s: MapState) => s.interactionMode);
   const activePoiType = useMapStore((s: MapState) => s.activePoiType);
   const setInteractionMode = useMapStore((s) => s.setInteractionMode);
+  const hoveredTaskId = useMapStore((s) => s.hoveredTaskId);
   const setEditingFeature = useMapStore((s: MapState) => s.setEditingFeature);
 
+  const satelliteLayer   = useMapStore((s) => s.satelliteLayer);
+  const satelliteDate    = useMapStore((s) => s.satelliteDate);
+  const satelliteOpacity = useMapStore((s) => s.satelliteOpacity);
+
+  // Custom Pane für Wege: zIndex 450 > vector pane 400 → Linien immer über Waldpolygonen
+  useEffect(() => {
+    try {
+      if (!map.getPane('paths-pane')) {
+        map.createPane('paths-pane');
+        map.getPane('paths-pane')!.style.zIndex = '450';
+      }
+    } catch {}
+  }, [map]);
+
+  // Sentinel Hub WMS Layer — liegt auf eigenem Pane unter den Vektordaten
+  const sentinelLayerRef = useRef<L.TileLayer.WMS | null>(null);
+
+  useEffect(() => {
+    // Layer entfernen wenn deaktiviert
+    if (satelliteLayer === 'NONE') {
+      sentinelLayerRef.current?.remove();
+      sentinelLayerRef.current = null;
+      return;
+    }
+
+    try {
+      // Pane inline erstellen (verhindert Race mit separatem Pane-Effekt in Strict Mode)
+      if (!map.getPane('satellite-pane')) {
+        map.createPane('satellite-pane');
+        map.getPane('satellite-pane')!.style.zIndex = '200';
+      }
+
+      const cfg = SENTINEL_LAYER_MAP[satelliteLayer];
+      const timeRange = toTimeRange(satelliteDate);
+
+      // Sentinel-1 ist SAR (kein optischer Sensor) → andere Parameter als S2
+      const isS1 = satelliteLayer === 'VH-BACKSCATTER' || satelliteLayer === 'RGB-KOMPOSIT';
+      const s2Extras = isS1
+        ? { orthorectify: 'true', backscattercoeff: 'GAMMA0_TERRAIN', polarization: 'DV' }
+        : { MAXCC: 80, PRIORITY: 'leastCC' };
+      const attribution = isS1
+        ? '© Copernicus Data Space / Sentinel-1'
+        : '© Copernicus Data Space / Sentinel-2';
+
+      const wmsOptions: any = {
+        layers:      cfg.id,
+        format:      cfg.format,
+        transparent: true,
+        version:     '1.3.0',
+        uppercase:   true,
+        TIME:        timeRange,
+        ...s2Extras,
+        crossOrigin: true,
+        tileSize:    256,
+        pane:        'satellite-pane',
+        attribution,
+        opacity:     satelliteOpacity,
+      };
+
+      if (sentinelLayerRef.current) {
+        sentinelLayerRef.current.remove();
+      }
+      sentinelLayerRef.current = L.tileLayer.wms(WMS_BASE_URL, wmsOptions);
+      sentinelLayerRef.current.addTo(map);
+    } catch (e) {
+      console.warn('Satellite layer error:', e);
+      sentinelLayerRef.current = null;
+    }
+  }, [map, satelliteLayer, satelliteDate, satelliteOpacity]);
+
+  // Cleanup Sentinel beim Unmount
+  useEffect(() => {
+    return () => {
+      sentinelLayerRef.current?.remove();
+      sentinelLayerRef.current = null;
+    };
+  }, []);
+
+  // ── RainViewer Niederschlagsradar ──────────────────────────────────────────
+  const weatherRadar          = useMapStore(s => s.weatherRadar);
+  const weatherRadarOpacity   = useMapStore(s => s.weatherRadarOpacity);
+  const weatherRadarFrameIndex = useMapStore(s => s.weatherRadarFrameIndex);
+  const weatherRadarFrames    = useMapStore(s => s.weatherRadarFrames);
+  const weatherRadarHost      = useMapStore(s => s.weatherRadarHost);
+  const setWeatherRadarData   = useMapStore(s => s.setWeatherRadarData);
+  const setWeatherRadarFrameIndex = useMapStore(s => s.setWeatherRadarFrameIndex);
+
+  const radarLayerRef = useRef<L.TileLayer | null>(null);
+
+  // Frames von RainViewer laden
+  useEffect(() => {
+    if (!weatherRadar) return;
+    const load = async () => {
+      try {
+        const res  = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+        const data = await res.json();
+        const past     = (data.radar?.past     ?? []).map((f: any) => ({ ...f, isPast: true  }));
+        const nowcast  = (data.radar?.nowcast  ?? []).map((f: any) => ({ ...f, isPast: false }));
+        const frames   = [...past, ...nowcast];
+        setWeatherRadarData(data.host ?? 'https://tilecache.rainviewer.com', frames);
+        setWeatherRadarFrameIndex(Math.max(0, past.length - 1));
+      } catch (e) {
+        console.warn('RainViewer load failed', e);
+      }
+    };
+    load();
+    const timer = setInterval(load, 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [weatherRadar, setWeatherRadarData, setWeatherRadarFrameIndex]);
+
+  // TileLayer erstellen / aktualisieren / entfernen
+  useEffect(() => {
+    if (!weatherRadar || !weatherRadarFrames.length || !weatherRadarHost) {
+      radarLayerRef.current?.remove();
+      radarLayerRef.current = null;
+      return;
+    }
+    const frame = weatherRadarFrames[weatherRadarFrameIndex];
+    if (!frame) return;
+
+    try {
+      // Pane inline erstellen (verhindert Race mit separatem Pane-Effekt in Strict Mode)
+      if (!map.getPane('radar-pane')) {
+        map.createPane('radar-pane');
+        map.getPane('radar-pane')!.style.zIndex = '210';
+      }
+
+      const tileUrl = `${weatherRadarHost}${frame.path}/256/{z}/{x}/{y}/6/1_1.png`;
+
+      if (!radarLayerRef.current) {
+        radarLayerRef.current = L.tileLayer(tileUrl, {
+          opacity:     weatherRadarOpacity,
+          tileSize:    256,
+          pane:        'radar-pane',
+          attribution: '© RainViewer',
+          zIndex:      210,
+        }).addTo(map);
+      } else {
+        radarLayerRef.current.setUrl(tileUrl);
+        radarLayerRef.current.setOpacity(weatherRadarOpacity);
+      }
+    } catch (e) {
+      console.warn('Radar layer error:', e);
+      radarLayerRef.current = null;
+    }
+  }, [map, weatherRadar, weatherRadarFrames, weatherRadarHost, weatherRadarFrameIndex, weatherRadarOpacity]);
+
+  // Cleanup Radar + Sentinel beim Unmount
+  useEffect(() => {
+    return () => {
+      radarLayerRef.current?.remove();
+      radarLayerRef.current = null;
+    };
+  }, []);
+
   const showForests = activeLayers.includes('FOREST_BOUNDARY');
-  const showSections = activeLayers.includes('SECTIONS'); 
+  const showSections = activeLayers.includes('SECTIONS');
   const showActivity = activeLayers.includes('ACTIVITY_PLAN');
-  const showInfrastructure = activeLayers.includes('INFRASTRUCTURE'); 
+  const showInfrastructure = activeLayers.includes('INFRASTRUCTURE');
   const showTasks = activeLayers.includes('TASKS');
+
+  const isDrawMode = interactionMode === 'DRAW_FOREST' || interactionMode === 'DRAW_PATH' ||
+    interactionMode === 'DRAW_PLANTING' || interactionMode === 'DRAW_HUNTING' || interactionMode === 'DRAW_CALAMITY';
 
   const poisVisible = showInfrastructure && currentZoom >= POI_VISIBILITY_THRESHOLD;
 
@@ -160,25 +413,48 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
       return data.forests.flatMap(f => f.pois || []);
   }, [data.forests]);
 
-  // Helper: Prüfen ob POI Aufgaben hat
-  const getPoiTaskCount = (poiId: string) => {
-      return data.tasks.filter(t => t.poiId === poiId && t.status !== 'DONE').length;
-  };
+  // Task-Counts pro POI: einmal berechnen statt per-render filtern
+  const poiTaskCounts = useMemo(() => {
+      const counts = new Map<string, number>();
+      data.tasks.forEach((t: any) => {
+          if (t.poiId && t.status !== 'DONE') {
+              counts.set(t.poiId, (counts.get(t.poiId) ?? 0) + 1);
+          }
+      });
+      return counts;
+  }, [data.tasks]);
+
+  // POI-ID des aktuell in der Sidebar gehovertes Tasks — einmal, nicht per POI
+  const hoveredTaskPoiId = useMemo(() => {
+      if (!hoveredTaskId) return null;
+      return data.tasks.find((t: any) => t.id === hoveredTaskId)?.poiId ?? null;
+  }, [hoveredTaskId, data.tasks]);
 
   useMapEvents({
     zoomend: () => setCurrentZoom(map.getZoom()),
     click(e) {
       if (interactionMode === 'DRAW_POI' && activePoiType) {
+        if (pendingPoi) return; // Modal offen → Karten-Klicks ignorieren
         const { lat, lng } = e.latlng;
-        const fallbackForestId = data.forests[0]?.id;
 
-        if (!fallbackForestId) {
-            toast.error("Bitte erst einen Wald anlegen!");
-            return;
+        // Detect which forest polygon contains the click point
+        let forestId: string | undefined;
+        try {
+          const clickedPoint = point([lng, lat]);
+          const containing = data.forests.find(f => f.geoJson && booleanPointInPolygon(clickedPoint, f.geoJson));
+          forestId = containing?.id;
+        } catch {
+          forestId = undefined;
+        }
+
+        if (!forestId) {
+          // Außerhalb aller Waldpolygone → Wald manuell zuweisen lassen
+          setPendingPoi({ lat, lng, type: activePoiType });
+          return;
         }
 
         toast.promise(
-            createPoi({ lat, lng, type: activePoiType, orgSlug: data.orgSlug, userId: data.currentUserId, forestId: fallbackForestId }),
+            createPoi({ lat, lng, type: activePoiType, orgSlug: data.orgSlug, userId: data.currentUserId, forestId }),
             {
                 loading: 'Platziere Objekt...',
                 success: () => { setInteractionMode('VIEW'); onRefresh(); return 'Objekt erstellt!'; },
@@ -189,8 +465,29 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
     }
   });
 
+  const handleForestAssign = (forestId: string) => {
+    if (!pendingPoi) return;
+    const { lat, lng, type } = pendingPoi;
+    setPendingPoi(null);
+    toast.promise(
+      createPoi({ lat, lng, type, orgSlug: data.orgSlug, userId: data.currentUserId, forestId }),
+      {
+        loading: 'Platziere Objekt...',
+        success: () => { setInteractionMode('VIEW'); onRefresh(); return 'Objekt erstellt!'; },
+        error: (err) => `Fehler: ${err.message}`,
+      }
+    );
+  };
+
   return (
     <>
+      {pendingPoi && (
+        <ForestAssignDialog
+          forests={data.forests}
+          onConfirm={handleForestAssign}
+          onCancel={() => setPendingPoi(null)}
+        />
+      )}
       {data.forests.map((forest) => {
         if (isBeingEdited(forest.id)) return null;
         const forestLatLngs = geoJSONToLeaflet(forest.geoJson);
@@ -226,8 +523,132 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
               </Polygon>
             )}
 
-            {/* ... SECTIONS (Pflanzen etc.) hier einfügen wenn nötig ... */}
-            {/* Um Platz zu sparen lasse ich die anderen Polygone hier weg, sie sind identisch zum vorigen Code */}
+            {/* JAGDFLÄCHEN — zuerst rendern (unter Pflanz- und Kalamitätsflächen) */}
+            {showSections && forest.hunting?.map((h: any) => {
+              const coords = geoJSONToLeaflet(h.geoJson);
+              if (!coords.length) return null;
+              const isSel = selectedId === h.id;
+              const isHov = hoveredId === h.id;
+              return (
+                <Polygon
+                  key={h.id}
+                  positions={coords}
+                  interactive={!isDrawMode}
+                  pathOptions={{
+                    color: COLORS.HUNTING,
+                    weight: isSel ? 3 : 2,
+                    fillColor: COLORS.HUNTING,
+                    fillOpacity: isSel ? 0.25 : 0.1,
+                    dashArray: '15, 10, 5, 10',
+                    opacity: isSel ? 1 : isHov ? 0.9 : 0.7,
+                  }}
+                  eventHandlers={{
+                    click: (e) => { if (interactionMode === 'VIEW') { L.DomEvent.stopPropagation(e); selectFeature(h.id, 'HUNTING'); } },
+                    mouseover: () => setHovered(h.id),
+                    mouseout:  () => setHovered(null),
+                  }}
+                >
+                  <Tooltip sticky direction="top" opacity={0.9} className="!pointer-events-none">
+                    <span className="font-bold text-xs">{h.name || 'Jagdfläche'}</span>
+                    {h.areaHa && <span className="text-gray-500 ml-1 text-xs">· {h.areaHa.toFixed(2)} ha</span>}
+                  </Tooltip>
+                </Polygon>
+              );
+            })}
+
+            {/* KALAMITÄTSFLÄCHEN — unter Pflanzflächen */}
+            {showSections && forest.calamities?.map((c: any) => {
+              const coords = geoJSONToLeaflet(c.geoJson);
+              if (!coords.length) return null;
+              const isSel = selectedId === c.id;
+              const isHov = hoveredId === c.id;
+              const label = c.cause === 'WIND' ? 'Windwurf' : c.cause === 'BARK_BEETLE' ? 'Borkenkäfer' : c.cause === 'FIRE' ? 'Brand' : c.cause === 'SNOW' ? 'Schneebruch' : c.cause === 'DROUGHT' ? 'Trockenheit' : 'Kalamität';
+              return (
+                <Polygon
+                  key={c.id}
+                  positions={coords}
+                  interactive={!isDrawMode}
+                  pathOptions={{
+                    color: COLORS.CALAMITY,
+                    weight: isSel ? 3 : 2,
+                    fillColor: COLORS.CALAMITY,
+                    fillOpacity: isSel ? 0.4 : isHov ? 0.3 : 0.22,
+                    dashArray: isSel ? undefined : '6, 4',
+                    opacity: isSel ? 1 : 0.85,
+                  }}
+                  eventHandlers={{
+                    click: (e) => { if (interactionMode === 'VIEW') { L.DomEvent.stopPropagation(e); selectFeature(c.id, 'CALAMITY'); } },
+                    mouseover: () => setHovered(c.id),
+                    mouseout:  () => setHovered(null),
+                  }}
+                >
+                  <Tooltip sticky direction="top" opacity={0.9} className="!pointer-events-none">
+                    <span className="font-bold text-xs">{label}</span>
+                    {c.areaHa && <span className="text-gray-500 ml-1 text-xs">· {c.areaHa.toFixed(2)} ha</span>}
+                  </Tooltip>
+                </Polygon>
+              );
+            })}
+
+            {/* PFLANZFLÄCHEN — zuletzt rendern (oben im SVG-Stack → immer anklickbar) */}
+            {showSections && forest.plantings?.map((p: any) => {
+              const coords = geoJSONToLeaflet(p.geoJson);
+              if (!coords.length) return null;
+              const isSel = selectedId === p.id;
+              const isHov = hoveredId === p.id;
+
+              const content: { species: string; count: number }[] = Array.isArray(p.content) ? p.content : [];
+              const totalCount = content.reduce((s, c) => s + (Number(c.count) || 0), 0);
+              const usePattern = content.length > 1 && totalCount > 0;
+              const dominant = getDominantSpecies(content) ?? p.treeSpecies;
+              const baseColor = getSpeciesColor(dominant ?? 'OAK');
+              const patternId = `planting-pattern-${p.id}`;
+              const label = getSpeciesLabel(dominant ?? p.treeSpecies) || 'Pflanzfläche';
+
+              const size = 50; let cx = 0;
+
+              return (
+                <React.Fragment key={p.id}>
+                  {usePattern && (
+                    <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+                      <defs>
+                        <pattern id={patternId} patternUnits="userSpaceOnUse" width={size} height={size} patternTransform="rotate(45)">
+                          {content.map((item, idx) => {
+                            const ratio = (Number(item.count) || 0) / totalCount;
+                            if (ratio <= 0) return null;
+                            const w = size * ratio; const x = cx; cx += w;
+                            return <rect key={idx} x={x} y="0" width={w} height={size} fill={getSpeciesColor(item.species)} strokeWidth="0" />;
+                          })}
+                        </pattern>
+                      </defs>
+                    </svg>
+                  )}
+                  <Polygon
+                    positions={coords}
+                    interactive={!isDrawMode}
+                    pathOptions={{
+                      color: isSel ? '#fff' : baseColor,
+                      weight: isSel ? 3 : isHov ? 2.5 : 2,
+                      fillColor: usePattern ? `url(#${patternId})` : baseColor,
+                      fillOpacity: usePattern ? 1 : (isSel ? 0.5 : isHov ? 0.35 : 0.25),
+                      opacity: isSel ? 1 : 0.85,
+                    }}
+                    eventHandlers={{
+                      click: (e) => { if (interactionMode === 'VIEW') { L.DomEvent.stopPropagation(e); selectFeature(p.id, 'PLANTING'); } },
+                      mouseover: () => setHovered(p.id),
+                      mouseout:  () => setHovered(null),
+                    }}
+                  >
+                    <Tooltip sticky direction="top" opacity={0.9} className="!pointer-events-none">
+                      <span className="font-bold text-xs">{label}</span>
+                      {p.areaHa && <span className="text-gray-500 ml-1 text-xs">· {p.areaHa.toFixed(2)} ha</span>}
+                      {totalCount > 0 && <span className="text-gray-500 ml-1 text-xs">· {totalCount.toLocaleString('de-DE')} Stk.</span>}
+                    </Tooltip>
+                  </Polygon>
+                </React.Fragment>
+              );
+            })}
+
             {/* INFRASTRUKTUR: POIs */}
             {showInfrastructure && poisVisible && forest.pois?.map((poi: any) => {
                 const isSelected = selectedId === poi.id;
@@ -235,14 +656,17 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
                 const displayLat = (isMoving && editingData && editingData.id === poi.id) ? editingData.lat : poi.lat;
                 const displayLng = (isMoving && editingData && editingData.id === poi.id) ? editingData.lng : poi.lng;
 
-                // NEU: Check auf Tasks
-                const hasTask = getPoiTaskCount(poi.id) > 0;
+                const hasTask = (poiTaskCounts.get(poi.id) ?? 0) > 0;
 
                 return (
                     <Marker
                         key={poi.id}
                         position={[displayLat, displayLng]}
-                        icon={createPoiIcon(poi.type, isSelected, hasTask)} // Übergebe Status
+                        icon={
+                            poi.type === 'TREE'
+                                ? createTreeIcon(isSelected, hasTask, poi.tree?.health)
+                                : createPoiIcon(poi.type, isSelected, hasTask, hoveredId === poi.id || hoveredTaskPoiId === poi.id)
+                        }
                         draggable={isMoving}
                         eventHandlers={{
                             click: (e) => {
@@ -272,6 +696,57 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
           </React.Fragment>
         );
       })}
+
+      {/* INFRASTRUKTUR: Wege — in custom pane (zIndex 450) über Waldpolygonen */}
+      {showInfrastructure && data.forests.flatMap((forest) =>
+        (forest.paths ?? []).map((path: any) => {
+          const coords = geoJSONLineToLeaflet(path.geoJson);
+          if (!coords.length) return null;
+
+          const isSelected = selectedId === path.id;
+          const isHovered  = hoveredId === path.id;
+          const defaultColor = path.type === 'SKID_TRAIL' ? '#eab308'
+                             : path.type === 'WATER'      ? '#3b82f6'
+                             :                              '#94a3b8';
+          const color = path.color ?? defaultColor;
+          const storedLength = path.lengthM ?? calculatePathLengthM(path.geoJson);
+          const lengthLabel  = storedLength >= 1000
+            ? `${(storedLength / 1000).toFixed(2)} km`
+            : `${Math.round(storedLength)} m`;
+          const typeLabel = path.type === 'SKID_TRAIL' ? 'Rückegasse'
+                          : path.type === 'WATER'      ? 'Gewässer'
+                          :                              'LKW-Weg';
+
+          return (
+            <Polyline
+              key={`${path.id}-${color}`}
+              positions={coords}
+              pathOptions={{
+                color,
+                weight: isSelected ? 5 : isHovered ? 4 : path.type === 'SKID_TRAIL' ? 2 : 3,
+                dashArray: path.type === 'SKID_TRAIL' ? '6, 4' : undefined,
+                opacity: isSelected ? 1 : 0.75,
+                pane: 'paths-pane',
+              }}
+              eventHandlers={{
+                click: (e) => {
+                  if (interactionMode === 'VIEW') {
+                    L.DomEvent.stopPropagation(e);
+                    selectFeature(path.id, 'PATH');
+                  }
+                },
+                mouseover: () => setHovered(path.id),
+                mouseout:  () => setHovered(null),
+              }}
+            >
+              <Tooltip direction="top" offset={[0, -4]} opacity={0.9} className="!pointer-events-none">
+                <span className="font-bold text-xs">{path.name ?? typeLabel}</span>
+                <span className="text-gray-500 ml-1 text-xs">· {lengthLabel}</span>
+              </Tooltip>
+            </Polyline>
+          );
+        })
+      )}
 
       {/* TASKS */}
       {showTasks && currentZoom >= 10 && data.tasks.map((task) => {

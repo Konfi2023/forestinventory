@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
 import { useMapStore } from '../stores/useMapStores';
 import { createForest, updateForest } from '@/actions/forest';
+import { createPath, updatePath } from '@/actions/paths';
+import { createPlanting, updatePlanting, createHunting, updateHunting, createCalamity, updateCalamity } from '@/actions/polygons';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import L from 'leaflet';
@@ -12,54 +14,73 @@ import area from '@turf/area';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { Save, X } from 'lucide-react';
+import { calculatePathLengthM } from '@/lib/map-helpers';
+
+const PATH_COLORS: Record<string, string> = {
+  ROAD:       '#94a3b8',
+  SKID_TRAIL: '#eab308',
+  WATER:      '#3b82f6',
+};
+
+function formatLength(m: number): string {
+  return m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`;
+}
 
 export default function MapGeometryEditor() {
   const map = useMap();
   const { data: session } = useSession();
-  
-  // Store Access
-  const mode = useMapStore(s => s.interactionMode);
-  const editingData = useMapStore(s => s.editingFeatureData);
-  const setMode = useMapStore(s => s.setInteractionMode);
+
+  const mode           = useMapStore(s => s.interactionMode);
+  const editingData    = useMapStore(s => s.editingFeatureData);
+  const activePathType = useMapStore(s => s.activePathType);
+  const setMode        = useMapStore(s => s.setInteractionMode);
   const setEditingFeature = useMapStore(s => s.setEditingFeature);
-  const refreshData = useMapStore(s => s.refreshData);
-  const selectFeature = useMapStore(s => s.selectFeature); // <--- NEU: Zum Wiederöffnen der Sidebar
+  const refreshData    = useMapStore(s => s.refreshData);
+  const selectFeature  = useMapStore(s => s.selectFeature);
 
   const createdLayerRef = useRef<L.Layer | null>(null);
-  const editToolbarRef = useRef<L.EditToolbar.Edit | null>(null);
-  const drawerRef = useRef<L.Draw.Polygon | null>(null);
+  const editToolbarRef  = useRef<L.EditToolbar.Edit | null>(null);
+  const drawerRef       = useRef<L.Draw.Polygon | L.Draw.Polyline | null>(null);
+  const pathLengthRef   = useRef<number>(0);
 
-  const [showSaveBar, setShowSaveBar] = useState(false);
+  // Refs zum Lesen aktueller Werte in Draw-Callbacks ohne Dependency-Schleife
+  const editingDataRef = useRef<any>(null);
+  const sessionRef     = useRef<any>(null);
+  editingDataRef.current = editingData;
+  sessionRef.current     = session;
 
-  // --- DRAW MODE (NEU ERSTELLEN) ---
+  const [showSaveBar,   setShowSaveBar]   = useState(false);
+  const [drawnLengthM,  setDrawnLengthM]  = useState<number | null>(null);
+
+  // ─── DRAW FOREST ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!map || mode !== 'DRAW_FOREST') return;
 
     // @ts-ignore
     const drawer = new L.Draw.Polygon(map, {
-        allowIntersection: false,
-        guidelineDistance: 10,
-        showArea: true,
-        drawError: { color: '#e1e100', message: '<strong>Fehler:</strong> Kanten überschneiden sich!' },
-        shapeOptions: { color: '#10b981', weight: 3, opacity: 1, fillOpacity: 0.2 }
+      allowIntersection: false,
+      guidelineDistance: 10,
+      showArea: true,
+      drawError: { color: '#e1e100', message: '<strong>Fehler:</strong> Kanten überschneiden sich!' },
+      shapeOptions: { color: '#10b981', weight: 3, opacity: 1, fillOpacity: 0.2 },
     });
 
     drawerRef.current = drawer;
     drawer.enable();
 
     const onCreated = async (e: any) => {
-      const layer = e.layer;
+      const layer   = e.layer;
       const geoJson = layer.toGeoJSON();
-      
+
       const calculatedAreaSqM = area(geoJson);
-      const calculatedAreaHa = parseFloat((calculatedAreaSqM / 10000).toFixed(4));
+      const calculatedAreaHa  = parseFloat((calculatedAreaSqM / 10000).toFixed(4));
 
       drawer.disable();
       map.addLayer(layer);
 
       setTimeout(async () => {
         const forestName = prompt(`Wie soll dieser Wald heißen? (ca. ${calculatedAreaHa.toFixed(2)} ha)`);
-        
+
         if (!forestName) {
           map.removeLayer(layer);
           setMode('VIEW');
@@ -69,24 +90,23 @@ export default function MapGeometryEditor() {
         try {
           const result = await createForest({
             name: forestName,
-            geoJson: geoJson,
-            areaHa: calculatedAreaHa, 
-            keycloakId: session?.user?.id as string,
+            geoJson,
+            areaHa: calculatedAreaHa,
+            keycloakId: sessionRef.current?.user?.id as string,
           });
 
           if (result.success) {
-            toast.success("Wald angelegt!");
-            map.removeLayer(layer); 
-            refreshData(); 
-            // Optional: Den neuen Wald direkt selektieren
+            toast.success('Wald angelegt!');
+            map.removeLayer(layer);
+            refreshData();
             if (result.forestId) selectFeature(result.forestId, 'FOREST');
           } else {
-            toast.error("Fehler: " + result.error);
+            toast.error('Fehler: ' + result.error);
             map.removeLayer(layer);
           }
         } catch (err) {
           console.error(err);
-          toast.error("Speichern fehlgeschlagen.");
+          toast.error('Speichern fehlgeschlagen.');
           map.removeLayer(layer);
         } finally {
           setMode('VIEW');
@@ -100,16 +120,152 @@ export default function MapGeometryEditor() {
       if (drawerRef.current) drawerRef.current.disable();
       map.off(L.Draw.Event.CREATED, onCreated);
     };
-  }, [map, mode, session, setMode, refreshData, selectFeature]);
+  }, [map, mode]);
 
 
-  // --- EDIT MODE (BESTEHEND BEARBEITEN) ---
+  // ─── DRAW PATH ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!map || mode !== 'DRAW_PATH' || !activePathType) return;
+
+    const color = PATH_COLORS[activePathType] ?? '#94a3b8';
+
+    // @ts-ignore
+    const drawer = new L.Draw.Polyline(map, {
+      shapeOptions: {
+        color,
+        weight: 3,
+        opacity: 0.9,
+        dashArray: activePathType === 'SKID_TRAIL' ? '6, 4' : undefined,
+      },
+      guidelineDistance: 10,
+    });
+
+    drawerRef.current = drawer;
+    drawer.enable();
+
+    const onCreated = async (e: any) => {
+      const layer   = e.layer;
+      const geoJson = layer.toGeoJSON();
+      const lengthM = calculatePathLengthM(geoJson);
+
+      pathLengthRef.current = lengthM;
+      setDrawnLengthM(lengthM);
+
+      drawer.disable();
+      map.addLayer(layer);
+      createdLayerRef.current = layer;
+
+      setShowSaveBar(true);
+    };
+
+    map.on(L.Draw.Event.CREATED, onCreated);
+
+    return () => {
+      if (drawerRef.current) drawerRef.current.disable();
+      map.off(L.Draw.Event.CREATED, onCreated);
+    };
+  }, [map, mode, activePathType]);
+
+
+  // ─── DRAW PLANTING / HUNTING / CALAMITY ─────────────────────────────────────
+  useEffect(() => {
+    const isPolygonDraw = mode === 'DRAW_PLANTING' || mode === 'DRAW_HUNTING' || mode === 'DRAW_CALAMITY';
+    if (!map || !isPolygonDraw) return;
+
+    const colorMap: Record<string, string> = {
+      DRAW_PLANTING: '#22c55e',
+      DRAW_HUNTING:  '#84cc16',
+      DRAW_CALAMITY: '#f97316',
+    };
+    const color = colorMap[mode] ?? '#3b82f6';
+
+    // @ts-ignore
+    const drawer = new L.Draw.Polygon(map, {
+      allowIntersection: false,
+      showArea: true,
+      shapeOptions: { color, weight: 2, opacity: 1, fillOpacity: 0.25 },
+    });
+
+    drawerRef.current = drawer;
+    drawer.enable();
+
+    // Capture mode in closure so onCreated always knows which polygon type
+    const capturedMode = mode;
+
+    const onCreated = async (e: any) => {
+      const layer    = e.layer;
+      const geoJson  = layer.toGeoJSON();
+      const areaHa   = parseFloat((area(geoJson) / 10000).toFixed(4));
+      const forestId = editingDataRef.current?.forestId;
+      const orgSlug  = editingDataRef.current?.orgSlug ?? '';
+      const userId   = sessionRef.current?.user?.id as string;
+
+      drawer.disable();
+      map.addLayer(layer);
+
+      if (!forestId) {
+        toast.error('Kein Wald ausgewählt. Bitte zuerst einen Wald auf der Karte anklicken.');
+        map.removeLayer(layer);
+        setMode('VIEW');
+        return;
+      }
+
+      try {
+        if (capturedMode === 'DRAW_PLANTING') {
+          const species = prompt(`Baumart für diese Pflanzfläche? (ca. ${areaHa.toFixed(2)} ha)`) ?? '';
+          const result = await createPlanting({ forestId, treeSpecies: species || 'Unbekannt', geoJson, areaHa, userId, orgSlug });
+          if (result.success) {
+            toast.success('Pflanzfläche angelegt!');
+            map.removeLayer(layer);
+            refreshData();
+            if (result.id) setTimeout(() => selectFeature(result.id!, 'PLANTING'), 300);
+          } else throw new Error(result.error);
+        } else if (capturedMode === 'DRAW_HUNTING') {
+          const name = prompt(`Name für diese Jagdfläche? (ca. ${areaHa.toFixed(2)} ha)`) ?? '';
+          const result = await createHunting({ forestId, name: name || 'Jagdfläche', geoJson, areaHa, userId, orgSlug });
+          if (result.success) {
+            toast.success('Jagdfläche angelegt!');
+            map.removeLayer(layer);
+            refreshData();
+            if (result.id) setTimeout(() => selectFeature(result.id!, 'HUNTING'), 300);
+          } else throw new Error(result.error);
+        } else if (capturedMode === 'DRAW_CALAMITY') {
+          const result = await createCalamity({ forestId, geoJson, areaHa, userId, orgSlug });
+          if (result.success) {
+            toast.success('Kalamitätsfläche angelegt!');
+            map.removeLayer(layer);
+            refreshData();
+            if (result.id) setTimeout(() => selectFeature(result.id!, 'CALAMITY'), 300);
+          } else throw new Error(result.error);
+        }
+      } catch (err: any) {
+        toast.error(`Fehler: ${err.message}`);
+        map.removeLayer(layer);
+      } finally {
+        setMode('VIEW');
+        setEditingFeature(null);
+      }
+    };
+
+    map.on(L.Draw.Event.CREATED, onCreated);
+
+    return () => {
+      if (drawerRef.current) drawerRef.current.disable();
+      map.off(L.Draw.Event.CREATED, onCreated);
+    };
+  }, [map, mode]); // Nur mode und map — editingData via Ref gelesen
+
+
+  // ─── EDIT GEOMETRY ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!map || mode !== 'EDIT_GEOMETRY' || !editingData) return;
 
-    // 1. Layer erstellen
+    const isPath = editingData.featureType === 'PATH';
+    const color  = isPath ? (PATH_COLORS[editingData.pathType] ?? '#94a3b8') : '#3b82f6';
+    const dashArray = (isPath && editingData.pathType === 'SKID_TRAIL') ? '6, 4' : '10, 10';
+
     const editLayer = L.geoJSON(editingData.geoJson, {
-      style: { color: '#3b82f6', weight: 3, dashArray: '10, 10', fillOpacity: 0.4 }
+      style: { color, weight: 3, dashArray, fillOpacity: 0.4 },
     }).getLayers()[0] as L.Path;
 
     if (!editLayer) return;
@@ -122,9 +278,9 @@ export default function MapGeometryEditor() {
 
     // @ts-ignore
     const editHandler = new L.EditToolbar.Edit(map, {
-        featureGroup: new L.FeatureGroup().addLayer(editLayer)
+      featureGroup: new L.FeatureGroup().addLayer(editLayer),
     });
-    
+
     editHandler.enable();
     editToolbarRef.current = editHandler;
     setShowSaveBar(true);
@@ -137,64 +293,168 @@ export default function MapGeometryEditor() {
   }, [map, mode, editingData]);
 
 
-  // --- SAVE / CANCEL LOGIC ---
+  // ─── SAVE / CANCEL ──────────────────────────────────────────────────────────
+  const handleSaveDrawPath = async () => {
+    if (!createdLayerRef.current || !activePathType) return;
+
+    // @ts-ignore
+    const geoJson = createdLayerRef.current.toGeoJSON();
+    const lengthM = pathLengthRef.current;
+
+    try {
+      const forestId = editingData?.forestId;
+      if (!forestId) {
+        toast.error('Kein Wald zugeordnet. Bitte zuerst einen Wald auf der Karte auswählen.');
+        return;
+      }
+
+      const name = activePathType === 'ROAD' ? 'LKW-Weg'
+                 : activePathType === 'SKID_TRAIL' ? 'Rückegasse'
+                 : 'Gewässer';
+
+      const result = await createPath({
+        forestId,
+        type: activePathType,
+        name,
+        geoJson,
+        lengthM,
+        userId: session?.user?.id as string,
+      });
+
+      if (result.success) {
+        toast.success(`${name} gespeichert! (${formatLength(lengthM)})`);
+        if (createdLayerRef.current) map.removeLayer(createdLayerRef.current);
+        createdLayerRef.current = null;
+        refreshData();
+        if (result.pathId) setTimeout(() => selectFeature(result.pathId!, 'PATH'), 300);
+      } else {
+        toast.error('Fehler: ' + result.error);
+      }
+    } finally {
+      setMode('VIEW');
+      setEditingFeature(null);
+      setShowSaveBar(false);
+      setDrawnLengthM(null);
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (!createdLayerRef.current || !editingData) return;
 
     // @ts-ignore
-    const newGeoJson = createdLayerRef.current.toGeoJSON();
-    const calculatedAreaSqM = area(newGeoJson);
-    const calculatedAreaHa = parseFloat((calculatedAreaSqM / 10000).toFixed(4));
-    
-    // ID merken, bevor wir editingData nullen
-    const currentId = editingData.id;
+    const newGeoJson  = createdLayerRef.current.toGeoJSON();
+    const currentId   = editingData.id;
+    const featureType = editingData.featureType ?? 'FOREST';
+    const orgSlug     = editingData.orgSlug ?? '';
 
     try {
-       await updateForest({
+      if (featureType === 'PATH') {
+        const newLengthM = calculatePathLengthM(newGeoJson);
+        await updatePath(currentId, { geoJson: newGeoJson, lengthM: newLengthM });
+        toast.success('Weg aktualisiert!');
+        refreshData();
+        setTimeout(() => selectFeature(currentId, 'PATH'), 100);
+      } else if (featureType === 'PLANTING') {
+        const areaHa = parseFloat((area(newGeoJson) / 10000).toFixed(4));
+        await updatePlanting(currentId, { geoJson: newGeoJson, areaHa }, orgSlug);
+        toast.success('Pflanzfläche aktualisiert!');
+        refreshData();
+        setTimeout(() => selectFeature(currentId, 'PLANTING'), 100);
+      } else if (featureType === 'HUNTING') {
+        const areaHa = parseFloat((area(newGeoJson) / 10000).toFixed(4));
+        await updateHunting(currentId, { geoJson: newGeoJson, areaHa }, orgSlug);
+        toast.success('Jagdfläche aktualisiert!');
+        refreshData();
+        setTimeout(() => selectFeature(currentId, 'HUNTING'), 100);
+      } else if (featureType === 'CALAMITY') {
+        const areaHa = parseFloat((area(newGeoJson) / 10000).toFixed(4));
+        await updateCalamity(currentId, { geoJson: newGeoJson, areaHa }, orgSlug);
+        toast.success('Kalamitätsfläche aktualisiert!');
+        refreshData();
+        setTimeout(() => selectFeature(currentId, 'CALAMITY'), 100);
+      } else {
+        const calculatedAreaHa = parseFloat((area(newGeoJson) / 10000).toFixed(4));
+        await updateForest({
           id: currentId,
           keycloakId: session?.user?.id as string,
-          name: editingData.name, 
+          name: editingData.name,
           geoJson: newGeoJson,
           areaHa: calculatedAreaHa,
-          // Farbe etc. behalten wir bei (wird im Backend nicht überschrieben, wenn undefined)
-       });
-       
-       toast.success("Grenzen aktualisiert!");
-       refreshData();
+        });
+        toast.success('Grenzen aktualisiert!');
+        refreshData();
+        setTimeout(() => selectFeature(currentId, 'FOREST'), 100);
+      }
     } catch (e) {
-       toast.error("Fehler beim Update");
+      toast.error('Fehler beim Update');
     } finally {
-       setMode('VIEW');
-       setEditingFeature(null);
-       
-       // UX FIX: Sidebar wieder öffnen für diesen Wald
-       setTimeout(() => selectFeature(currentId, 'FOREST'), 100);
+      setMode('VIEW');
+      setEditingFeature(null);
     }
   };
 
   const handleCancelEdit = () => {
     const currentId = editingData?.id;
+    const ft        = editingData?.featureType ?? 'FOREST';
+    const reSelectTypeMap: Record<string, any> = {
+      PATH: 'PATH', PLANTING: 'PLANTING', HUNTING: 'HUNTING', CALAMITY: 'CALAMITY',
+    };
+    const reSelectType = reSelectTypeMap[ft] ?? 'FOREST';
     setMode('VIEW');
     setEditingFeature(null);
-    // Auch bei Abbruch Sidebar wiederherstellen
-    if (currentId) setTimeout(() => selectFeature(currentId, 'FOREST'), 100);
+    setShowSaveBar(false);
+    setDrawnLengthM(null);
+    if (createdLayerRef.current) {
+      map.removeLayer(createdLayerRef.current);
+      createdLayerRef.current = null;
+    }
+    if (currentId) {
+      setTimeout(() => selectFeature(currentId, reSelectType), 100);
+    }
   };
 
+
+  // ─── SAVE BAR für DRAW_PATH ──────────────────────────────────────────────────
+  if (mode === 'DRAW_PATH' && showSaveBar && drawnLengthM !== null) {
+    return (
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[2000] flex flex-col items-center gap-2 animate-in fade-in slide-in-from-top-4">
+        <div className="bg-[#1a1a1a]/95 border border-white/10 rounded-full px-4 py-1.5 text-xs text-gray-300">
+          Länge: <span className="font-bold text-white">{formatLength(drawnLengthM)}</span>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSaveDrawPath}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95 border border-green-500"
+          >
+            <Save size={18} /> Weg speichern
+          </button>
+          <button
+            onClick={handleCancelEdit}
+            className="bg-white text-gray-700 hover:bg-gray-100 px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95"
+          >
+            <X size={18} /> Abbrechen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── SAVE BAR für EDIT_GEOMETRY ──────────────────────────────────────────────
   if (mode === 'EDIT_GEOMETRY' && showSaveBar) {
     return (
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-2 animate-in fade-in slide-in-from-top-4">
-         <button 
-           onClick={handleSaveEdit}
-           className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95 border border-green-500"
-         >
-            <Save size={18} /> Geometrie speichern
-         </button>
-         <button 
-           onClick={handleCancelEdit}
-           className="bg-white text-gray-700 hover:bg-gray-100 px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95"
-         >
-            <X size={18} /> Abbrechen
-         </button>
+        <button
+          onClick={handleSaveEdit}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95 border border-green-500"
+        >
+          <Save size={18} /> Geometrie speichern
+        </button>
+        <button
+          onClick={handleCancelEdit}
+          className="bg-white text-gray-700 hover:bg-gray-100 px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95"
+        >
+          <X size={18} /> Abbrechen
+        </button>
       </div>
     );
   }

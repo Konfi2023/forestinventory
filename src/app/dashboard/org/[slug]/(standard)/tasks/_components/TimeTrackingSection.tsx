@@ -1,153 +1,189 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Plus, Loader2 } from "lucide-react";
-import { logWorkTime } from "@/actions/tasks";
-import { toast } from "sonner";
-import { format } from "date-fns";
+import { useState } from 'react';
+import { Clock, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { logTime, deleteTimeEntry } from '@/actions/time-entries';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 
-interface Props {
-  orgSlug: string;
-  taskId: string;
-  entries: any[];
-  onUpdate: () => void;
+const CATEGORY_LABELS: Record<string, string> = {
+  MANUAL_WORK:  'Handarbeit',
+  MACHINE_WORK: 'Maschine',
+  PLANNING:     'Planung',
+  TRAVEL:       'Anfahrt',
+  INSPECTION:   'Begehung',
+};
+
+function fmtMins(mins: number | null | undefined): string {
+  if (!mins) return 'keine Schätzung';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-type Unit = "HOURS" | "DAYS";
+interface Props {
+  taskId:        string;
+  estimatedTime: number | null;
+  timeEntries:   any[];
+  currentUserId: string;
+  onRefresh:     () => void;
+}
 
-export function TimeTrackingSection({ orgSlug, taskId, entries, onUpdate }: Props) {
-  const [value, setValue] = useState("");
-  const [unit, setUnit] = useState<Unit>("HOURS");
-  const [desc, setDesc] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+export function TimeTrackingSection({ taskId, estimatedTime, timeEntries, currentUserId, onRefresh }: Props) {
+  const [showForm, setShowForm] = useState(false);
+  const [date,     setDate]     = useState(new Date().toISOString().split('T')[0]);
+  const [hours,    setHours]    = useState('');
+  const [category, setCategory] = useState('MANUAL_WORK');
+  const [note,     setNote]     = useState('');
+  const [saving,   setSaving]   = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Summe in Minuten berechnen
-  const totalMinutes = entries.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0);
-  
-  // Smarte Anzeige der Gesamtsumme
-  const formatTotal = (mins: number) => {
-    const hours = mins / 60;
-    if (hours === 0) return "0 Std.";
-    // Ab 8 Stunden zeigen wir Tage an (1 Tag = 8h)
-    if (hours >= 8) {
-        const days = hours / 8;
-        return `${days.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Tage (${hours}h)`;
+  const entries     = timeEntries ?? [];
+  const totalActual = entries.reduce((s: number, e: any) => s + (e.durationMinutes ?? 0), 0);
+  const progress    = estimatedTime && estimatedTime > 0
+    ? Math.min((totalActual / estimatedTime) * 100, 100)
+    : null;
+  const isOver = estimatedTime ? totalActual > estimatedTime : false;
+
+  const handleLog = async () => {
+    const h = parseFloat(hours);
+    if (!h || h <= 0) { toast.error('Bitte gültige Stundenzahl eingeben'); return; }
+    setSaving(true);
+    try {
+      await logTime(taskId, { date, durationMinutes: Math.round(h * 60), description: note || undefined, category });
+      toast.success('Zeit gebucht');
+      setHours(''); setNote(''); setShowForm(false);
+    } catch {
+      toast.error('Fehler beim Buchen');
+      setSaving(false);
+      return;
     }
-    return `${hours.toLocaleString('de-DE', { maximumFractionDigits: 2 })} Std.`;
+    setSaving(false);
+    onRefresh();
   };
 
-  const handleLogTime = async () => {
-    if (!value) return;
-    setIsLoading(true);
-    
-    // Umrechnung in Minuten für die Datenbank
-    const numVal = parseFloat(value.replace(',', '.'));
-    let minutes = 0;
-    
-    if (unit === "HOURS") minutes = Math.round(numVal * 60);
-    if (unit === "DAYS") minutes = Math.round(numVal * 8 * 60); // 1 Tag = 8h
-
+  const handleDelete = async (id: string) => {
+    setDeleting(id);
     try {
-      await logWorkTime(orgSlug, taskId, minutes, desc || "Arbeitszeit");
-      toast.success("Zeit gebucht");
-      setValue("");
-      setDesc("");
-      onUpdate();
-    } catch (e) {
-      toast.error("Fehler beim Buchen");
-    } finally {
-      setIsLoading(false);
+      await deleteTimeEntry(id);
+      toast.success('Eintrag gelöscht');
+    } catch {
+      toast.error('Fehler');
+      setDeleting(null);
+      return;
     }
+    setDeleting(null);
+    onRefresh();
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between text-sm font-bold text-slate-900">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-            <Clock size={16} />
-            Zeiterfassung
+          <Clock size={14} className="text-slate-400" />
+          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wide">Zeiterfassung</span>
         </div>
-        <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono">
-            {formatTotal(totalMinutes)} gesamt
-        </div>
-      </div>
-
-      {/* Eingabezeile */}
-      <div className="flex gap-2 items-end bg-slate-50 p-3 rounded-lg border border-slate-100">
-        <div className="w-24">
-            <label className="text-[10px] text-muted-foreground uppercase font-bold">Dauer</label>
-            <Input 
-                type="number" 
-                placeholder="z.B. 1.5" 
-                className="h-8 bg-white" 
-                step="0.25"
-                value={value}
-                onChange={e => setValue(e.target.value)}
-            />
-        </div>
-        <div className="w-24">
-             <label className="text-[10px] text-muted-foreground uppercase font-bold">Einheit</label>
-             <Select value={unit} onValueChange={(v) => setUnit(v as Unit)}>
-                <SelectTrigger className="h-8 bg-white"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="HOURS">Std.</SelectItem>
-                    <SelectItem value="DAYS">Tage</SelectItem>
-                </SelectContent>
-             </Select>
-        </div>
-        <div className="flex-1">
-            <label className="text-[10px] text-muted-foreground uppercase font-bold">Tätigkeit</label>
-            <Input 
-                placeholder="Was wurde gemacht?" 
-                className="h-8 bg-white" 
-                value={desc}
-                onChange={e => setDesc(e.target.value)}
-            />
-        </div>
-        <Button size="sm" className="h-8" onClick={handleLogTime} disabled={isLoading || !value}>
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Plus className="w-4 h-4"/>}
+        <Button size="sm" variant="ghost"
+          className="h-7 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-white/5 px-2"
+          onClick={() => setShowForm(v => !v)}>
+          <Plus size={13} className="mr-1" /> Eintrag
         </Button>
       </div>
 
-      {/* Liste */}
-      <div className="space-y-3 pl-1">
-        {entries.map((entry) => {
-            // Anzeige Logik für einzelne Einträge
-            const hours = (entry.durationMinutes / 60);
-            const displayDuration = hours >= 8 
-                ? `${(hours / 8).toLocaleString('de-DE', { maximumFractionDigits: 1 })} Tage` 
-                : `${hours.toLocaleString('de-DE', { maximumFractionDigits: 2 })} Std.`;
-
-            return (
-                <div key={entry.id} className="flex items-start gap-3 text-sm">
-                    <Avatar className="w-6 h-6 mt-0.5 border">
-                        <AvatarFallback className="text-[9px] bg-slate-200">
-                            {entry.user.lastName?.[0]}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex justify-between">
-                            <span className="font-medium text-slate-700">
-                                {entry.user.firstName} {entry.user.lastName}
-                            </span>
-                            <span className="font-mono text-slate-600 font-bold text-xs">
-                                {displayDuration}
-                            </span>
-                        </div>
-                        <div className="text-xs text-muted-foreground flex justify-between">
-                            <span>{entry.description}</span>
-                            <span>{format(new Date(entry.startTime), "dd.MM.")}</span>
-                        </div>
-                    </div>
-                </div>
-            );
-        })}
-        {entries.length === 0 && <p className="text-xs text-muted-foreground italic text-center">Noch keine Zeiten gebucht.</p>}
+      <div className="bg-white/5 rounded-lg p-3 space-y-2 border border-white/5">
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-400">Geschätzt</span>
+          <span className="text-white font-mono">{fmtMins(estimatedTime)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-400">Gebucht</span>
+          <span className={`font-mono font-semibold ${isOver ? 'text-red-400' : 'text-emerald-400'}`}>
+            {totalActual > 0 ? fmtMins(totalActual) : '0h'}
+          </span>
+        </div>
+        {progress !== null && (
+          <div className="space-y-1">
+            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${isOver ? 'bg-red-500' : 'bg-emerald-500'}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            {isOver && estimatedTime && (
+              <p className="text-[11px] text-red-400">+{fmtMins(totalActual - estimatedTime)} über Schätzung</p>
+            )}
+          </div>
+        )}
       </div>
+
+      {showForm && (
+        <div className="bg-white/5 border border-white/10 rounded-lg p-3 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Datum</label>
+              <Input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className="h-8 bg-black/30 border-white/10 text-white text-sm" />
+            </div>
+            <div>
+              <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Stunden</label>
+              <Input type="number" min="0.25" step="0.25" placeholder="z.B. 2.5"
+                value={hours} onChange={e => setHours(e.target.value)}
+                className="h-8 bg-black/30 border-white/10 text-white text-sm" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Kategorie</label>
+            <select value={category} onChange={e => setCategory(e.target.value)}
+              className="w-full h-8 bg-black/30 border border-white/10 rounded-md text-white text-sm px-2">
+              {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Notiz (optional)</label>
+            <Input placeholder="Was wurde gemacht?" value={note} onChange={e => setNote(e.target.value)}
+              className="h-8 bg-black/30 border-white/10 text-white text-sm" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" onClick={handleLog} disabled={saving}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs">
+              {saving ? <Loader2 size={13} className="animate-spin" /> : 'Buchen'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}
+              className="text-slate-400 h-8 text-xs">Abbrechen</Button>
+          </div>
+        </div>
+      )}
+
+      {entries.length > 0 && (
+        <div className="space-y-1">
+          {entries.map((e: any) => (
+            <div key={e.id} className="flex items-center gap-2 text-xs text-slate-400 group px-1">
+              <span className="shrink-0 text-slate-500">
+                {format(new Date(e.startTime), 'dd.MM.yy', { locale: de })}
+              </span>
+              <span className="font-mono text-white shrink-0">{fmtMins(e.durationMinutes)}</span>
+              <span className="text-slate-600 shrink-0">{CATEGORY_LABELS[e.category] ?? e.category}</span>
+              <span className="truncate flex-1">{e.description ?? ''}</span>
+              <span className="text-slate-600 shrink-0">
+                {e.user?.firstName ?? (e.user?.email ? e.user.email.split('@')[0] : '?')}
+              </span>
+              {e.userId === currentUserId && (
+                <button onClick={() => handleDelete(e.id)} disabled={deleting === e.id}
+                  className="opacity-0 group-hover:opacity-100 transition text-red-500 hover:text-red-400 shrink-0">
+                  {deleting === e.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {entries.length === 0 && !showForm && (
+        <p className="text-xs text-slate-600 text-center py-2">Noch keine Zeiteinträge.</p>
+      )}
     </div>
   );
 }

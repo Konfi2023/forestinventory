@@ -69,7 +69,11 @@ export default async function TasksPage({
       comments: {
         include: { user: true },
         orderBy: { createdAt: 'desc' }
-      }
+      },
+      timeEntries: {
+        include: { user: true },
+        orderBy: { startTime: 'desc' },
+      },
     },
     orderBy: [
         { priority: 'desc' }, 

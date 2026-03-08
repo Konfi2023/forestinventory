@@ -15,24 +15,25 @@ interface ShellProps {
   onClose: () => void;
   title: string;
   icon: React.ReactNode;
-  headerColor: string; // z.B. "bg-emerald-500" oder gradient class
-  
+  headerColor: string;
+  headerStyle?: React.CSSProperties;
+
   // Edit Mode Props
   isEditing: boolean;
   onToggleEdit: () => void;
   editNameValue?: string;
   onEditNameChange?: (val: string) => void;
-  
+
   // Permissions / Actions
   canEdit: boolean;
   canDelete: boolean;
   onDelete: () => void;
-  
+
   children: React.ReactNode;
 }
 
 export function DetailPanelShell({
-  isVisible, onClose, title, icon, headerColor,
+  isVisible, onClose, title, icon, headerColor, headerStyle,
   isEditing, onToggleEdit, editNameValue, onEditNameChange,
   canEdit, canDelete, onDelete,
   children
@@ -49,7 +50,7 @@ export function DetailPanelShell({
       )}
     >
       {/* HEADER */}
-      <div className={cn("p-4 border-b border-white/10 shrink-0", headerColor)}>
+      <div className={cn("p-4 border-b border-white/10 shrink-0", headerColor)} style={headerStyle}>
         <div className="flex items-start justify-between">
             {/* Title & Icon Area */}
             <div className="flex items-center gap-3 text-white font-bold text-sm w-full overflow-hidden mr-2">

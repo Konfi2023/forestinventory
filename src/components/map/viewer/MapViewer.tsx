@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, ZoomControl, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import dynamic from 'next/dynamic';
-import { cn } from '@/lib/utils'; 
+import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
 
 // Store & Config
 import { useMapStore } from '../stores/useMapStores';
@@ -17,10 +18,16 @@ import { geoJSONToLeaflet } from '@/lib/map-helpers';
 // Overlays
 import { LayerControl } from '../overlays/LayerControl';
 import { LocationControl } from '../overlays/LocationControl';
+import { MapWeatherWidget } from '../overlays/MapWeatherWidget';
 
 // Editor lazy laden
 const MapGeometryEditor = dynamic(
   () => import('../editor/MapGeometryEditor'),
+  { ssr: false }
+);
+
+const MapMeasureTool = dynamic(
+  () => import('../tools/MapMeasureTool'),
   { ssr: false }
 );
 
@@ -48,9 +55,9 @@ function MapController({ forestData }: { forestData: any }) {
     setMapReady(true);
     
     // Globale Funktionen registrieren
-    useMapStore.setState({ 
+    useMapStore.setState({
       flyTo: (coords, zoom) => {
-        if (map && map.getContainer()) { 
+        if (map && map.getContainer()) {
            try {
                map.flyTo(coords, zoom || 18, { duration: 1.5 });
            } catch (e) {
@@ -60,9 +67,14 @@ function MapController({ forestData }: { forestData: any }) {
       },
       fitBounds: (bounds) => {
         if (map && map.getContainer()) {
-            try { 
-                map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1.5 }); 
+            try {
+                map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1.5 });
             } catch (e) { console.warn("FitBounds failed", e); }
+        }
+      },
+      invalidateSize: () => {
+        if (map && map.getContainer()) {
+            try { map.invalidateSize(); } catch (e) {}
         }
       }
     });
@@ -104,9 +116,10 @@ function MapController({ forestData }: { forestData: any }) {
     return () => {
       clearTimeout(zoomTimer);
       setMapReady(false);
-      useMapStore.setState({ 
+      useMapStore.setState({
         flyTo: (coords, zoom) => console.warn("Map not initialized yet", coords, zoom),
         fitBounds: (bounds) => console.warn("Map not initialized yet", bounds),
+        invalidateSize: () => console.warn("Map not initialized yet"),
       });
     };
   }, [map, setMapReady, forestData]); 
@@ -123,23 +136,30 @@ interface MapViewerProps {
 export default function MapViewer({ forestData, children }: MapViewerProps) {
   const interactionMode = useMapStore((s) => s.interactionMode);
   const activeBaseMapId = useMapStore((s) => s.activeBaseMap);
-  
+
   const selectedFeatureType = useMapStore((s) => s.selectedFeatureType);
   const selectedFeatureId = useMapStore((s) => s.selectedFeatureId);
-  
-  // remountKey: Beim Unmount geleert, beim Mount neu gesetzt.
-  // Verhindert Leaflet-Fehler "Map container is being reused" im React Strict Mode.
-  const [remountKey, setRemountKey] = useState<string>('');
 
-  useEffect(() => {
-    const key = `map-${Math.random().toString(36).substring(7)}`;
-    setRemountKey(key);
-    return () => {
-      setRemountKey('');
-    };
-  }, []);
+  const windyOpen    = useMapStore((s) => s.windyOpen);
+  const setWindyOpen = useMapStore((s) => s.setWindyOpen);
 
-  if (!remountKey) return null;
+  // Windy-Koordinaten: ausgewählter Wald → erster Wald → Deutschland-Zentrum
+  const windyCoords = useMemo(() => {
+    const forests: any[] = forestData?.forests ?? [];
+    const target = (selectedFeatureType === 'FOREST' && selectedFeatureId)
+      ? forests.find((f: any) => f.id === selectedFeatureId)
+      : forests[0];
+    if (!target?.geoJson) return { lat: 51.1657, lng: 10.4515, zoom: 6 };
+    const geom = target.geoJson?.features?.[0]?.geometry ?? target.geoJson?.geometry ?? target.geoJson;
+    if (geom?.type !== 'Polygon' || !geom?.coordinates?.[0]?.length) return { lat: 51.1657, lng: 10.4515, zoom: 6 };
+    const coords: [number, number][] = geom.coordinates[0];
+    const lat = coords.reduce((s, c) => s + c[1], 0) / coords.length;
+    const lng = coords.reduce((s, c) => s + c[0], 0) / coords.length;
+    return isFinite(lat) && isFinite(lng) ? { lat, lng, zoom: 11 } : { lat: 51.1657, lng: 10.4515, zoom: 6 };
+  }, [forestData, selectedFeatureId, selectedFeatureType]);
+
+  // Stabiler Key: wird einmalig beim ersten Render erzeugt und ändert sich nie.
+  const [remountKey] = useState(() => `map-${Math.random().toString(36).substring(7)}`);
 
   const baseMapConfig = BASE_MAPS[activeBaseMapId] || BASE_MAPS.DARK;
 
@@ -162,16 +182,42 @@ export default function MapViewer({ forestData, children }: MapViewerProps) {
       </div>
 
       {/* 2. NAVIGATION / GPS */}
-      <div 
+      <div
         className={cn(
             "absolute bottom-24 z-[500] transition-all duration-300 ease-in-out",
-            isTaskOpen ? "right-[40rem]" : 
-            isSidebarOpen ? "right-[26rem]" : 
+            isTaskOpen ? "right-[40rem]" :
+            isSidebarOpen ? "right-[26rem]" :
             "right-3"
         )}
       >
          <LocationControl />
       </div>
+
+      {/* 3. WETTER-WIDGET */}
+      <div className={cn('absolute left-6 z-[500] transition-all duration-300', windyOpen ? 'bottom-24' : 'bottom-6')}>
+        <MapWeatherWidget forests={forestData?.forests ?? []} />
+      </div>
+
+      {/* 4. WINDY OVERLAY */}
+      {windyOpen && (
+        <div className="absolute inset-0 z-[400]">
+          <iframe
+            src={`https://embed.windy.com/embed2.html?lat=${windyCoords.lat.toFixed(4)}&lon=${windyCoords.lng.toFixed(4)}&zoom=${windyCoords.zoom}&level=surface&overlay=wind&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`}
+            className="w-full h-full border-0"
+            title="Windy Wetterkarte"
+            allow="geolocation"
+          />
+          {/* Schließen-Button — über dem iFrame */}
+          <button
+            onClick={() => setWindyOpen(false)}
+            className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white text-xs font-medium backdrop-blur border border-white/20 shadow-xl transition"
+            title="Wetterkarte schließen"
+          >
+            <X size={13} />
+            Schließen
+          </button>
+        </div>
+      )}
 
       {/* KARTE */}
       <MapContainer
@@ -185,11 +231,16 @@ export default function MapViewer({ forestData, children }: MapViewerProps) {
         scrollWheelZoom={true}
       >
         <TileLayer
-          key={baseMapConfig.id} 
+          key={baseMapConfig.id}
           url={baseMapConfig.url}
           attribution={baseMapConfig.attribution}
-          maxNativeZoom={19}
+          tileSize={baseMapConfig.tileSize}
+          zoomOffset={baseMapConfig.zoomOffset}
+          maxNativeZoom={baseMapConfig.tileSize === 512 ? 18 : 19}
           maxZoom={22}
+          keepBuffer={4}
+          updateWhenIdle={false}
+          updateWhenZooming={false}
         />
 
         {activeBaseMapId === 'SATELLITE' && (
@@ -206,8 +257,19 @@ export default function MapViewer({ forestData, children }: MapViewerProps) {
 
         {children}
 
-        {(interactionMode === 'DRAW_FOREST' || interactionMode === 'EDIT_GEOMETRY') && (
+        {(
+          interactionMode === 'DRAW_FOREST' ||
+          interactionMode === 'EDIT_GEOMETRY' ||
+          interactionMode === 'DRAW_PATH' ||
+          interactionMode === 'DRAW_PLANTING' ||
+          interactionMode === 'DRAW_HUNTING' ||
+          interactionMode === 'DRAW_CALAMITY'
+        ) && (
            <MapGeometryEditor />
+        )}
+
+        {(interactionMode === 'MEASURE_DISTANCE' || interactionMode === 'MEASURE_AREA') && (
+           <MapMeasureTool />
         )}
 
       </MapContainer>

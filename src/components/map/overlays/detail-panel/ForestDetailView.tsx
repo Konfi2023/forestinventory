@@ -18,6 +18,7 @@ import { useMapStore } from '@/components/map/stores/useMapStores';
 // Import des Dialogs und des Sicherheits-Modals
 import { CreateTaskDialog } from '@/app/dashboard/org/[slug]/(standard)/tasks/_components/CreateTaskDialog';
 import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
+import { AlertTriangle } from 'lucide-react';
 
 const FOREST_COLORS = [
     "#10b981", "#3b82f6", "#ef4444", "#f59e0b", 
@@ -48,6 +49,7 @@ export function ForestDetailView({
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showCreateTask, setShowCreateTask] = useState(false);
+    const [showAllDeletion, setShowAllDeletion] = useState(false);
     
     const [name, setName] = useState(forest.name);
     const [desc, setDesc] = useState(forest.description || "");
@@ -55,6 +57,30 @@ export function ForestDetailView({
 
     const forestTasks = tasks.filter(t => t.forestId === forest.id && t.status !== 'DONE');
     const isGeometryEditing = interactionMode === 'EDIT_GEOMETRY';
+
+    const allForestTasks = tasks.filter((t: any) => t.forestId === forest.id);
+
+    // Hierarchische Löschliste: POIs mit ihren Tasks, dann Wege+Flächen, dann freie Tasks
+    type DeletionRow = { category: string; name: string; indent?: boolean };
+    const deletionItems: DeletionRow[] = [];
+
+    (forest.pois ?? []).forEach((poi: any) => {
+      deletionItems.push({ category: 'POI', name: poi.name || 'Unbenannt' });
+      allForestTasks
+        .filter((t: any) => t.poiId === poi.id)
+        .forEach((t: any) => deletionItems.push({ category: 'Aufgabe', name: t.title || 'Unbenannt', indent: true }));
+    });
+
+    (forest.paths ?? []).forEach((x: any) => {
+      const cat = x.type === 'SKID_TRAIL' ? 'Rückegasse' : x.type === 'WATER' ? 'Gewässer' : 'Weg';
+      deletionItems.push({ category: cat, name: x.name || 'Unbenannt' });
+    });
+    (forest.plantings  ?? []).forEach((x: any) => deletionItems.push({ category: 'Pflanzfläche', name: x.name || 'Unbenannt' }));
+    (forest.calamities ?? []).forEach((x: any) => deletionItems.push({ category: 'Kalamität',    name: x.name || x.cause || 'Unbenannt' }));
+    (forest.hunting    ?? []).forEach((x: any) => deletionItems.push({ category: 'Jagdfläche',   name: x.name || 'Unbenannt' }));
+
+    // Aufgaben ohne POI-Bezug (separat angezeigt, nicht in der Hierarchie-Liste)
+    const standaloneTasks = allForestTasks.filter((t: any) => !t.poiId);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -222,15 +248,15 @@ export function ForestDetailView({
                     
                     {/* LINKS: Löschen Button (Öffnet Modal) */}
                     {canDelete ? (
-                         <DeleteConfirmDialog 
+                         <DeleteConfirmDialog
                             trigger={
                                 <Button variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-950/30 px-3">
                                     <Trash2 className="w-4 h-4 mr-2" /> Löschen
                                 </Button>
                             }
                             title={`Wald "${forest.name}" löschen?`}
-                            description="ACHTUNG: Dies löscht den gesamten Wald inklusive aller Geodaten, Aufgaben und Historie unwiderruflich."
-                            confirmString={forest.name} // User muss den Namen tippen
+                            description="Dieser Vorgang ist unwiderruflich. Folgende Daten werden dabei permanent gelöscht:"
+                            confirmString={forest.name}
                             onConfirm={async () => {
                                 const res = await deleteForest(forest.id);
                                 if (res.success) {
@@ -240,7 +266,67 @@ export function ForestDetailView({
                                     throw new Error(res.error);
                                 }
                             }}
-                         />
+                         >
+                            {/* Hierarchie: POIs, Wege, Flächen */}
+                            {deletionItems.length > 0 ? (
+                                <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-1.5">
+                                    {(showAllDeletion ? deletionItems : deletionItems.slice(0, 4)).map((item, i) => (
+                                        <div key={i} className={cn('flex items-baseline gap-2 text-sm', item.indent && 'pl-4')}>
+                                            <span className={cn('text-[10px] font-semibold uppercase shrink-0 w-20', item.indent ? 'text-amber-400' : 'text-red-400')}>
+                                                {item.indent ? '↳ ' : ''}{item.category}
+                                            </span>
+                                            <span className="text-slate-700 truncate">{item.name}</span>
+                                        </div>
+                                    ))}
+                                    {deletionItems.length > 4 && (
+                                        <button
+                                            onClick={() => setShowAllDeletion(v => !v)}
+                                            className="text-xs text-red-500 hover:text-red-700 underline pt-1"
+                                        >
+                                            {showAllDeletion
+                                                ? 'Weniger anzeigen'
+                                                : `+${deletionItems.length - 4} weitere anzeigen`}
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+                                    Keine verknüpften Geodaten vorhanden.
+                                </div>
+                            )}
+
+                            {/* Aufgaben — identisch zu POI-Dialog, aber Checkbox gesperrt */}
+                            {allForestTasks.length > 0 && (
+                                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+                                    <p className="text-xs font-semibold text-amber-800">
+                                        Verknüpfte Aufgaben ({allForestTasks.length})
+                                    </p>
+                                    <div className="space-y-1">
+                                        {allForestTasks.slice(0, 3).map((t: any) => (
+                                            <div key={t.id} className="flex items-baseline gap-2 text-sm">
+                                                <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">Aufgabe</span>
+                                                <span className="text-slate-700 truncate">{t.title}</span>
+                                            </div>
+                                        ))}
+                                        {allForestTasks.length > 3 && (
+                                            <p className="text-xs text-amber-600">+{allForestTasks.length - 3} weitere…</p>
+                                        )}
+                                    </div>
+                                    <label className="flex items-center gap-2 pt-1 border-t border-amber-200 cursor-not-allowed">
+                                        <input
+                                            type="checkbox"
+                                            checked
+                                            disabled
+                                            className="rounded border-amber-400 text-red-600 opacity-60"
+                                        />
+                                        <span className="text-sm text-slate-600">
+                                            Aufgaben ebenfalls löschen
+                                            <span className="block text-[11px] text-slate-400">Aufgaben können ohne Wald nicht existieren.</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+                         </DeleteConfirmDialog>
                     ) : <div></div>}
 
                     {/* RECHTS: Abbrechen & Speichern */}

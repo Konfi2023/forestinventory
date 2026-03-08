@@ -13,9 +13,10 @@ import { useMapStore } from '@/components/map/stores/useMapStores';
 import { getBoundsFromGeoJson } from '@/lib/map-helpers';
 
 // 3. Components
-import { MapDetailPanel } from '@/components/map/overlays/MapDetailPanel'; 
+import { MapDetailPanel } from '@/components/map/overlays/MapDetailPanel';
 import { MapToolbar } from '@/components/map/overlays/MapToolbar';
-import { TaskDetailSheet } from '@/app/dashboard/org/[slug]/(standard)/tasks/_components/TaskDetailSheet'; 
+import { TaskSidebar } from '@/components/map/overlays/TaskSidebar';
+import { TaskDetailSheet } from '@/app/dashboard/org/[slug]/(standard)/tasks/_components/TaskDetailSheet';
 
 // 4. Dynamic Components
 const MapViewer = dynamic(
@@ -154,42 +155,45 @@ export default function MapPageClient({ orgSlug }: Props) {
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      <MapViewer forestData={data} skipAutoZoom={!!focusTaskId}>
-        <GeoDataHandler 
-            data={{
-                ...data,
-                orgSlug: orgSlug
-            }} 
-            onRefresh={loadMapData} 
-        />
-        <MapToolbar 
+    <div className="flex w-full h-full overflow-hidden">
+      {/* ── Linke Aufgaben-Sidebar ── */}
+      <TaskSidebar tasks={data.tasks} forests={data.forests} />
+
+      {/* ── Karte + rechtes Detail-Panel ── */}
+      <div className="relative flex-1 overflow-hidden min-w-0">
+        <MapViewer forestData={data} skipAutoZoom={!!focusTaskId}>
+          <GeoDataHandler
+            data={{ ...data, orgSlug }}
+            onRefresh={loadMapData}
+          />
+          <MapToolbar
             canCreate={hasPermission('forest:edit')}
             orgSlug={orgSlug}
             currentUserId={data.currentUserId}
             onRefresh={loadMapData}
+          />
+        </MapViewer>
+
+        <MapDetailPanel
+          forests={data.forests}
+          tasks={data.tasks}
+          members={data.members}
+          orgSlug={orgSlug}
+          onForestDeleted={handleOptimisticDelete}
+          canEdit={hasPermission('forest:edit')}
+          canDelete={hasPermission('forest:delete')}
         />
-      </MapViewer>
-      
-      <MapDetailPanel 
-         forests={data.forests} 
-         tasks={data.tasks}
-         members={data.members}
-         orgSlug={orgSlug}
-         onForestDeleted={handleOptimisticDelete}
-         canEdit={hasPermission('forest:edit')}
-         canDelete={hasPermission('forest:delete')}
-      />
+      </div>
 
       {activeTask && (
-          <TaskDetailSheet 
-             task={activeTask}
-             open={!!activeTask}
-             onClose={() => selectFeature(null, null)}
-             orgSlug={orgSlug}
-             members={data.members}
-             currentUserId={data.currentUserId}
-          />
+        <TaskDetailSheet
+          task={activeTask}
+          open={!!activeTask}
+          onClose={() => selectFeature(null, null)}
+          orgSlug={orgSlug}
+          members={data.members}
+          currentUserId={data.currentUserId}
+        />
       )}
     </div>
   );

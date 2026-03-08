@@ -3,13 +3,17 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Trees, 
+import {
+  LayoutDashboard,
+  Trees,
   Settings,
   ClipboardList,
   CalendarDays,
-  Map as MapIcon
+  Map as MapIcon,
+  Leaf,
+  LogOut,
+  PackageOpen,
+  BarChart2,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MobileNav } from "./_components/MobileNav";
@@ -105,6 +109,12 @@ export default async function OrgLayout({
           
           <NavItem href={`/dashboard/org/${slug}/forest`} icon={<Trees size={20} />} label="Waldbestände" />
 
+          <NavItem href={`/dashboard/org/${slug}/biomass`} icon={<Leaf size={20} />} label="Biomasse-Monitoring" />
+
+          <NavItem href={`/dashboard/org/${slug}/operations`} icon={<PackageOpen size={20} />} label="Maßnahmen & Holzverkauf" />
+
+          <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label="Zeitcontrolling" />
+
           {/* Spacer, damit Einstellungen unten klebt oder zumindest Abstand hat */}
           <div className="mt-auto pb-4">
              <div className="my-2 border-t border-slate-800" />
@@ -128,6 +138,10 @@ export default async function OrgLayout({
                         {membership.role.name}
                     </p>
                 </div>
+                <Link href="/api/auth/signout" title="Abmelden"
+                  className="text-slate-600 hover:text-red-400 transition shrink-0">
+                  <LogOut size={16} />
+                </Link>
             </div>
         </div>
       </aside>

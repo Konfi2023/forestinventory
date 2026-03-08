@@ -27,7 +27,7 @@ export default async function CalendarPage({
   // Wälder laden
   const forests = await prisma.forest.findMany({
     where: { organizationId: org.id },
-    select: { id: true, name: true },
+    select: { id: true, name: true, geoJson: true },
     orderBy: { name: 'asc' }
   });
 

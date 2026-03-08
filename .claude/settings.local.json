@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npx prisma:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(npm install:*)",
+      "Bash(xargs grep:*)",
+      "Bash(\"C:\\\\Users\\\\Aschkan\\\\forestinventory\\\\.env\":*)",
+      "Read(//c/Users/Aschkan/forestdb2/components/map/overlays//**)",
+      "Read(//c/Users/Aschkan/forestdb2/components/map/sidebar//**)",
+      "Bash(cat:*)"
+    ]
+  }
+}

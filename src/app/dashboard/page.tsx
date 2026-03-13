@@ -7,7 +7,12 @@ import { InviteList } from "@/components/dashboard/InviteList";
 import { LogOut } from "lucide-react";
 import Link from "next/link";
 
-export default async function DashboardRoot() {
+export default async function DashboardRoot({
+  searchParams,
+}: {
+  searchParams: Promise<{ createOrg?: string }>;
+}) {
+  const { createOrg } = await searchParams;
   const session = await getServerSession(authOptions);
 
   // Sicherheit: Nicht eingeloggt -> Raus
@@ -15,15 +20,23 @@ export default async function DashboardRoot() {
     redirect("/api/auth/signin");
   }
 
-  // 1. Hat der User schon Organisationen? -> Redirect zum Dashboard
-  const memberships = await prisma.membership.findMany({
-    where: { userId: session.user.id },
-    include: { organization: true },
-  });
+  // 1. Hat der User schon Organisationen? -> Redirect zur zuletzt aktiven Org
+  const [memberships, dbUser] = await Promise.all([
+    prisma.membership.findMany({
+      where: { userId: session.user.id },
+      include: { organization: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { lastActiveOrgId: true },
+    }),
+  ]);
 
   if (memberships.length > 0) {
-    // Nimm die erste gefundene Organisation (oder Logik für 'zuletzt besucht')
-    const targetSlug = memberships[0].organization.slug;
+    const lastActive = dbUser?.lastActiveOrgId
+      ? memberships.find(m => m.organizationId === dbUser.lastActiveOrgId)
+      : null;
+    const targetSlug = (lastActive ?? memberships[0]).organization.slug;
     redirect(`/dashboard/org/${targetSlug}`);
   }
 
@@ -39,7 +52,7 @@ export default async function DashboardRoot() {
     }
   });
 
-  if (pendingInvites.length > 0) {
+  if (pendingInvites.length > 0 && createOrg !== '1') {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
             <LogoutButton />

@@ -98,11 +98,9 @@ export function InviteList({ invites }: Props) {
 
         <div className="text-center mt-8">
             <p className="text-xs text-slate-400 mb-2">oder</p>
-            <Button variant="link" className="text-slate-500" onClick={() => window.location.reload()}>
+            <Button variant="link" className="text-slate-500" onClick={() => router.push('/dashboard?createOrg=1')}>
                 <ArrowRight className="w-4 h-4 mr-2" />
                 Doch eine eigene Organisation erstellen?
-                {/* Hier müsste man Logik bauen, um die Ansicht zu wechseln, 
-                    aber meist reicht es, Invites abzulehnen oder anzunehmen. */}
             </Button>
         </div>
     </div>

@@ -3,6 +3,8 @@
   "enabled": true,
   "displayName": "Forest Inventory",
   "sslRequired": "none",
+  "loginTheme": "forest-dark",
+  "accountTheme": "forest-dark",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,

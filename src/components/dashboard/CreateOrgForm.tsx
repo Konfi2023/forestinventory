@@ -11,18 +11,15 @@ import { Loader2, Building2, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-
 import { toast } from "sonner";
 import { OrgType } from "@prisma/client";
 
-// Schritte definieren
 const STEPS = [
   { id: 1, title: "Account", desc: "Wie soll Ihr Betrieb im System heißen?" },
   { id: 2, title: "Betriebsprofil", desc: "Helfen Sie uns, das System für Sie einzurichten." },
-  { id: 3, title: "Rechnungsdaten", desc: "Offizielle Daten für B2B-Verträge (optional für Start)." }
 ];
 
 export function CreateOrgForm() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Der "Cache" - State für alle Daten
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -36,17 +33,14 @@ export function CreateOrgForm() {
     country: "Deutschland"
   });
 
-  // Helper zum Updaten des States
   const updateData = (key: string, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
-    // Auto-Generate Slug in Step 1
     if (key === "name" && step === 1) {
       const autoSlug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
       setFormData(prev => ({ ...prev, name: value, slug: autoSlug }));
     }
   };
 
-  // Validierung vor dem Weitergehen
   const validateStep = () => {
     if (step === 1) {
       if (!formData.name || formData.name.length < 3) {
@@ -54,12 +48,6 @@ export function CreateOrgForm() {
         return false;
       }
       if (!formData.slug) return false;
-    }
-    if (step === 2) {
-      if (!formData.totalHectares) {
-        toast.error("Bitte geben Sie eine ungefähre Fläche an.");
-        return false;
-      }
     }
     return true;
   };
@@ -75,7 +63,6 @@ export function CreateOrgForm() {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      // Daten final absenden
       await createOrganization({
         ...formData,
         totalHectares: parseFloat(formData.totalHectares) || 0
@@ -94,32 +81,32 @@ export function CreateOrgForm() {
                 <Building2 size={20}/>
             </div>
             <div className="text-xs font-medium text-slate-400">
-                Schritt {step} von 3
+                Schritt {step} von 2
             </div>
         </div>
         <CardTitle>{STEPS[step - 1].title}</CardTitle>
         <CardDescription>{STEPS[step - 1].desc}</CardDescription>
-        
+
         {/* Progress Bar */}
         <div className="h-1 w-full bg-slate-100 mt-4 rounded-full overflow-hidden">
-            <div 
-                className="h-full bg-slate-900 transition-all duration-500 ease-in-out" 
-                style={{ width: `${(step / 3) * 100}%` }}
+            <div
+                className="h-full bg-slate-900 transition-all duration-500 ease-in-out"
+                style={{ width: `${(step / 2) * 100}%` }}
             />
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4 py-4 min-h-[220px]">
-        
+
         {/* --- SCHRITT 1: BASIC --- */}
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
               <Label>Name der Organisation</Label>
-              <Input 
-                value={formData.name} 
+              <Input
+                value={formData.name}
                 onChange={(e) => updateData("name", e.target.value)}
-                placeholder="z.B. Forstbetrieb Müller" 
+                placeholder="z.B. Forstbetrieb Müller"
                 autoFocus
               />
             </div>
@@ -129,8 +116,8 @@ export function CreateOrgForm() {
                   <span className="text-sm text-slate-400 bg-slate-50 border border-r-0 rounded-l-md px-3 h-10 flex items-center">
                       forest-app.de/
                   </span>
-                  <Input 
-                    value={formData.slug} 
+                  <Input
+                    value={formData.slug}
                     onChange={(e) => updateData("slug", e.target.value)}
                     className="rounded-l-none font-mono text-sm"
                   />
@@ -159,70 +146,39 @@ export function CreateOrgForm() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Bewirtschaftete Fläche (ca. Hektar)</Label>
+              <Label>Bewirtschaftete Fläche (optional)</Label>
               <div className="relative">
-                <Input 
-                    type="number" 
-                    value={formData.totalHectares} 
+                <Input
+                    type="number"
+                    value={formData.totalHectares}
                     onChange={(e) => updateData("totalHectares", e.target.value)}
                     placeholder="50"
                 />
                 <span className="absolute right-3 top-2.5 text-sm text-slate-400">ha</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Wichtig für die Auswahl des passenden Preismodells.</p>
-            </div>
-          </div>
-        )}
-
-        {/* --- SCHRITT 3: B2B DATEN --- */}
-        {step === 3 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                    <Label>Offizieller Firmenname (Rechnung)</Label>
-                    <Input 
-                        value={formData.legalName} 
-                        onChange={(e) => updateData("legalName", e.target.value)}
-                        placeholder={formData.name || "Müller GmbH"}
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label>Straße & Nr.</Label>
-                    <Input value={formData.street} onChange={(e) => updateData("street", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label>PLZ & Ort</Label>
-                    <div className="flex gap-2">
-                        <Input className="w-20" value={formData.zip} onChange={(e) => updateData("zip", e.target.value)} />
-                        <Input className="flex-1" value={formData.city} onChange={(e) => updateData("city", e.target.value)} />
-                    </div>
-                </div>
-                <div className="space-y-2 col-span-2">
-                    <Label>USt-IdNr. (Optional)</Label>
-                    <Input value={formData.vatId} onChange={(e) => updateData("vatId", e.target.value)} placeholder="DE..." />
-                </div>
+              <p className="text-[10px] text-muted-foreground">Hilft uns, die Ansichten optimal auf Ihren Betrieb anzupassen.</p>
             </div>
           </div>
         )}
 
       </CardContent>
-      
+
       <CardFooter className="flex justify-between border-t p-6 bg-slate-50/50">
         {step > 1 ? (
             <Button variant="ghost" onClick={handleBack}>
                 <ArrowLeft className="w-4 h-4 mr-2" /> Zurück
             </Button>
         ) : (
-            <div></div> // Spacer
+            <div></div>
         )}
 
-        {step < 3 ? (
+        {step < 2 ? (
             <Button onClick={handleNext}>
                 Weiter <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
         ) : (
             <Button onClick={handleSubmit} disabled={isLoading} className="bg-green-600 hover:bg-green-700">
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4 mr-2"/> Kostenpflichtig starten</>}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4 mr-2"/> Betrieb erstellen</>}
             </Button>
         )}
       </CardFooter>

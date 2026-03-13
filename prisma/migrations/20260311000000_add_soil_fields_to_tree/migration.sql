@@ -1,0 +1,2 @@
+ALTER TABLE "ForestPoiTree" ADD COLUMN IF NOT EXISTS "soilCondition" TEXT;
+ALTER TABLE "ForestPoiTree" ADD COLUMN IF NOT EXISTS "soilMoisture" TEXT;

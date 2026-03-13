@@ -50,8 +50,11 @@ export async function updatePlanting(
   }
 }
 
-export async function deletePlanting(id: string, orgSlug: string) {
+export async function deletePlanting(id: string, orgSlug: string, taskIds?: string[]) {
   try {
+    if (taskIds?.length) {
+      await prisma.task.deleteMany({ where: { id: { in: taskIds } } });
+    }
     await prisma.forestPlanting.delete({ where: { id } });
     revalidatePath(`/dashboard/org/${orgSlug}/map`);
     return { success: true };
@@ -107,8 +110,11 @@ export async function updateHunting(
   }
 }
 
-export async function deleteHunting(id: string, orgSlug: string) {
+export async function deleteHunting(id: string, orgSlug: string, taskIds?: string[]) {
   try {
+    if (taskIds?.length) {
+      await prisma.task.deleteMany({ where: { id: { in: taskIds } } });
+    }
     await prisma.forestHunting.delete({ where: { id } });
     revalidatePath(`/dashboard/org/${orgSlug}/map`);
     return { success: true };
@@ -205,8 +211,11 @@ export async function updateCalamity(
   }
 }
 
-export async function deleteCalamity(id: string, orgSlug: string) {
+export async function deleteCalamity(id: string, orgSlug: string, taskIds?: string[]) {
   try {
+    if (taskIds?.length) {
+      await prisma.task.deleteMany({ where: { id: { in: taskIds } } });
+    }
     await prisma.forestCalamity.delete({ where: { id } });
     revalidatePath(`/dashboard/org/${orgSlug}/map`);
     return { success: true };

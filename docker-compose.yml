@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -14,17 +12,61 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: forest_pgbouncer
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DB_USER: forest_user
+      DB_PASSWORD: forest_password
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: forest_inventory
+      LISTEN_PORT: 6432
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 20
+      SERVER_RESET_QUERY: DISCARD ALL
+      AUTH_TYPE: scram-sha-256
+    ports:
+      - "6432:6432"
+
+  backup:
+    image: prodrigestivill/postgres-backup-local
+    container_name: forest_backup
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: forest_inventory
+      POSTGRES_USER: forest_user
+      POSTGRES_PASSWORD: forest_password
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+      HEALTHCHECK_PORT: 8080
+    volumes:
+      - ./backups:/backups
+
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.1
     container_name: forest_iam
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    command: start-dev
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    command: start-dev --import-realm
     ports:
       - "8080:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      - C:/Users/Aschkan/forestinventory/keycloak:/opt/keycloak/data/import
       - C:/Users/Aschkan/forestinventory/src/keycloak-theme/forest-dark:/opt/keycloak/themes/forest-dark
 
 volumes:

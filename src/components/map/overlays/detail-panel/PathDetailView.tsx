@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Route, Ruler, Loader2, Waves, Palette, ScanLine, Trash2, Check } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Route, Ruler, Loader2, Waves, Palette, ScanLine, Trash2, Check, PlusCircle, AlertCircle, Calendar, User } from 'lucide-react';
 import { DetailPanelShell } from './DetailPanelShell';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,11 @@ import { cn } from '@/lib/utils';
 import { useMapStore } from '@/components/map/stores/useMapStores';
 import { calculatePathLengthM } from '@/lib/map-helpers';
 import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
+import { CreateTaskDialog } from '@/app/dashboard/org/[slug]/(standard)/tasks/_components/CreateTaskDialog';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { getUserColor, getInitials } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 // ---------------------------------------------------------------------------
 
@@ -34,6 +39,10 @@ function formatLength(m: number): string {
 interface Props {
   path: any;
   forest: any;
+  orgSlug: string;
+  tasks: any[];
+  members: any[];
+  forests: any[];
   onClose: () => void;
   onRefresh: () => void;
   onDeleteSuccess: (id: string) => void;
@@ -42,17 +51,24 @@ interface Props {
 }
 
 export function PathDetailView({
-  path, forest, onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
+  path, forest, orgSlug, tasks, members, forests, onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
 }: Props) {
   const setInteractionMode = useMapStore(s => s.setInteractionMode);
   const setEditingFeature  = useMapStore(s => s.setEditingFeature);
   const interactionMode    = useMapStore(s => s.interactionMode);
+  const selectFeature      = useMapStore(s => s.selectFeature);
 
   const cfg     = PATH_CONFIG[path.type] ?? PATH_CONFIG.ROAD;
   const lengthM = path.lengthM ?? calculatePathLengthM(path.geoJson);
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving,  setIsSaving]  = useState(false);
+  const [isEditing,      setIsEditing]      = useState(false);
+  const [isSaving,       setIsSaving]       = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+
+  const linkedTasks = useMemo(() => {
+    if (!tasks?.length) return [];
+    return tasks.filter(t => t.linkedPolygonId === path.id && t.status !== 'DONE');
+  }, [tasks, path.id]);
 
   const [name,  setName]  = useState(path.name  ?? cfg.label);
   const [note,  setNote]  = useState(path.note  ?? '');
@@ -177,7 +193,64 @@ export function PathDetailView({
         )}
       </div>
 
-      {/* 5. GEOMETRIE BEARBEITEN — nur im Edit-Modus */}
+      {/* 5. AUFGABEN */}
+      {!isEditing && (
+        <div className="space-y-3 pt-4 border-t border-white/10 mt-4">
+          <div className="flex justify-between items-center">
+            <h4 className="text-[10px] uppercase text-gray-500 font-bold">Aufgaben</h4>
+            <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-300">{linkedTasks.length}</span>
+          </div>
+          <div className="space-y-2">
+            {linkedTasks.length === 0 ? (
+              <div className="text-center py-4 text-xs text-gray-600 border border-dashed border-white/10 rounded-lg">
+                Alles erledigt.
+              </div>
+            ) : (
+              linkedTasks.map((task: any) => (
+                <div
+                  key={task.id}
+                  onClick={() => selectFeature(task.id, 'TASK')}
+                  className="bg-white/5 hover:bg-white/10 border border-white/5 p-3 rounded-lg transition-colors group cursor-pointer flex justify-between items-start"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      {task.priority === 'URGENT' && <AlertCircle size={14} className="text-red-500" />}
+                      <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">{task.title}</span>
+                    </div>
+                    {task.dueDate && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Calendar size={12} /> {format(new Date(task.dueDate), 'dd. MMM', { locale: de })}
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0 ml-2">
+                    {task.assignee ? (
+                      <Avatar className="h-6 w-6 border border-white/20">
+                        <AvatarFallback className={cn('text-[9px] font-bold', getUserColor(task.assignee.firstName || task.assignee.email))}>
+                          {getInitials(task.assignee.firstName, task.assignee.lastName)}
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
+                        <User size={12} className="text-gray-500" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+            <Button
+              className="w-full border-dashed border-white/20 text-gray-400 hover:text-white hover:bg-white/5 h-9 text-xs mt-2"
+              variant="outline"
+              onClick={() => setShowCreateTask(true)}
+            >
+              <PlusCircle className="w-3 h-3 mr-2" /> Neue Aufgabe hier
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 6. GEOMETRIE BEARBEITEN — nur im Edit-Modus */}
       {isEditing && (
         <div className="pt-2 border-t border-white/10 mt-2">
           <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">
@@ -250,6 +323,18 @@ export function PathDetailView({
           </div>
         </div>
       )}
+      <CreateTaskDialog
+        openProp={showCreateTask}
+        onOpenChangeProp={open => { setShowCreateTask(open); if (!open) onRefresh(); }}
+        orgSlug={orgSlug}
+        members={members}
+        forests={forests}
+        defaultTitle={`Aufgabe: ${name}`}
+        defaultForestId={path.forestId}
+        defaultLinkedPolygonId={path.id}
+        defaultLinkedPolygonType={path.type}
+        trigger={<span className="hidden" />}
+      />
     </DetailPanelShell>
   );
 }

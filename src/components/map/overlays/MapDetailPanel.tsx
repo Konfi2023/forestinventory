@@ -132,6 +132,10 @@ export function MapDetailPanel({ forests, tasks, members, orgSlug, onForestDelet
         key={selectedPath.id}
         path={selectedPath}
         forest={selectedPathForest}
+        orgSlug={orgSlug}
+        tasks={tasks}
+        members={members}
+        forests={forests}
         onClose={handleClose}
         onRefresh={refreshData}
         onDeleteSuccess={() => { refreshData(); handleClose(); }}
@@ -148,6 +152,9 @@ export function MapDetailPanel({ forests, tasks, members, orgSlug, onForestDelet
         planting={selectedPlanting}
         forest={selectedPlantingForest}
         orgSlug={orgSlug}
+        tasks={tasks}
+        members={members}
+        forests={forests}
         onClose={handleClose}
         onRefresh={refreshData}
         onDeleteSuccess={() => { refreshData(); handleClose(); }}
@@ -164,6 +171,9 @@ export function MapDetailPanel({ forests, tasks, members, orgSlug, onForestDelet
         hunting={selectedHunting}
         forest={selectedHuntingForest}
         orgSlug={orgSlug}
+        tasks={tasks}
+        members={members}
+        forests={forests}
         onClose={handleClose}
         onRefresh={refreshData}
         onDeleteSuccess={() => { refreshData(); handleClose(); }}
@@ -180,6 +190,9 @@ export function MapDetailPanel({ forests, tasks, members, orgSlug, onForestDelet
         calamity={selectedCalamity}
         forest={selectedCalamityForest}
         orgSlug={orgSlug}
+        tasks={tasks}
+        members={members}
+        forests={forests}
         onClose={handleClose}
         onRefresh={refreshData}
         onDeleteSuccess={() => { refreshData(); handleClose(); }}

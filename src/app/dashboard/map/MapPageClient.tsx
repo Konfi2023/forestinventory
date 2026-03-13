@@ -50,12 +50,12 @@ export default function MapPageClient({ orgSlug }: Props) {
       permissions: string[]
   } | null>(null);
 
-  const dataVersion = useMapStore(s => s.dataVersion);
   const selectedId = useMapStore(s => s.selectedFeatureId);
   const selectedType = useMapStore(s => s.selectedFeatureType);
   const selectFeature = useMapStore(s => s.selectFeature);
+  const restorePreviousFeature = useMapStore(s => s.restorePreviousFeature);
   const isMapReady = useMapStore(s => s.isReady);
-  
+
   const searchParams = useSearchParams();
   const focusTaskId = searchParams.get('focusTaskId');
 
@@ -77,9 +77,15 @@ export default function MapPageClient({ orgSlug }: Props) {
     }
   }, [orgSlug]);
 
+  // Registriere loadMapData direkt als refreshData im Store —
+  // so kann MapGeometryEditor es direkt aufrufen statt über dataVersion-Umweg.
+  useEffect(() => {
+    useMapStore.setState({ refreshData: loadMapData });
+  }, [loadMapData]);
+
   useEffect(() => {
     loadMapData();
-  }, [loadMapData, dataVersion]);
+  }, [loadMapData]);
 
   // --- HYBRID AUTO-ZOOM EFFEKT ---
   useEffect(() => {
@@ -109,6 +115,23 @@ export default function MapPageClient({ orgSlug }: Props) {
 
     if (targetLat && targetLng) {
       flyTo([targetLat, targetLng], 19);
+    } else if (targetTask.linkedPolygonId && targetTask.linkedPolygonType) {
+      // Polygon-Bounds berechnen (Kulturfläche, Kalamität, Jagdrevier, Weg)
+      const parentForest = data.forests.find((f: any) => f.id === targetTask.forestId);
+      if (parentForest) {
+        const collectionKey: Record<string, string> = {
+          PLANTING: 'plantings', CALAMITY: 'calamities', HUNTING: 'hunting', PATH: 'paths'
+        };
+        const key = collectionKey[targetTask.linkedPolygonType];
+        const polygon = key && parentForest[key]?.find((p: any) => p.id === targetTask.linkedPolygonId);
+        if (polygon?.geoJson) {
+          const bounds = getBoundsFromGeoJson(polygon.geoJson);
+          if (bounds) { fitBounds(bounds); }
+        } else {
+          const forestBounds = getBoundsFromGeoJson(parentForest.geoJson);
+          if (forestBounds) fitBounds(forestBounds);
+        }
+      }
     } else {
       const parentForest = data.forests.find((f: any) => f.id === targetTask.forestId);
       if (parentForest?.geoJson) {
@@ -157,7 +180,7 @@ export default function MapPageClient({ orgSlug }: Props) {
   return (
     <div className="flex w-full h-full overflow-hidden">
       {/* ── Linke Aufgaben-Sidebar ── */}
-      <TaskSidebar tasks={data.tasks} forests={data.forests} />
+      <TaskSidebar tasks={data.tasks} forests={data.forests} onRefresh={loadMapData} />
 
       {/* ── Karte + rechtes Detail-Panel ── */}
       <div className="relative flex-1 overflow-hidden min-w-0">
@@ -189,7 +212,7 @@ export default function MapPageClient({ orgSlug }: Props) {
         <TaskDetailSheet
           task={activeTask}
           open={!!activeTask}
-          onClose={() => selectFeature(null, null)}
+          onClose={() => restorePreviousFeature()}
           orgSlug={orgSlug}
           members={data.members}
           currentUserId={data.currentUserId}

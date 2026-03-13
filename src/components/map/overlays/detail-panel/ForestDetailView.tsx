@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Trees, Ruler, MapPin, Loader2, Plus, Calendar, AlertCircle, 
-  Palette, ScanLine, Check, Trash2 
+import {
+  Trees, Ruler, Loader2, Plus, Calendar, AlertCircle,
+  Palette, ScanLine, Check, Trash2
 } from 'lucide-react';
 import { DetailPanelShell } from './DetailPanelShell';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +45,7 @@ export function ForestDetailView({
     const setInteractionMode = useMapStore(s => s.setInteractionMode);
     const setEditingFeature = useMapStore(s => s.setEditingFeature);
     const interactionMode = useMapStore(s => s.interactionMode);
+    const selectFeature = useMapStore(s => s.selectFeature);
     
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -136,15 +137,9 @@ export function ForestDetailView({
             onDelete={() => {}} 
         >
             {/* 1. FAKTEN */}
-            <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                    <div className="flex items-center gap-1.5 text-[10px] uppercase text-gray-500 font-bold mb-1"><Ruler size={12} /> Fläche</div>
-                    <div className="text-lg text-white font-mono font-medium">{forest.areaHa?.toFixed(2) || 0} <span className="text-sm text-gray-500 ml-1">ha</span></div>
-                </div>
-                <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                    <div className="flex items-center gap-1.5 text-[10px] uppercase text-gray-500 font-bold mb-1"><MapPin size={12} /> Ort</div>
-                    <div className="text-sm text-white truncate">{forest.location || "Unbekannt"}</div>
-                </div>
+            <div className="bg-white/5 p-3 rounded-lg border border-white/5">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase text-gray-500 font-bold mb-1"><Ruler size={12} /> Fläche</div>
+                <div className="text-lg text-white font-mono font-medium">{forest.areaHa?.toFixed(2) || 0} <span className="text-sm text-gray-500 ml-1">ha</span></div>
             </div>
 
             {/* 2. COLOR PICKER */}
@@ -220,7 +215,7 @@ export function ForestDetailView({
                             </div>
                         ) : (
                             forestTasks.map((task: any) => (
-                                <div key={task.id} className="bg-white/5 hover:bg-white/10 border border-white/5 p-3 rounded-lg transition-colors group cursor-pointer">
+                                <div key={task.id} onClick={() => selectFeature(task.id, 'TASK')} className="bg-white/5 hover:bg-white/10 border border-white/5 p-3 rounded-lg transition-colors group cursor-pointer">
                                     <div className="flex justify-between items-start mb-1">
                                         <div className="flex items-center gap-2">
                                             {task.priority === 'URGENT' && <AlertCircle size={14} className="text-red-500" />}

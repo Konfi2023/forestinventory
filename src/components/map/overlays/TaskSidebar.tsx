@@ -32,9 +32,10 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 interface Props {
   tasks: any[];
   forests: any[];
+  onRefresh?: () => void;
 }
 
-export function TaskSidebar({ tasks, forests }: Props) {
+export function TaskSidebar({ tasks, forests, onRefresh }: Props) {
   const isOpen          = useMapStore(s => s.taskSidebarOpen);
   const setOpen         = useMapStore(s => s.setTaskSidebarOpen);
   const setHoveredTask  = useMapStore(s => s.setHoveredTaskId);
@@ -44,7 +45,7 @@ export function TaskSidebar({ tasks, forests }: Props) {
   const fitBounds       = useMapStore(s => s.fitBounds);
   const invalidateSize  = useMapStore(s => s.invalidateSize);
 
-  const [activeTab, setActiveTab] = useState<SidebarTab>('TASKS');
+  const [activeTab, setActiveTab] = useState<SidebarTab>('FEATURES');
 
   // Welche Forest-Gruppen sind aufgeklappt
   const [expandedForests, setExpandedForests] = useState<Set<string>>(new Set());
@@ -136,6 +137,18 @@ export function TaskSidebar({ tasks, forests }: Props) {
         {/* Tabs */}
         <div className="flex border-b border-white/8 shrink-0">
           <button
+            onClick={() => setActiveTab('FEATURES')}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors',
+              activeTab === 'FEATURES'
+                ? 'text-white border-b-2 border-emerald-500'
+                : 'text-gray-500 hover:text-gray-300',
+            )}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            Objekte
+          </button>
+          <button
             onClick={() => setActiveTab('TASKS')}
             className={cn(
               'flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors',
@@ -154,18 +167,6 @@ export function TaskSidebar({ tasks, forests }: Props) {
             </span>
           </button>
           <button
-            onClick={() => setActiveTab('FEATURES')}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors',
-              activeTab === 'FEATURES'
-                ? 'text-white border-b-2 border-emerald-500'
-                : 'text-gray-500 hover:text-gray-300',
-            )}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            Objekte
-          </button>
-          <button
             onClick={() => setActiveTab('BIOMASS')}
             className={cn(
               'flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors',
@@ -182,7 +183,7 @@ export function TaskSidebar({ tasks, forests }: Props) {
         {/* Inhalt */}
         {activeTab === 'FEATURES' ? (
           <div className="flex-1 overflow-hidden min-w-[288px]">
-            <FeatureList forests={forests} />
+            <FeatureList forests={forests} onRefresh={onRefresh} />
           </div>
         ) : activeTab === 'BIOMASS' ? (
           <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 min-w-[288px] space-y-4">

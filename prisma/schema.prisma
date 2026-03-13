@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // --- IAM & MANDANTEN ---
@@ -83,9 +84,10 @@ model User {
   timeEntries           TimeEntry[]
   taskComments          TaskComment[]
   watchedTasks          Task[]         @relation("TaskWatchers")
-  receivedNotifications Notification[] @relation("NotifReceiver")
-  sentNotifications     Notification[] @relation("NotifActor")
+  receivedNotifications Notification[]    @relation("NotifReceiver")
+  sentNotifications     Notification[]    @relation("NotifActor")
   TaskSchedule          TaskSchedule[]
+  treeMeasurements      TreeMeasurement[] @relation("TreeMeasurements")
 }
 
 model Membership {
@@ -306,6 +308,7 @@ model ForestPoi {
   tree              ForestPoiTree?
   logPile           ForestPoiLogPile?
   operationLogPiles LogPile[]
+  measurements      TreeMeasurement[]
 }
 
 model ForestPoiLogPile {
@@ -348,12 +351,58 @@ model ForestPoiTree {
   diameter   Float?
   height     Float?
   co2Storage Float?
-  health     TreeHealth @default(HEALTHY)
-  notes      String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  health        TreeHealth    @default(HEALTHY)
+  damageType    String?       // Schadursache (Freitext: Borkenkäfer, Trocken, Pilz, …)
+  damageSeverity Int?         // Schadausmaß 0–100 %
+  crownCondition Int?         // Kronenanteil vital 0–100 %
+
+  // Standort-Eigenschaften (selten ändernd)
+  soilCondition SoilCondition?
+  soilMoisture  SoilMoisture?
+  exposition    Exposition?
+  slopeClass    SlopeClass?
+  slopePosition SlopePosition?
+  standType     StandType?
+  stockingDegree StockingDegree?
+
+  imageKey  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([species])
+}
+
+// Historische Messwerte pro Baum (Phase 2: Zeitreihe)
+model TreeMeasurement {
+  id           String     @id @default(uuid())
+  poiId        String
+  poi          ForestPoi  @relation(fields: [poiId], references: [id], onDelete: Cascade)
+  measuredAt   DateTime   @default(now())
+  measuredById String?
+  measuredBy   User?      @relation("TreeMeasurements", fields: [measuredById], references: [id], onDelete: SetNull)
+
+  // Dendrologische Messwerte
+  diameter      Float?
+  height        Float?
+  age           Int?
+  co2Storage    Float?
+
+  // Vitalität zum Messzeitpunkt
+  health         TreeHealth @default(HEALTHY)
+  damageType     String?
+  damageSeverity Int?
+  crownCondition Int?
+
+  // Bodenfeuchtigkeit kann sich ändern
+  soilMoisture SoilMoisture?
+
+  notes    String?
+  imageKey String?
+
+  createdAt DateTime @default(now())
+
+  @@index([poiId, measuredAt])
 }
 
 // Biomasse-Zeitreihe: periodisch gespeicherte NDVI-Werte pro Waldfläche
@@ -538,6 +587,10 @@ model Task {
   documents     Document[]
   poiId         String?
   poi           ForestPoi? @relation(fields: [poiId], references: [id], onDelete: SetNull)
+
+  // Polygon-Verknüpfung (optional): Kultur, Kalamität, Jagd oder Weg
+  linkedPolygonId   String?
+  linkedPolygonType String? // 'PLANTING' | 'CALAMITY' | 'HUNTING' | 'PATH'
 
   // Georeferenzierung (Optional): Wo genau ist die Aufgabe?
   lat Float?
@@ -983,6 +1036,67 @@ enum TreeHealth {
   DAMAGED             // Geschädigt
   DEAD                // Abgestorben
   MARKED_FOR_FELLING  // Zum Fällen markiert
+}
+
+enum SoilCondition {
+  SANDY  // Sandig
+  LOAMY  // Lehmig
+  CLAY   // Tonig
+  HUMUS  // Humos
+  ROCKY  // Steinig / Skelettreich
+  MIXED  // Gemischt
+}
+
+enum SoilMoisture {
+  DRY         // Trocken
+  FRESH       // Frisch
+  MOIST       // Feucht
+  WET         // Nass
+  WATERLOGGED // Staunass
+}
+
+enum Exposition {
+  N     // Nord
+  NE    // Nordost
+  E     // Ost
+  SE    // Südost
+  S     // Süd
+  SW    // Südwest
+  W     // West
+  NW    // Nordwest
+  FLAT  // Eben (keine Exposition)
+}
+
+enum SlopeClass {
+  FLAT       // Flach (<5°)
+  MODERATE   // Mäßig (5–15°)
+  STEEP      // Steil (15–30°)
+  VERY_STEEP // Sehr steil (>30°)
+}
+
+enum SlopePosition {
+  SUMMIT      // Kuppe
+  UPPER_SLOPE // Oberhang
+  MID_SLOPE   // Mittelhang
+  LOWER_SLOPE // Unterhang
+  VALLEY      // Talboden
+}
+
+enum StandType {
+  PURE_CONIFER    // Reiner Nadelbestand
+  PURE_DECIDUOUS  // Reiner Laubbestand
+  MIXED           // Mischbestand
+  EDGE            // Waldrand
+  CLEARCUT        // Freifläche / Schlagfläche
+  YOUNG_GROWTH    // Jungwuchs / Verjüngung
+}
+
+enum StockingDegree {
+  OPEN       // Locker
+  SPARSE     // Licht
+  MEDIUM     // Mittel
+  DENSE      // Dicht
+  VERY_DENSE // Sehr dicht
 }
 
 // --- ALARM-QUITTIERUNGEN ---

@@ -13,9 +13,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // Konfiguration
 // ---------------------------------------------------------------------------
 
-const REGION = process.env.AWS_REGION ?? "eu-central-1";
-const BUCKET = process.env.AWS_S3_BUCKET ?? "";
-const IS_S3 = Boolean(BUCKET && process.env.AWS_ACCESS_KEY_ID);
+const REGION   = process.env.AWS_REGION   ?? "eu-central-1";
+const BUCKET   = process.env.AWS_S3_BUCKET ?? "";
+const ENDPOINT = process.env.S3_ENDPOINT   ?? undefined;   // z.B. https://fsn1.your-objectstorage.com
+const IS_S3    = Boolean(BUCKET && process.env.AWS_ACCESS_KEY_ID);
 
 // Presigned URLs laufen nach 1 Stunde ab – lang genug für eine UI-Session,
 // kurz genug um unerwünschten dauerhaften Zugriff zu verhindern.
@@ -27,9 +28,11 @@ const UPLOAD_URL_EXPIRY_SECONDS = 300;
 // Erlaubte MIME-Typen für Bilder
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
+  "image/jpg",
   "image/png",
   "image/webp",
   "image/heic",
+  "image/heif",
 ] as const;
 
 // Maximale Dateigröße: 10 MB
@@ -38,6 +41,7 @@ export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 function s3Client(): S3Client {
   return new S3Client({
     region: REGION,
+    ...(ENDPOINT ? { endpoint: ENDPOINT, forcePathStyle: true } : {}),
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
@@ -91,7 +95,16 @@ export async function uploadFile(
   file: File,
   folder: string = "general"
 ): Promise<{ url: string; key: string }> {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+  // Determine extension: prefer MIME type mapping for reliability (iPhone sends
+  // heic/heif files sometimes with .jpg extension or no extension at all)
+  const MIME_TO_EXT: Record<string, string> = {
+    'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
+    'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heic',
+    'image/gif': 'gif',
+  };
+  const extFromMime = MIME_TO_EXT[file.type];
+  const extFromName = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() : undefined;
+  const ext = extFromMime ?? extFromName ?? 'jpg';
   const key = `${folder}/${randomUUID()}.${ext}`;
 
   if (IS_S3) {

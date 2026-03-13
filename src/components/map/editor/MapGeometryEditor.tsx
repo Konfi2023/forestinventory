@@ -10,11 +10,56 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import L from 'leaflet';
 import area from '@turf/area';
+import centroid from '@turf/centroid';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { Save, X } from 'lucide-react';
 import { calculatePathLengthM } from '@/lib/map-helpers';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Modal: Polygon außerhalb Waldgrenzen → Wald manuell zuweisen
+function ForestAssignDialog({ forests, polygonType, onConfirm, onCancel }: {
+  forests: any[];
+  polygonType: string;
+  onConfirm: (forestId: string) => void;
+  onCancel: () => void;
+}) {
+  const [selectedForestId, setSelectedForestId] = useState('');
+  const typeLabel = polygonType === 'DRAW_PLANTING' ? 'Pflanzfläche'
+                  : polygonType === 'DRAW_HUNTING'  ? 'Jagdfläche'
+                  : 'Kalamitätsfläche';
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 space-y-4">
+        <div>
+          <h3 className="font-semibold text-slate-900 text-base">{typeLabel} außerhalb eines Waldes</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Der Mittelpunkt dieser Fläche liegt außerhalb aller eingezeichneten Waldflächen. Bitte weisen Sie sie einem Wald zu.
+          </p>
+        </div>
+        <Select onValueChange={setSelectedForestId} value={selectedForestId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Wald auswählen…" />
+          </SelectTrigger>
+          <SelectContent>
+            {forests.map((f: any) => (
+              <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" size="sm" onClick={onCancel}>Abbrechen</Button>
+          <Button size="sm" disabled={!selectedForestId} onClick={() => onConfirm(selectedForestId)}>
+            Zuweisen & Speichern
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const PATH_COLORS: Record<string, string> = {
   ROAD:       '#94a3b8',
@@ -26,7 +71,7 @@ function formatLength(m: number): string {
   return m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`;
 }
 
-export default function MapGeometryEditor() {
+export default function MapGeometryEditor({ forests = [] }: { forests?: any[] }) {
   const map = useMap();
   const { data: session } = useSession();
 
@@ -49,8 +94,46 @@ export default function MapGeometryEditor() {
   editingDataRef.current = editingData;
   sessionRef.current     = session;
 
-  const [showSaveBar,   setShowSaveBar]   = useState(false);
-  const [drawnLengthM,  setDrawnLengthM]  = useState<number | null>(null);
+  const [showSaveBar,      setShowSaveBar]      = useState(false);
+  const [drawnLengthM,     setDrawnLengthM]     = useState<number | null>(null);
+  const [pendingPolygon,   setPendingPolygon]   = useState<{ geoJson: any; areaHa: number; mode: string } | null>(null);
+
+  // forests via Ref damit onCreated-Callback immer aktuelle Werte liest
+  const forestsRef = useRef<any[]>([]);
+  forestsRef.current = forests;
+
+  // ─── POLYGON SPEICHERN (shared) ─────────────────────────────────────────────
+  const savePolygon = async (polygonMode: string, geoJson: any, areaHa: number, forestId: string) => {
+    const orgSlug = editingDataRef.current?.orgSlug ?? '';
+    const userId  = sessionRef.current?.user?.id as string;
+    try {
+      if (polygonMode === 'DRAW_PLANTING') {
+        const result = await createPlanting({ forestId, treeSpecies: 'Unbekannt', description: 'Pflanzfläche', geoJson, areaHa, userId, orgSlug });
+        if (result.success) { toast.success('Pflanzfläche angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'PLANTING'), 300); }
+        else throw new Error(result.error);
+      } else if (polygonMode === 'DRAW_HUNTING') {
+        const result = await createHunting({ forestId, name: 'Jagdfläche', geoJson, areaHa, userId, orgSlug });
+        if (result.success) { toast.success('Jagdfläche angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'HUNTING'), 300); }
+        else throw new Error(result.error);
+      } else if (polygonMode === 'DRAW_CALAMITY') {
+        const result = await createCalamity({ forestId, geoJson, areaHa, userId, orgSlug });
+        if (result.success) { toast.success('Kalamitätsfläche angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'CALAMITY'), 300); }
+        else throw new Error(result.error);
+      }
+    } catch (err: any) {
+      toast.error(`Fehler: ${err.message}`);
+    } finally {
+      setMode('VIEW');
+      setEditingFeature(null);
+    }
+  };
+
+  const handlePolygonForestAssign = async (forestId: string) => {
+    if (!pendingPolygon) return;
+    const { geoJson, areaHa, mode: polygonMode } = pendingPolygon;
+    setPendingPolygon(null);
+    await savePolygon(polygonMode, geoJson, areaHa, forestId);
+  };
 
   // ─── DRAW FOREST ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -75,50 +158,34 @@ export default function MapGeometryEditor() {
       const calculatedAreaSqM = area(geoJson);
       const calculatedAreaHa  = parseFloat((calculatedAreaSqM / 10000).toFixed(4));
 
-      drawer.disable();
-      map.addLayer(layer);
+      try {
+        const result = await createForest({
+          name: 'Mein Wald',
+          geoJson,
+          areaHa: calculatedAreaHa,
+          keycloakId: sessionRef.current?.user?.id as string,
+        });
 
-      setTimeout(async () => {
-        const forestName = prompt(`Wie soll dieser Wald heißen? (ca. ${calculatedAreaHa.toFixed(2)} ha)`);
-
-        if (!forestName) {
-          map.removeLayer(layer);
-          setMode('VIEW');
-          return;
+        if (result.success) {
+          toast.success('Wald angelegt!');
+          refreshData();
+          if (result.forestId) setTimeout(() => selectFeature(result.forestId!, 'FOREST'), 300);
+        } else {
+          toast.error('Fehler: ' + result.error);
         }
-
-        try {
-          const result = await createForest({
-            name: forestName,
-            geoJson,
-            areaHa: calculatedAreaHa,
-            keycloakId: sessionRef.current?.user?.id as string,
-          });
-
-          if (result.success) {
-            toast.success('Wald angelegt!');
-            map.removeLayer(layer);
-            refreshData();
-            if (result.forestId) selectFeature(result.forestId, 'FOREST');
-          } else {
-            toast.error('Fehler: ' + result.error);
-            map.removeLayer(layer);
-          }
-        } catch (err) {
-          console.error(err);
-          toast.error('Speichern fehlgeschlagen.');
-          map.removeLayer(layer);
-        } finally {
-          setMode('VIEW');
-        }
-      }, 100);
+      } catch (err) {
+        console.error(err);
+        toast.error('Speichern fehlgeschlagen.');
+      } finally {
+        setMode('VIEW');
+      }
     };
 
     map.on(L.Draw.Event.CREATED, onCreated);
 
     return () => {
-      if (drawerRef.current) drawerRef.current.disable();
       map.off(L.Draw.Event.CREATED, onCreated);
+      try { if (drawerRef.current) { drawerRef.current.disable(); drawerRef.current = null; } } catch {}
     };
   }, [map, mode]);
 
@@ -161,8 +228,8 @@ export default function MapGeometryEditor() {
     map.on(L.Draw.Event.CREATED, onCreated);
 
     return () => {
-      if (drawerRef.current) drawerRef.current.disable();
       map.off(L.Draw.Event.CREATED, onCreated);
+      try { if (drawerRef.current) { drawerRef.current.disable(); drawerRef.current = null; } } catch {}
     };
   }, [map, mode, activePathType]);
 
@@ -193,65 +260,36 @@ export default function MapGeometryEditor() {
     const capturedMode = mode;
 
     const onCreated = async (e: any) => {
-      const layer    = e.layer;
-      const geoJson  = layer.toGeoJSON();
-      const areaHa   = parseFloat((area(geoJson) / 10000).toFixed(4));
-      const forestId = editingDataRef.current?.forestId;
-      const orgSlug  = editingDataRef.current?.orgSlug ?? '';
-      const userId   = sessionRef.current?.user?.id as string;
+      const layer   = e.layer;
+      const geoJson = layer.toGeoJSON();
+      const areaHa  = parseFloat((area(geoJson) / 10000).toFixed(4));
 
-      drawer.disable();
-      map.addLayer(layer);
+      // Centroid berechnen und prüfen, ob er in einem bekannten Wald liegt
+      let forestId: string | undefined;
+      try {
+        const c = centroid(geoJson);
+        const found = forestsRef.current.find(
+          f => f.geoJson && booleanPointInPolygon(c, f.geoJson.type === 'Feature' ? f.geoJson : { type: 'Feature', geometry: f.geoJson, properties: {} })
+        );
+        forestId = found?.id;
+      } catch {
+        forestId = undefined;
+      }
 
       if (!forestId) {
-        toast.error('Kein Wald ausgewählt. Bitte zuerst einen Wald auf der Karte anklicken.');
-        map.removeLayer(layer);
-        setMode('VIEW');
+        // Centroid liegt außerhalb aller Wälder → Modal anzeigen
+        setPendingPolygon({ geoJson, areaHa, mode: capturedMode });
         return;
       }
 
-      try {
-        if (capturedMode === 'DRAW_PLANTING') {
-          const species = prompt(`Baumart für diese Pflanzfläche? (ca. ${areaHa.toFixed(2)} ha)`) ?? '';
-          const result = await createPlanting({ forestId, treeSpecies: species || 'Unbekannt', geoJson, areaHa, userId, orgSlug });
-          if (result.success) {
-            toast.success('Pflanzfläche angelegt!');
-            map.removeLayer(layer);
-            refreshData();
-            if (result.id) setTimeout(() => selectFeature(result.id!, 'PLANTING'), 300);
-          } else throw new Error(result.error);
-        } else if (capturedMode === 'DRAW_HUNTING') {
-          const name = prompt(`Name für diese Jagdfläche? (ca. ${areaHa.toFixed(2)} ha)`) ?? '';
-          const result = await createHunting({ forestId, name: name || 'Jagdfläche', geoJson, areaHa, userId, orgSlug });
-          if (result.success) {
-            toast.success('Jagdfläche angelegt!');
-            map.removeLayer(layer);
-            refreshData();
-            if (result.id) setTimeout(() => selectFeature(result.id!, 'HUNTING'), 300);
-          } else throw new Error(result.error);
-        } else if (capturedMode === 'DRAW_CALAMITY') {
-          const result = await createCalamity({ forestId, geoJson, areaHa, userId, orgSlug });
-          if (result.success) {
-            toast.success('Kalamitätsfläche angelegt!');
-            map.removeLayer(layer);
-            refreshData();
-            if (result.id) setTimeout(() => selectFeature(result.id!, 'CALAMITY'), 300);
-          } else throw new Error(result.error);
-        }
-      } catch (err: any) {
-        toast.error(`Fehler: ${err.message}`);
-        map.removeLayer(layer);
-      } finally {
-        setMode('VIEW');
-        setEditingFeature(null);
-      }
+      await savePolygon(capturedMode, geoJson, areaHa, forestId);
     };
 
     map.on(L.Draw.Event.CREATED, onCreated);
 
     return () => {
-      if (drawerRef.current) drawerRef.current.disable();
       map.off(L.Draw.Event.CREATED, onCreated);
+      try { if (drawerRef.current) { drawerRef.current.disable(); drawerRef.current = null; } } catch {}
     };
   }, [map, mode]); // Nur mode und map — editingData via Ref gelesen
 
@@ -286,8 +324,8 @@ export default function MapGeometryEditor() {
     setShowSaveBar(true);
 
     return () => {
-      if (editToolbarRef.current) editToolbarRef.current.disable();
-      if (createdLayerRef.current) map.removeLayer(createdLayerRef.current);
+      try { if (editToolbarRef.current) { editToolbarRef.current.disable(); editToolbarRef.current = null; } } catch {}
+      try { if (createdLayerRef.current) { map.removeLayer(createdLayerRef.current); createdLayerRef.current = null; } } catch {}
       setShowSaveBar(false);
     };
   }, [map, mode, editingData]);
@@ -456,6 +494,17 @@ export default function MapGeometryEditor() {
           <X size={18} /> Abbrechen
         </button>
       </div>
+    );
+  }
+
+  if (pendingPolygon) {
+    return (
+      <ForestAssignDialog
+        forests={forests}
+        polygonType={pendingPolygon.mode}
+        onConfirm={handlePolygonForestAssign}
+        onCancel={() => { setPendingPolygon(null); setMode('VIEW'); setEditingFeature(null); }}
+      />
     );
   }
 

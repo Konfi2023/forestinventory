@@ -117,3 +117,41 @@ export async function deleteForest(forestId: string) {
     return { success: false, error: e.message };
   }
 }
+
+// ─── Batch-Delete ─────────────────────────────────────────────────────────────
+
+export async function batchDeleteForests(forestIds: string[]) {
+  if (!forestIds.length) return { success: true, deleted: 0 };
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Nicht eingeloggt");
+
+    const { organizationId } = await requireAuthContext(session.user.id, PERMISSIONS.FOREST_DELETE);
+
+    // Nur Forests dieser Org löschen — Sicherheitscheck
+    const existing = await prisma.forest.findMany({
+      where: { id: { in: forestIds }, organizationId },
+      select: { id: true },
+    });
+    const validIds = existing.map(f => f.id);
+    if (!validIds.length) return { success: true, deleted: 0 };
+
+    // Abhängigkeiten löschen
+    await prisma.forestPoi.deleteMany({ where: { forestId: { in: validIds } } });
+    await prisma.forestPath.deleteMany({ where: { forestId: { in: validIds } } });
+    await prisma.forestPlanting.deleteMany({ where: { forestId: { in: validIds } } });
+    await prisma.forestMaintenance.deleteMany({ where: { forestId: { in: validIds } } });
+    await prisma.forestCalamity.deleteMany({ where: { forestId: { in: validIds } } });
+    await prisma.forestHabitat.deleteMany({ where: { forestId: { in: validIds } } });
+    await prisma.forestHunting.deleteMany({ where: { forestId: { in: validIds } } });
+    await prisma.task.deleteMany({ where: { forestId: { in: validIds } } });
+
+    const result = await prisma.forest.deleteMany({ where: { id: { in: validIds } } });
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true, deleted: result.count };
+  } catch (e: any) {
+    console.error("❌ BATCH DELETE ERROR:", e);
+    return { success: false, error: e.message };
+  }
+}

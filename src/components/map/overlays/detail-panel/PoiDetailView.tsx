@@ -113,7 +113,23 @@ export function PoiDetailView({
   const [treeDiameter,  setTreeDiameter]  = useState<string>(poi.tree?.diameter?.toString() ?? '');
   const [treeHeight,    setTreeHeight]    = useState<string>(poi.tree?.height?.toString() ?? '');
   const [treeHealth,    setTreeHealth]    = useState<string>(poi.tree?.health ?? 'HEALTHY');
+  const [treeDamageType,    setTreeDamageType]    = useState<string>(poi.tree?.damageType ?? '');
+  const [treeDamageSeverity,setTreeDamageSeverity]= useState<string>(poi.tree?.damageSeverity?.toString() ?? '');
+  const [treeCrownCondition,setTreeCrownCondition]= useState<string>(poi.tree?.crownCondition?.toString() ?? '');
+  const [treeSoilCondition, setTreeSoilCondition] = useState<string>(poi.tree?.soilCondition ?? '');
+  const [treeSoilMoisture,  setTreeSoilMoisture]  = useState<string>(poi.tree?.soilMoisture ?? '');
+  const [treeExposition,    setTreeExposition]    = useState<string>(poi.tree?.exposition ?? '');
+  const [treeSlopeClass,    setTreeSlopeClass]    = useState<string>(poi.tree?.slopeClass ?? '');
+  const [treeSlopePosition, setTreeSlopePosition] = useState<string>(poi.tree?.slopePosition ?? '');
+  const [treeStandType,     setTreeStandType]     = useState<string>(poi.tree?.standType ?? '');
+  const [treeStockingDegree,setTreeStockingDegree]= useState<string>(poi.tree?.stockingDegree ?? '');
   const [treeNotes,     setTreeNotes]     = useState<string>(poi.tree?.notes ?? '');
+  const [treeImageKey,     setTreeImageKey]     = useState<string | null>(poi.tree?.imageKey ?? null);
+  const [treeImagePreview, setTreeImagePreview] = useState<string | null>(
+    poi.tree?.imageKey ? `/api/images/poi?key=${encodeURIComponent(poi.tree.imageKey)}` : null
+  );
+  const [treeImageUploading, setTreeImageUploading] = useState(false);
+  const treeFileInputRef = useRef<HTMLInputElement>(null);
 
   // Polter-Felder
   const [logVolumeFm,    setLogVolumeFm]    = useState<string>(poi.logPile?.volumeFm?.toString() ?? '');
@@ -212,6 +228,48 @@ export function PoiDetailView({
     }
   };
 
+  const handleTreeImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
+      toast.error('Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Datei zu groß. Maximum: 10 MB');
+      return;
+    }
+
+    setTreeImageUploading(true);
+    try {
+      const res = await fetch('/api/upload/poi-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poiId: poi.id, contentType: file.type, contentLength: file.size }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? 'Upload-URL konnte nicht erstellt werden');
+      }
+      const { uploadUrl, key } = await res.json();
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
+      setTreeImageKey(key);
+      setTreeImagePreview(URL.createObjectURL(file));
+      toast.success('Bild hochgeladen');
+    } catch (err: any) {
+      toast.error(err.message ?? 'Fehler beim Upload');
+    } finally {
+      setTreeImageUploading(false);
+      if (treeFileInputRef.current) treeFileInputRef.current.value = '';
+    }
+  };
+
   // ---------------------------------------------------------------------------
   // Speichern
   // ---------------------------------------------------------------------------
@@ -236,12 +294,23 @@ export function PoiDetailView({
 
         poi.type === 'TREE'
           ? upsertPoiTree(poi.id, {
-              species:  treeSpecies  || undefined,
-              age:      treeAge      ? parseInt(treeAge, 10)       : null,
-              diameter: treeDiameter ? parseFloat(treeDiameter)    : null,
-              height:   treeHeight   ? parseFloat(treeHeight)      : null,
-              health:   treeHealth,
-              notes:    treeNotes    || undefined,
+              species:        treeSpecies       || undefined,
+              age:            treeAge           ? parseInt(treeAge, 10)            : null,
+              diameter:       treeDiameter      ? parseFloat(treeDiameter)         : null,
+              height:         treeHeight        ? parseFloat(treeHeight)           : null,
+              health:         treeHealth,
+              damageType:     treeDamageType    || null,
+              damageSeverity: treeDamageSeverity? parseInt(treeDamageSeverity, 10) : null,
+              crownCondition: treeCrownCondition? parseInt(treeCrownCondition, 10) : null,
+              soilCondition:  treeSoilCondition  || null,
+              soilMoisture:   treeSoilMoisture   || null,
+              exposition:     treeExposition     || null,
+              slopeClass:     treeSlopeClass     || null,
+              slopePosition:  treeSlopePosition  || null,
+              standType:      treeStandType      || null,
+              stockingDegree: treeStockingDegree || null,
+              notes:          treeNotes          || undefined,
+              imageKey:       treeImageKey,
             })
           : null,
 
@@ -368,12 +437,27 @@ export function PoiDetailView({
       {poi.type === 'TREE' && (
         <TreeSection
           isEditing={isEditing}
-          treeSpecies={treeSpecies}     setTreeSpecies={setTreeSpecies}
-          treeAge={treeAge}             setTreeAge={setTreeAge}
-          treeDiameter={treeDiameter}   setTreeDiameter={setTreeDiameter}
-          treeHeight={treeHeight}       setTreeHeight={setTreeHeight}
-          treeHealth={treeHealth}       setTreeHealth={setTreeHealth}
-          treeNotes={treeNotes}         setTreeNotes={setTreeNotes}
+          treeSpecies={treeSpecies}               setTreeSpecies={setTreeSpecies}
+          treeAge={treeAge}                       setTreeAge={setTreeAge}
+          treeDiameter={treeDiameter}             setTreeDiameter={setTreeDiameter}
+          treeHeight={treeHeight}                 setTreeHeight={setTreeHeight}
+          treeHealth={treeHealth}                 setTreeHealth={setTreeHealth}
+          treeDamageType={treeDamageType}         setTreeDamageType={setTreeDamageType}
+          treeDamageSeverity={treeDamageSeverity} setTreeDamageSeverity={setTreeDamageSeverity}
+          treeCrownCondition={treeCrownCondition} setTreeCrownCondition={setTreeCrownCondition}
+          treeSoilCondition={treeSoilCondition}   setTreeSoilCondition={setTreeSoilCondition}
+          treeSoilMoisture={treeSoilMoisture}     setTreeSoilMoisture={setTreeSoilMoisture}
+          treeExposition={treeExposition}         setTreeExposition={setTreeExposition}
+          treeSlopeClass={treeSlopeClass}         setTreeSlopeClass={setTreeSlopeClass}
+          treeSlopePosition={treeSlopePosition}   setTreeSlopePosition={setTreeSlopePosition}
+          treeStandType={treeStandType}           setTreeStandType={setTreeStandType}
+          treeStockingDegree={treeStockingDegree} setTreeStockingDegree={setTreeStockingDegree}
+          treeNotes={treeNotes}                   setTreeNotes={setTreeNotes}
+          imagePreview={treeImagePreview}
+          imageUploading={treeImageUploading}
+          fileInputRef={treeFileInputRef}
+          onFileSelect={handleTreeImageSelect}
+          onImageRemove={() => { setTreeImageKey(null); setTreeImagePreview(null); }}
         />
       )}
 
@@ -933,10 +1017,82 @@ const COMMON_SPECIES = [
   'Tanne', 'Birke', 'Erle', 'Esche', 'Ahorn', 'Pappel',
 ];
 
+const SOIL_COND_OPTS = [
+  { id: 'SANDY', label: 'Sandig' }, { id: 'LOAMY', label: 'Lehmig' },
+  { id: 'CLAY',  label: 'Tonig'  }, { id: 'HUMUS', label: 'Humos'  },
+  { id: 'ROCKY', label: 'Steinig'}, { id: 'MIXED', label: 'Gemischt'},
+];
+const SOIL_MOIST_OPTS = [
+  { id: 'DRY',         label: 'Trocken'  }, { id: 'FRESH', label: 'Frisch' },
+  { id: 'MOIST',       label: 'Feucht'   }, { id: 'WET',   label: 'Nass'   },
+  { id: 'WATERLOGGED', label: 'Staunass' },
+];
+const EXPOSITION_OPTS = [
+  { id: 'N',  label: 'N'  }, { id: 'NE', label: 'NO' }, { id: 'E',    label: 'O'    },
+  { id: 'SE', label: 'SO' }, { id: 'S',  label: 'S'  }, { id: 'SW',   label: 'SW'   },
+  { id: 'W',  label: 'W'  }, { id: 'NW', label: 'NW' }, { id: 'FLAT', label: 'Eben' },
+];
+const SLOPE_CLASS_OPTS = [
+  { id: 'FLAT',       label: 'Flach (<5°)'  }, { id: 'MODERATE', label: 'Mäßig (5–15°)' },
+  { id: 'STEEP',      label: 'Steil (15–30°)'}, { id: 'VERY_STEEP',label: 'Sehr steil'  },
+];
+const SLOPE_POS_OPTS = [
+  { id: 'SUMMIT',      label: 'Kuppe'     }, { id: 'UPPER_SLOPE', label: 'Oberhang'  },
+  { id: 'MID_SLOPE',   label: 'Mittelhang'}, { id: 'LOWER_SLOPE', label: 'Unterhang' },
+  { id: 'VALLEY',      label: 'Talboden'  },
+];
+const STAND_TYPE_OPTS = [
+  { id: 'PURE_CONIFER',   label: 'Rein Nadel'  }, { id: 'PURE_DECIDUOUS', label: 'Rein Laub'   },
+  { id: 'MIXED',          label: 'Mischbestand'}, { id: 'EDGE',           label: 'Waldrand'    },
+  { id: 'CLEARCUT',       label: 'Freifläche'  }, { id: 'YOUNG_GROWTH',   label: 'Jungwuchs'  },
+];
+const STOCKING_OPTS = [
+  { id: 'OPEN',  label: 'Locker' }, { id: 'SPARSE',     label: 'Licht'      },
+  { id: 'MEDIUM',label: 'Mittel' }, { id: 'DENSE',      label: 'Dicht'      },
+  { id: 'VERY_DENSE', label: 'Sehr dicht' },
+];
+
+function ToggleGroup({ opts, value, onChange, cols = 3, color = 'emerald' }: {
+  opts: { id: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+  cols?: number;
+  color?: string;
+}) {
+  const active = color === 'blue'   ? 'bg-blue-600 text-white'
+               : color === 'amber'  ? 'bg-amber-600 text-white'
+               : color === 'violet' ? 'bg-violet-600 text-white'
+               : 'bg-emerald-600 text-white';
+  return (
+    <div className={`grid gap-1.5`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}>
+      {opts.map(o => (
+        <button key={o.id} type="button"
+          onClick={() => onChange(value === o.id ? '' : o.id)}
+          className={`py-1.5 rounded text-[11px] font-medium transition-colors ${value === o.id ? active : 'bg-black/30 border border-white/10 text-gray-400 hover:text-white hover:bg-white/5'}`}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function TreeSection({
-  isEditing, treeSpecies, setTreeSpecies, treeAge, setTreeAge,
+  isEditing,
+  treeSpecies, setTreeSpecies, treeAge, setTreeAge,
   treeDiameter, setTreeDiameter, treeHeight, setTreeHeight,
-  treeHealth, setTreeHealth, treeNotes, setTreeNotes,
+  treeHealth, setTreeHealth,
+  treeDamageType, setTreeDamageType,
+  treeDamageSeverity, setTreeDamageSeverity,
+  treeCrownCondition, setTreeCrownCondition,
+  treeSoilCondition, setTreeSoilCondition,
+  treeSoilMoisture, setTreeSoilMoisture,
+  treeExposition, setTreeExposition,
+  treeSlopeClass, setTreeSlopeClass,
+  treeSlopePosition, setTreeSlopePosition,
+  treeStandType, setTreeStandType,
+  treeStockingDegree, setTreeStockingDegree,
+  treeNotes, setTreeNotes,
+  imagePreview, imageUploading, fileInputRef, onFileSelect, onImageRemove,
 }: any) {
   // CO2-Schätzung live berechnen
   const co2Estimate = useMemo(() => {
@@ -963,6 +1119,35 @@ function TreeSection({
       <h4 className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-1.5">
         <TreePine className="w-3 h-3" /> Baumdaten
       </h4>
+
+      <div className="relative w-full h-40 bg-black/30 rounded-lg overflow-hidden flex items-center justify-center border border-white/10">
+        {imagePreview ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imagePreview} alt="Baumfoto" className="w-full h-full object-cover" />
+            {isEditing && (
+              <button
+                onClick={onImageRemove}
+                className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </>
+        ) : (
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={imageUploading || !isEditing}
+            className="flex flex-col items-center gap-1 text-gray-400 hover:text-white disabled:opacity-40 transition"
+          >
+            {imageUploading
+              ? <Loader2 className="w-5 h-5 animate-spin" />
+              : <><Camera className="w-5 h-5" /><span className="text-xs">Foto hochladen</span><span className="text-[10px] opacity-60">JPEG, PNG, WebP · max. 10 MB</span></>
+            }
+          </button>
+        )}
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="hidden" onChange={onFileSelect} />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         {/* Baumart */}
@@ -1042,6 +1227,100 @@ function TreeSection({
           </div>
         </div>
       )}
+
+      {/* Vitalität (Schaden) */}
+      {(isEditing || treeDamageType || treeDamageSeverity || treeCrownCondition) && (
+        <div className="space-y-3 pt-3 border-t border-white/5">
+          <h4 className="text-[10px] uppercase text-gray-500 font-bold">Vitalität & Schaden</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Schadursache</label>
+              {isEditing ? (
+                <input value={treeDamageType} onChange={e => setTreeDamageType(e.target.value)}
+                  placeholder="z.B. Borkenkäfer, Trocken …"
+                  className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
+              ) : <p className="text-sm text-gray-300">{treeDamageType || '—'}</p>}
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Schadausmaß (%)</label>
+              {isEditing ? (
+                <input type="number" value={treeDamageSeverity} onChange={e => setTreeDamageSeverity(e.target.value)}
+                  min="0" max="100" placeholder="0–100"
+                  className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
+              ) : <p className="text-sm text-gray-300">{treeDamageSeverity ? `${treeDamageSeverity} %` : '—'}</p>}
+            </div>
+            <div className="col-span-2">
+              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Kronenanteil vital (%)</label>
+              {isEditing ? (
+                <input type="number" value={treeCrownCondition} onChange={e => setTreeCrownCondition(e.target.value)}
+                  min="0" max="100" placeholder="0–100"
+                  className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
+              ) : <p className="text-sm text-gray-300">{treeCrownCondition ? `${treeCrownCondition} %` : '—'}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bodenfelder */}
+      <div className="space-y-3 pt-3 border-t border-white/5">
+        <h4 className="text-[10px] uppercase text-gray-500 font-bold">Boden</h4>
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Bodenbeschaffenheit</label>
+          {isEditing
+            ? <ToggleGroup opts={SOIL_COND_OPTS} value={treeSoilCondition} onChange={setTreeSoilCondition} cols={3} />
+            : <p className="text-sm text-gray-300">{SOIL_COND_OPTS.find(o=>o.id===treeSoilCondition)?.label ?? (treeSoilCondition || '—')}</p>
+          }
+        </div>
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Bodenfeuchtigkeit</label>
+          {isEditing
+            ? <ToggleGroup opts={SOIL_MOIST_OPTS} value={treeSoilMoisture} onChange={setTreeSoilMoisture} cols={3} color="blue" />
+            : <p className="text-sm text-gray-300">{SOIL_MOIST_OPTS.find(o=>o.id===treeSoilMoisture)?.label ?? (treeSoilMoisture || '—')}</p>
+          }
+        </div>
+      </div>
+
+      {/* Standort */}
+      <div className="space-y-3 pt-3 border-t border-white/5">
+        <h4 className="text-[10px] uppercase text-gray-500 font-bold">Standort</h4>
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Exposition</label>
+          {isEditing
+            ? <ToggleGroup opts={EXPOSITION_OPTS} value={treeExposition} onChange={setTreeExposition} cols={3} color="amber" />
+            : <p className="text-sm text-gray-300">{EXPOSITION_OPTS.find(o=>o.id===treeExposition)?.label ?? (treeExposition || '—')}</p>
+          }
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Hangneigung</label>
+            {isEditing
+              ? <ToggleGroup opts={SLOPE_CLASS_OPTS} value={treeSlopeClass} onChange={setTreeSlopeClass} cols={2} color="amber" />
+              : <p className="text-sm text-gray-300">{SLOPE_CLASS_OPTS.find(o=>o.id===treeSlopeClass)?.label ?? (treeSlopeClass || '—')}</p>
+            }
+          </div>
+          <div>
+            <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Hangposition</label>
+            {isEditing
+              ? <ToggleGroup opts={SLOPE_POS_OPTS} value={treeSlopePosition} onChange={setTreeSlopePosition} cols={2} color="amber" />
+              : <p className="text-sm text-gray-300">{SLOPE_POS_OPTS.find(o=>o.id===treeSlopePosition)?.label ?? (treeSlopePosition || '—')}</p>
+            }
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Bestandstyp</label>
+          {isEditing
+            ? <ToggleGroup opts={STAND_TYPE_OPTS} value={treeStandType} onChange={setTreeStandType} cols={3} color="violet" />
+            : <p className="text-sm text-gray-300">{STAND_TYPE_OPTS.find(o=>o.id===treeStandType)?.label ?? (treeStandType || '—')}</p>
+          }
+        </div>
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Bestockungsgrad</label>
+          {isEditing
+            ? <ToggleGroup opts={STOCKING_OPTS} value={treeStockingDegree} onChange={setTreeStockingDegree} cols={3} color="violet" />
+            : <p className="text-sm text-gray-300">{STOCKING_OPTS.find(o=>o.id===treeStockingDegree)?.label ?? (treeStockingDegree || '—')}</p>
+          }
+        </div>
+      </div>
 
       {/* Baum-Notizen */}
       <div>

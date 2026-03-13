@@ -10,13 +10,14 @@ import { X } from 'lucide-react';
 
 // Store & Config
 import { useMapStore } from '../stores/useMapStores';
-import { BASE_MAPS } from '../registry/MapConfig';
+import { BASE_MAPS, OVERLAY_ZOOM_LIMITS } from '../registry/MapConfig';
 
 // Helper für Geometrie
 import { geoJSONToLeaflet } from '@/lib/map-helpers';
 
 // Overlays
 import { LayerControl } from '../overlays/LayerControl';
+import { CadastralLayer } from '../layers/CadastralLayer';
 import { LocationControl } from '../overlays/LocationControl';
 import { MapWeatherWidget } from '../overlays/MapWeatherWidget';
 
@@ -41,6 +42,83 @@ const fixLeafletIcons = () => {
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   });
 };
+
+// --- 2a. Scale Bar (custom, mittig unten) ---
+function ScaleBar() {
+  const map = useMap();
+  const [scale, setScale] = useState({ width: 80, label: '...' });
+
+  useEffect(() => {
+    const update = () => {
+      const lat = map.getCenter().lat;
+      const metersPerPx = (40075016.686 * Math.abs(Math.cos(lat * Math.PI / 180))) / Math.pow(2, map.getZoom() + 8);
+      const maxM = metersPerPx * 100;
+      const steps = [1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000];
+      const nice = steps.find(v => v >= maxM) ?? steps[steps.length - 1];
+      setScale({
+        width: Math.round(nice / metersPerPx),
+        label: nice >= 1000 ? `${nice / 1000} km` : `${nice} m`,
+      });
+    };
+    update();
+    map.on('zoomend moveend', update);
+    return () => { map.off('zoomend moveend', update); };
+  }, [map]);
+
+  return (
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] pointer-events-none flex flex-col items-center gap-0.5">
+      <span className="text-[10px] text-white font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+        {scale.label}
+      </span>
+      <div
+        className="border-b-2 border-l-2 border-r-2 border-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
+        style={{ width: scale.width, height: 5 }}
+      />
+    </div>
+  );
+}
+
+// --- 2b. Zoom Limiter — passt min/maxZoom dynamisch an die aktive Kartenansicht an ---
+function ZoomLimiter() {
+  const map            = useMap();
+  const activeBaseMap  = useMapStore(s => s.activeBaseMap);
+  const satelliteLayer = useMapStore(s => s.satelliteLayer);
+  const windyOpen      = useMapStore(s => s.windyOpen);
+  const weatherRadar   = useMapStore(s => s.weatherRadar);
+
+  useEffect(() => {
+    if (!map.getContainer()) return;
+    const base = BASE_MAPS[activeBaseMap as keyof typeof BASE_MAPS] ?? BASE_MAPS.DARK;
+    let min = base.minZoom;
+    let max = base.maxZoom;
+
+    // Overlay-Limits: XOR — nur eines aktiv gleichzeitig
+    if (windyOpen) {
+      min = Math.max(min, OVERLAY_ZOOM_LIMITS.WINDY.min);
+      max = Math.min(max, OVERLAY_ZOOM_LIMITS.WINDY.max);
+    } else if (satelliteLayer !== 'NONE') {
+      min = Math.max(min, OVERLAY_ZOOM_LIMITS.SENTINEL.min);
+      max = Math.min(max, OVERLAY_ZOOM_LIMITS.SENTINEL.max);
+    } else if (weatherRadar) {
+      min = Math.max(min, OVERLAY_ZOOM_LIMITS.RADAR.min);
+      max = Math.min(max, OVERLAY_ZOOM_LIMITS.RADAR.max);
+    }
+
+    try {
+      // Limits sofort setzen — blockiert weitere Tile-Requests außerhalb des gültigen Bereichs
+      // noch während die Fly-Animation läuft
+      map.setMinZoom(min);
+      map.setMaxZoom(max);
+      const current = map.getZoom();
+      if (current < min) map.flyTo(map.getCenter(), min, { animate: true, duration: 0.8 });
+      else if (current > max) map.flyTo(map.getCenter(), max, { animate: true, duration: 0.8 });
+    } catch (e) {
+      console.warn('ZoomLimiter: map not ready', e);
+    }
+  }, [map, activeBaseMap, satelliteLayer, windyOpen, weatherRadar]);
+
+  return null;
+}
 
 // --- 2. Map Controller ---
 function MapController({ forestData }: { forestData: any }) {
@@ -129,11 +207,16 @@ function MapController({ forestData }: { forestData: any }) {
 
 // --- 3. Haupt-Komponente ---
 interface MapViewerProps {
-  forestData: any; 
-  children?: React.ReactNode; 
+  forestData: any;
+  children?: React.ReactNode;
+  skipAutoZoom?: boolean;
+  minimal?: boolean; // Blendet LayerControl + WeatherWidget aus (für Mobile-App)
 }
 
-export default function MapViewer({ forestData, children }: MapViewerProps) {
+export default function MapViewer({ forestData, children, skipAutoZoom, minimal = false }: MapViewerProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
   const interactionMode = useMapStore((s) => s.interactionMode);
   const activeBaseMapId = useMapStore((s) => s.activeBaseMap);
 
@@ -142,6 +225,7 @@ export default function MapViewer({ forestData, children }: MapViewerProps) {
 
   const windyOpen    = useMapStore((s) => s.windyOpen);
   const setWindyOpen = useMapStore((s) => s.setWindyOpen);
+  const showCadastral = useMapStore((s) => s.showCadastral);
 
   // Windy-Koordinaten: ausgewählter Wald → erster Wald → Deutschland-Zentrum
   const windyCoords = useMemo(() => {
@@ -170,16 +254,18 @@ export default function MapViewer({ forestData, children }: MapViewerProps) {
     <div className="relative w-full h-full bg-[#050505] overflow-hidden">
       
       {/* 1. LAYER CONTROL */}
-      <div 
-        className={cn(
-            "absolute top-6 z-[500] transition-all duration-300 ease-in-out",
-            isTaskOpen ? "right-[40rem]" : 
-            isSidebarOpen ? "right-[26rem]" : 
-            "right-6"
-        )}
-      >
-        <LayerControl />
-      </div>
+      {!minimal && (
+        <div
+          className={cn(
+              "absolute top-6 z-[500] transition-all duration-300 ease-in-out",
+              isTaskOpen ? "right-[40rem]" :
+              isSidebarOpen ? "right-[26rem]" :
+              "right-6"
+          )}
+        >
+          <LayerControl />
+        </div>
+      )}
 
       {/* 2. NAVIGATION / GPS */}
       <div
@@ -194,9 +280,11 @@ export default function MapViewer({ forestData, children }: MapViewerProps) {
       </div>
 
       {/* 3. WETTER-WIDGET */}
-      <div className={cn('absolute left-6 z-[500] transition-all duration-300', windyOpen ? 'bottom-24' : 'bottom-6')}>
-        <MapWeatherWidget forests={forestData?.forests ?? []} />
-      </div>
+      {!minimal && (
+        <div className={cn('absolute left-6 z-[500] transition-all duration-300', windyOpen ? 'bottom-24' : 'bottom-6')}>
+          <MapWeatherWidget forests={forestData?.forests ?? []} />
+        </div>
+      )}
 
       {/* 4. WINDY OVERLAY */}
       {windyOpen && (
@@ -254,6 +342,10 @@ export default function MapViewer({ forestData, children }: MapViewerProps) {
         <MapController forestData={forestData} />
         
         <ZoomControl position="bottomright" />
+        <ScaleBar />
+        <ZoomLimiter />
+
+        <CadastralLayer visible={showCadastral} />
 
         {children}
 
@@ -265,7 +357,7 @@ export default function MapViewer({ forestData, children }: MapViewerProps) {
           interactionMode === 'DRAW_HUNTING' ||
           interactionMode === 'DRAW_CALAMITY'
         ) && (
-           <MapGeometryEditor />
+           <MapGeometryEditor forests={forestData?.forests ?? []} />
         )}
 
         {(interactionMode === 'MEASURE_DISTANCE' || interactionMode === 'MEASURE_AREA') && (

@@ -173,7 +173,18 @@ export type UpsertPoiTreeInput = {
   diameter?: number | null;
   height?: number | null;
   health?: string;
+  damageType?: string | null;
+  damageSeverity?: number | null;
+  crownCondition?: number | null;
+  soilCondition?: string | null;
+  soilMoisture?: string | null;
+  exposition?: string | null;
+  slopeClass?: string | null;
+  slopePosition?: string | null;
+  standType?: string | null;
+  stockingDegree?: string | null;
   notes?: string;
+  imageKey?: string | null;
 };
 
 export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput) {
@@ -188,28 +199,64 @@ export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput) {
         ? calculateCo2(data.species ?? "", data.diameter, data.height)
         : null;
 
+    // Altes Bild löschen wenn ein neues gesetzt wird
+    if (data.imageKey !== undefined) {
+      const existing = await prisma.forestPoiTree.findUnique({
+        where: { poiId },
+        select: { imageKey: true },
+      });
+      if (existing?.imageKey && existing.imageKey !== data.imageKey) {
+        await deleteFile(existing.imageKey).catch(() => null);
+      }
+    }
+
+    const treeData = {
+      species:        data.species        ?? null,
+      age:            data.age            ?? null,
+      diameter:       data.diameter       ?? null,
+      height:         data.height         ?? null,
+      health:         (data.health as any) ?? "HEALTHY",
+      co2Storage:     co2,
+      damageType:     data.damageType     ?? null,
+      damageSeverity: data.damageSeverity ?? null,
+      crownCondition: data.crownCondition ?? null,
+      soilCondition:  (data.soilCondition  as any) ?? null,
+      soilMoisture:   (data.soilMoisture   as any) ?? null,
+      exposition:     (data.exposition     as any) ?? null,
+      slopeClass:     (data.slopeClass     as any) ?? null,
+      slopePosition:  (data.slopePosition  as any) ?? null,
+      standType:      (data.standType      as any) ?? null,
+      stockingDegree: (data.stockingDegree as any) ?? null,
+      notes:          data.notes          ?? null,
+      ...(data.imageKey !== undefined ? { imageKey: data.imageKey } : {}),
+    };
+
     await prisma.forestPoiTree.upsert({
-      where: { poiId },
-      create: {
-        poiId,
-        species: data.species ?? null,
-        age: data.age ?? null,
-        diameter: data.diameter ?? null,
-        height: data.height ?? null,
-        health: (data.health as any) ?? "HEALTHY",
-        co2Storage: co2,
-        notes: data.notes ?? null,
-      },
-      update: {
-        species: data.species ?? null,
-        age: data.age ?? null,
-        diameter: data.diameter ?? null,
-        height: data.height ?? null,
-        health: data.health as any,
-        co2Storage: co2,
-        notes: data.notes ?? null,
-      },
+      where:  { poiId },
+      create: { poiId, ...treeData },
+      update: treeData,
     });
+
+    // Phase 2: Messung als Zeitreiheneintrag speichern (nur wenn Messwerte vorhanden)
+    if (data.diameter || data.height || data.health) {
+      await prisma.treeMeasurement.create({
+        data: {
+          poiId,
+          measuredById:  session.user.id,
+          diameter:      data.diameter       ?? null,
+          height:        data.height         ?? null,
+          age:           data.age            ?? null,
+          co2Storage:    co2,
+          health:        (data.health as any) ?? "HEALTHY",
+          damageType:    data.damageType     ?? null,
+          damageSeverity:data.damageSeverity ?? null,
+          crownCondition:data.crownCondition ?? null,
+          soilMoisture:  (data.soilMoisture  as any) ?? null,
+          notes:         data.notes          ?? null,
+          imageKey:      data.imageKey       ?? null,
+        },
+      });
+    }
 
     revalidatePath("/dashboard/map");
     return { success: true };

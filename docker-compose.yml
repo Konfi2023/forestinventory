@@ -14,6 +14,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    container_name: forest_pgbouncer
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USERNAME: forest_user
+      POSTGRESQL_PASSWORD: forest_password
+      POSTGRESQL_DATABASE: forest_inventory
+      PGBOUNCER_PORT: 6432
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_MAX_CLIENT_CONN: 1000
+      PGBOUNCER_DEFAULT_POOL_SIZE: 20
+    ports:
+      - "6432:6432"
+
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.1
     container_name: forest_iam

@@ -64,6 +64,24 @@ export async function GET(
 
   const { id: taskId } = await params;
 
+  // Verify the user belongs to the org that owns this task
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      forest: {
+        include: {
+          organization: {
+            include: { members: { where: { userId: session.user.id } } },
+          },
+        },
+      },
+    },
+  });
+
+  if (!task || !task.forest.organization.members[0]) {
+    return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 });
+  }
+
   const images = await prisma.image.findMany({
     where: { taskId },
     orderBy: { createdAt: 'asc' },

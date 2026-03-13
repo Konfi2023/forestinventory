@@ -6,6 +6,18 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Sentry server-side init (kompatibel mit Next.js 16 ohne withSentryConfig)
+    if (process.env.SENTRY_DSN) {
+      const Sentry = await import('@sentry/nextjs');
+      Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        tracesSampleRate: 0.2,
+        beforeSend(event) {
+          if (event.request?.cookies) delete event.request.cookies;
+          return event;
+        },
+      });
+    }
     const required: Record<string, string> = {
       DATABASE_URL:         'PostgreSQL-Verbindung (PgBouncer)',
       DIRECT_DATABASE_URL:  'PostgreSQL-Direktverbindung (für Migrationen)',

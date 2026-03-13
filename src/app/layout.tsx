@@ -10,6 +10,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 // --- 2. KORREKTER PFAD ZUM AUTH PROVIDER ---
 // Du hast die Datei unter src/components/providers/ angelegt
 import { NextAuthProvider } from "@/components/providers/NextAuthProvider";
+import { SentryProvider } from "@/components/providers/SentryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,12 +57,11 @@ export default async function RootLayout({
       >
         {/* Hier waren die Komponenten rot, weil der Import fehlte */}
         <NextIntlClientProvider messages={messages}>
-          
+          <SentryProvider dsn={process.env.NEXT_PUBLIC_SENTRY_DSN} />
           <NextAuthProvider>
             {children}
             <Toaster />
           </NextAuthProvider>
-
         </NextIntlClientProvider>
       </body>
     </html>

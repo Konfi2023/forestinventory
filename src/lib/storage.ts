@@ -13,9 +13,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // Konfiguration
 // ---------------------------------------------------------------------------
 
-const REGION = process.env.AWS_REGION ?? "eu-central-1";
-const BUCKET = process.env.AWS_S3_BUCKET ?? "";
-const IS_S3 = Boolean(BUCKET && process.env.AWS_ACCESS_KEY_ID);
+const REGION   = process.env.AWS_REGION   ?? "eu-central-1";
+const BUCKET   = process.env.AWS_S3_BUCKET ?? "";
+const ENDPOINT = process.env.S3_ENDPOINT   ?? undefined;   // z.B. https://fsn1.your-objectstorage.com
+const IS_S3    = Boolean(BUCKET && process.env.AWS_ACCESS_KEY_ID);
 
 // Presigned URLs laufen nach 1 Stunde ab – lang genug für eine UI-Session,
 // kurz genug um unerwünschten dauerhaften Zugriff zu verhindern.
@@ -40,6 +41,7 @@ export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 function s3Client(): S3Client {
   return new S3Client({
     region: REGION,
+    ...(ENDPOINT ? { endpoint: ENDPOINT, forcePathStyle: true } : {}),
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,

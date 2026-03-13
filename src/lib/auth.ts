@@ -13,7 +13,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // 1. JWT Callback: Hier landen die Daten von Keycloak
     async jwt({ token, profile, account }) {
-      if (profile && account) {
+      // Auch bei bestehenden Tokens prüfen ob der User noch in der DB existiert
+      // (z.B. nach DB-Reset oder Migration). Falls nicht → wie neuer Login behandeln.
+      if (!profile && !account && token.dbId) {
+        const exists = await prisma.user.findUnique({ where: { id: token.dbId as string }, select: { id: true } });
+        if (!exists) {
+          delete token.dbId;
+          delete token.lastActiveOrgId;
+        }
+      }
+
+      if (profile && account || (!token.dbId && token.sub)) {
         const email = token.email;
         const keycloakId = token.sub;
 
@@ -46,8 +56,8 @@ export const authOptions: NextAuthOptions = {
               data: {
                 keycloakId,
                 email,
-                firstName: profile.name?.split(" ")[0] || "User",
-                lastName: profile.name?.split(" ")[1] || "",
+                firstName: (profile as any)?.name?.split(" ")[0] || "User",
+                lastName: (profile as any)?.name?.split(" ")[1] || "",
               },
             });
 

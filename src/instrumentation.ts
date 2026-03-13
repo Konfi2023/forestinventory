@@ -41,6 +41,11 @@ export async function register() {
       }
     }
 
+    // Empfohlen (kein Hard-Fail, aber Warnung)
+    if (!process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
+      missing.push(`  ⚠ ${'SENTRY_DSN'.padEnd(26)} — Sentry Error-Monitoring (empfohlen)`);
+    }
+
     if (missing.length > 0) {
       const border = '═'.repeat(62);
       const lines = [

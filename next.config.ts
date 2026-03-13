@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
 import withPWAInit from "@ducanh2912/next-pwa";
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 
@@ -51,4 +52,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(withNextIntl(nextConfig));
+const combinedConfig = withPWA(withNextIntl(nextConfig));
+
+export default withSentryConfig(combinedConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  // Sourcemaps werden hochgeladen aber nicht im Bundle ausgeliefert
+  silent: true,
+  sourcemaps: { disable: false, deleteSourcemapsAfterUpload: true },
+  disableLogger: true,
+  // Kein Sentry-Tunnel — direkter Upload
+  autoInstrumentServerFunctions: true,
+});

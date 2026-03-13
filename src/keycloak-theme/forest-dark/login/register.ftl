@@ -37,22 +37,23 @@
                     </div>
                 </#if>
 
+                <#assign fd = (register.formData)!{}>
                 <form id="kc-register-form" class="np-auth-form" action="${url.registrationAction}" method="post">
 
                     <div style="display: flex; gap: 15px;">
                         <div class="np-input-group" style="flex: 1;">
                             <div class="np-input-label-pill-wrapper"><span class="np-input-label-pill">${msg("firstName")}</span></div>
-                            <input type="text" id="firstName" class="np-input" name="firstName" value="${(register.formData.firstName!'')}" />
+                            <input type="text" id="firstName" class="np-input" name="firstName" value="${(fd.firstName)!''}" />
                         </div>
                         <div class="np-input-group" style="flex: 1;">
                             <div class="np-input-label-pill-wrapper"><span class="np-input-label-pill">${msg("lastName")}</span></div>
-                            <input type="text" id="lastName" class="np-input" name="lastName" value="${(register.formData.lastName!'')}" />
+                            <input type="text" id="lastName" class="np-input" name="lastName" value="${(fd.lastName)!''}" />
                         </div>
                     </div>
 
                     <div class="np-input-group">
                         <div class="np-input-label-pill-wrapper"><span class="np-input-label-pill">${msg("email")}</span></div>
-                        <input type="text" id="email" class="np-input" name="email" value="${(register.formData.email!'')}" autocomplete="email" />
+                        <input type="text" id="email" class="np-input" name="email" value="${(fd.email)!''}" autocomplete="email" />
                     </div>
 
                     <div class="np-input-group">

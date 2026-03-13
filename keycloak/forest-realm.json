@@ -4,13 +4,14 @@
   "displayName": "Forest Inventory",
   "sslRequired": "none",
   "loginTheme": "forest-dark",
-  "accountTheme": "forest-dark",
-  "registrationAllowed": false,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "verifyEmail": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
-  "bruteForceProtected": false,
+  "bruteForceProtected": true,
   "clients": [
     {
       "clientId": "forest-app",
@@ -28,15 +29,20 @@
         "http://localhost:3000/*",
         "http://localhost:3000/api/auth/callback/keycloak",
         "http://192.168.178.170:3000/*",
-        "http://192.168.178.170:3000/api/auth/callback/keycloak"
+        "http://192.168.178.170:3000/api/auth/callback/keycloak",
+        "https://forest-inventory.eu/*",
+        "https://forest-inventory.eu/api/auth/callback/keycloak",
+        "https://www.forest-inventory.eu/*"
       ],
       "webOrigins": [
         "http://localhost:3000",
-        "http://192.168.178.170:3000"
+        "http://192.168.178.170:3000",
+        "https://forest-inventory.eu",
+        "https://www.forest-inventory.eu"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:3000/*##http://192.168.178.170:3000/*"
+        "post.logout.redirect.uris": "http://localhost:3000/*##http://192.168.178.170:3000/*##https://forest-inventory.eu/*"
       },
       "fullScopeAllowed": true,
       "defaultClientScopes": [
@@ -53,18 +59,5 @@
         "microprofile-jwt"
       ]
     }
-  ],
-  "roles": {
-    "realm": [
-      {
-        "name": "user",
-        "description": "Standard user"
-      },
-      {
-        "name": "admin",
-        "description": "Administrator"
-      }
-    ]
-  },
-  "defaultRoles": ["user"]
+  ]
 }

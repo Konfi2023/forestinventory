@@ -131,7 +131,7 @@ function PolygonCard({
                   <YAxis tick={{ fontSize: 9 }} tickLine={false} />
                   <Tooltip
                     contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e2e8f0' }}
-                    formatter={(v: any, name: string) => [
+                    formatter={(v: any, name: string | undefined) => [
                       v != null ? `${Number(v).toFixed(2)} dB` : '—',
                       name === 'vhDb' ? 'VH' : 'Baseline',
                     ]}

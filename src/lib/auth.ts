@@ -51,22 +51,19 @@ export const authOptions: NextAuthOptions = {
               },
             });
 
-            // DEV-HELPER: Der allererste User wird automatisch Admin der Demo-Org
-            // (Damit du dich nicht aussperrst beim Testen)
-            const userCount = await prisma.user.count();
-            if (userCount === 1) {
-              const demoOrg = await prisma.organization.findUnique({ where: { slug: "demo-forst" } });
-              const adminRole = await prisma.role.findFirst({ where: { name: "Administrator", organizationId: demoOrg?.id } });
-              
-              if (demoOrg && adminRole) {
-                await prisma.membership.create({
-                  data: {
-                    userId: dbUser.id,
-                    organizationId: demoOrg.id,
-                    roleId: adminRole.id
-                  }
-                });
-                console.log("👑 Erster User wurde zum Admin der Demo-Org gemacht.");
+            // DEV-ONLY: Der allererste User wird automatisch Admin der Demo-Org.
+            // In Production läuft dieser Block nie – Memberships werden über Einladungen verwaltet.
+            if (process.env.NODE_ENV === 'development') {
+              const userCount = await prisma.user.count();
+              if (userCount === 1) {
+                const demoOrg = await prisma.organization.findUnique({ where: { slug: "demo-forst" } });
+                const adminRole = await prisma.role.findFirst({ where: { name: "Administrator", organizationId: demoOrg?.id } });
+                if (demoOrg && adminRole) {
+                  await prisma.membership.create({
+                    data: { userId: dbUser.id, organizationId: demoOrg.id, roleId: adminRole.id },
+                  });
+                  console.log("👑 [DEV] Erster User wurde zum Admin der Demo-Org gemacht.");
+                }
               }
             }
           }
@@ -90,6 +87,9 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  // Debugging an, falls was schief geht
-  debug: true, 
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 Tage – App bleibt eingeloggt
+  },
+  debug: process.env.NODE_ENV === 'development',
 };

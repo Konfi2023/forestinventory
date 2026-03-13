@@ -25,6 +25,7 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
   const [schedules, setSchedules] = useState<any[]>([]);
   
   const [editingSchedule, setEditingSchedule] = useState<any>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Reload Trigger für den Create Dialog
   // Wenn im CreateDialog eine Serie erstellt wird, wollen wir diese Liste hier aktualisieren
@@ -61,15 +62,29 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
     }
   };
 
+  const handleStop = async (id: string) => {
+    try {
+      setSchedules(prev => prev.map(s => s.id === id ? { ...s, active: false } : s));
+      await toggleScheduleActive(orgSlug, id, false);
+      toast.success("Serie gestoppt — bestehende Aufgaben bleiben erhalten");
+    } catch (e) {
+      loadData();
+      toast.error("Fehler");
+    } finally {
+      setPendingDeleteId(null);
+    }
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm("Serie wirklich löschen?")) return;
     try {
       setSchedules(prev => prev.filter(s => s.id !== id));
       await deleteTaskSchedule(orgSlug, id);
-      toast.success("Serie gelöscht");
+      toast.success("Serie und alle verknüpften Daten gelöscht");
     } catch (e) {
       loadData();
       toast.error("Fehler beim Löschen");
+    } finally {
+      setPendingDeleteId(null);
     }
   };
 
@@ -157,27 +172,54 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                                size="sm" variant="ghost" 
-                                onClick={() => setEditingSchedule(s)}
-                            >
-                                <Pencil className="w-4 h-4 text-slate-500" />
-                            </Button>
-                            <Button 
-                              size="sm" variant="ghost" 
-                              onClick={() => handleToggle(s.id, s.active)}
-                            >
-                              {s.active ? <Pause className="w-4 h-4 text-amber-600" /> : <Play className="w-4 h-4 text-emerald-600" />}
-                            </Button>
-                            <Button 
-                              size="sm" variant="ghost" 
-                              onClick={() => handleDelete(s.id)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+                          {pendingDeleteId === s.id ? (
+                            <div className="flex justify-end items-center gap-1 animate-in fade-in slide-in-from-right-2">
+                              <span className="text-xs text-slate-500 mr-1">Löschen?</span>
+                              <Button
+                                size="sm" variant="outline"
+                                className="text-amber-600 border-amber-200 hover:bg-amber-50 h-7 px-2 text-xs"
+                                onClick={() => handleStop(s.id)}
+                              >
+                                Stoppen
+                              </Button>
+                              <Button
+                                size="sm" variant="outline"
+                                className="text-red-600 border-red-200 hover:bg-red-50 h-7 px-2 text-xs"
+                                onClick={() => handleDelete(s.id)}
+                              >
+                                Alles löschen
+                              </Button>
+                              <Button
+                                size="sm" variant="ghost"
+                                className="h-7 px-2 text-xs text-slate-400"
+                                onClick={() => setPendingDeleteId(null)}
+                              >
+                                Abbrechen
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                  size="sm" variant="ghost"
+                                  onClick={() => setEditingSchedule(s)}
+                              >
+                                  <Pencil className="w-4 h-4 text-slate-500" />
+                              </Button>
+                              <Button
+                                size="sm" variant="ghost"
+                                onClick={() => handleToggle(s.id, s.active)}
+                              >
+                                {s.active ? <Pause className="w-4 h-4 text-amber-600" /> : <Play className="w-4 h-4 text-emerald-600" />}
+                              </Button>
+                              <Button
+                                size="sm" variant="ghost"
+                                onClick={() => setPendingDeleteId(s.id)}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

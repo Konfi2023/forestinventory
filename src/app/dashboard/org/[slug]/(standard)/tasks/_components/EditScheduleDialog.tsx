@@ -9,7 +9,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { updateTaskSchedule } from "@/actions/tasks";
 import { RecurrenceUnit, TaskPriority } from "@prisma/client";
 import { toast } from "sonner";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
+
+function getNextDates(startDate: Date | null, interval: string, unit: string, count = 4): Date[] {
+  if (!startDate || isNaN(startDate.getTime())) return [];
+  const n = Math.max(1, parseInt(interval) || 1);
+  const dates: Date[] = [new Date(startDate)];
+  for (let i = 1; i < count; i++) {
+    const next = new Date(dates[i - 1]);
+    if (unit === 'DAYS') next.setDate(next.getDate() + n);
+    else if (unit === 'WEEKS') next.setDate(next.getDate() + n * 7);
+    else if (unit === 'MONTHS') next.setMonth(next.getMonth() + n);
+    else if (unit === 'YEARS') next.setFullYear(next.getFullYear() + n);
+    dates.push(next);
+  }
+  return dates;
+}
 
 interface Props {
   schedule: any;
@@ -31,6 +48,11 @@ export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, 
   const [interval, setInterval] = useState(schedule.interval.toString());
   const [unit, setUnit] = useState<RecurrenceUnit>(schedule.unit);
   const [priority, setPriority] = useState<TaskPriority>(schedule.priority);
+  const [endDate, setEndDate] = useState(
+    schedule.endDate ? new Date(schedule.endDate).toISOString().split('T')[0] : ""
+  );
+
+  const previewStart = schedule.nextRunAt ? new Date(schedule.nextRunAt) : null;
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -41,7 +63,8 @@ export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, 
         assigneeId: assigneeId === "unassigned" ? undefined : assigneeId,
         interval: parseInt(interval),
         unit,
-        priority
+        priority,
+        endDate: endDate ? new Date(endDate) : undefined,
       });
       toast.success("Serie aktualisiert");
       onSuccess(); // Liste neu laden
@@ -105,6 +128,33 @@ export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, 
                 </Select>
             </div>
           </div>
+
+          <div className="grid gap-2">
+            <Label>Enddatum (optional)</Label>
+            <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+          </div>
+
+          {/* Live-Vorschau */}
+          {previewStart && (() => {
+            const dates = getNextDates(previewStart, interval, unit, 4);
+            return (
+              <div className="bg-blue-50 border border-blue-100 rounded-md p-3 space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase text-blue-500 flex items-center gap-1.5">
+                  <Calendar size={11} /> Nächste Termine (ab jetzt)
+                </p>
+                {dates.map((d, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-blue-800">
+                    <span className="text-[10px] text-blue-400 w-4">{i + 1}.</span>
+                    {format(d, "EEEE, dd. MMMM yyyy", { locale: de })}
+                    {endDate && d > new Date(endDate) && (
+                      <span className="text-[10px] text-slate-400 ml-1">(nach Enddatum)</span>
+                    )}
+                  </div>
+                ))}
+                <p className="text-[10px] text-blue-400">… und so weiter</p>
+              </div>
+            );
+          })()}
 
           <div className="grid gap-2">
               <Label>Standard-Bearbeiter</Label>

@@ -27,9 +27,11 @@ const UPLOAD_URL_EXPIRY_SECONDS = 300;
 // Erlaubte MIME-Typen für Bilder
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
+  "image/jpg",
   "image/png",
   "image/webp",
   "image/heic",
+  "image/heif",
 ] as const;
 
 // Maximale Dateigröße: 10 MB
@@ -91,7 +93,16 @@ export async function uploadFile(
   file: File,
   folder: string = "general"
 ): Promise<{ url: string; key: string }> {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+  // Determine extension: prefer MIME type mapping for reliability (iPhone sends
+  // heic/heif files sometimes with .jpg extension or no extension at all)
+  const MIME_TO_EXT: Record<string, string> = {
+    'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
+    'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heic',
+    'image/gif': 'gif',
+  };
+  const extFromMime = MIME_TO_EXT[file.type];
+  const extFromName = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() : undefined;
+  const ext = extFromMime ?? extFromName ?? 'jpg';
   const key = `${folder}/${randomUUID()}.${ext}`;
 
   if (IS_S3) {

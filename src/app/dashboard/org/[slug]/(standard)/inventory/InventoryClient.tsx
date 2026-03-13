@@ -1,0 +1,1144 @@
+'use client';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { TREE_SPECIES } from '@/lib/tree-species';
+import { db, type PendingTree } from '@/lib/inventory-db';
+import {
+  Camera, MapPin, Trees, ChevronRight, ChevronLeft,
+  Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
+  ClipboardList, User,
+} from 'lucide-react';
+import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
+
+const SOIL_CONDITIONS = [
+  { id: 'SANDY', label: 'Sandig' },
+  { id: 'LOAMY', label: 'Lehmig' },
+  { id: 'CLAY', label: 'Tonig' },
+  { id: 'HUMUS', label: 'Humos' },
+  { id: 'ROCKY', label: 'Steinig' },
+  { id: 'MIXED', label: 'Gemischt' },
+];
+
+const SOIL_MOISTURE = [
+  { id: 'DRY', label: 'Trocken' },
+  { id: 'FRESH', label: 'Frisch' },
+  { id: 'MOIST', label: 'Feucht' },
+  { id: 'WET', label: 'Nass' },
+  { id: 'WATERLOGGED', label: 'Staunass' },
+];
+
+const EXPOSITIONS = [
+  { id: 'N', label: 'N' }, { id: 'NE', label: 'NO' }, { id: 'E', label: 'O' },
+  { id: 'SE', label: 'SO' }, { id: 'S', label: 'S' }, { id: 'SW', label: 'SW' },
+  { id: 'W', label: 'W' }, { id: 'NW', label: 'NW' }, { id: 'FLAT', label: 'Eben' },
+];
+
+const SLOPE_CLASSES = [
+  { id: 'FLAT', label: 'Flach (<5°)' },
+  { id: 'MODERATE', label: 'Mäßig (5–15°)' },
+  { id: 'STEEP', label: 'Steil (15–30°)' },
+  { id: 'VERY_STEEP', label: 'Sehr steil (>30°)' },
+];
+
+const SLOPE_POSITIONS = [
+  { id: 'SUMMIT', label: 'Kuppe' },
+  { id: 'UPPER_SLOPE', label: 'Oberhang' },
+  { id: 'MID_SLOPE', label: 'Mittelhang' },
+  { id: 'LOWER_SLOPE', label: 'Unterhang' },
+  { id: 'VALLEY', label: 'Talboden' },
+];
+
+const STAND_TYPES = [
+  { id: 'PURE_CONIFER',   label: 'Rein Nadel' },
+  { id: 'PURE_DECIDUOUS', label: 'Rein Laub' },
+  { id: 'MIXED',          label: 'Mischbestand' },
+  { id: 'EDGE',           label: 'Waldrand' },
+  { id: 'CLEARCUT',       label: 'Freifläche' },
+  { id: 'YOUNG_GROWTH',   label: 'Jungwuchs' },
+];
+
+const STOCKING_DEGREES = [
+  { id: 'OPEN',       label: 'Locker' },
+  { id: 'SPARSE',     label: 'Licht' },
+  { id: 'MEDIUM',     label: 'Mittel' },
+  { id: 'DENSE',      label: 'Dicht' },
+  { id: 'VERY_DENSE', label: 'Sehr dicht' },
+];
+
+type Step = 'forest' | 'camera' | 'species' | 'details' | 'saved' | 'task' | 'summary';
+
+interface SessionTree {
+  species: string;
+  diameter: string;
+  height: string;
+  soilCondition:  string;
+  soilMoisture:   string;
+  exposition:     string;
+  slopeClass:     string;
+  slopePosition:  string;
+  standType:      string;
+  stockingDegree: string;
+  lat: number | null;
+  lng: number | null;
+  forestName: string;
+  synced: boolean;
+}
+
+interface Forest { id: string; name: string; }
+
+interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
+
+interface InventoryClientProps {
+  forests: Forest[];
+  orgSlug: string;
+  members?: Member[];
+}
+
+interface TreeForm {
+  forestId: string;
+  forestName: string;
+  lat: number | null;
+  lng: number | null;
+  species: string;
+  diameter: string;
+  height: string;
+  soilCondition:  string;
+  soilMoisture:   string;
+  exposition:     string;
+  slopeClass:     string;
+  slopePosition:  string;
+  standType:      string;
+  stockingDegree: string;
+  notes: string;
+}
+
+const EMPTY_FORM: TreeForm = {
+  forestId: '', forestName: '', lat: null, lng: null,
+  species: '', diameter: '', height: '',
+  soilCondition: '', soilMoisture: '',
+  exposition: '', slopeClass: '', slopePosition: '',
+  standType: '', stockingDegree: '',
+  notes: '',
+};
+
+export function InventoryClient({ forests, orgSlug, members = [] }: InventoryClientProps) {
+  const [step, setStep] = useState<Step>('forest');
+  const [form, setForm] = useState<TreeForm>(EMPTY_FORM);
+  const [speciesSearch, setSpeciesSearch] = useState('');
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ ok: number; fail: number } | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<'denied' | 'unavailable' | 'timeout' | 'insecure' | null>(null);
+  const [savedCount, setSavedCount] = useState(0);
+  const [sessionTrees, setSessionTrees] = useState<SessionTree[]>([]);
+  const [savedPoiId, setSavedPoiId] = useState<string | null>(null);
+  // Task-Formular
+  const [taskTitle, setTaskTitle]       = useState('');
+  const [taskPriority, setTaskPriority] = useState('MEDIUM');
+  const [taskDueDate, setTaskDueDate]   = useState('');
+  const [taskShowDatePicker, setTaskShowDatePicker] = useState(false);
+  const [taskAssigneeId, setTaskAssigneeId] = useState('');
+  const [taskSaving, setTaskSaving]     = useState(false);
+  const [taskSaveError, setTaskSaveError] = useState<string | null>(null);
+  const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoFileRef = useRef<File | null>(null);
+
+  // Online-Status und Pending-Count
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const onOnline = () => { setIsOnline(true); syncPending(); };
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    loadPendingCount();
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
+  async function loadPendingCount() {
+    const count = await db.pendingTrees.where('synced').equals(0).count();
+    setPendingCount(count);
+  }
+
+  const syncPending = useCallback(async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    const pending = await db.pendingTrees.where('synced').equals(0).toArray();
+
+    if (pending.length === 0) {
+      setIsSyncing(false);
+      return 0;
+    }
+
+    // Alle ausstehenden Bäume parallel hochladen (statt sequentiell)
+    const results = await Promise.allSettled(
+      pending.map(async (tree) => {
+        const res = await fetch('/api/inventory/tree', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            forestId:       tree.forestId,
+            lat:            tree.lat,
+            lng:            tree.lng,
+            species:        tree.species,
+            diameter:       tree.diameter,
+            height:         tree.height,
+            soilCondition:  tree.soilCondition,
+            soilMoisture:   tree.soilMoisture,
+            exposition:     tree.exposition,
+            slopeClass:     tree.slopeClass,
+            slopePosition:  tree.slopePosition,
+            standType:      tree.standType,
+            stockingDegree: tree.stockingDegree,
+            damageType:     tree.damageType,
+            damageSeverity: tree.damageSeverity,
+            crownCondition: tree.crownCondition,
+            notes:          tree.notes,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await db.pendingTrees.update(tree.id!, { synced: true });
+      })
+    );
+
+    const ok   = results.filter(r => r.status === 'fulfilled').length;
+    const fail = results.filter(r => r.status === 'rejected').length;
+
+    setIsSyncing(false);
+    setSyncResult({ ok, fail });
+    // Meldung nach 4 Sekunden ausblenden
+    setTimeout(() => setSyncResult(null), 4000);
+
+    await loadPendingCount();
+    return ok;
+  }, []);
+
+  function captureGps() {
+    // GPS requires a secure context (HTTPS or localhost)
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setGpsError('insecure');
+      return;
+    }
+    if (!navigator.geolocation) {
+      setGpsError('unavailable');
+      return;
+    }
+    setGpsLoading(true);
+    setGpsError(null);
+
+    // Try with high accuracy first; on timeout fall back to low accuracy
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm(f => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }));
+        setGpsLoading(false);
+        setGpsError(null);
+      },
+      (err) => {
+        if (err.code === 3) {
+          // Timeout with high accuracy → retry without it
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              setForm(f => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }));
+              setGpsLoading(false);
+              setGpsError(null);
+            },
+            (err2) => {
+              setGpsLoading(false);
+              if (err2.code === 1) setGpsError('denied');
+              else if (err2.code === 3) setGpsError('timeout');
+              else setGpsError('unavailable');
+            },
+            { enableHighAccuracy: false, timeout: 10000 }
+          );
+        } else {
+          setGpsLoading(false);
+          if (err.code === 1) setGpsError('denied');
+          else setGpsError('unavailable');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    photoFileRef.current = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    captureGps();
+  }
+
+  // Komprimiert ein Bild auf max. 1200px und JPEG-Qualität 0.75
+  function compressImage(file: File): Promise<Blob> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1200;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else { width = Math.round(width * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => resolve(blob ?? file), 'image/jpeg', 0.75);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
+  async function saveTree() {
+    const treeData: Omit<PendingTree, 'id'> = {
+      forestId:       form.forestId,
+      forestName:     form.forestName,
+      lat:            form.lat ?? 0,
+      lng:            form.lng ?? 0,
+      species:        form.species || 'OTHER',
+      diameter:       form.diameter ? parseFloat(form.diameter) : null,
+      height:         form.height   ? parseFloat(form.height)   : null,
+      soilCondition:  form.soilCondition  || null,
+      soilMoisture:   form.soilMoisture   || null,
+      exposition:     form.exposition     || null,
+      slopeClass:     form.slopeClass     || null,
+      slopePosition:  form.slopePosition  || null,
+      standType:      form.standType      || null,
+      stockingDegree: form.stockingDegree || null,
+      damageType:     null,
+      damageSeverity: null,
+      crownCondition: null,
+      notes:          form.notes || null,
+      createdAt:      new Date().toISOString(),
+      synced:         false,
+    };
+
+    if (isOnline) {
+      try {
+        const res = await fetch('/api/inventory/tree', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(treeData),
+        });
+        if (res.ok) {
+          treeData.synced = true;
+          const { poiId } = await res.json();
+          setSavedPoiId(poiId ?? null);
+          if (poiId && photoFileRef.current) {
+            setPhotoUploadStatus('uploading');
+            try {
+              const compressed = await compressImage(photoFileRef.current);
+              const fd = new FormData();
+              fd.append('file', new File([compressed], 'tree.jpg', { type: 'image/jpeg' }));
+              const imgRes = await fetch(`/api/app/inventory/trees/${poiId}/image`, { method: 'POST', body: fd });
+              setPhotoUploadStatus(imgRes.ok ? 'success' : 'error');
+            } catch {
+              setPhotoUploadStatus('error');
+            }
+          }
+        }
+      } catch {
+        // Offline-Fallback
+      }
+    }
+
+    if (!treeData.synced) {
+      await db.pendingTrees.add(treeData);
+      await loadPendingCount();
+    }
+
+    setSessionTrees(prev => [...prev, {
+      species:        form.species || 'OTHER',
+      diameter:       form.diameter,
+      height:         form.height,
+      soilCondition:  form.soilCondition,
+      soilMoisture:   form.soilMoisture,
+      exposition:     form.exposition,
+      slopeClass:     form.slopeClass,
+      slopePosition:  form.slopePosition,
+      standType:      form.standType,
+      stockingDegree: form.stockingDegree,
+      lat:            form.lat,
+      lng:            form.lng,
+      forestName:     form.forestName,
+      synced:         treeData.synced,
+    }]);
+    setSavedCount(c => c + 1);
+    setStep('saved');
+  }
+
+  function nextTree() {
+    const forestId = form.forestId;
+    const forestName = form.forestName;
+    setForm({ ...EMPTY_FORM, forestId, forestName });
+    setPhotoPreview(null);
+    photoFileRef.current = null;
+    setSpeciesSearch('');
+    setGpsError(null);
+    setSavedPoiId(null);
+    setTaskTitle(''); setTaskPriority('MEDIUM'); setTaskDueDate(''); setTaskAssigneeId(''); setTaskShowDatePicker(false);
+    setPhotoUploadStatus('idle');
+    setStep('camera');
+  }
+
+  function finish() {
+    setStep('summary');
+  }
+
+  function startNew() {
+    setForm(EMPTY_FORM);
+    setPhotoPreview(null);
+    photoFileRef.current = null;
+    setSpeciesSearch('');
+    setSavedCount(0);
+    setSessionTrees([]);
+    setGpsError(null);
+    setSavedPoiId(null);
+    setTaskTitle(''); setTaskPriority('MEDIUM'); setTaskDueDate(''); setTaskAssigneeId(''); setTaskShowDatePicker(false);
+    setPhotoUploadStatus('idle');
+    setStep('forest');
+  }
+
+  async function saveTask() {
+    if (!taskTitle.trim()) return;
+    setTaskSaving(true);
+    setTaskSaveError(null);
+    try {
+      const res = await fetch('/api/app/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orgSlug,
+          title:      taskTitle.trim(),
+          forestId:   form.forestId,
+          priority:   taskPriority,
+          assigneeId: taskAssigneeId || undefined,
+          dueDate:    taskDueDate    || undefined,
+          poiId:      savedPoiId     || undefined,
+          lat:        form.lat       ?? undefined,
+          lng:        form.lng       ?? undefined,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setStep('saved');
+    } catch {
+      setTaskSaveError('Aufgabe konnte nicht gespeichert werden. Bitte erneut versuchen.');
+    }
+    setTaskSaving(false);
+  }
+
+  const filteredSpecies = TREE_SPECIES.filter(s =>
+    s.label.toLowerCase().includes(speciesSearch.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
+        <div className="flex items-center gap-2">
+          <TreePine size={20} className="text-emerald-400" />
+          <span className="font-semibold text-sm">Forstinventur</span>
+          {form.forestName && (
+            <span className="text-xs text-slate-400 hidden sm:block">· {form.forestName}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Offline-Badge */}
+          {!isOnline && (
+            <span className="flex items-center gap-1 text-xs bg-amber-900/50 text-amber-300 px-2 py-1 rounded-full">
+              <CloudOff size={12} /> Offline
+            </span>
+          )}
+          {/* Sync-Ergebnis-Badge */}
+          {syncResult && (
+            <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+              syncResult.fail > 0
+                ? 'bg-amber-900/50 text-amber-300'
+                : 'bg-emerald-900/50 text-emerald-300'
+            }`}>
+              {syncResult.fail > 0
+                ? `✓ ${syncResult.ok} sync · ${syncResult.fail} fehlgeschlagen`
+                : `✓ ${syncResult.ok} synchronisiert`
+              }
+            </span>
+          )}
+          {/* Pending-Sync-Badge */}
+          {pendingCount > 0 && !syncResult && (
+            <button
+              onClick={syncPending}
+              disabled={!isOnline || isSyncing}
+              className="flex items-center gap-1 text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded-full hover:bg-blue-900/80 disabled:opacity-50"
+            >
+              <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
+              {isSyncing ? 'Sync läuft…' : `${pendingCount} ausstehend`}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Steps Indicator */}
+      {step !== 'forest' && step !== 'saved' && (
+        <div className="flex px-4 pt-3 gap-1.5 shrink-0">
+          {(['camera', 'species', 'details'] as const).map((s, i) => (
+            <div
+              key={s}
+              className={`h-1 flex-1 rounded-full transition-colors ${
+                ['camera', 'species', 'details'].indexOf(step) >= i
+                  ? 'bg-emerald-500' : 'bg-slate-700'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+
+        {/* SCHRITT 0: Waldauswahl */}
+        {step === 'forest' && (
+          <div className="p-4">
+            <h1 className="text-xl font-bold mb-1">Wald wählen</h1>
+            <p className="text-slate-400 text-sm mb-6">Welchen Wald inventarisierst du heute?</p>
+            {savedCount > 0 && (
+              <div className="mb-4 bg-emerald-900/30 border border-emerald-800 rounded-xl p-3 text-sm text-emerald-300">
+                ✓ {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} in dieser Session gespeichert
+              </div>
+            )}
+            <div className="space-y-2">
+              {forests.map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => { setForm(form => ({ ...form, forestId: f.id, forestName: f.name })); setStep('camera'); }}
+                  className="w-full flex items-center justify-between p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Trees size={20} className="text-emerald-400 shrink-0" />
+                    <span className="font-medium">{f.name}</span>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-500" />
+                </button>
+              ))}
+              {forests.length === 0 && (
+                <p className="text-slate-500 text-center py-8">Keine Wälder gefunden.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* SCHRITT 1: Kamera + GPS */}
+        {step === 'camera' && (
+          <div className="p-4">
+            <button onClick={() => setStep('forest')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+              <ChevronLeft size={16} /> Wald wechseln
+            </button>
+            <h2 className="text-xl font-bold mb-1">Foto & Position</h2>
+            <p className="text-slate-400 text-sm mb-5">Fotografiere den Baum und erfasse den Standort.</p>
+
+            {/* Foto */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className={`relative w-full aspect-video rounded-xl flex items-center justify-center cursor-pointer transition-colors mb-4 overflow-hidden ${
+                photoPreview ? '' : 'bg-slate-800 hover:bg-slate-700 border-2 border-dashed border-slate-600'
+              }`}
+            >
+              {photoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoPreview} alt="Baum" className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-slate-400">
+                  <Camera size={40} />
+                  <span className="text-sm">Foto aufnehmen</span>
+                </div>
+              )}
+              {photoPreview && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                  <Camera size={32} className="text-white" />
+                </div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhoto}
+            />
+
+            {/* GPS */}
+            <div className="bg-slate-800 rounded-xl p-4 mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <MapPin size={16} className="text-emerald-400" />
+                  GPS-Position
+                </div>
+                <button
+                  onClick={captureGps}
+                  disabled={gpsLoading}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
+                >
+                  {gpsLoading ? 'Wird ermittelt…' : form.lat ? 'Neu erfassen' : 'Position ermitteln'}
+                </button>
+              </div>
+
+              {form.lat && form.lng ? (
+                <p className="text-sm text-slate-300 font-mono">
+                  {form.lat.toFixed(6)}, {form.lng.toFixed(6)}
+                </p>
+              ) : gpsLoading ? (
+                <p className="text-sm text-slate-500">GPS wird ermittelt…</p>
+              ) : gpsError === 'insecure' ? (
+                <div className="mt-1 space-y-2">
+                  <p className="text-sm text-red-400 font-medium">GPS erfordert HTTPS.</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Safari blockiert GPS auf unsicheren Verbindungen (HTTP). Öffne die App über eine HTTPS-Adresse.
+                  </p>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Schnellste Lösung: Starte auf dem PC einen HTTPS-Tunnel:
+                  </p>
+                  <p className="text-xs font-mono bg-slate-900 rounded px-2 py-1.5 text-emerald-400">
+                    npx ngrok http 3000
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    ngrok gibt eine <span className="text-slate-300">https://…ngrok-free.app</span>-URL aus — diese im iPhone-Safari öffnen.
+                  </p>
+                </div>
+              ) : gpsError === 'denied' ? (
+                <div className="mt-1 space-y-2">
+                  <p className="text-sm text-amber-400 font-medium">Ortungsdienste sind deaktiviert.</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Bitte erlaube den Standortzugriff in deinen Geräteeinstellungen:
+                  </p>
+                  <ul className="text-xs text-slate-400 list-disc list-inside space-y-0.5">
+                    <li><span className="text-slate-300">iOS:</span> Einstellungen → Datenschutz → Ortungsdienste → Safari/Browser → „Beim Verwenden"</li>
+                    <li><span className="text-slate-300">Android:</span> Einstellungen → Apps → Browser → Berechtigungen → Standort</li>
+                  </ul>
+                  <button
+                    onClick={captureGps}
+                    className="mt-1 text-xs text-emerald-400 underline hover:text-emerald-300"
+                  >
+                    Nochmal versuchen
+                  </button>
+                </div>
+              ) : gpsError === 'timeout' ? (
+                <div className="mt-1">
+                  <p className="text-sm text-amber-400">GPS-Signal zu schwach. Im Freien erneut versuchen.</p>
+                  <button onClick={captureGps} className="mt-1 text-xs text-emerald-400 underline hover:text-emerald-300">
+                    Nochmal versuchen
+                  </button>
+                </div>
+              ) : gpsError === 'unavailable' ? (
+                <div className="mt-1">
+                  <p className="text-sm text-amber-400">GPS nicht verfügbar auf diesem Gerät.</p>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Noch nicht erfasst – tippe auf „Position ermitteln"</p>
+              )}
+            </div>
+
+            <button
+              onClick={() => setStep('species')}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+            >
+              Weiter <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 2: Baumart + Durchmesser */}
+        {step === 'species' && (
+          <div className="p-4">
+            <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Baumart & Maße</h2>
+            <p className="text-slate-400 text-sm mb-5">Baumart bestätigen und Durchmesser eingeben.</p>
+
+            {/* Durchmesser */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Brusthöhendurchmesser (BHD) in cm
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="z.B. 42"
+                value={form.diameter}
+                onChange={e => setForm(f => ({ ...f, diameter: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Baumartensuche */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Baumart</label>
+              <input
+                type="text"
+                placeholder="Suchen…"
+                value={speciesSearch}
+                onChange={e => setSpeciesSearch(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 mb-2"
+              />
+              <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto">
+                {filteredSpecies.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setForm(f => ({ ...f, species: s.id }))}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
+                      form.species === s.id
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                    }`}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: s.color }}
+                    />
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setStep('details')}
+              disabled={!form.species}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors mt-4"
+            >
+              Weiter <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 3: Höhe + Boden */}
+        {step === 'details' && (
+          <div className="p-4">
+            <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Eigenschaften</h2>
+            <p className="text-slate-400 text-sm mb-5">Höhe und Bodenverhältnisse erfassen.</p>
+
+            {/* Höhe */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Geschätzte Baumhöhe in m
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="z.B. 28"
+                value={form.height}
+                onChange={e => setForm(f => ({ ...f, height: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Bodenbeschaffenheit */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
+                <Leaf size={14} className="text-emerald-400" /> Bodenbeschaffenheit
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SOIL_CONDITIONS.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setForm(f => ({ ...f, soilCondition: f.soilCondition === s.id ? '' : s.id }))}
+                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      form.soilCondition === s.id
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bodenfeuchtigkeit */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
+                <Droplets size={14} className="text-blue-400" /> Bodenfeuchtigkeit
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SOIL_MOISTURE.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setForm(f => ({ ...f, soilMoisture: f.soilMoisture === s.id ? '' : s.id }))}
+                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      form.soilMoisture === s.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Exposition */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Exposition (Hangrichtung)</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {EXPOSITIONS.map(s => (
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, exposition: f.exposition === s.id ? '' : s.id }))}
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.exposition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Hangneigung */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Hangneigung</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {SLOPE_CLASSES.map(s => (
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, slopeClass: f.slopeClass === s.id ? '' : s.id }))}
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Hangposition */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Hangposition</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {SLOPE_POSITIONS.map(s => (
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, slopePosition: f.slopePosition === s.id ? '' : s.id }))}
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bestandstyp */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Bestandstyp</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {STAND_TYPES.map(s => (
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, standType: f.standType === s.id ? '' : s.id }))}
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.standType === s.id ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bestockungsgrad */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Bestockungsgrad</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {STOCKING_DEGREES.map(s => (
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, stockingDegree: f.stockingDegree === s.id ? '' : s.id }))}
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.stockingDegree === s.id ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Notizen */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Notizen (optional)</label>
+              <textarea
+                rows={2}
+                placeholder="Besonderheiten, Schäden, …"
+                value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+              />
+            </div>
+
+            <button
+              onClick={saveTree}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+            >
+              <Check size={18} /> Baum speichern
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 4: Gespeichert */}
+        {step === 'saved' && (
+          <div className="p-4 flex flex-col items-center text-center pt-12">
+            <div className="w-20 h-20 bg-emerald-900/50 rounded-full flex items-center justify-center mb-6">
+              <Check size={40} className="text-emerald-400" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Baum gespeichert</h2>
+            <p className="text-slate-400 mb-2">
+              {TREE_SPECIES.find(s => s.id === form.species)?.label ?? form.species}
+              {form.diameter && ` · Ø ${form.diameter} cm`}
+              {form.height && ` · ${form.height} m`}
+            </p>
+            {form.lat && form.lng && (
+              <p className="text-xs text-slate-500 font-mono mb-1">
+                {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
+              </p>
+            )}
+            {!isOnline && (
+              <p className="text-sm text-amber-400 mt-2 mb-4 flex items-center gap-1.5">
+                <CloudOff size={14} /> Offline gespeichert – wird synchronisiert sobald online
+              </p>
+            )}
+            {isOnline && (
+              <p className="text-sm text-emerald-400 mt-2">
+                ✓ Auf der Karte sichtbar
+              </p>
+            )}
+            {photoUploadStatus === 'uploading' && (
+              <p className="text-sm text-slate-400 mt-2 mb-2 flex items-center justify-center gap-1.5">
+                <RefreshCw size={13} className="animate-spin" /> Foto wird hochgeladen…
+              </p>
+            )}
+            {photoUploadStatus === 'success' && (
+              <p className="text-sm text-emerald-400 mt-2 mb-2">✓ Foto gespeichert</p>
+            )}
+            {photoUploadStatus === 'error' && (
+              <p className="text-sm text-amber-400 mt-2 mb-2">
+                ⚠ Foto konnte nicht hochgeladen werden – Baum ist trotzdem gespeichert
+              </p>
+            )}
+
+            <div className="mt-4 w-full space-y-3">
+              {savedPoiId && (
+                <button
+                  onClick={() => setStep('task')}
+                  className="w-full py-3 bg-blue-700 hover:bg-blue-600 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
+                >
+                  <ClipboardList size={18} /> Aufgabe erstellen
+                </button>
+              )}
+              <button
+                onClick={nextTree}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                <TreePine size={18} /> Nächster Baum
+              </button>
+              <button
+                onClick={finish}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-slate-300 transition-colors"
+              >
+                Inventur beenden ({savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'})
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SCHRITT 4b: Aufgabe erstellen */}
+        {step === 'task' && (
+          <div className="p-4">
+            <button onClick={() => setStep('saved')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Aufgabe erstellen</h2>
+            <p className="text-slate-400 text-sm mb-5">
+              Diese Aufgabe wird dem Baum zugeordnet und erscheint im Kanban-Board und Kalender.
+            </p>
+
+            {/* Titel */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Titel *</label>
+              <input
+                type="text"
+                placeholder="z.B. Schaden kontrollieren"
+                value={taskTitle}
+                onChange={e => setTaskTitle(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* Priorität */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Priorität</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([['LOW', 'Niedrig', 'bg-slate-600'], ['MEDIUM', 'Mittel', 'bg-amber-600'], ['HIGH', 'Hoch', 'bg-red-600']] as [string, string, string][]).map(([val, label, active]) => (
+                  <button
+                    key={val}
+                    onClick={() => setTaskPriority(val)}
+                    className={`py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      taskPriority === val ? `${active} text-white` : 'bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Fälligkeitsdatum */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-300 mb-2">Fällig bis (optional)</label>
+              <DateTrigger
+                value={taskDueDate}
+                placeholder="Kein Datum gewählt"
+                onClick={() => setTaskShowDatePicker(true)}
+              />
+              {taskShowDatePicker && (
+                <DatePickerSheet
+                  value={taskDueDate}
+                  label="Fälligkeitsdatum"
+                  onChange={setTaskDueDate}
+                  onClose={() => setTaskShowDatePicker(false)}
+                />
+              )}
+            </div>
+
+            {/* Zuweisung */}
+            {members.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <span className="flex items-center gap-1.5"><User size={14} /> Zuweisen an (optional)</span>
+                </label>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => setTaskAssigneeId('')}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${
+                      taskAssigneeId === '' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    Nicht zugewiesen
+                  </button>
+                  {members.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => setTaskAssigneeId(m.id)}
+                      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${
+                        taskAssigneeId === m.id ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      {m.firstName && m.lastName ? `${m.firstName} ${m.lastName}` : m.email}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {taskSaveError && (
+              <div className="px-4 py-3 bg-red-900/50 border border-red-700 rounded-xl flex items-center justify-between gap-3">
+                <span className="text-sm text-red-300">{taskSaveError}</span>
+                <button onClick={() => setTaskSaveError(null)} className="text-red-400 shrink-0">
+                  <span aria-hidden>✕</span>
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={saveTask}
+              disabled={!taskTitle.trim() || taskSaving}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+            >
+              {taskSaving ? (
+                <RefreshCw size={18} className="animate-spin" />
+              ) : (
+                <><ClipboardList size={18} /> Aufgabe speichern</>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 5: Session-Abschluss */}
+        {step === 'summary' && (
+          <div className="p-4">
+            {/* Header */}
+            <div className="flex flex-col items-center text-center pt-6 pb-6">
+              <div className="w-16 h-16 bg-emerald-900/50 rounded-full flex items-center justify-center mb-4">
+                <Check size={32} className="text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-bold mb-1">Inventur abgeschlossen</h2>
+              <p className="text-slate-400 text-sm">
+                {sessionTrees.length} {sessionTrees.length === 1 ? 'Baum' : 'Bäume'} erfasst
+              </p>
+              {pendingCount > 0 && (
+                <div className="mt-3 flex items-center gap-2 bg-amber-900/30 border border-amber-800 rounded-xl px-3 py-2">
+                  <CloudOff size={14} className="text-amber-400 shrink-0" />
+                  <p className="text-xs text-amber-300">
+                    {pendingCount} {pendingCount === 1 ? 'Datensatz' : 'Datensätze'} warten auf Synchronisation
+                  </p>
+                  {isOnline && (
+                    <button
+                      onClick={syncPending}
+                      disabled={isSyncing}
+                      className="ml-auto shrink-0 text-xs text-emerald-400 underline disabled:opacity-50"
+                    >
+                      {isSyncing ? 'Sync…' : 'Jetzt sync'}
+                    </button>
+                  )}
+                </div>
+              )}
+              {pendingCount === 0 && (
+                <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
+                  <Check size={12} /> Alle Daten synchronisiert
+                </p>
+              )}
+            </div>
+
+            {/* Baumliste */}
+            {sessionTrees.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Erfasste Bäume</h3>
+                <div className="space-y-2">
+                  {sessionTrees.map((tree, i) => {
+                    const speciesLabel = TREE_SPECIES.find(s => s.id === tree.species)?.label ?? tree.species;
+                    const speciesColor = TREE_SPECIES.find(s => s.id === tree.species)?.color ?? '#64748b';
+                    const soilLabel = SOIL_CONDITIONS.find(s => s.id === tree.soilCondition)?.label;
+                    const moistLabel = SOIL_MOISTURE.find(s => s.id === tree.soilMoisture)?.label;
+                    return (
+                      <div key={i} className="bg-slate-800 rounded-xl p-3">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: speciesColor }} />
+                          <span className="font-medium text-sm">{speciesLabel}</span>
+                          <span className="ml-auto text-xs text-slate-500">#{i + 1}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-400">
+                          {tree.diameter && <span>Ø {tree.diameter} cm</span>}
+                          {tree.height && <span>↕ {tree.height} m</span>}
+                          {soilLabel && <span>Boden: {soilLabel}</span>}
+                          {moistLabel && <span>Feuchte: {moistLabel}</span>}
+                          {tree.lat && tree.lng && (
+                            <span className="font-mono">{tree.lat.toFixed(4)}, {tree.lng.toFixed(4)}</span>
+                          )}
+                        </div>
+                        {!tree.synced && (
+                          <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-400">
+                            <CloudOff size={10} /> Offline gespeichert
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Aktionen */}
+            <div className="space-y-3 pb-8">
+              <button
+                onClick={startNew}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                <TreePine size={18} /> Neue Session starten
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

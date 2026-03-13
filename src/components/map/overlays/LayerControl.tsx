@@ -2,26 +2,14 @@
 
 import { useMapStore } from '../stores/useMapStores';
 import { LAYER_REGISTRY } from '../registry/LayerRegistry';
-import { BASE_MAPS, MapTheme } from '../registry/MapConfig';
-import { Layers, ChevronDown, ChevronUp, Check, Satellite, Leaf, Play, Pause, Calendar, CloudRain, Zap, Wind } from 'lucide-react';
+import { BASE_MAPS } from '../registry/MapConfig';
+import { Layers, ChevronDown, ChevronUp, Check, Leaf, Play, Pause, Calendar, CloudRain, Zap, Wind, Grid3x3 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import type { SatelliteLayerId } from '../stores/useMapStores';
-
-const SATELLITE_LAYERS: { id: SatelliteLayerId; label: string; color: string; group: 'off' | 's2' | 's1' }[] = [
-  { id: 'NONE',             label: 'Aus',              color: '#374151', group: 'off' },
-  // Sentinel-2
-  { id: 'TRUE_COLOR',       label: 'Echtfarbe',        color: '#3b82f6', group: 's2' },
-  { id: 'NDVI',             label: 'NDVI',             color: '#22c55e', group: 's2' },
-  { id: 'EVI',              label: 'EVI',              color: '#10b981', group: 's2' },
-  // Sentinel-1
-  { id: 'VH-BACKSCATTER',   label: 'VH Backscatter',   color: '#f59e0b', group: 's1' },
-  { id: 'RGB-KOMPOSIT',      label: 'RGB Komposit',     color: '#a78bfa', group: 's1' },
-];
 
 function formatRadarTime(unixTs: number): string {
   const now  = Date.now() / 1000;
-  const diff = Math.round((unixTs - now) / 60); // Minuten
+  const diff = Math.round((unixTs - now) / 60);
   if (Math.abs(diff) <= 5)  return 'Jetzt';
   if (diff < 0) {
     const m = Math.abs(diff);
@@ -46,7 +34,6 @@ function getDateFromOffset(offset: number): string {
 export function LayerControl() {
   const {
     activeBaseMap, setBaseMap,
-    activeTheme, setTheme,
     activeLayers, toggleLayer,
     satelliteLayer, setSatelliteLayer,
     satelliteDate,  setSatelliteDate,
@@ -58,12 +45,64 @@ export function LayerControl() {
     weatherRadarPlaying, setWeatherRadarPlaying,
     weatherRadarFrames,
     windyOpen, setWindyOpen,
+    showCadastral, setShowCadastral,
   } = useMapStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0);
 
-  // Timer für Satelliten-Zeitraffer — nur monthOffset ändern
+  const biomasseActive = satelliteLayer === 'NDVI';
+
+  // XOR-Handler — immer nur ein Overlay gleichzeitig aktiv
+  const handleBiomasse = () => {
+    if (biomasseActive) {
+      setSatelliteLayer('NONE');
+      setSatellitePlaying(false);
+    } else {
+      setSatelliteLayer('NDVI');
+      setWeatherRadar(false);
+      setWindyOpen(false);
+      setShowCadastral(false);
+    }
+  };
+
+  const handleWeatherRadar = () => {
+    if (weatherRadar) {
+      setWeatherRadar(false);
+    } else {
+      setWeatherRadar(true);
+      setSatelliteLayer('NONE');
+      setSatellitePlaying(false);
+      setWindyOpen(false);
+      setShowCadastral(false);
+    }
+  };
+
+  const handleWindy = () => {
+    if (windyOpen) {
+      setWindyOpen(false);
+    } else {
+      setWindyOpen(true);
+      setSatelliteLayer('NONE');
+      setSatellitePlaying(false);
+      setWeatherRadar(false);
+      setShowCadastral(false);
+    }
+  };
+
+  const handleFlurkarte = () => {
+    if (showCadastral) {
+      setShowCadastral(false);
+    } else {
+      setShowCadastral(true);
+      setSatelliteLayer('NONE');
+      setSatellitePlaying(false);
+      setWeatherRadar(false);
+      setWindyOpen(false);
+    }
+  };
+
+  // Timer für Biomasse-Zeitraffer
   useEffect(() => {
     if (!satellitePlaying) return;
     const interval = setInterval(() => {
@@ -72,7 +111,7 @@ export function LayerControl() {
     return () => clearInterval(interval);
   }, [satellitePlaying]);
 
-  // monthOffset → satelliteDate synchronisieren (getrennt, nie im Updater)
+  // monthOffset → satelliteDate
   useEffect(() => {
     setSatelliteDate(getDateFromOffset(monthOffset));
   }, [monthOffset, setSatelliteDate]);
@@ -96,14 +135,13 @@ export function LayerControl() {
   displayDate.setMonth(displayDate.getMonth() + monthOffset);
   const monthLabel = displayDate.toLocaleString('de-DE', { month: 'short', year: '2-digit' });
 
-  // Overlays filtern (Wir nehmen nur die echten Datenebenen aus der Registry)
   const overlayLayers = Object.values(LAYER_REGISTRY).filter(l => !l.isBaseLayer);
 
   return (
     <div className="bg-[#151515]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl transition-all w-72 flex flex-col font-sans">
-      
+
       {/* HEADER */}
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full p-3 flex items-center justify-between text-xs font-bold text-white hover:bg-white/5 transition border-b border-white/5"
       >
@@ -118,8 +156,8 @@ export function LayerControl() {
 
       {isOpen && (
         <div className="p-4 space-y-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
-          
-          {/* 1. HINTERGRUNDKARTE (Grid Layout) */}
+
+          {/* 1. HINTERGRUNDKARTE */}
           <section>
             <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-3 tracking-wider">
               Hintergrund
@@ -131,23 +169,18 @@ export function LayerControl() {
                   onClick={() => setBaseMap(map.id as any)}
                   className={cn(
                     "relative h-16 rounded-lg border transition-all overflow-hidden group",
-                    activeBaseMap === map.id 
-                      ? "border-[#10b981] ring-1 ring-[#10b981]" 
+                    activeBaseMap === map.id
+                      ? "border-[#10b981] ring-1 ring-[#10b981]"
                       : "border-white/10 hover:border-white/30"
                   )}
                 >
-                  {/* Farb-Preview (später echtes Thumbnail) */}
-                  <div 
-                    className="absolute inset-0 opacity-50 group-hover:opacity-70 transition-opacity" 
-                    style={{ backgroundColor: map.previewColor }} 
+                  <div
+                    className="absolute inset-0 opacity-50 group-hover:opacity-70 transition-opacity"
+                    style={{ backgroundColor: map.previewColor }}
                   />
-                  
-                  {/* Label */}
                   <span className="absolute bottom-1 left-2 text-[10px] font-medium text-white z-10 shadow-black drop-shadow-md">
                     {map.label}
                   </span>
-
-                  {/* Active Indicator */}
                   {activeBaseMap === map.id && (
                     <div className="absolute top-1 right-1 bg-[#10b981] text-black rounded-full p-0.5">
                       <Check size={8} strokeWidth={4} />
@@ -158,105 +191,37 @@ export function LayerControl() {
             </div>
           </section>
 
-          {/* 2. KARTENSTIL (Themes) */}
-          <section>
-            <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-3 tracking-wider">
-              Darstellung (Thema)
-            </h4>
-            <div className="flex bg-black/40 p-1 rounded-lg border border-white/5">
-              {(['STANDARD', 'SPECIES', 'AGE_CLASS'] as MapTheme[]).map((theme) => (
-                <button
-                  key={theme}
-                  onClick={() => setTheme(theme)}
-                  className={cn(
-                    "flex-1 py-1.5 rounded-md text-[10px] font-bold transition-all",
-                    activeTheme === theme
-                      ? "bg-[#333] text-white shadow-sm border border-white/10" 
-                      : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
-                  )}
-                >
-                  {theme === 'STANDARD' ? 'Standard' : theme === 'SPECIES' ? 'Baumart' : 'Alter'}
-                </button>
-              ))}
-            </div>
-          </section>
-
           <div className="h-px bg-white/10 w-full" />
 
-          {/* 3. SATELLITENDATEN (Sentinel Hub) */}
+          {/* 2. BIOMASSE */}
           <section>
             <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-3 tracking-wider flex items-center gap-1.5">
-              <Satellite className="w-3 h-3" /> Satellitendaten
+              <Leaf className="w-3 h-3" /> Vegetationsindex
             </h4>
 
-            {/* Layer-Auswahl */}
-            <div className="space-y-2 mb-3">
-
-              {/* Aus */}
-              <button
-                onClick={() => setSatelliteLayer('NONE')}
-                className={cn(
-                  'w-full py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all',
-                  satelliteLayer === 'NONE'
-                    ? 'bg-[#374151] text-white border-transparent'
-                    : 'text-gray-500 border-white/10 hover:text-gray-300 hover:bg-white/5'
-                )}
-              >
-                Aus
-              </button>
-
-              {/* Sentinel-2 */}
-              <div>
-                <p className="text-[9px] uppercase text-gray-600 font-bold tracking-wider mb-1 px-0.5">
-                  Sentinel-2 · Optisch
-                </p>
-                <div className="grid grid-cols-3 gap-1">
-                  {SATELLITE_LAYERS.filter(l => l.group === 's2').map(cfg => (
-                    <button
-                      key={cfg.id}
-                      onClick={() => setSatelliteLayer(cfg.id)}
-                      className={cn(
-                        'py-1.5 px-1 rounded-lg text-[10px] font-bold border transition-all',
-                        satelliteLayer === cfg.id
-                          ? 'text-white border-transparent'
-                          : 'text-gray-500 border-white/10 hover:text-gray-300 hover:bg-white/5'
-                      )}
-                      style={satelliteLayer === cfg.id ? { backgroundColor: cfg.color } : {}}
-                    >
-                      {cfg.label}
-                    </button>
-                  ))}
-                </div>
+            <button
+              onClick={handleBiomasse}
+              className={cn(
+                'w-full flex items-center gap-3 p-2.5 rounded-lg text-xs transition-all border mb-2',
+                biomasseActive
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                  : 'bg-transparent border-white/10 text-gray-500 hover:bg-white/5 hover:text-gray-300',
+              )}
+            >
+              <div className={cn(
+                'w-6 h-6 rounded flex items-center justify-center transition-colors',
+                biomasseActive ? 'bg-emerald-500' : 'bg-[#222]',
+              )}>
+                <Leaf size={14} className={biomasseActive ? 'text-white' : 'text-gray-600'} />
               </div>
-
-              {/* Sentinel-1 */}
-              <div>
-                <p className="text-[9px] uppercase text-gray-600 font-bold tracking-wider mb-1 px-0.5">
-                  Sentinel-1 · SAR Radar
-                </p>
-                <div className="grid grid-cols-2 gap-1">
-                  {SATELLITE_LAYERS.filter(l => l.group === 's1').map(cfg => (
-                    <button
-                      key={cfg.id}
-                      onClick={() => setSatelliteLayer(cfg.id)}
-                      className={cn(
-                        'py-1.5 px-1 rounded-lg text-[10px] font-bold border transition-all',
-                        satelliteLayer === cfg.id
-                          ? 'text-white border-transparent'
-                          : 'text-gray-500 border-white/10 hover:text-gray-300 hover:bg-white/5'
-                      )}
-                      style={satelliteLayer === cfg.id ? { backgroundColor: cfg.color } : {}}
-                    >
-                      {cfg.label}
-                    </button>
-                  ))}
-                </div>
+              <span className="flex-1 text-left font-medium">Biomasse (NDVI)</span>
+              <div className={cn('w-8 h-4 rounded-full relative transition-colors', biomasseActive ? 'bg-emerald-500' : 'bg-gray-700')}>
+                <div className={cn('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', biomasseActive ? 'left-4.5' : 'left-0.5')} />
               </div>
+            </button>
 
-            </div>
-
-            {/* Zeitsteuerung — nur wenn ein Layer aktiv */}
-            {satelliteLayer !== 'NONE' && (
+            {/* Zeitsteuerung — nur wenn aktiv */}
+            {biomasseActive && (
               <div className="space-y-3 bg-black/30 p-3 rounded-lg border border-white/5">
 
                 {/* Datum + Play */}
@@ -306,35 +271,28 @@ export function LayerControl() {
                 </div>
 
                 {/* NDVI-Legende */}
-                {(satelliteLayer === 'NDVI' || satelliteLayer === 'EVI') && (
-                  <div className="pt-2 border-t border-white/10">
-                    <div className="flex justify-between text-[9px] text-gray-500 mb-1">
-                      <span className="flex items-center gap-1"><Leaf className="w-2.5 h-2.5 text-red-400" /> Geringe Biomasse</span>
-                      <span className="flex items-center gap-1">Hohe Dichte <Leaf className="w-2.5 h-2.5 text-emerald-400" /></span>
-                    </div>
-                    <div className="h-2 w-full rounded-full" style={{ background: 'linear-gradient(to right, #ef4444, #eab308, #22c55e)' }} />
-                    <p className="text-[9px] text-gray-600 mt-1">Sentinel-2 L2A · {getTimeRange(satelliteDate)}</p>
+                <div className="pt-2 border-t border-white/10">
+                  <div className="flex justify-between text-[9px] text-gray-500 mb-1">
+                    <span className="flex items-center gap-1"><Leaf className="w-2.5 h-2.5 text-red-400" /> Geringe Biomasse</span>
+                    <span className="flex items-center gap-1">Hohe Dichte <Leaf className="w-2.5 h-2.5 text-emerald-400" /></span>
                   </div>
-                )}
-
-                {satelliteLayer === 'TRUE_COLOR' && (
-                  <p className="text-[9px] text-gray-600">Sentinel-2 L2A Echtfarbe · {getTimeRange(satelliteDate)}</p>
-                )}
+                  <div className="h-2 w-full rounded-full" style={{ background: 'linear-gradient(to right, #ef4444, #eab308, #22c55e)' }} />
+                  <p className="text-[9px] text-gray-600 mt-1">Sentinel-2 L2A · {getTimeRange(satelliteDate)}</p>
+                </div>
               </div>
             )}
           </section>
 
           <div className="h-px bg-white/10 w-full" />
 
-          {/* 4. WETTERKARTE (RainViewer Radar) */}
+          {/* 3. WETTERKARTE */}
           <section>
             <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-3 tracking-wider flex items-center gap-1.5">
               <CloudRain className="w-3 h-3" /> Wetterkarte
             </h4>
 
-            {/* Toggle An/Aus */}
             <button
-              onClick={() => setWeatherRadar(!weatherRadar)}
+              onClick={handleWeatherRadar}
               className={cn(
                 'w-full flex items-center gap-3 p-2.5 rounded-lg text-xs transition-all border mb-2',
                 weatherRadar
@@ -354,11 +312,9 @@ export function LayerControl() {
               </div>
             </button>
 
-            {/* Zeitsteuerung — nur wenn aktiv und Frames geladen */}
             {weatherRadar && weatherRadarFrames.length > 0 && (
               <div className="space-y-3 bg-black/30 p-3 rounded-lg border border-white/5">
 
-                {/* Zeitstempel + Play */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-[10px] font-bold text-white">
                     {weatherRadarFrames[weatherRadarFrameIndex]?.isPast === false
@@ -379,7 +335,6 @@ export function LayerControl() {
                   </button>
                 </div>
 
-                {/* Frame-Slider */}
                 <input
                   type="range"
                   min={0}
@@ -396,7 +351,6 @@ export function LayerControl() {
                   <span>{formatRadarTime(weatherRadarFrames[weatherRadarFrames.length - 1]?.time ?? 0)}</span>
                 </div>
 
-                {/* Deckkraft */}
                 <div>
                   <div className="flex justify-between text-[9px] text-gray-500 mb-1">
                     <span>Deckkraft</span>
@@ -410,11 +364,8 @@ export function LayerControl() {
                   />
                 </div>
 
-                {/* Legende */}
                 <div className="pt-2 border-t border-white/10">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="h-2 flex-1 rounded-full" style={{ background: 'linear-gradient(to right, #a5f3fc, #38bdf8, #0284c7, #1d4ed8, #4c1d95)' }} />
-                  </div>
+                  <div className="h-2 flex-1 rounded-full mb-1" style={{ background: 'linear-gradient(to right, #a5f3fc, #38bdf8, #0284c7, #1d4ed8, #4c1d95)' }} />
                   <div className="flex justify-between text-[9px] text-gray-600">
                     <span>Leichter Regen</span><span>Starkregen</span>
                   </div>
@@ -423,7 +374,6 @@ export function LayerControl() {
               </div>
             )}
 
-            {/* Ladehinweis wenn aktiv aber noch keine Frames */}
             {weatherRadar && weatherRadarFrames.length === 0 && (
               <p className="text-[10px] text-gray-500 text-center py-2 animate-pulse">Lade Radar-Daten…</p>
             )}
@@ -431,13 +381,13 @@ export function LayerControl() {
 
           <div className="h-px bg-white/10 w-full" />
 
-          {/* Windy Wetterkarte */}
+          {/* 4. WINDY */}
           <section>
             <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-3 tracking-wider flex items-center gap-1.5">
               <Wind className="w-3 h-3" /> Windy Wetterkarte
             </h4>
             <button
-              onClick={() => setWindyOpen(!windyOpen)}
+              onClick={handleWindy}
               className={cn(
                 'w-full flex items-center gap-3 p-2.5 rounded-lg text-xs transition-all border',
                 windyOpen
@@ -465,7 +415,41 @@ export function LayerControl() {
 
           <div className="h-px bg-white/10 w-full" />
 
-          {/* 6. OVERLAYS (Liste mit Toggles) */}
+          {/* 5. FLURKARTE */}
+          <section>
+            <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-3 tracking-wider flex items-center gap-1.5">
+              <Grid3x3 className="w-3 h-3" /> Flurkarte
+            </h4>
+            <button
+              onClick={handleFlurkarte}
+              className={cn(
+                'w-full flex items-center gap-3 p-2.5 rounded-lg text-xs transition-all border',
+                showCadastral
+                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                  : 'bg-transparent border-white/10 text-gray-500 hover:bg-white/5 hover:text-gray-300',
+              )}
+            >
+              <div className={cn(
+                'w-6 h-6 rounded flex items-center justify-center transition-colors',
+                showCadastral ? 'bg-amber-500' : 'bg-[#222]',
+              )}>
+                <Grid3x3 size={14} className={showCadastral ? 'text-white' : 'text-gray-600'} />
+              </div>
+              <span className="flex-1 text-left font-medium">Flurstücke (ALKIS)</span>
+              <div className={cn('w-8 h-4 rounded-full relative transition-colors', showCadastral ? 'bg-amber-500' : 'bg-gray-700')}>
+                <div className={cn('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', showCadastral ? 'left-4.5' : 'left-0.5')} />
+              </div>
+            </button>
+            {showCadastral && (
+              <p className="text-[10px] text-gray-500 mt-2 px-1">
+                Automatische Dienst-Auswahl je Bundesland · WMS-Dienst erst ab Zoom 12–17 sichtbar
+              </p>
+            )}
+          </section>
+
+          <div className="h-px bg-white/10 w-full" />
+
+          {/* 6. EBENEN & OBJEKTE */}
           <section>
             <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-3 tracking-wider">
               Ebenen & Objekte
@@ -474,19 +458,19 @@ export function LayerControl() {
               {overlayLayers.map((layer) => {
                 const isActive = activeLayers.includes(layer.id);
                 const Icon = layer.icon;
-                
+
                 return (
                   <button
                     key={layer.id}
                     onClick={() => toggleLayer(layer.id)}
                     className={cn(
                       "w-full flex items-center gap-3 p-2.5 rounded-lg text-xs transition-all border group",
-                      isActive 
-                        ? "bg-white/5 border-white/10 text-white" 
+                      isActive
+                        ? "bg-white/5 border-white/10 text-white"
                         : "bg-transparent border-transparent text-gray-500 hover:bg-white/5 hover:text-gray-300"
                     )}
                   >
-                    <div 
+                    <div
                       className={cn(
                         "w-6 h-6 rounded flex items-center justify-center transition-colors",
                         isActive ? "" : "grayscale opacity-50"
@@ -495,12 +479,7 @@ export function LayerControl() {
                     >
                       <Icon size={14} className="text-black/80" />
                     </div>
-
-                    <span className="flex-1 text-left font-medium">
-                      {layer.label}
-                    </span>
-
-                    {/* iOS Style Toggle Switch Simulation */}
+                    <span className="flex-1 text-left font-medium">{layer.label}</span>
                     <div className={cn(
                       "w-8 h-4 rounded-full relative transition-colors",
                       isActive ? "bg-[#10b981]" : "bg-gray-700"

@@ -46,6 +46,8 @@ export interface MapState {
   selectedFeatureId: string | null;
   selectedFeatureType: FeatureType | null;
   hoveredFeatureId: string | null;
+  previousFeatureId: string | null;
+  previousFeatureType: FeatureType | null;
   
   // Interaktions-Modus
   interactionMode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY';
@@ -80,9 +82,6 @@ export interface MapState {
   setWeatherRadarPlaying: (playing: boolean) => void;
   setWeatherRadarData: (host: string, frames: Array<{ time: number; path: string; isPast: boolean }>) => void;
 
-  // 4. Data Sync
-  dataVersion: number;
-
   // Actions
   setMapReady: (ready: boolean) => void;
   setBaseMap: (id: BaseMapId) => void;
@@ -91,6 +90,7 @@ export interface MapState {
   setLayerVisibility: (layer: LayerId, visible: boolean) => void;
   
   selectFeature: (id: string | null, type: FeatureType | null) => void;
+  restorePreviousFeature: () => void;
   setHoveredFeature: (id: string | null) => void;
   
   setInteractionMode: (mode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY') => void;
@@ -109,6 +109,10 @@ export interface MapState {
   // Windy Wetterkarte
   windyOpen: boolean;
   setWindyOpen: (open: boolean) => void;
+
+  // Flurkarte (ALKIS WMS)
+  showCadastral: boolean;
+  setShowCadastral: (v: boolean) => void;
 
   // Map Movement
   flyTo: (coords: [number, number], zoom?: number) => void;
@@ -129,6 +133,8 @@ export const useMapStore = create<MapState>()(
     selectedFeatureId: null,
     selectedFeatureType: null,
     hoveredFeatureId: null,
+    previousFeatureId: null,
+    previousFeatureType: null,
     
     interactionMode: 'VIEW',
     editingFeatureData: null,
@@ -148,7 +154,6 @@ export const useMapStore = create<MapState>()(
     weatherRadarFrames: [],
     weatherRadarHost: '',
 
-    dataVersion: 0,
 
     taskSidebarOpen: false,
     hoveredTaskId: null,
@@ -177,9 +182,21 @@ export const useMapStore = create<MapState>()(
     }),
 
     selectFeature: (id, type) => set(state => ({
+      // Vorheriges Feature merken – aber nur wenn es kein TASK war
+      // (damit Task→Task keine History aufbaut)
+      ...(state.selectedFeatureId && state.selectedFeatureType !== 'TASK'
+        ? { previousFeatureId: state.selectedFeatureId, previousFeatureType: state.selectedFeatureType }
+        : {}),
       selectedFeatureId: id,
       selectedFeatureType: type,
       ...(type === 'FOREST' && id ? { lastForestId: id } : {}),
+    })),
+
+    restorePreviousFeature: () => set(state => ({
+      selectedFeatureId: state.previousFeatureId,
+      selectedFeatureType: state.previousFeatureType,
+      previousFeatureId: null,
+      previousFeatureType: null,
     })),
     
     setHoveredFeature: (id) => set({ hoveredFeatureId: id }),
@@ -202,13 +219,16 @@ export const useMapStore = create<MapState>()(
     setWeatherRadarPlaying: (playing) => set({ weatherRadarPlaying: playing }),
     setWeatherRadarData:    (host, frames) => set({ weatherRadarHost: host, weatherRadarFrames: frames }),
 
-    refreshData: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
+    refreshData: () => console.warn('refreshData: not yet registered'),
 
     setTaskSidebarOpen: (open) => set({ taskSidebarOpen: open }),
     setHoveredTaskId: (id) => set({ hoveredTaskId: id }),
 
     windyOpen: false,
     setWindyOpen: (open) => set({ windyOpen: open }),
+
+    showCadastral: false,
+    setShowCadastral: (v) => set({ showCadastral: v }),
 
     flyTo: (coords, zoom) => console.warn("Map not initialized yet", coords, zoom),
     fitBounds: (bounds) => console.warn("Map not initialized yet", bounds),

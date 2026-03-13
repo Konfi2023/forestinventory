@@ -139,11 +139,35 @@ interface WeatherData {
 
 function getCentroid(forest: any): { lat: number; lng: number } | null {
   if (!forest?.geoJson) return null;
-  const geom = forest.geoJson?.features?.[0]?.geometry ?? forest.geoJson?.geometry ?? forest.geoJson;
-  if (geom?.type !== 'Polygon' || !geom?.coordinates?.[0]?.length) return null;
-  const coords: [number, number][] = geom.coordinates[0];
-  const lat = coords.reduce((s, c) => s + c[1], 0) / coords.length;
-  const lng = coords.reduce((s, c) => s + c[0], 0) / coords.length;
+
+  const raw = typeof forest.geoJson === 'string'
+    ? (() => { try { return JSON.parse(forest.geoJson); } catch { return null; } })()
+    : forest.geoJson;
+  if (!raw) return null;
+
+  // FeatureCollection → Feature → Geometry
+  let geom: any = null;
+  if (raw.type === 'FeatureCollection') {
+    geom = raw.features?.find((f: any) =>
+      f?.geometry?.type === 'Polygon' || f?.geometry?.type === 'MultiPolygon'
+    )?.geometry ?? null;
+  } else if (raw.type === 'Feature') {
+    geom = raw.geometry ?? null;
+  } else {
+    geom = raw;
+  }
+  if (!geom) return null;
+
+  let ring: number[][] | null = null;
+  if (geom.type === 'Polygon' && geom.coordinates?.[0]?.length) {
+    ring = geom.coordinates[0];
+  } else if (geom.type === 'MultiPolygon' && geom.coordinates?.[0]?.[0]?.length) {
+    ring = geom.coordinates[0][0];
+  }
+  if (!ring) return null;
+
+  const lat = ring.reduce((s, c) => s + c[1], 0) / ring.length;
+  const lng = ring.reduce((s, c) => s + c[0], 0) / ring.length;
   return isFinite(lat) && isFinite(lng) ? { lat, lng } : null;
 }
 

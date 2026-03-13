@@ -4,6 +4,7 @@
   "description": "Digitale Forstverwaltung",
   "start_url": "/dashboard",
   "display": "standalone",
+  "categories": ["productivity", "utilities"],
   "background_color": "#ffffff",
   "theme_color": "#0f172a",
   "orientation": "portrait",

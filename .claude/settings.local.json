@@ -11,7 +11,12 @@
       "Bash(\"C:\\\\Users\\\\Aschkan\\\\forestinventory\\\\.env\":*)",
       "Read(//c/Users/Aschkan/forestdb2/components/map/overlays//**)",
       "Read(//c/Users/Aschkan/forestdb2/components/map/sidebar//**)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(ls .env*:*)",
+      "Bash(grep -n \"typeIcon\\\\|Waves\\\\|Tractor\" C:/Users/Aschkan/forestinventory/src/app/dashboard/org/[slug]/\\\\\\(standard\\\\\\)/tasks/_components/TaskDetailSheet.tsx | head -20)",
+      "Bash(grep -n \"typeIcon\\\\|type.*icon\\\\|PATH\\\\|ROAD\\\\|SKID\\\\|Route\" C:/Users/Aschkan/forestinventory/src/app/dashboard/org/[slug]/\\\\\\(standard\\\\\\)/tasks/_components/TaskDetailSheet.tsx | head -20)",
+      "Bash(find /c/Users/Aschkan/forestinventory/src -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -size +50k 2>/dev/null | head -20)",
+      "Bash(find . -name \"*.env*\" -type f 2>/dev/null | head -10)"
     ]
   }
 }

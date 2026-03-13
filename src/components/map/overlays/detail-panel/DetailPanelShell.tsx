@@ -63,7 +63,6 @@ export function DetailPanelShell({
                         value={editNameValue}
                         onChange={(e) => onEditNameChange(e.target.value)}
                         className="h-8 bg-black/50 border-white/20 text-white font-bold focus-visible:ring-white/50 min-w-0"
-                        autoFocus
                     />
                 ) : (
                     <span className="truncate text-lg">{title}</span>

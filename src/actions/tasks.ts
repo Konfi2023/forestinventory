@@ -5,6 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { TaskPriority, TaskStatus, RecurrenceUnit } from "@prisma/client";
+import { addDays, addWeeks, addMonths, addYears } from "date-fns";
+
+function calcNextDate(from: Date, unit: RecurrenceUnit, interval: number): Date {
+  switch (unit) {
+    case "DAYS":   return addDays(from, interval);
+    case "WEEKS":  return addWeeks(from, interval);
+    case "MONTHS": return addMonths(from, interval);
+    case "YEARS":  return addYears(from, interval);
+    default:       return addDays(from, interval);
+  }
+}
 import { sendNotification, addWatcher } from "@/lib/notifications";
 
 // --- SECURITY HELPER ---
@@ -36,14 +47,15 @@ export async function createTask(orgSlug: string, data: {
   description?: string;
   forestId: string;
   priority: TaskPriority;
-  scheduledDate?: Date;    
+  scheduledDate?: Date;
   scheduledEndDate?: Date;
   dueDate?: Date;
   assigneeId?: string;
-  // NEU: Geo-Daten & POI
   lat?: number;
   lng?: number;
   poiId?: string;
+  linkedPolygonId?: string;
+  linkedPolygonType?: string;
 }) {
   const { org, user } = await checkPermission(orgSlug, "tasks:create");
 
@@ -63,10 +75,11 @@ export async function createTask(orgSlug: string, data: {
       scheduledDate: data.scheduledDate,      
       scheduledEndDate: data.scheduledEndDate,
       
-      // LOGIK: Wenn POI, dann verknüpfen. Wenn kein POI, dann Koordinaten speichern.
       poiId: data.poiId || null,
-      lat: data.poiId ? null : data.lat, 
-      lng: data.poiId ? null : data.lng,
+      linkedPolygonId: data.poiId ? null : (data.linkedPolygonId || null),
+      linkedPolygonType: data.poiId ? null : (data.linkedPolygonType || null),
+      lat: (data.poiId || data.linkedPolygonId) ? null : data.lat,
+      lng: (data.poiId || data.linkedPolygonId) ? null : data.lng,
       
       watchers: { connect: { id: user.id } }
     }
@@ -143,10 +156,11 @@ export async function updateTaskContent(orgSlug: string, taskId: string, data: {
   priority?: TaskPriority;
   dueDate?: Date | null;
   estimatedTime?: number | null;
-  // NEU: Geo-Update erlauben
   lat?: number | null;
   lng?: number | null;
   poiId?: string | null;
+  linkedPolygonId?: string | null;
+  linkedPolygonType?: string | null;
 }) {
   const { org, user } = await checkPermission(orgSlug, "tasks:edit");
 
@@ -235,12 +249,44 @@ export async function getTaskDetails(orgSlug: string, taskId: string) {
       },
       images: { orderBy: { createdAt: 'desc' } },
       documents: { orderBy: { createdAt: 'desc' } },
-      // NEU: POI Laden
-      poi: true 
+      poi: true
     }
   });
 
-  return task;
+  if (!task) return null;
+
+  // Verlinktes Polygon-Objekt auflösen (kein echter FK, daher manuell)
+  let linkedPolygon: { id: string; name: string; type: string } | null = null;
+  if (task.linkedPolygonId && task.linkedPolygonType) {
+    switch (task.linkedPolygonType) {
+      case 'PLANTING': {
+        const obj = await prisma.forestPlanting.findUnique({ where: { id: task.linkedPolygonId }, select: { id: true, treeSpecies: true, description: true } });
+        if (obj) linkedPolygon = { id: obj.id, name: obj.description || obj.treeSpecies, type: 'PLANTING' };
+        break;
+      }
+      case 'CALAMITY': {
+        const obj = await prisma.forestCalamity.findUnique({ where: { id: task.linkedPolygonId }, select: { id: true, cause: true, description: true } });
+        if (obj) linkedPolygon = { id: obj.id, name: obj.description || obj.cause || 'Kalamität', type: 'CALAMITY' };
+        break;
+      }
+      case 'HUNTING': {
+        const obj = await prisma.forestHunting.findUnique({ where: { id: task.linkedPolygonId }, select: { id: true, name: true } });
+        if (obj) linkedPolygon = { id: obj.id, name: obj.name || 'Jagdrevier', type: 'HUNTING' };
+        break;
+      }
+      case 'PATH':
+      case 'ROAD':
+      case 'SKID_TRAIL':
+      case 'WATER': {
+        const PATH_LABELS: Record<string, string> = { ROAD: 'LKW-Weg', SKID_TRAIL: 'Rückegasse', WATER: 'Gewässer' };
+        const obj = await prisma.forestPath.findUnique({ where: { id: task.linkedPolygonId }, select: { id: true, name: true, type: true } });
+        if (obj) linkedPolygon = { id: obj.id, name: obj.name || PATH_LABELS[obj.type] || obj.type, type: task.linkedPolygonType! };
+        break;
+      }
+    }
+  }
+
+  return { ...task, linkedPolygon };
 }
 
 // --- COMMENTS (MIT MENTIONS & REGELN) ---
@@ -410,21 +456,41 @@ export async function createTaskSchedule(orgSlug: string, data: {
   const forest = await prisma.forest.findUnique({ where: { id: data.forestId } });
   if (!forest || forest.organizationId !== org.id) throw new Error("Wald nicht gefunden");
 
-  await prisma.taskSchedule.create({
-    data: {
-      title: data.title,
-      description: data.description,
-      priority: data.priority,
-      forestId: data.forestId,
-      assigneeId: data.assigneeId || null,
-      creatorId: user.id,
-      active: true,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      interval: data.interval,
-      unit: data.unit,
-      nextRunAt: data.startDate, 
-    }
+  const secondRunAt = calcNextDate(data.startDate, data.unit, data.interval);
+
+  await prisma.$transaction(async (tx) => {
+    const schedule = await tx.taskSchedule.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        forestId: data.forestId,
+        assigneeId: data.assigneeId || null,
+        creatorId: user.id,
+        active: true,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        interval: data.interval,
+        unit: data.unit,
+        nextRunAt: secondRunAt, // Cron überspringt ersten Termin — wir erzeugen ihn sofort
+        lastGeneratedAt: new Date(),
+      }
+    });
+
+    // Ersten Task sofort erzeugen → sofort im Kanban sichtbar
+    await tx.task.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        forestId: data.forestId,
+        assigneeId: data.assigneeId || null,
+        creatorId: user.id,
+        scheduleId: schedule.id,
+        status: "OPEN",
+        dueDate: data.startDate,
+      }
+    });
   });
 
   revalidatePath(`/dashboard/org/${orgSlug}/tasks`);
@@ -478,6 +544,7 @@ export async function updateTaskSchedule(orgSlug: string, scheduleId: string, da
   interval: number;
   unit: RecurrenceUnit;
   priority: TaskPriority;
+  endDate?: Date;
 }) {
   const { org } = await checkPermission(orgSlug, "schedules:manage");
 
@@ -493,6 +560,7 @@ export async function updateTaskSchedule(orgSlug: string, scheduleId: string, da
       interval: data.interval,
       unit: data.unit,
       priority: data.priority,
+      endDate: data.endDate ?? null,
     }
   });
 
@@ -536,4 +604,27 @@ export async function unscheduleTask(orgSlug: string, taskId: string) {
   revalidatePath(`/dashboard/org/${orgSlug}/calendar`);
   revalidatePath(`/dashboard/org/${orgSlug}/tasks`);
   return { success: true };
+}
+
+export async function getForestObjects(orgSlug: string, forestId: string) {
+  const { org } = await checkPermission(orgSlug, "tasks:view");
+
+  const forest = await prisma.forest.findUnique({
+    where: { id: forestId, organizationId: org.id },
+    select: {
+      pois:       { select: { id: true, name: true, type: true } },
+      plantings:  { select: { id: true, treeSpecies: true, description: true } },
+      calamities: { select: { id: true, cause: true, description: true } },
+      hunting:    { select: { id: true, name: true } },
+      paths:      { select: { id: true, name: true, type: true } },
+    }
+  });
+  if (!forest) return null;
+  const { paths, ...rest } = forest;
+  return {
+    ...rest,
+    roads:      paths.filter(p => p.type === 'ROAD'),
+    skidTrails: paths.filter(p => p.type === 'SKID_TRAIL'),
+    waters:     paths.filter(p => p.type === 'WATER'),
+  };
 }

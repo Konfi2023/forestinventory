@@ -523,10 +523,10 @@ function dirLabel(deg: number | null): string {
   return dirs[Math.round(deg / 45) % 8];
 }
 
-function SarChart({ s1Snapshots, snapshots, stormEvents }: {
+function SarChart({ s1Snapshots, snapshots, stormEvents = [] }: {
   s1Snapshots: S1Snapshot[];
   snapshots:   Snapshot[];
-  stormEvents: StormEvent[];
+  stormEvents?: StormEvent[];
 }) {
   const valid = s1Snapshots.filter(s => s.vhMeanDb != null);
 

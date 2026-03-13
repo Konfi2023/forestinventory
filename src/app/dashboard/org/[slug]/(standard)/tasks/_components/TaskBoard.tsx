@@ -274,7 +274,7 @@ export function TaskBoard({ initialTasks, orgSlug, members, currentUserId, defau
                           
                           <h4 className="font-semibold text-slate-900 truncate">{task.title}</h4>
                           
-                          <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                          <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 flex-wrap">
                               {task.dueDate && (
                                   <div className="flex items-center gap-1">
                                       <Calendar size={12} className={new Date() > new Date(task.dueDate) ? "text-red-500" : ""} />
@@ -287,6 +287,11 @@ export function TaskBoard({ initialTasks, orgSlug, members, currentUserId, defau
                               <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal bg-slate-100">
                                 {translateStatus(task.status)}
                               </Badge>
+                              {task.scheduleId && (
+                                  <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal bg-blue-50 text-blue-600 border border-blue-100">
+                                    🔁 Serie
+                                  </Badge>
+                              )}
                           </div>
                       </div>
 
@@ -343,15 +348,21 @@ function DraggableTaskCard({ task, onClick }: { task: any, onClick: () => void }
     );
 }
 
-// UPDATE: AVATARE IN TASK CARD
 function TaskCardContent({ task }: { task: any }) {
     return (
         <Card className="cursor-grab active:cursor-grabbing hover:shadow-md transition-all hover:border-slate-400 group bg-white">
             <CardHeader className="p-3 pb-0 space-y-1">
                 <div className="flex justify-between items-start">
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-slate-200 text-slate-500 font-normal">
-                        {task.forest.name}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-slate-200 text-slate-500 font-normal">
+                            {task.forest.name}
+                        </Badge>
+                        {task.scheduleId && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 bg-blue-50 text-blue-600 border border-blue-100 font-normal gap-0.5">
+                                🔁 Serie
+                            </Badge>
+                        )}
+                    </div>
                     <PriorityBadge priority={task.priority} showLabel={false} />
                 </div>
                 <CardTitle className="text-sm font-medium leading-tight group-hover:text-blue-600 transition-colors pt-1">
@@ -368,7 +379,7 @@ function TaskCardContent({ task }: { task: any }) {
                             </>
                         )}
                     </div>
-                    
+
                     {/* AVATAR DESKTOP */}
                     {task.assignee ? (
                         <Avatar className="h-6 w-6 border-2 border-white shadow-sm">

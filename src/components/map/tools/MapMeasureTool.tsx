@@ -106,6 +106,8 @@ export default function MapMeasureTool() {
     return () => {
       map.off(L.Draw.Event.CREATED, onCreated);
       drawerRef.current?.disable();
+      drawerRef.current = null;
+      clearLayer();
       map.doubleClickZoom.enable();
     };
   }, [map, mode]); // eslint-disable-line react-hooks/exhaustive-deps

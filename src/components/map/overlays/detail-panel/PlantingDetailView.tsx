@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Sprout, Ruler, Loader2, ScanLine, Check, Trash2, Plus, X, Search, Radio } from 'lucide-react';
+import { Sprout, Ruler, Loader2, ScanLine, Check, Trash2, Plus, X, Search, Radio, PlusCircle, Calendar, User, AlertCircle } from 'lucide-react';
 import { DetailPanelShell } from './DetailPanelShell';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,14 @@ import { toast } from 'sonner';
 import { useMapStore } from '@/components/map/stores/useMapStores';
 import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
 import { TREE_SPECIES, getSpeciesColor, getSpeciesLabel, getDominantSpecies } from '@/lib/tree-species';
+import { CreateTaskDialog } from '@/app/dashboard/org/[slug]/(standard)/tasks/_components/CreateTaskDialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { cn, getUserColor, getInitials } from '@/lib/utils';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { point } from '@turf/helpers';
+import centroid from '@turf/centroid';
 
 // ---------------------------------------------------------------------------
 
@@ -101,6 +109,9 @@ interface Props {
   planting: any;
   forest: any;
   orgSlug: string;
+  tasks: any[];
+  members: any[];
+  forests: any[];
   onClose: () => void;
   onRefresh: () => void;
   onDeleteSuccess: () => void;
@@ -109,17 +120,20 @@ interface Props {
 }
 
 export function PlantingDetailView({
-  planting, forest, orgSlug, onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
+  planting, forest, orgSlug, tasks, members, forests, onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
 }: Props) {
   const setInteractionMode = useMapStore(s => s.setInteractionMode);
   const setEditingFeature  = useMapStore(s => s.setEditingFeature);
   const interactionMode    = useMapStore(s => s.interactionMode);
+  const selectFeature      = useMapStore(s => s.selectFeature);
 
-  const [isEditing,     setIsEditing]     = useState(false);
-  const [isSaving,      setIsSaving]      = useState(false);
-  const [showPicker,    setShowPicker]    = useState(false);
-  const [trackBiomass,  setTrackBiomass]  = useState<boolean>(planting.trackBiomass ?? false);
-  const [isTogglingBio, setIsTogglingBio] = useState(false);
+  const [isEditing,      setIsEditing]      = useState(false);
+  const [isSaving,       setIsSaving]       = useState(false);
+  const [showPicker,     setShowPicker]     = useState(false);
+  const [trackBiomass,   setTrackBiomass]   = useState<boolean>(planting.trackBiomass ?? false);
+  const [isTogglingBio,  setIsTogglingBio]  = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [deleteTasksToo, setDeleteTasksToo] = useState(false);
 
   const parseContent = (raw: any): ContentEntry[] => {
     if (!Array.isArray(raw)) return [];
@@ -132,10 +146,40 @@ export function PlantingDetailView({
 
   const totalCount = content.reduce((s, e) => s + e.count, 0);
   const dominant   = getDominantSpecies(content) ?? planting.treeSpecies;
-  const dominantLabel = getSpeciesLabel(dominant ?? '') || planting.treeSpecies || 'Pflanzfläche';
+  const dominantLabel = (dominant && dominant !== 'Unbekannt') ? getSpeciesLabel(dominant) : 'Pflanzfläche';
   const dominantColor = getSpeciesColor(dominant ?? '');
 
+  const title = (description && description.trim()) ? description.trim() : dominantLabel;
+
   const isGeometryEditing = interactionMode === 'EDIT_GEOMETRY';
+
+  const polygonCentroid = useMemo(() => {
+    try {
+      const geo = planting.geoJson;
+      const feature = geo.type === 'Feature' ? geo : { type: 'Feature', geometry: geo, properties: {} };
+      const c = centroid(feature as any);
+      return { lat: c.geometry.coordinates[1], lng: c.geometry.coordinates[0] };
+    } catch { return null; }
+  }, [planting.geoJson]);
+
+  const linkedTasks = useMemo(() => {
+    if (!tasks?.length) return [];
+    return tasks.filter(t => {
+      if (t.status === 'DONE') return false;
+      // Neue direkte Verknüpfung via linkedPolygonId
+      if (t.linkedPolygonId === planting.id && t.linkedPolygonType === 'PLANTING') return true;
+      // Legacy: Koordinate innerhalb der Fläche
+      if (t.lat && t.lng) {
+        try {
+          const p = point([t.lng, t.lat]);
+          const geo = planting.geoJson;
+          const feature = geo.type === 'Feature' ? geo : { type: 'Feature', geometry: geo, properties: {} };
+          return booleanPointInPolygon(p, feature as any);
+        } catch { return false; }
+      }
+      return false;
+    });
+  }, [tasks, planting.id, planting.geoJson]);
 
   const addSpecies = (id: string) => {
     if (content.some(e => e.species === id)) {
@@ -209,12 +253,17 @@ export function PlantingDetailView({
     <DetailPanelShell
       isVisible={true}
       onClose={onClose}
-      title={dominantLabel}
+      title={title}
       icon={<Sprout className="w-4 h-4" style={{ color: dominantColor }} />}
       headerColor=""
       headerStyle={{ background: `linear-gradient(to bottom right, ${dominantColor}40, rgba(0,0,0,0.8))` }}
       isEditing={isEditing}
-      onToggleEdit={() => setIsEditing(!isEditing)}
+      onToggleEdit={() => {
+        if (!isEditing && !description) setDescription(dominantLabel);
+        setIsEditing(!isEditing);
+      }}
+      editNameValue={description}
+      onEditNameChange={setDescription}
       canEdit={canEdit}
       canDelete={canDelete}
       onDelete={() => {}}
@@ -342,6 +391,63 @@ export function PlantingDetailView({
         )}
       </div>
 
+      {/* AUFGABEN */}
+      {!isEditing && (
+        <div className="space-y-3 pt-4 border-t border-white/10 mt-4">
+          <div className="flex justify-between items-center">
+            <h4 className="text-[10px] uppercase text-gray-500 font-bold">Aufgaben</h4>
+            <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-300">{linkedTasks.length}</span>
+          </div>
+          <div className="space-y-2">
+            {linkedTasks.length === 0 ? (
+              <div className="text-center py-4 text-xs text-gray-600 border border-dashed border-white/10 rounded-lg">
+                Alles erledigt.
+              </div>
+            ) : (
+              linkedTasks.map((task: any) => (
+                <div
+                  key={task.id}
+                  onClick={() => selectFeature(task.id, 'TASK')}
+                  className="bg-white/5 hover:bg-white/10 border border-white/5 p-3 rounded-lg transition-colors group cursor-pointer flex justify-between items-start"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      {task.priority === 'URGENT' && <AlertCircle size={14} className="text-red-500" />}
+                      <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">{task.title}</span>
+                    </div>
+                    {task.dueDate && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Calendar size={12} /> {format(new Date(task.dueDate), 'dd. MMM', { locale: de })}
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0 ml-2">
+                    {task.assignee ? (
+                      <Avatar className="h-6 w-6 border border-white/20">
+                        <AvatarFallback className={cn('text-[9px] font-bold', getUserColor(task.assignee.firstName || task.assignee.email))}>
+                          {getInitials(task.assignee.firstName, task.assignee.lastName)}
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
+                        <User size={12} className="text-gray-500" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+            <Button
+              className="w-full border-dashed border-white/20 text-gray-400 hover:text-white hover:bg-white/5 h-9 text-xs mt-2"
+              variant="outline"
+              onClick={() => setShowCreateTask(true)}
+            >
+              <PlusCircle className="w-3 h-3 mr-2" /> Neue Aufgabe hier
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* BIOMASSE-TRACKING */}
       <div className="flex items-center justify-between py-2 border-t border-white/10">
         <div className="flex items-center gap-2">
@@ -391,11 +497,37 @@ export function PlantingDetailView({
               description="Die Pflanzfläche wird unwiderruflich von der Karte entfernt."
               confirmString={dominantLabel}
               onConfirm={async () => {
-                const res = await deletePlanting(planting.id, orgSlug);
+                const taskIds = deleteTasksToo ? linkedTasks.map((t: any) => t.id) : undefined;
+                const res = await deletePlanting(planting.id, orgSlug, taskIds);
                 if (res.success) { onDeleteSuccess(); onClose(); }
                 else throw new Error(res.error);
               }}
-            />
+            >
+              {linkedTasks.length > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-amber-800">
+                    Verknüpfte Aufgaben ({linkedTasks.length})
+                  </p>
+                  <div className="space-y-1">
+                    {linkedTasks.map((t: any) => (
+                      <div key={t.id} className="flex items-baseline gap-2 text-sm">
+                        <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">Aufgabe</span>
+                        <span className="text-slate-700 truncate">{t.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer pt-1 border-t border-amber-200">
+                    <input
+                      type="checkbox"
+                      checked={deleteTasksToo}
+                      onChange={e => setDeleteTasksToo(e.target.checked)}
+                      className="rounded border-amber-400 text-red-600 focus:ring-red-500"
+                    />
+                    <span className="text-sm text-slate-700">Aufgaben ebenfalls löschen</span>
+                  </label>
+                </div>
+              )}
+            </DeleteConfirmDialog>
           ) : <div />}
           <div className="flex gap-2">
             <Button variant="ghost" onClick={resetEditing} className="text-gray-400">
@@ -407,6 +539,18 @@ export function PlantingDetailView({
           </div>
         </div>
       )}
+      <CreateTaskDialog
+        openProp={showCreateTask}
+        onOpenChangeProp={open => { setShowCreateTask(open); if (!open) onRefresh(); }}
+        orgSlug={orgSlug}
+        members={members}
+        forests={forests}
+        defaultTitle={`Aufgabe: ${title}`}
+        defaultForestId={planting.forestId}
+        defaultLinkedPolygonId={planting.id}
+        defaultLinkedPolygonType="PLANTING"
+        trigger={<span className="hidden" />}
+      />
     </DetailPanelShell>
   );
 }

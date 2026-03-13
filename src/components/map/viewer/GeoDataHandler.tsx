@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useMapStore, MapState, SatelliteLayerId } from '../stores/useMapStores';
+import { useShallow } from 'zustand/react/shallow';
 import { LAYER_REGISTRY } from '../registry/LayerRegistry';
 import { Polygon, Marker, Polyline, Tooltip, useMapEvents, useMap } from 'react-leaflet';
 import { geoJSONToLeaflet, geoJSONLineToLeaflet, calculatePathLengthM } from '@/lib/map-helpers';
@@ -213,7 +214,9 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
   const [pendingPoi, setPendingPoi] = useState<{ lat: number; lng: number; type: string } | null>(null);
 
-  const activeLayers = useMapStore((s: MapState) => s.activeLayers);
+  // useShallow: verhindert Re-Render wenn activeLayers-Inhalt gleich bleibt
+  // aber eine neue Array-Referenz entsteht (z.B. durch andere Store-Updates)
+  const activeLayers = useMapStore(useShallow((s: MapState) => s.activeLayers));
   const selectFeature = useMapStore((s: MapState) => s.selectFeature);
   const selectedId = useMapStore((s: MapState) => s.selectedFeatureId);
   const hoveredId = useMapStore((s: MapState) => s.hoveredFeatureId);
@@ -243,6 +246,9 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
   const sentinelLayerRef = useRef<L.TileLayer.WMS | null>(null);
 
   useEffect(() => {
+    // Defensive guard: map might not be fully initialized (Strict Mode double-invoke)
+    if (!map.getContainer()) return;
+
     // Layer entfernen wenn deaktiviert
     if (satelliteLayer === 'NONE') {
       sentinelLayerRef.current?.remove();
@@ -260,7 +266,6 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
       const cfg = SENTINEL_LAYER_MAP[satelliteLayer];
       const timeRange = toTimeRange(satelliteDate);
 
-      // Sentinel-1 ist SAR (kein optischer Sensor) → andere Parameter als S2
       const isS1 = satelliteLayer === 'VH-BACKSCATTER' || satelliteLayer === 'RGB-KOMPOSIT';
       const s2Extras = isS1
         ? { orthorectify: 'true', backscattercoeff: 'GAMMA0_TERRAIN', polarization: 'DV' }
@@ -284,24 +289,19 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
         opacity:     satelliteOpacity,
       };
 
-      if (sentinelLayerRef.current) {
-        sentinelLayerRef.current.remove();
-      }
+      sentinelLayerRef.current?.remove();
       sentinelLayerRef.current = L.tileLayer.wms(WMS_BASE_URL, wmsOptions);
       sentinelLayerRef.current.addTo(map);
     } catch (e) {
       console.warn('Satellite layer error:', e);
       sentinelLayerRef.current = null;
     }
-  }, [map, satelliteLayer, satelliteDate, satelliteOpacity]);
 
-  // Cleanup Sentinel beim Unmount
-  useEffect(() => {
     return () => {
       sentinelLayerRef.current?.remove();
       sentinelLayerRef.current = null;
     };
-  }, []);
+  }, [map, satelliteLayer, satelliteDate, satelliteOpacity]);
 
   // ── RainViewer Niederschlagsradar ──────────────────────────────────────────
   const weatherRadar          = useMapStore(s => s.weatherRadar);
@@ -337,6 +337,8 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
 
   // TileLayer erstellen / aktualisieren / entfernen
   useEffect(() => {
+    if (!map.getContainer()) return;
+
     if (!weatherRadar || !weatherRadarFrames.length || !weatherRadarHost) {
       radarLayerRef.current?.remove();
       radarLayerRef.current = null;
@@ -345,46 +347,86 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
     const frame = weatherRadarFrames[weatherRadarFrameIndex];
     if (!frame) return;
 
-    try {
-      // Pane inline erstellen (verhindert Race mit separatem Pane-Effekt in Strict Mode)
-      if (!map.getPane('radar-pane')) {
-        map.createPane('radar-pane');
-        map.getPane('radar-pane')!.style.zIndex = '210';
-      }
+    const RADAR_MAX_ZOOM = 16;
+    let cancelled = false;
 
-      const tileUrl = `${weatherRadarHost}${frame.path}/256/{z}/{x}/{y}/6/1_1.png`;
-
-      if (!radarLayerRef.current) {
-        radarLayerRef.current = L.tileLayer(tileUrl, {
-          opacity:     weatherRadarOpacity,
-          tileSize:    256,
-          pane:        'radar-pane',
-          attribution: '© RainViewer',
-          zIndex:      210,
-        }).addTo(map);
-      } else {
-        radarLayerRef.current.setUrl(tileUrl);
-        radarLayerRef.current.setOpacity(weatherRadarOpacity);
+    const addLayer = () => {
+      if (cancelled || !map.getContainer()) return;
+      try {
+        if (!map.getPane('radar-pane')) {
+          map.createPane('radar-pane');
+          map.getPane('radar-pane')!.style.zIndex = '210';
+        }
+        const tileUrl = `${weatherRadarHost}${frame.path}/256/{z}/{x}/{y}/6/1_1.png`;
+        if (!radarLayerRef.current) {
+          radarLayerRef.current = L.tileLayer(tileUrl, {
+            opacity:       weatherRadarOpacity,
+            tileSize:      256,
+            pane:          'radar-pane',
+            attribution:   '© RainViewer',
+            zIndex:        210,
+            maxNativeZoom: 10,
+            maxZoom:       22,
+          }).addTo(map);
+        } else {
+          radarLayerRef.current.setUrl(tileUrl);
+          radarLayerRef.current.setOpacity(weatherRadarOpacity);
+        }
+      } catch (e) {
+        console.warn('Radar layer error:', e);
+        radarLayerRef.current = null;
       }
-    } catch (e) {
-      console.warn('Radar layer error:', e);
-      radarLayerRef.current = null;
+    };
+
+    // Wenn aktueller Zoom über dem Radar-Maximum liegt, warten bis die
+    // Fly-Animation (ausgelöst vom ZoomLimiter) abgeschlossen ist.
+    if (map.getZoom() > RADAR_MAX_ZOOM) {
+      map.once('zoomend', addLayer);
+    } else {
+      addLayer();
     }
-  }, [map, weatherRadar, weatherRadarFrames, weatherRadarHost, weatherRadarFrameIndex, weatherRadarOpacity]);
 
-  // Cleanup Radar + Sentinel beim Unmount
-  useEffect(() => {
     return () => {
+      cancelled = true;
+      map.off('zoomend', addLayer);
       radarLayerRef.current?.remove();
       radarLayerRef.current = null;
     };
-  }, []);
+  }, [map, weatherRadar, weatherRadarFrames, weatherRadarHost, weatherRadarFrameIndex, weatherRadarOpacity]);
 
-  const showForests = activeLayers.includes('FOREST_BOUNDARY');
-  const showSections = activeLayers.includes('SECTIONS');
-  const showActivity = activeLayers.includes('ACTIVITY_PLAN');
+  const showForests        = activeLayers.includes('FOREST_BOUNDARY');
+  const showSections       = activeLayers.includes('SECTIONS');
+  const showActivity       = activeLayers.includes('ACTIVITY_PLAN');
   const showInfrastructure = activeLayers.includes('INFRASTRUCTURE');
-  const showTasks = activeLayers.includes('TASKS');
+  const showTasks          = activeLayers.includes('TASKS');
+
+  // ── Koordinaten-Konversion vorab berechnen ────────────────────────────────
+  // geoJSONToLeaflet / geoJSONLineToLeaflet sind pure Funktionen und teuer
+  // bei vielen Polygonen. Einmal pro data.forests-Änderung berechnen,
+  // nicht bei jedem Hover/Select-Re-Render.
+  const forestCoords = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof geoJSONToLeaflet>>();
+    data.forests.forEach(f => m.set(f.id, geoJSONToLeaflet(f.geoJson)));
+    return m;
+  }, [data.forests]);
+
+  const polygonCoords = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof geoJSONToLeaflet>>();
+    data.forests.forEach(f => {
+      f.plantings?.forEach((p: any)   => m.set(p.id, geoJSONToLeaflet(p.geoJson)));
+      f.hunting?.forEach((h: any)     => m.set(h.id, geoJSONToLeaflet(h.geoJson)));
+      f.calamities?.forEach((c: any)  => m.set(c.id, geoJSONToLeaflet(c.geoJson)));
+    });
+    return m;
+  }, [data.forests]);
+
+  const pathCoords = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof geoJSONLineToLeaflet>>();
+    data.forests.forEach(f => {
+      f.paths?.forEach((p: any) => m.set(p.id, geoJSONLineToLeaflet(p.geoJson)));
+    });
+    return m;
+  }, [data.forests]);
 
   const isDrawMode = interactionMode === 'DRAW_FOREST' || interactionMode === 'DRAW_PATH' ||
     interactionMode === 'DRAW_PLANTING' || interactionMode === 'DRAW_HUNTING' || interactionMode === 'DRAW_CALAMITY';
@@ -395,18 +437,18 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
     return interactionMode === 'EDIT_GEOMETRY' && editingData?.id === forestId;
   };
 
-  const getForestStyle = (forest: any) => {
+  const getForestStyle = useCallback((forest: any) => {
     const isSelected = selectedId === forest.id;
-    const isHovered = hoveredId === forest.id;
-    const baseColor = forest.color || LAYER_REGISTRY.FOREST_BOUNDARY.color;
-    return { 
-        color: isSelected ? '#ffffff' : baseColor, 
-        weight: isSelected || isHovered ? 3 : 2, 
-        fillColor: baseColor, 
-        fillOpacity: isSelected ? 0.2 : 0.05,
-        dashArray: '5, 5' 
+    const isHovered  = hoveredId  === forest.id;
+    const baseColor  = forest.color || LAYER_REGISTRY.FOREST_BOUNDARY.color;
+    return {
+      color:       isSelected ? '#ffffff' : baseColor,
+      weight:      isSelected || isHovered ? 3 : 2,
+      fillColor:   baseColor,
+      fillOpacity: isSelected ? 0.2 : 0.05,
+      dashArray:   '5, 5',
     };
-  };
+  }, [selectedId, hoveredId]);
 
   // Liste aller POIs erstellen für Kollisions-Check
   const allPois = useMemo(() => {
@@ -429,6 +471,29 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
       if (!hoveredTaskId) return null;
       return data.tasks.find((t: any) => t.id === hoveredTaskId)?.poiId ?? null;
   }, [hoveredTaskId, data.tasks]);
+
+  // Tasks die innerhalb eines Polygons (Pflanzung, Jagd, Kalamität) liegen
+  // bekommen keinen eigenen Pin — analog zu POI-Tasks (die via poiId ausgeblendet werden)
+  const polygonTaskIds = useMemo(() => {
+    const allPolygons = data.forests.flatMap((f: any) => [
+      ...(f.plantings  ?? []).map((p: any) => p.geoJson),
+      ...(f.hunting    ?? []).map((h: any) => h.geoJson),
+      ...(f.calamities ?? []).map((c: any) => c.geoJson),
+    ]);
+    if (!allPolygons.length) return new Set<string>();
+    const ids = new Set<string>();
+    data.tasks.forEach((t: any) => {
+      if (!t.lat || !t.lng || t.poiId) return;
+      const p = point([t.lng, t.lat]);
+      for (const geo of allPolygons) {
+        try {
+          const feature = geo.type === 'Feature' ? geo : { type: 'Feature', geometry: geo, properties: {} };
+          if (booleanPointInPolygon(p, feature as any)) { ids.add(t.id); break; }
+        } catch { /* ignore invalid geometries */ }
+      }
+    });
+    return ids;
+  }, [data.tasks, data.forests]);
 
   useMapEvents({
     zoomend: () => setCurrentZoom(map.getZoom()),
@@ -490,7 +555,7 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
       )}
       {data.forests.map((forest) => {
         if (isBeingEdited(forest.id)) return null;
-        const forestLatLngs = geoJSONToLeaflet(forest.geoJson);
+        const forestLatLngs = forestCoords.get(forest.id) ?? [];
         
         return (
           <React.Fragment key={`forest-group-${forest.id}`}>
@@ -525,7 +590,7 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
 
             {/* JAGDFLÄCHEN — zuerst rendern (unter Pflanz- und Kalamitätsflächen) */}
             {showSections && forest.hunting?.map((h: any) => {
-              const coords = geoJSONToLeaflet(h.geoJson);
+              const coords = polygonCoords.get(h.id) ?? [];
               if (!coords.length) return null;
               const isSel = selectedId === h.id;
               const isHov = hoveredId === h.id;
@@ -558,7 +623,7 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
 
             {/* KALAMITÄTSFLÄCHEN — unter Pflanzflächen */}
             {showSections && forest.calamities?.map((c: any) => {
-              const coords = geoJSONToLeaflet(c.geoJson);
+              const coords = polygonCoords.get(c.id) ?? [];
               if (!coords.length) return null;
               const isSel = selectedId === c.id;
               const isHov = hoveredId === c.id;
@@ -592,7 +657,7 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
 
             {/* PFLANZFLÄCHEN — zuletzt rendern (oben im SVG-Stack → immer anklickbar) */}
             {showSections && forest.plantings?.map((p: any) => {
-              const coords = geoJSONToLeaflet(p.geoJson);
+              const coords = polygonCoords.get(p.id) ?? [];
               if (!coords.length) return null;
               const isSel = selectedId === p.id;
               const isHov = hoveredId === p.id;
@@ -603,7 +668,7 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
               const dominant = getDominantSpecies(content) ?? p.treeSpecies;
               const baseColor = getSpeciesColor(dominant ?? 'OAK');
               const patternId = `planting-pattern-${p.id}`;
-              const label = getSpeciesLabel(dominant ?? p.treeSpecies) || 'Pflanzfläche';
+              const label = p.description?.trim() || getSpeciesLabel(dominant ?? p.treeSpecies) || 'Pflanzfläche';
 
               const size = 50; let cx = 0;
 
@@ -700,7 +765,7 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
       {/* INFRASTRUKTUR: Wege — in custom pane (zIndex 450) über Waldpolygonen */}
       {showInfrastructure && data.forests.flatMap((forest) =>
         (forest.paths ?? []).map((path: any) => {
-          const coords = geoJSONLineToLeaflet(path.geoJson);
+          const coords = pathCoords.get(path.id) ?? [];
           if (!coords.length) return null;
 
           const isSelected = selectedId === path.id;
@@ -752,8 +817,9 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
       {showTasks && currentZoom >= 10 && data.tasks.map((task) => {
         if (!task.lat || !task.lng) return null;
 
-        // Dedup: Wenn Task an POI hängt -> NICHT ZEIGEN (ist im Icon integriert)
+        // Dedup: Wenn Task an POI hängt oder innerhalb eines Polygons liegt -> NICHT ZEIGEN
         if (task.poiId) return null;
+        if (polygonTaskIds.has(task.id)) return null;
 
         const isSelected = selectedId === task.id;
 

@@ -49,6 +49,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  serverExternalPackages: ['better-sqlite3'],
 };
 
 const combinedConfig = withPWA(withNextIntl(nextConfig));

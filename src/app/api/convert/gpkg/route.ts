@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-// node:sqlite is only available in Node.js 22.5+ — imported lazily at runtime
-type DatabaseSync = import('node:sqlite').DatabaseSync;
+import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { tmpdir } from 'os';
@@ -213,17 +212,6 @@ function pickName(row: Record<string, any>, tableName: string, idx: number): str
 // ─── Route ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  // node:sqlite requires Node.js 22.5+ — check at runtime
-  let DatabaseSync: typeof import('node:sqlite').DatabaseSync;
-  try {
-    ({ DatabaseSync } = await import('node:sqlite' as any));
-  } catch {
-    return NextResponse.json(
-      { error: 'GPKG-Import erfordert Node.js 22.5+ auf dem Server.' },
-      { status: 503 }
-    );
-  }
-
   const tmpPath = path.join(tmpdir(), `gpkg_${randomUUID()}.gpkg`);
   try {
     const formData  = await req.formData();
@@ -232,7 +220,7 @@ export async function POST(req: NextRequest) {
 
     fs.writeFileSync(tmpPath, Buffer.from(await file.arrayBuffer()));
 
-    const db = new DatabaseSync(tmpPath, { readOnly: true } as any);
+    const db = new Database(tmpPath, { readonly: true });
 
     // Feature-Tabellen aus gpkg_contents
     const contentRows = db.prepare(

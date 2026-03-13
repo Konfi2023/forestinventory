@@ -39,9 +39,12 @@ export function middleware(req: NextRequest) {
 
   maybeCleanup();
 
-  // Auth-Routen: 20 Versuche / 15 Minuten (Brute-Force-Schutz)
+  // Auth-Routen: Brute-Force-Schutz
+  // OAuth-Callbacks (Keycloak redirect) großzügiger — sie kommen automatisch und zählen nicht als Angriffsversuch
   if (pathname.startsWith('/api/auth')) {
-    if (!rateLimit(`auth:${ip}`, 20, 15 * 60 * 1000)) {
+    const isCallback = pathname.startsWith('/api/auth/callback') || pathname.startsWith('/api/auth/session') || pathname.startsWith('/api/auth/csrf');
+    const limit = isCallback ? 200 : 60;
+    if (!rateLimit(`auth:${ip}`, limit, 15 * 60 * 1000)) {
       return NextResponse.json(
         { error: 'Zu viele Anmeldeversuche. Bitte warte 15 Minuten.' },
         { status: 429, headers: { 'Retry-After': '900' } }

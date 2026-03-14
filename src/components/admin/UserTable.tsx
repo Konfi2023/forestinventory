@@ -159,6 +159,7 @@ export function UserTable({
   };
 
   return (
+    <>
     <div className="rounded-md border bg-white shadow-sm">
       <Table>
         <TableHeader>
@@ -350,5 +351,6 @@ export function UserTable({
       loading={isLoading}
       onConfirm={() => confirm?.onConfirm()}
     />
+    </>
   );
 }

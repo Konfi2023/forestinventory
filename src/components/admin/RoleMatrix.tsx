@@ -71,6 +71,7 @@ export function RoleMatrix({ roles, orgSlug }: Props) {
   };
 
   return (
+    <>
     <div className="border rounded-lg overflow-hidden shadow-sm bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
@@ -173,5 +174,6 @@ export function RoleMatrix({ roles, orgSlug }: Props) {
       destructive
       onConfirm={handleDelete}
     />
+    </>
   );
 }

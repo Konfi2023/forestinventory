@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { SignInButton } from "./SignInButton";
 
 async function acceptInvite(token: string) {
   "use server";
@@ -99,9 +100,7 @@ export default async function InvitePage({
               <p className="text-sm text-muted-foreground">
                 Bitte loggen Sie sich mit <strong>{invite.email}</strong> ein, um die Einladung anzunehmen.
               </p>
-              <Link href={`/api/auth/signin/keycloak?callbackUrl=/invite/${token}`}>
-                <Button className="w-full">Jetzt Einloggen</Button>
-              </Link>
+              <SignInButton callbackUrl={`/invite/${token}`} />
             </div>
           ) : emailMismatch ? (
             <div className="text-center space-y-3">

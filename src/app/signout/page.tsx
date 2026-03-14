@@ -1,12 +1,14 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
 export default function SignOutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -29,7 +31,7 @@ export default function SignOutPage() {
         <div className="flex flex-col gap-3">
           <Button
             className="w-full bg-slate-900 hover:bg-slate-700"
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ callbackUrl })}
           >
             <LogOut className="w-4 h-4 mr-2" />
             Ja, abmelden

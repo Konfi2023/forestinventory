@@ -99,7 +99,7 @@ export default async function InvitePage({
               <p className="text-sm text-muted-foreground">
                 Bitte loggen Sie sich mit <strong>{invite.email}</strong> ein, um die Einladung anzunehmen.
               </p>
-              <Link href={`/api/auth/signin?callbackUrl=/invite/${token}`}>
+              <Link href={`/api/auth/signin/keycloak?callbackUrl=/invite/${token}`}>
                 <Button className="w-full">Jetzt Einloggen</Button>
               </Link>
             </div>
@@ -112,7 +112,7 @@ export default async function InvitePage({
                   <strong>{invite.email}</strong>. Bitte melden Sie sich ab und loggen Sie sich mit der richtigen Adresse ein.
                 </span>
               </div>
-              <Link href={`/api/auth/signout?callbackUrl=/invite/${token}`}>
+              <Link href={`/signout?callbackUrl=/invite/${token}`}>
                 <Button variant="outline" className="w-full">Abmelden & neu einloggen</Button>
               </Link>
             </div>

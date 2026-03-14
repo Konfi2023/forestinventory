@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html class="${properties.kcHtmlClass!}">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>${msg("loginTitle",(realm.displayName!'ForestInventory'))}</title>
+    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
+    <link href="${url.resourcesPath}/css/styles.css?v=${.now?long}" rel="stylesheet" />
+</head>
+
+<body>
+    <!-- TOP NAV -->
+    <div class="np-top-nav">
+        <a href="https://forest-inventory.eu" title="${msg('backToHome')}" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+            <div style="width: 32px; height: 32px; background: #059669; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 14l-5-10-5 10"/>
+                    <path d="M13 18l-1-4-1 4"/>
+                    <path d="M7 14l-3 6h16l-3-6"/>
+                    <line x1="12" y1="18" x2="12" y2="21"/>
+                    <line x1="9" y1="21" x2="15" y2="21"/>
+                </svg>
+            </div>
+            <span style="font-weight: 700; font-size: 18px; color: #ffffff; letter-spacing: -0.02em;">Forest<span style="color: #34d399;">Inventory</span></span>
+        </a>
+    </div>
+
+    <!-- PAGE CONTAINER -->
+    <div class="np-auth-page">
+        <div class="np-auth-container" style="justify-content: center; gap: 0;">
+            <div class="np-auth-left" style="text-align: center; align-items: center; max-width: 480px;">
+
+                <!-- Error icon -->
+                <div style="background: rgba(248, 113, 113, 0.08); padding: 20px; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px auto;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+
+                <h1 class="np-auth-signup-title" style="color: #f87171;">Sitzung abgelaufen</h1>
+
+                <p class="np-auth-subtitle" style="font-size: 16px; line-height: 1.7; margin-bottom: 36px; color: #94a3b8;">
+                    Ihre Sitzung ist abgelaufen. Bitte starten Sie den Vorgang neu — Ihre Einladung ist weiterhin gültig.
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                    <#if url.loginRestartFlowUrl?has_content>
+                        <a href="${url.loginRestartFlowUrl}" class="np-primary-button" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            Vorgang neu starten
+                        </a>
+                    </#if>
+                    <a href="https://forest-inventory.eu" style="color: #64748b; font-size: 14px; text-decoration: none; margin-top: 4px;">
+                        Zur Startseite
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>

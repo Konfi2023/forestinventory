@@ -9,6 +9,14 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer: process.env.KEYCLOAK_ISSUER!,
     }),
+    KeycloakProvider({
+      id: "keycloak-register",
+      name: "Keycloak Register",
+      clientId: process.env.KEYCLOAK_CLIENT_ID!,
+      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
+      issuer: process.env.KEYCLOAK_ISSUER!,
+      authorization: { params: { prompt: "create" } },
+    }),
   ],
   callbacks: {
     // 1. JWT Callback: Hier landen die Daten von Keycloak

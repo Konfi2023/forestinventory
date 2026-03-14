@@ -15,7 +15,7 @@ export function SignInButton({ callbackUrl, email, isNewUser }: Props) {
     return (
       <Button
         className="w-full bg-green-600 hover:bg-green-700"
-        onClick={() => signIn("keycloak", { callbackUrl }, { login_hint: email, prompt: "create" })}
+        onClick={() => signIn("keycloak-register", { callbackUrl }, { login_hint: email })}
       >
         <UserPlus className="w-4 h-4 mr-2" />
         Kostenlosen Account erstellen

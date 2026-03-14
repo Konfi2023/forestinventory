@@ -15,7 +15,10 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.KEYCLOAK_CLIENT_ID!,
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer: process.env.KEYCLOAK_ISSUER!,
-      authorization: { params: { prompt: "create" } },
+      authorization: {
+        url: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/registrations`,
+        params: { scope: "openid email profile" },
+      },
     }),
   ],
   callbacks: {

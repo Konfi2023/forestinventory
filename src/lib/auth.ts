@@ -9,6 +9,7 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.KEYCLOAK_CLIENT_ID!,
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer: process.env.KEYCLOAK_ISSUER!,
+      allowDangerousEmailAccountLinking: true,
     }),
     {
       id: "keycloak-register",
@@ -23,6 +24,7 @@ export const authOptions: NextAuthOptions = {
       token: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
       userinfo: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
       checks: ["pkce", "state"],
+      allowDangerousEmailAccountLinking: true,
       profile(profile: Profile & { sub: string }) {
         return { id: profile.sub, name: profile.name, email: profile.email, image: null };
       },

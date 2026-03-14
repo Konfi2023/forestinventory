@@ -11,12 +11,22 @@ export async function GET(req: NextRequest) {
 
   const issuer = process.env.KEYCLOAK_ISSUER!;
 
+  const clientId = process.env.KEYCLOAK_CLIENT_ID!;
+
   if (token?.idToken) {
+    // Best case: id_token_hint tells Keycloak exactly who to log out
     return NextResponse.json({
       url: `${issuer}/protocol/openid-connect/logout?id_token_hint=${token.idToken}&post_logout_redirect_uri=${postLogoutUri}`,
     });
   }
 
-  // No id_token — fall back to plain redirect
+  if (token) {
+    // Fallback for sessions that predate id_token storage: client_id + post_logout_redirect_uri
+    return NextResponse.json({
+      url: `${issuer}/protocol/openid-connect/logout?client_id=${encodeURIComponent(clientId)}&post_logout_redirect_uri=${postLogoutUri}`,
+    });
+  }
+
+  // No session at all — just redirect
   return NextResponse.json({ url: rawCallback });
 }

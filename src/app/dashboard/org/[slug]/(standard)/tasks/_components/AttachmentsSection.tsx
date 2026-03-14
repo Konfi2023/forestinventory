@@ -8,6 +8,7 @@ import { uploadTaskImage, uploadTaskDocument, deleteTaskImage, deleteTaskDocumen
 import { toast } from "sonner";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Props {
   orgSlug: string;
@@ -19,6 +20,7 @@ interface Props {
 
 export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdate }: Props) {
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: 'image' | 'document' } | null>(null);
 
   // --- DROP HANDLER ---
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -52,7 +54,6 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
 
   // --- DELETE HANDLER ---
   const handleDelete = async (id: string, type: 'image' | 'document') => {
-    if(!confirm("Wirklich löschen?")) return;
     try {
         if(type === 'image') await deleteTaskImage(orgSlug, id);
         else await deleteTaskDocument(orgSlug, id);
@@ -95,7 +96,7 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
                         </a>
                         <Button 
                             size="icon" variant="destructive" className="h-8 w-8 rounded-full opacity-80 hover:opacity-100"
-                            onClick={() => handleDelete(img.id, 'image')}
+                            onClick={() => setDeleteTarget({ id: img.id, type: 'image' })}
                         >
                             <Trash2 size={14} />
                         </Button>
@@ -120,7 +121,7 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
                         </a>
                         <Button 
                             size="icon" variant="ghost" className="h-8 w-8 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={() => handleDelete(doc.id, 'document')}
+                            onClick={() => setDeleteTarget({ id: doc.id, type: 'document' })}
                         >
                             <Trash2 size={14} />
                         </Button>
@@ -162,6 +163,15 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
             </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        title="Datei löschen?"
+        confirmLabel="Löschen"
+        destructive
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id, deleteTarget.type).finally(() => setDeleteTarget(null))}
+      />
     </div>
   );
 }

@@ -42,6 +42,8 @@ import {
 } from "@/components/ui/table";
 
 import { ManageAccessDialog } from "@/components/admin/ManageAccessDialog";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Member = {
   id: string;
@@ -90,28 +92,29 @@ export function UserTable({
   
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [confirm, setConfirm] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
 
-  const handleRemoveMember = async (memberId: string) => {
+  const handleRemoveMember = (memberId: string) => {
     const targetMember = members.find(m => m.id === memberId);
     const isMe = targetMember?.user.id === currentUserId;
-    
-    const confirmMessage = isMe 
-      ? "Möchten Sie die Organisation wirklich verlassen? Sie verlieren sofort den Zugriff."
-      : "Möchten Sie diesen Benutzer wirklich aus der Organisation entfernen?";
-
-    if (!confirm(confirmMessage)) return;
-    
-    setIsLoading(true);
-    try {
-      const result = await removeMember(orgSlug, memberId);
-      if (result.isSelf) {
-        window.location.href = "/"; 
-      }
-    } catch (e: any) {
-      alert(e.message || "Fehler beim Entfernen");
-    } finally {
-      setIsLoading(false);
-    }
+    setConfirm({
+      title: isMe ? "Organisation verlassen?" : "Mitglied entfernen?",
+      description: isMe
+        ? "Sie verlieren sofort den Zugriff auf diese Organisation."
+        : "Der Benutzer wird aus der Organisation entfernt und verliert alle Zugriffsrechte.",
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          const result = await removeMember(orgSlug, memberId);
+          if (result.isSelf) window.location.href = "/";
+        } catch (e: any) {
+          toast.error(e.message || "Fehler beim Entfernen");
+        } finally {
+          setIsLoading(false);
+          setConfirm(null);
+        }
+      },
+    });
   };
 
   const handleRoleChange = async (memberId: string, newRoleId: string) => {
@@ -119,32 +122,37 @@ export function UserTable({
     try {
       await updateMemberRole(orgSlug, memberId, newRoleId);
     } catch (e: any) {
-      alert(e.message || "Fehler beim Ändern der Rolle");
+      toast.error(e.message || "Fehler beim Ändern der Rolle");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRevokeInvite = async (inviteId: string) => {
-    if (!confirm("Möchten Sie diese Einladung wirklich zurückziehen? Der Link wird ungültig.")) return;
-    
-    setIsLoading(true);
-    try {
-      await revokeInvite(orgSlug, inviteId);
-    } catch (e: any) {
-      alert(e.message || "Fehler beim Zurückziehen");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRevokeInvite = (inviteId: string) => {
+    setConfirm({
+      title: "Einladung zurückziehen?",
+      description: "Der Einladungslink wird ungültig. Der Empfänger kann ihn nicht mehr verwenden.",
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          await revokeInvite(orgSlug, inviteId);
+        } catch (e: any) {
+          toast.error(e.message || "Fehler beim Zurückziehen");
+        } finally {
+          setIsLoading(false);
+          setConfirm(null);
+        }
+      },
+    });
   };
 
   const handleResendInvite = async (inviteId: string) => {
     setIsLoading(true);
     try {
       await resendInvite(orgSlug, inviteId);
-      alert("Einladung wurde erneut per E-Mail gesendet.");
+      toast.success("Einladung erneut gesendet.");
     } catch (e: any) {
-      alert(e.message || "Fehler beim Senden");
+      toast.error(e.message || "Fehler beim Senden");
     } finally {
       setIsLoading(false);
     }
@@ -331,5 +339,16 @@ export function UserTable({
         </TableBody>
       </Table>
     </div>
+
+    <ConfirmDialog
+      open={!!confirm}
+      onOpenChange={(o) => { if (!o) setConfirm(null); }}
+      title={confirm?.title ?? ""}
+      description={confirm?.description}
+      confirmLabel="Bestätigen"
+      destructive
+      loading={isLoading}
+      onConfirm={() => confirm?.onConfirm()}
+    />
   );
 }

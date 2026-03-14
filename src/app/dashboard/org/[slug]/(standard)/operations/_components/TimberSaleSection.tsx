@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { createTimberSale, deleteTimberSale, updateTimberSale } from "@/actions/operations";
 import { TimberSaleStatus } from "@prisma/client";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { TransportTicketSection } from "./TransportTicketSection";
 
 const SALE_STATUS: Record<TimberSaleStatus, { label: string; bg: string; text: string }> = {
@@ -210,9 +211,9 @@ function EudrSaleRow({ saleId, eudrReference: initial, orgSlug }: {
 export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug, forestName, operationTitle, operationYear }: Props) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; buyer: string } | null>(null);
 
-  const handleDelete = async (id: string, buyer: string) => {
-    if (!confirm(`Verkauf an "${buyer}" löschen? Polter werden freigegeben.`)) return;
+  const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
       await deleteTimberSale(orgSlug, id);
@@ -221,6 +222,7 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
       toast.error(e.message);
     } finally {
       setDeleting(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -342,7 +344,7 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
                   {/* Löschen */}
                   <div className="flex items-center justify-end pl-2">
                     <button
-                      onClick={() => handleDelete(sale.id, sale.buyerName)}
+                      onClick={() => setDeleteTarget({ id: sale.id, buyer: sale.buyerName })}
                       disabled={deleting === sale.id}
                       className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
                       title="Löschen"
@@ -388,6 +390,16 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        title={`Verkauf an "${deleteTarget?.buyer}" löschen?`}
+        description="Die zugeordneten Polter werden wieder freigegeben."
+        confirmLabel="Löschen"
+        destructive
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+      />
     </div>
   );
 }

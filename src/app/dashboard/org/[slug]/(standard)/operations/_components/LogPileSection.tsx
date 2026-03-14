@@ -14,6 +14,7 @@ import { createLogPile, deleteLogPile, updateLogPile } from "@/actions/operation
 import { upsertPoiLogPile } from "@/actions/poi";
 import { PolterStatus, WoodType } from "@prisma/client";
 import { TREE_SPECIES } from "@/lib/tree-species";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // ─── Konstanten ──────────────────────────────────────────────────────────────
 
@@ -452,18 +453,18 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
   const [deleting,  setDeleting]  = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const totalEst      = logPiles.reduce((s: number, p: any) => s + (p.estimatedAmount ?? 0), 0);
   const totalMeasured = logPiles.reduce((s: number, p: any) => s + (p.measuredAmount ?? 0), 0);
   const totalFm       = logPiles.reduce((s: number, p: any) => s + (p.measuredAmount ?? p.estimatedAmount ?? 0), 0);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Polter "${name}" wirklich löschen?`)) return;
+  const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
       await deleteLogPile(orgSlug, id);
       toast.success("Polter gelöscht");
-    } catch (e: any) { toast.error(e.message); } finally { setDeleting(null); }
+    } catch (e: any) { toast.error(e.message); } finally { setDeleting(null); setDeleteTarget(null); }
   };
 
   const handleStatusChange = async (id: string, status: PolterStatus) => {
@@ -592,7 +593,7 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
                       <Pencil size={11} />
                     </button>
                     <button
-                      onClick={() => handleDelete(pile.id, pile.name ?? "Polter")}
+                      onClick={() => setDeleteTarget({ id: pile.id, name: pile.name ?? "Polter" })}
                       disabled={deleting === pile.id}
                       className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                       title="Löschen"
@@ -613,6 +614,15 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        title={`Polter "${deleteTarget?.name}" löschen?`}
+        confirmLabel="Löschen"
+        destructive
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+      />
     </div>
   );
 }

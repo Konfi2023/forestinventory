@@ -8,13 +8,15 @@ import { Mail, Check, X, Loader2, ArrowRight } from "lucide-react";
 import { acceptDashboardInvite, declineDashboardInvite } from "@/actions/invites";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Props {
   invites: any[];
 }
 
 export function InviteList({ invites }: Props) {
-  const [isLoading, setIsLoading] = useState<string | null>(null); // ID des ladenden Items
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [declineTarget, setDeclineTarget] = useState<string | null>(null);
   const router = useRouter();
 
   const handleAccept = async (inviteId: string) => {
@@ -32,7 +34,6 @@ export function InviteList({ invites }: Props) {
   };
 
   const handleDecline = async (inviteId: string) => {
-    if(!confirm("Möchten Sie diese Einladung wirklich ablehnen?")) return;
     setIsLoading(inviteId);
     try {
       await declineDashboardInvite(inviteId);
@@ -42,6 +43,7 @@ export function InviteList({ invites }: Props) {
       toast.error("Fehler");
     } finally {
       setIsLoading(null);
+      setDeclineTarget(null);
     }
   };
 
@@ -78,7 +80,7 @@ export function InviteList({ invites }: Props) {
             <Button 
                 variant="outline" 
                 className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={() => handleDecline(invite.id)}
+                onClick={() => setDeclineTarget(invite.id)}
                 disabled={!!isLoading}
             >
                 {isLoading === invite.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <X className="w-4 h-4 mr-2"/>}
@@ -95,6 +97,16 @@ export function InviteList({ invites }: Props) {
           </CardFooter>
         </Card>
       ))}
+
+      <ConfirmDialog
+        open={!!declineTarget}
+        onOpenChange={(o) => { if (!o) setDeclineTarget(null); }}
+        title="Einladung ablehnen?"
+        description="Sie können die Einladung später nicht mehr annehmen."
+        confirmLabel="Ablehnen"
+        destructive
+        onConfirm={() => declineTarget && handleDecline(declineTarget)}
+      />
 
         <div className="text-center mt-8">
             <p className="text-xs text-slate-400 mb-2">oder</p>

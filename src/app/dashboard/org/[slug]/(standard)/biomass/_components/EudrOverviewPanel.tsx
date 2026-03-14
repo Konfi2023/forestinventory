@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { updateDds, deleteDds, submitDdsViaApi } from "@/actions/eudr";
 import { NewDdsDialog } from "./NewDdsDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { TREE_SPECIES, getSpeciesLabel } from "@/lib/tree-species";
 import { HS_CODE_OPTIONS } from "@/lib/eudr-helpers";
 
@@ -104,6 +105,8 @@ function DdsItem({
   const [saving,      setSaving]      = useState(false);
   const [deleting,    setDeleting]    = useState(false);
   const [submitting,  setSubmitting]  = useState(false);
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Statement-Felder
   const [status, setStatus] = useState(stmt.status);
@@ -156,7 +159,6 @@ function DdsItem({
   };
 
   const handleSubmitApi = async () => {
-    if (!confirm("Sorgfaltserklärung jetzt an TRACES NT (EUDR-API) einreichen?")) return;
     setSubmitting(true);
     try {
       const result = await submitDdsViaApi(stmt.id, orgSlug);
@@ -173,7 +175,6 @@ function DdsItem({
   };
 
   const handleDelete = async () => {
-    if (!confirm("Entwurf löschen?")) return;
     setDeleting(true);
     try {
       await deleteDds(stmt.id, orgSlug);
@@ -337,7 +338,7 @@ function DdsItem({
             {/* API submit (only for DRAFT + API configured) */}
             {stmt.status === "DRAFT" && apiEnabled && apiConfigured && (
               <Button
-                size="sm" onClick={handleSubmitApi} disabled={submitting}
+                size="sm" onClick={() => setConfirmSubmit(true)} disabled={submitting}
                 className="w-full h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {submitting
@@ -366,7 +367,7 @@ function DdsItem({
             )}
             <div className="flex items-center justify-between">
               {stmt.status === "DRAFT" ? (
-                <Button variant="ghost" size="sm" onClick={handleDelete} disabled={deleting}
+                <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)} disabled={deleting}
                   className="text-red-400 hover:text-red-600 hover:bg-red-50 h-7 px-2 text-xs">
                   {deleting ? <Loader2 size={12} className="animate-spin mr-1" /> : <Trash2 size={12} className="mr-1" />}
                   Löschen
@@ -386,6 +387,23 @@ function DdsItem({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmSubmit}
+        onOpenChange={setConfirmSubmit}
+        title="An TRACES NT einreichen?"
+        description="Sorgfaltserklärung jetzt an die EUDR-API (TRACES NT) einreichen?"
+        confirmLabel="Einreichen"
+        onConfirm={handleSubmitApi}
+      />
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Entwurf löschen?"
+        confirmLabel="Löschen"
+        destructive
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

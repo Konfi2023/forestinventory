@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Rss, Copy, RefreshCw, Check } from "lucide-react";
 import { getICalLink, resetICalToken } from "@/actions/calendar";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export function SubscribeCalendarDialog() {
   const [link, setLink] = useState("");
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
 
   const loadLink = async () => {
     const url = await getICalLink();
@@ -27,10 +29,10 @@ export function SubscribeCalendarDialog() {
   };
 
   const handleReset = async () => {
-    if(!confirm("Wenn Sie den Link zurücksetzen, funktionieren alle bisherigen Kalender-Abos nicht mehr.")) return;
     await resetICalToken();
-    loadLink(); // Neuen Link laden
+    loadLink();
     toast.success("Neuer Link generiert");
+    setResetConfirm(false);
   };
 
   return (
@@ -62,11 +64,20 @@ export function SubscribeCalendarDialog() {
                 </p>
             </div>
             
-            <Button variant="ghost" size="sm" onClick={handleReset} className="text-red-500 hover:text-red-600 hover:bg-red-50 w-full justify-start px-0">
+            <Button variant="ghost" size="sm" onClick={() => setResetConfirm(true)} className="text-red-500 hover:text-red-600 hover:bg-red-50 w-full justify-start px-0">
                 <RefreshCw className="w-3 h-3 mr-2" /> Link zurücksetzen (bei Missbrauch)
             </Button>
         </div>
       </DialogContent>
+      <ConfirmDialog
+        open={resetConfirm}
+        onOpenChange={setResetConfirm}
+        title="Abo-Link zurücksetzen?"
+        description="Alle bisherigen Kalender-Abonnements (Outlook, Google, Apple) hören auf zu funktionieren. Sie müssen den neuen Link in allen Apps neu einrichten."
+        confirmLabel="Zurücksetzen"
+        destructive
+        onConfirm={handleReset}
+      />
     </Dialog>
   );
 }

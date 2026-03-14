@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { createRole } from "@/actions/roles";
+import { toast } from "sonner";
 
 export function CreateRoleDialog({ orgSlug }: { orgSlug: string }) {
   const [open, setOpen] = useState(false);
@@ -34,7 +35,7 @@ export function CreateRoleDialog({ orgSlug }: { orgSlug: string }) {
       setName("");    // Reset
       setDesc("");
     } catch (error) {
-      alert("Fehler beim Erstellen der Rolle");
+      toast.error("Fehler beim Erstellen der Rolle");
     } finally {
       setIsLoading(false);
     }

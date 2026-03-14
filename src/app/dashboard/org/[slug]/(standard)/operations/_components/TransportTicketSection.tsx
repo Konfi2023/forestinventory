@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { createTransportTicket, updateTransportTicket, deleteTransportTicket } from "@/actions/operations";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // ─── Typen ─────────────────────────────────────────────────────────────────
 
@@ -282,12 +283,12 @@ export function TransportTicketSection({
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [deleting, setDeleting]     = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; nr: string } | null>(null);
 
   const totalFactoryM3 = tickets.reduce((s, t) => s + t.factoryAmount, 0);
   const totalForestM3  = tickets.reduce((s, t) => s + (t.forestAmount ?? 0), 0);
 
-  const handleDelete = async (id: string, nr: string) => {
-    if (!confirm(`Lieferschein "${nr}" wirklich löschen?`)) return;
+  const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
       await deleteTransportTicket(orgSlug, id);
@@ -296,6 +297,7 @@ export function TransportTicketSection({
       toast.error(e.message);
     } finally {
       setDeleting(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -444,7 +446,7 @@ export function TransportTicketSection({
                           <Pencil size={11} />
                         </button>
                         <button
-                          onClick={() => handleDelete(ticket.id, ticket.ticketNumber)}
+                          onClick={() => setDeleteTarget({ id: ticket.id, nr: ticket.ticketNumber })}
                           disabled={deleting === ticket.id}
                           className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                           title="Löschen"
@@ -517,6 +519,15 @@ export function TransportTicketSection({
           </Dialog>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        title={`Lieferschein "${deleteTarget?.nr}" löschen?`}
+        confirmLabel="Löschen"
+        destructive
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+      />
     </div>
   );
 }

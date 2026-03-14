@@ -39,7 +39,7 @@ export function InviteUserDialog({ orgSlug, availableRoles }: { orgSlug: string,
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if(!roleId) {
-      alert("Bitte eine Rolle wählen");
+      toast.error("Bitte eine Rolle wählen");
       return;
     }
     
@@ -50,9 +50,9 @@ export function InviteUserDialog({ orgSlug, availableRoles }: { orgSlug: string,
       setOpen(false);
       setEmail("");
       setRoleId("");
-      alert("Einladung wurde gesendet! (Siehe Server-Konsole für Link)");
+      toast.success("Einladung wurde gesendet!");
     } catch (error: any) {
-      alert(error.message || "Fehler beim Einladen");
+      toast.error(error.message || "Fehler beim Einladen");
     } finally {
       setIsLoading(false);
     }

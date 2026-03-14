@@ -12,6 +12,7 @@ import { deleteOperation, updateOperation } from "@/actions/operations";
 import { LogPileSection } from "./LogPileSection";
 import { TimberSaleSection } from "./TimberSaleSection";
 import { OperationStatus, OperationType } from "@prisma/client";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const TYPE_LABELS: Record<OperationType, string> = {
   HARVEST: "Einschlag", PLANTING: "Aufforstung", MAINTENANCE: "Pflege",
@@ -38,6 +39,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
   const [open,    setOpen]    = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [editingDesc, setEditingDesc] = useState(false);
   const [desc, setDesc] = useState(operation.description ?? "");
   const [savingDesc, setSavingDesc] = useState(false);
@@ -98,7 +100,6 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Maßnahme "${operation.title}" wirklich löschen? Alle Polter werden ebenfalls gelöscht.`)) return;
     setDeleting(true);
     try {
       await deleteOperation(orgSlug, operation.id);
@@ -334,7 +335,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
             </div>
             <Button
               variant="ghost" size="sm"
-              onClick={handleDelete} disabled={deleting}
+              onClick={() => setConfirmDelete(true)} disabled={deleting}
               className="text-red-400 hover:text-red-600 hover:bg-red-50 h-7 px-2 text-xs ml-auto"
             >
               {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
@@ -343,6 +344,16 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Maßnahme "${operation.title}" löschen?`}
+        description="Alle Polter werden ebenfalls gelöscht."
+        confirmLabel="Löschen"
+        destructive
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

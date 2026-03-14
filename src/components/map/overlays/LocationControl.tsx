@@ -4,13 +4,14 @@ import { Crosshair, Loader2 } from 'lucide-react';
 import { useMapStore } from '../stores/useMapStores';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export function LocationControl() {
   const flyTo = useMapStore(s => s.flyTo);
   const [loading, setLoading] = useState(false);
 
   const handleGPS = () => {
-    if (!navigator.geolocation) return alert("Geolocation nicht verfügbar");
+    if (!navigator.geolocation) { toast.error("Geolocation nicht verfügbar"); return; }
     
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
@@ -24,7 +25,7 @@ export function LocationControl() {
         (err) => {
             console.error(err);
             setLoading(false);
-            alert("Standort konnte nicht ermittelt werden.");
+            toast.error("Standort konnte nicht ermittelt werden.");
         },
         { enableHighAccuracy: true, timeout: 5000 }
     );

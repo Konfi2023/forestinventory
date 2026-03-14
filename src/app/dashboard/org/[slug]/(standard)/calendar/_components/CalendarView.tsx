@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials, getUserColor } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // --- WMO icon helper ---
 function WmoIcon({ code, size = 12 }: { code: number; size?: number }) {
@@ -70,6 +71,7 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
 
   // Task Details
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [deleteEventTarget, setDeleteEventTarget] = useState<{ id: string; remove: () => void } | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   // --- OPTIMISTIC UI STATE ---
@@ -201,10 +203,7 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
       const taskData = await getTaskDetails(orgSlug, id);
       if (taskData) { setSelectedTask(taskData); setIsSheetOpen(true); }
     } else if (type === 'event') {
-      if(confirm(`Termin löschen?`)) {
-         try { await deleteEvent(orgSlug, id); clickInfo.event.remove(); toast.success("Gelöscht"); } 
-         catch(e) { toast.error("Fehler"); }
-      }
+      setDeleteEventTarget({ id, remove: () => clickInfo.event.remove() });
     }
   };
 
@@ -352,11 +351,25 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
             onSuccess={refreshAll}
         />
 
-        <TaskDetailSheet 
-            task={selectedTask} open={isSheetOpen} 
+        <TaskDetailSheet
+            task={selectedTask} open={isSheetOpen}
             onClose={() => { setIsSheetOpen(false); setSelectedTask(null); }}
             orgSlug={orgSlug} members={members} currentUserId={currentUserId}
             onUnschedule={handleUnscheduleFromSheet}
+        />
+
+        <ConfirmDialog
+          open={!!deleteEventTarget}
+          onOpenChange={(o) => { if (!o) setDeleteEventTarget(null); }}
+          title="Termin löschen?"
+          confirmLabel="Löschen"
+          destructive
+          onConfirm={async () => {
+            if (!deleteEventTarget) return;
+            try { await deleteEvent(orgSlug, deleteEventTarget.id); deleteEventTarget.remove(); toast.success("Termin gelöscht"); }
+            catch { toast.error("Fehler beim Löschen"); }
+            finally { setDeleteEventTarget(null); }
+          }}
         />
       </div>
     </div>

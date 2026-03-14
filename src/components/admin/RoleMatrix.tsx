@@ -5,6 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PERMISSION_GROUPS } from "@/lib/permissions";
 import { updateRolePermissions, deleteRole } from "@/actions/roles";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // Typen definieren
 type Role = {
@@ -20,8 +22,8 @@ interface Props {
 }
 
 export function RoleMatrix({ roles, orgSlug }: Props) {
-  // Lokaler State für sofortiges Feedback (Optimistic UI)
   const [localRoles, setLocalRoles] = useState(roles);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // WICHTIG: Wenn sich die Daten vom Server ändern (z.B. nach Löschen einer Rolle),
   // müssen wir den lokalen State synchronisieren.
@@ -52,21 +54,19 @@ export function RoleMatrix({ roles, orgSlug }: Props) {
       }
     } catch (error) {
       console.error(error);
-      alert("Fehler beim Speichern!"); 
-      setLocalRoles(roles); // Rollback bei Fehler
+      toast.error("Fehler beim Speichern!");
+      setLocalRoles(roles);
     }
   };
 
-  // Rolle löschen
-  const handleDelete = async (roleId: string) => {
-    if (!confirm("Möchten Sie diese Rolle wirklich löschen?")) return;
-    
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteRole(orgSlug, roleId);
-      // Die Seite wird durch revalidatePath automatisch aktualisiert,
-      // der useEffect oben übernimmt dann das Update der Tabelle.
+      await deleteRole(orgSlug, deleteTarget);
     } catch (e: any) {
-      alert(e.message || "Fehler beim Löschen");
+      toast.error(e.message || "Fehler beim Löschen");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -89,8 +89,8 @@ export function RoleMatrix({ roles, orgSlug }: Props) {
                         System
                       </span>
                     ) : (
-                      <button 
-                        onClick={() => handleDelete(role.id)}
+                      <button
+                        onClick={() => setDeleteTarget(role.id)}
                         className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded hover:bg-slate-100"
                         title="Rolle löschen"
                       >
@@ -163,5 +163,15 @@ export function RoleMatrix({ roles, orgSlug }: Props) {
         </table>
       </div>
     </div>
+
+    <ConfirmDialog
+      open={!!deleteTarget}
+      onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+      title="Rolle löschen?"
+      description="Diese Rolle wird dauerhaft gelöscht. Mitglieder mit dieser Rolle verlieren ihre Berechtigungen."
+      confirmLabel="Löschen"
+      destructive
+      onConfirm={handleDelete}
+    />
   );
 }

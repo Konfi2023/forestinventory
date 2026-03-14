@@ -1,15 +1,37 @@
 "use client";
 
+import { Suspense } from "react";
 import { signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
-export default function SignOutPage() {
+function SignOutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
 
+  return (
+    <div className="flex flex-col gap-3">
+      <Button
+        className="w-full bg-slate-900 hover:bg-slate-700"
+        onClick={() => signOut({ callbackUrl })}
+      >
+        <LogOut className="w-4 h-4 mr-2" />
+        Ja, abmelden
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={() => router.back()}
+      >
+        Abbrechen
+      </Button>
+    </div>
+  );
+}
+
+export default function SignOutPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-slate-100 p-8 text-center space-y-6">
@@ -28,22 +50,9 @@ export default function SignOutPage() {
           <p className="text-sm text-slate-500">Sie werden von Forest Inventory abgemeldet.</p>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <Button
-            className="w-full bg-slate-900 hover:bg-slate-700"
-            onClick={() => signOut({ callbackUrl })}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Ja, abmelden
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => router.back()}
-          >
-            Abbrechen
-          </Button>
-        </div>
+        <Suspense fallback={<div className="h-20" />}>
+          <SignOutContent />
+        </Suspense>
       </div>
     </div>
   );

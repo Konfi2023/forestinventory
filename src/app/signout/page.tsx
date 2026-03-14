@@ -5,25 +5,41 @@ import { signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { useState } from "react";
 
 function SignOutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+  const [loading, setLoading] = useState(false);
+
+  const handleSignOut = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/auth/keycloak-logout?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      const { url: keycloakLogoutUrl } = await res.json();
+      await signOut({ redirect: false });
+      window.location.href = keycloakLogoutUrl;
+    } catch {
+      await signOut({ callbackUrl });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-3">
       <Button
         className="w-full bg-slate-900 hover:bg-slate-700"
-        onClick={() => signOut({ callbackUrl })}
+        onClick={handleSignOut}
+        disabled={loading}
       >
         <LogOut className="w-4 h-4 mr-2" />
-        Ja, abmelden
+        {loading ? "Wird abgemeldet…" : "Ja, abmelden"}
       </Button>
       <Button
         variant="outline"
         className="w-full"
         onClick={() => router.back()}
+        disabled={loading}
       >
         Abbrechen
       </Button>

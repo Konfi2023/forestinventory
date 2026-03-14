@@ -41,6 +41,10 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      if (account?.id_token) {
+        token.idToken = account.id_token;
+      }
+
       if (profile && account || (!token.dbId && token.sub)) {
         const email = token.email;
         const keycloakId = token.sub;

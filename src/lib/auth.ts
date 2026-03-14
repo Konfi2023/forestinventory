@@ -1,5 +1,6 @@
-import { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, Profile } from "next-auth";
 import KeycloakProvider from "next-auth/providers/keycloak";
+import type { OAuthConfig } from "next-auth/providers";
 import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
@@ -9,17 +10,23 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer: process.env.KEYCLOAK_ISSUER!,
     }),
-    KeycloakProvider({
+    {
       id: "keycloak-register",
       name: "Keycloak Register",
+      type: "oauth",
       clientId: process.env.KEYCLOAK_CLIENT_ID!,
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
-      issuer: process.env.KEYCLOAK_ISSUER!,
       authorization: {
         url: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/registrations`,
         params: { scope: "openid email profile" },
       },
-    }),
+      token: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+      userinfo: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
+      checks: ["pkce", "state"],
+      profile(profile: Profile & { sub: string }) {
+        return { id: profile.sub, name: profile.name, email: profile.email, image: null };
+      },
+    } as OAuthConfig<Profile & { sub: string }>,
   ],
   callbacks: {
     // 1. JWT Callback: Hier landen die Daten von Keycloak

@@ -50,10 +50,7 @@ export default async function InvitePage({
 
   const invite = await prisma.invite.findUnique({
     where: { token },
-    include: {
-      organization: true,
-      role: true
-    }
+    include: { organization: true, role: true }
   });
 
   if (!invite || invite.expiresAt < new Date()) {
@@ -80,6 +77,12 @@ export default async function InvitePage({
   const emailMismatch =
     session && session.user.email?.toLowerCase() !== invite.email.toLowerCase();
 
+  const dbUser = await prisma.user.findUnique({
+    where: { email: invite.email.toLowerCase() },
+    select: { id: true },
+  });
+  const isNewUser = !dbUser;
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50">
       <Card className="w-[450px]">
@@ -98,9 +101,12 @@ export default async function InvitePage({
           {!session ? (
             <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">
-                Bitte loggen Sie sich mit <strong>{invite.email}</strong> ein, um die Einladung anzunehmen.
+                {isNewUser
+                  ? <>Erstellen Sie einen Account mit <strong>{invite.email}</strong>, um der Einladung beizutreten.</>
+                  : <>Bitte loggen Sie sich mit <strong>{invite.email}</strong> ein, um die Einladung anzunehmen.</>
+                }
               </p>
-              <SignInButton callbackUrl={`/invite/${token}`} />
+              <SignInButton callbackUrl={`/invite/${token}`} email={invite.email} isNewUser={isNewUser} />
             </div>
           ) : emailMismatch ? (
             <div className="text-center space-y-3">

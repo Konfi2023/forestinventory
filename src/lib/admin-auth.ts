@@ -7,7 +7,7 @@ export async function requireSystemAdmin() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
-    redirect("/api/auth/signin");
+    redirect('/api/auth/signin/keycloak');
   }
 
   // Live-Check gegen die DB (Session könnte alt sein)

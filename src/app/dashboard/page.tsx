@@ -17,7 +17,7 @@ export default async function DashboardRoot({
 
   // Sicherheit: Nicht eingeloggt -> Raus
   if (!session?.user?.email) {
-    redirect("/api/auth/signin");
+    redirect('/api/auth/signin/keycloak');
   }
 
   // 1. Hat der User schon Organisationen? -> Redirect zur zuletzt aktiven Org

@@ -23,7 +23,7 @@ export default async function TasksPage({
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return redirect("/api/auth/signin");
+    return redirect('/api/auth/signin/keycloak');
   }
 
   // 1. Organisation laden

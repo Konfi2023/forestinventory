@@ -13,7 +13,7 @@ export default async function OperationsPage({
 }) {
   const { slug } = await params;
   const session = await getServerSession(authOptions);
-  if (!session?.user) return redirect("/api/auth/signin");
+  if (!session?.user) return redirect('/api/auth/signin/keycloak');
 
   const org = await prisma.organization.findUnique({ where: { slug } });
   if (!org) return notFound();

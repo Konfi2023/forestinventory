@@ -11,7 +11,7 @@ export default async function InventoryPage({
 }) {
   const { slug } = await params;
   const session = await getServerSession(authOptions);
-  if (!session?.user) redirect('/api/auth/signin');
+  if (!session?.user) redirect('/api/auth/signin/keycloak');
 
   const org = await prisma.organization.findUnique({ where: { slug } });
   if (!org) redirect('/dashboard');

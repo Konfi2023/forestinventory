@@ -32,7 +32,7 @@ export default async function OrgLayout({
   const { slug } = await params;
 
   if (!session?.user) {
-    redirect("/api/auth/signin");
+    redirect('/api/auth/signin/keycloak');
   }
 
   // 1. Aktuelle Organisation laden

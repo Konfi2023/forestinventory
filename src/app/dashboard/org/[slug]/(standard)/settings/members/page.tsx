@@ -28,9 +28,12 @@ export default async function UsersPage({
 
   if (!myMembership) return notFound();
 
-  const canInvite =
-    myMembership.role.name === "Administrator" ||
-    myMembership.role.permissions.includes("users:invite");
+  const isOrgAdmin = myMembership.role.name === "Administrator";
+
+  const canInvite = isOrgAdmin || myMembership.role.permissions.includes("users:invite");
+  const canManageUsers = isOrgAdmin ||
+    myMembership.role.permissions.includes("users:edit") ||
+    myMembership.role.permissions.includes("users:delete");
 
   // 1. Mitglieder inkl. accessibleForests laden
   const members = await prisma.membership.findMany({
@@ -80,14 +83,15 @@ export default async function UsersPage({
         )}
       </div>
 
-      <UserTable 
-        members={members} 
+      <UserTable
+        members={members}
         invites={invites}
         availableRoles={availableRoles}
         orgSlug={slug}
         currentUserId={session.user.id}
         currentUserRole={myMembership.role}
-        forests={forests} // <--- NEU: Übergeben
+        forests={forests}
+        canManageUsers={canManageUsers}
       />
     </div>
   );

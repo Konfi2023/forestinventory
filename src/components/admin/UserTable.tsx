@@ -78,16 +78,18 @@ interface UserTableProps {
   currentUserId: string;
   currentUserRole: { id: string; name: string; isSystemRole: boolean };
   forests: { id: string; name: string }[];
+  canManageUsers: boolean;
 }
 
-export function UserTable({ 
-  members, 
-  invites, 
-  availableRoles, 
-  orgSlug, 
+export function UserTable({
+  members,
+  invites,
+  availableRoles,
+  orgSlug,
   currentUserId,
   currentUserRole,
-  forests 
+  forests,
+  canManageUsers,
 }: UserTableProps) {
   
   const [isLoading, setIsLoading] = useState(false);
@@ -232,7 +234,8 @@ export function UserTable({
             const targetIsAdmin = member.role.name === "Administrator";
             const amIAdmin = currentUserRole.name === "Administrator";
 
-            const canEdit = amIAdmin || !targetIsAdmin || isMe;
+            // Bearbeiten erlaubt wenn: ich Admin bin ODER ich Verwaltungsrechte habe (und Ziel kein Admin ist) ODER ich mich selbst entferne
+            const canEdit = isMe || (canManageUsers && !targetIsAdmin) || amIAdmin;
 
             const accessCount = member.user.accessibleForests?.length || 0;
             const accessLabel = targetIsAdmin 

@@ -69,10 +69,10 @@ export async function deleteAccount(confirmedEmail: string) {
     data: { assigneeId: null },
   });
 
-  // 2. Remove from watched tasks
-  await prisma.task.updateMany({
-    where: { watchers: { some: { id: userId } } },
-    data: { watchers: { disconnect: { id: userId } } },
+  // 2. Remove from watched tasks (many-to-many via user update)
+  await prisma.user.update({
+    where: { id: userId },
+    data: { watchedTasks: { set: [] } },
   });
 
   // 3. Delete task comments

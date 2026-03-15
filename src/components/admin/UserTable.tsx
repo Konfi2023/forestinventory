@@ -294,26 +294,30 @@ export function UserTable({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Benutzer verwalten</DropdownMenuLabel>
-                            <DropdownMenuSub>
-                            <DropdownMenuSubTrigger disabled={isMe && !amIAdmin}> 
-                                <UserCog className="mr-2 h-4 w-4" />
-                                Rolle ändern
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                                <DropdownMenuRadioGroup 
-                                value={member.role.id} 
-                                onValueChange={(val: string) => handleRoleChange(member.id, val)}
-                                >
-                                {availableRoles.map(role => (
-                                    <DropdownMenuRadioItem key={role.id} value={role.id}>
-                                    {role.name}
-                                    </DropdownMenuRadioItem>
-                                ))}
-                                </DropdownMenuRadioGroup>
-                            </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            {(amIAdmin || (canManageUsers && !targetIsAdmin)) && (
+                              <>
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <UserCog className="mr-2 h-4 w-4" />
+                                    Rolle ändern
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent>
+                                    <DropdownMenuRadioGroup
+                                      value={member.role.id}
+                                      onValueChange={(val: string) => handleRoleChange(member.id, val)}
+                                    >
+                                      {availableRoles.map(role => (
+                                        <DropdownMenuRadioItem key={role.id} value={role.id}>
+                                          {role.name}
+                                        </DropdownMenuRadioItem>
+                                      ))}
+                                    </DropdownMenuRadioGroup>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            <DropdownMenuItem
                             className="text-red-600 focus:text-red-600"
                             onClick={() => handleRemoveMember(member.id)}
                             >

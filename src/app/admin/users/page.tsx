@@ -21,10 +21,11 @@ export default async function AdminUsersPage({ searchParams }: { searchParams?: 
 
   const users = await prisma.user.findMany({
     where: {
-      OR: [
+      NOT: { email: { startsWith: "deleted-" } },
+      OR: query ? [
         { email: { contains: query, mode: 'insensitive' } },
         { lastName: { contains: query, mode: 'insensitive' } },
-      ],
+      ] : undefined,
     },
     orderBy: { createdAt: 'desc' },
     take: 50, 

@@ -12,6 +12,7 @@ export function SettingsTabsClient({ slug, canManageRoles }: { slug: string; can
     { href: `/dashboard/org/${slug}/settings/members`, label: "Team & Mitglieder", exact: false },
     ...(canManageRoles ? [{ href: `/dashboard/org/${slug}/settings/roles`, label: "Rollen & Rechte", exact: false }] : []),
     { href: `/dashboard/org/${slug}/settings/eudr`, label: "EUDR-Compliance", exact: false },
+    { href: `/dashboard/org/${slug}/settings/account`, label: "Mein Account", exact: false },
   ];
 
   return (

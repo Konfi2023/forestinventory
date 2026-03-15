@@ -28,6 +28,10 @@ export default async function UsersPage({
 
   if (!myMembership) return notFound();
 
+  const canInvite =
+    myMembership.role.name === "Administrator" ||
+    myMembership.role.permissions.includes("users:invite");
+
   // 1. Mitglieder inkl. accessibleForests laden
   const members = await prisma.membership.findMany({
     where: { organizationId: org.id },
@@ -68,10 +72,12 @@ export default async function UsersPage({
           </p>
         </div>
         
-        <InviteUserDialog 
-          orgSlug={slug} 
-          availableRoles={availableRoles} 
-        />
+        {canInvite && (
+          <InviteUserDialog
+            orgSlug={slug}
+            availableRoles={availableRoles}
+          />
+        )}
       </div>
 
       <UserTable 

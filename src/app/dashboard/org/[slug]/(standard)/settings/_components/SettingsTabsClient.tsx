@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-export function SettingsTabsClient({ slug }: { slug: string }) {
+export function SettingsTabsClient({ slug, canManageRoles }: { slug: string; canManageRoles: boolean }) {
   const pathname = usePathname();
 
   const tabs = [
     { href: `/dashboard/org/${slug}/settings`, label: "Allgemein", exact: true },
     { href: `/dashboard/org/${slug}/settings/members`, label: "Team & Mitglieder", exact: false },
-    { href: `/dashboard/org/${slug}/settings/roles`, label: "Rollen & Rechte", exact: false },
+    ...(canManageRoles ? [{ href: `/dashboard/org/${slug}/settings/roles`, label: "Rollen & Rechte", exact: false }] : []),
     { href: `/dashboard/org/${slug}/settings/eudr`, label: "EUDR-Compliance", exact: false },
   ];
 

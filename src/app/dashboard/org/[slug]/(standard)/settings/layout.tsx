@@ -1,4 +1,7 @@
 import { SettingsTabsClient } from "./_components/SettingsTabsClient";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export default async function SettingsLayout({
   children,
@@ -9,6 +12,20 @@ export default async function SettingsLayout({
 }) {
   const { slug } = await params;
 
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+
+  let canManageRoles = false;
+  if (userId) {
+    const membership = await prisma.membership.findFirst({
+      where: { userId, organization: { slug } },
+      include: { role: true, user: { select: { isSystemAdmin: true } } },
+    });
+    canManageRoles =
+      !!membership?.user?.isSystemAdmin ||
+      membership?.role?.name === "Administrator";
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -18,7 +35,7 @@ export default async function SettingsLayout({
         </p>
       </div>
 
-      <SettingsTabsClient slug={slug} />
+      <SettingsTabsClient slug={slug} canManageRoles={canManageRoles} />
 
       <div className="py-4">
         {children}

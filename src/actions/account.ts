@@ -85,7 +85,7 @@ export async function deleteAccount(confirmedEmail: string) {
   await prisma.user.update({
     where: { id: userId },
     data: {
-      keycloakId: null,
+      keycloakId: `deleted-${userId}`,
       email: `deleted-${userId}@deleted.local`,
       firstName: "Gelöschter",
       lastName: "Nutzer",

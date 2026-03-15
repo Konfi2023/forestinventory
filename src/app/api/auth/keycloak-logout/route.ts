@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
 
   const clientId = process.env.KEYCLOAK_CLIENT_ID!;
 
+  console.log("[keycloak-logout] token present:", !!token, "| idToken present:", !!token?.idToken);
+
   if (token?.idToken) {
     // Best case: id_token_hint tells Keycloak exactly who to log out
     return NextResponse.json({

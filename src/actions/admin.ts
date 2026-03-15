@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireSystemAdmin } from "@/lib/admin-auth";
 import { revalidatePath } from "next/cache";
+import { deleteKeycloakUser } from "@/lib/keycloak-admin";
 
 /**
  * Aktualisiert den Status einer Organisation (z.B. FREE -> PRO oder SUSPENDED)
@@ -40,13 +41,52 @@ export async function deleteOrganization(orgId: string) {
 export async function deleteUser(userId: string) {
   await requireSystemAdmin();
 
-  await prisma.user.delete({
-    where: { id: userId }
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { keycloakId: true },
   });
 
-  // HINWEIS: Hier müsste idealerweise auch der Keycloak-User via Admin-API gelöscht werden,
-  // damit er sich nicht mehr einloggen kann.
-  
+  // 1. Assigned tasks → unassigned
+  await prisma.task.updateMany({
+    where: { assigneeId: userId },
+    data: { assigneeId: null },
+  });
+
+  // 2. Remove from watched tasks
+  await prisma.user.update({
+    where: { id: userId },
+    data: { watchedTasks: { set: [] } },
+  });
+
+  // 3. Delete task comments
+  await prisma.taskComment.deleteMany({ where: { userId } });
+
+  // 4. Delete memberships
+  await prisma.membership.deleteMany({ where: { userId } });
+
+  // 5. Anonymize user record
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      keycloakId: `deleted-${userId}`,
+      email: `deleted-${userId}@deleted.local`,
+      firstName: "Gelöschter",
+      lastName: "Nutzer",
+      companyName: null,
+      vatId: null,
+      street: null,
+      zip: null,
+      city: null,
+      lastActiveOrgId: null,
+      calendarToken: null,
+    },
+  });
+
+  // 6. Delete Keycloak account
+  if (user?.keycloakId && !user.keycloakId.startsWith("deleted-")) {
+    await deleteKeycloakUser(user.keycloakId);
+  }
+
   revalidatePath("/admin/users");
   return { success: true };
 }

@@ -3,45 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-async function deleteKeycloakUser(keycloakId: string): Promise<void> {
-  try {
-    const issuer = process.env.KEYCLOAK_ISSUER!;
-    const base = issuer.split("/realms/")[0];
-    const realm = issuer.split("/realms/")[1];
-
-    // Admin token via password grant
-    const tokenRes = await fetch(
-      `${base}/realms/master/protocol/openid-connect/token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: "admin-cli",
-          grant_type: "password",
-          username: process.env.KEYCLOAK_ADMIN_USER ?? "admin",
-          password: process.env.KEYCLOAK_ADMIN_PASSWORD ?? "admin",
-        }),
-      }
-    );
-    if (!tokenRes.ok) throw new Error("Admin token failed");
-    const { access_token } = await tokenRes.json();
-
-    const delRes = await fetch(
-      `${base}/admin/realms/${realm}/users/${keycloakId}`,
-      {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${access_token}` },
-      }
-    );
-    if (!delRes.ok && delRes.status !== 404) {
-      throw new Error(`Keycloak delete failed: ${delRes.status}`);
-    }
-  } catch (err) {
-    // Log but don't block account deletion if Keycloak call fails
-    console.error("[deleteAccount] Keycloak deletion error:", err);
-  }
-}
+import { deleteKeycloakUser } from "@/lib/keycloak-admin";
 
 export async function deleteAccount(confirmedEmail: string) {
   const session = await getServerSession(authOptions);

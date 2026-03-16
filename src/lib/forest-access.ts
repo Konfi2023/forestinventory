@@ -16,7 +16,7 @@ export async function getAccessibleForests(orgId: string, userId: string) {
 
   // 2. Admin-Check (System-Admin Rolle oder Name 'Administrator')
   // Wir gehen davon aus, dass 'Administrator' immer alles darf.
-  const isAdmin = membership.role.name === "Administrator" || membership.role.permissions.includes("forest:view_all");
+  const isAdmin = membership.role.name === "Administrator" || membership.role.permissions.includes("forest:view");
 
   if (isAdmin) {
     // Admin sieht ALLES in der Org

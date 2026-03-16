@@ -48,3 +48,10 @@ next-env.d.ts
 .env.local
 .env.production
 public/uploads/
+
+# Repomix output
+repomix-output.xml
+repomix-output*.xml
+
+# Deploy script (server-only)
+deploy.sh

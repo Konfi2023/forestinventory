@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureDbUser } from "@/lib/ensure-user";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { redirect } from "next/navigation";
@@ -16,7 +17,7 @@ async function acceptInvite(token: string) {
 
   const invite = await prisma.invite.findUnique({
     where: { token },
-    include: { organization: true }
+    include: { organization: true },
   });
 
   if (!invite || invite.expiresAt < new Date()) {
@@ -27,12 +28,15 @@ async function acceptInvite(token: string) {
     throw new Error("Diese Einladung gilt für eine andere E-Mail-Adresse.");
   }
 
+  // DSGVO: User-Eintrag erst jetzt erstellen — Mitgliedschaft ist die Rechtsgrundlage
+  const userId = await ensureDbUser(session);
+
   await prisma.membership.create({
     data: {
-      userId: session.user.id,
+      userId,
       organizationId: invite.organizationId,
       roleId: invite.roleId,
-    }
+    },
   });
 
   await prisma.invite.delete({ where: { token } });
@@ -50,7 +54,7 @@ export default async function InvitePage({
 
   const invite = await prisma.invite.findUnique({
     where: { token },
-    include: { organization: true, role: true }
+    include: { organization: true, role: true },
   });
 
   if (!invite || invite.expiresAt < new Date()) {
@@ -95,30 +99,45 @@ export default async function InvitePage({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-slate-100 p-3 rounded-md text-sm text-center text-slate-600">
-            Einladung für: <span className="font-semibold text-slate-900">{invite.email}</span>
+            Einladung für:{" "}
+            <span className="font-semibold text-slate-900">{invite.email}</span>
           </div>
 
           {!session ? (
             <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">
-                {isNewUser
-                  ? <>Erstellen Sie einen Account mit <strong>{invite.email}</strong>, um der Einladung beizutreten.</>
-                  : <>Bitte loggen Sie sich mit <strong>{invite.email}</strong> ein, um die Einladung anzunehmen.</>
-                }
+                {isNewUser ? (
+                  <>
+                    Erstellen Sie einen Account mit <strong>{invite.email}</strong>, um der
+                    Einladung beizutreten.
+                  </>
+                ) : (
+                  <>
+                    Bitte loggen Sie sich mit <strong>{invite.email}</strong> ein, um die
+                    Einladung anzunehmen.
+                  </>
+                )}
               </p>
-              <SignInButton callbackUrl={`/invite/${token}`} email={invite.email} isNewUser={isNewUser} />
+              <SignInButton
+                callbackUrl={`/invite/${token}`}
+                email={invite.email}
+                isNewUser={isNewUser}
+              />
             </div>
           ) : emailMismatch ? (
             <div className="text-center space-y-3">
               <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded">
                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>
-                  Sie sind als <strong>{session.user.email}</strong> eingeloggt. Diese Einladung gilt nur für{" "}
-                  <strong>{invite.email}</strong>. Bitte melden Sie sich ab und loggen Sie sich mit der richtigen Adresse ein.
+                  Sie sind als <strong>{session.user.email}</strong> eingeloggt. Diese
+                  Einladung gilt nur für <strong>{invite.email}</strong>. Bitte melden Sie
+                  sich ab und loggen Sie sich mit der richtigen Adresse ein.
                 </span>
               </div>
               <Link href={`/signout?callbackUrl=/invite/${token}`}>
-                <Button variant="outline" className="w-full">Abmelden & neu einloggen</Button>
+                <Button variant="outline" className="w-full">
+                  Abmelden & neu einloggen
+                </Button>
               </Link>
             </div>
           ) : (

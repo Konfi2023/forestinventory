@@ -2,6 +2,7 @@
 "use server";
 
 import { authOptions } from "@/lib/auth";
+import { ensureDbUser } from "@/lib/ensure-user";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
@@ -242,10 +243,13 @@ export async function acceptDashboardInvite(inviteId: string) {
     throw new Error("Diese Einladung ist nicht für Sie bestimmt.");
   }
 
+  // DSGVO: User erst jetzt anlegen — Mitgliedschaft ist die Rechtsgrundlage
+  const userId = await ensureDbUser(session);
+
   // 2. Mitgliedschaft erstellen
   await prisma.membership.create({
     data: {
-      userId: session.user.id,
+      userId,
       organizationId: invite.organizationId,
       roleId: invite.roleId,
     }
@@ -255,7 +259,6 @@ export async function acceptDashboardInvite(inviteId: string) {
   await prisma.invite.delete({ where: { id: inviteId } });
 
   // 4. Redirect zur neuen Org
-  // Wir nutzen hier kein revalidatePath, da wir die Seite verlassen
   return { success: true, redirectSlug: invite.organization.slug };
 }
 

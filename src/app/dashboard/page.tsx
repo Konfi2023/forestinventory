@@ -21,23 +21,26 @@ export default async function DashboardRoot({
   }
 
   // 1. Hat der User schon Organisationen? -> Redirect zur zuletzt aktiven Org
-  const [memberships, dbUser] = await Promise.all([
-    prisma.membership.findMany({
-      where: { userId: session.user.id },
-      include: { organization: true },
-    }),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { lastActiveOrgId: true },
-    }),
-  ]);
-
-  if (memberships.length > 0) {
-    const lastActive = dbUser?.lastActiveOrgId
-      ? memberships.find(m => m.organizationId === dbUser.lastActiveOrgId)
-      : null;
-    const targetSlug = (lastActive ?? memberships[0]).organization.slug;
-    redirect(`/dashboard/org/${targetSlug}`);
+  // Guard: neuer User hat noch keinen DB-Eintrag (id ist undefined bis Org-Erstellung)
+  if (session.user.id) {
+    const [memberships, dbUser] = await Promise.all([
+      prisma.membership.findMany({
+        where: { userId: session.user.id },
+        include: { organization: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { lastActiveOrgId: true },
+      }),
+    ]);
+  
+    if (memberships.length > 0) {
+      const lastActive = dbUser?.lastActiveOrgId
+        ? memberships.find(m => m.organizationId === dbUser.lastActiveOrgId)
+        : null;
+      const targetSlug = (lastActive ?? memberships[0]).organization.slug;
+      redirect(`/dashboard/org/${targetSlug}`);
+    }
   }
 
   // 2. Hat der User offene Einladungen? -> Invite Screen anzeigen

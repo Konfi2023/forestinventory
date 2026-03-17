@@ -23,7 +23,7 @@ export const ALL_FEATURES = [
   { icon: Leaf,          label: 'Baum- & Holzpolterinventar (Mobile App)' },
   { icon: BarChart3,     label: 'Berichte & Kostencontrolling' },
   { icon: Satellite,     label: 'Satellitenmonitoring (Biomasse, NDVI)' },
-  { icon: ShieldCheck,   label: 'EUDR-Ready (Konformität ab 2027)' },
+  { icon: ShieldCheck,   label: 'Waldgesundheitsmonitoring' },
   { icon: Users,         label: 'Team-Einladungen & Rollen' },
 ];
 
@@ -235,11 +235,10 @@ export function PlanCards({
                 </span>
                 <span className="text-slate-400 text-sm ml-1">/ Monat</span>
               </div>
-              <p className="text-xs text-slate-400 mb-1">zzgl. MwSt.</p>
               {billingInterval === 'yearly' && plan.yearlyPrice && (
-                <p className="text-xs text-slate-400 mb-5">{plan.yearlyPrice} € jährlich abgerechnet</p>
+                <p className="text-xs text-slate-400 mb-1">{plan.yearlyPrice} € jährlich abgerechnet</p>
               )}
-              {billingInterval === 'monthly' && <div className="mb-5" />}
+              <p className="text-xs text-slate-400 mb-5">zzgl. MwSt.</p>
 
               {/* Limits badge */}
               <div className={`text-sm font-bold px-4 py-3 rounded-xl border text-center mb-4 ${meta.accentBg} ${meta.accentBorder} ${meta.accentText}`}>
@@ -247,12 +246,6 @@ export function PlanCards({
                 <span className="font-normal text-xs ml-2 opacity-75">
                   · {plan.maxUsers ? `${plan.maxUsers} ${plan.maxUsers === 1 ? 'Nutzer' : 'Nutzer'}` : 'Unbegrenzte Nutzer'}
                 </span>
-              </div>
-
-              {/* Support tier */}
-              <div className="flex items-center gap-2 text-sm text-slate-600 mb-6 flex-1">
-                <CheckCircle2 size={14} className="text-green-600 shrink-0" />
-                {meta.support}
               </div>
 
               {/* CTA button */}

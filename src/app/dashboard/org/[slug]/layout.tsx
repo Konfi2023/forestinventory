@@ -3,9 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
+import { headers } from "next/headers";
 import {
   LayoutDashboard,
-  Trees,
   Settings,
   ClipboardList,
   CalendarDays,
@@ -14,6 +14,10 @@ import {
   LogOut,
   PackageOpen,
   BarChart2,
+  Euro,
+  CreditCard,
+  BookUser,
+  FileBarChart2,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MobileNav } from "./_components/MobileNav";
@@ -42,6 +46,11 @@ export default async function OrgLayout({
 
   if (!org) {
     return notFound();
+  }
+
+  // 1b. Onboarding Guard: unvollständiges Onboarding -> zurück zum Wizard
+  if (!org.onboardingComplete) {
+    redirect('/onboarding');
   }
 
   // 2. Prüfen, ob der User Mitglied in dieser Org ist
@@ -107,18 +116,21 @@ export default async function OrgLayout({
           
           <NavItem href={`/dashboard/org/${slug}/calendar`} icon={<CalendarDays size={20} />} label="Kalender" />
           
-          <NavItem href={`/dashboard/org/${slug}/forest`} icon={<Trees size={20} />} label="Waldbestände" />
 
           <NavItem href={`/dashboard/org/${slug}/biomass`} icon={<Leaf size={20} />} label="Biomasse-Monitoring" />
 
           <NavItem href={`/dashboard/org/${slug}/operations`} icon={<PackageOpen size={20} />} label="Maßnahmen & Holzverkauf" />
 
           <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label="Zeitcontrolling" />
+          <NavItem href={`/dashboard/org/${slug}/kostencontrolling`} icon={<Euro size={20} />} label="Kostencontrolling" />
+          <NavItem href={`/dashboard/org/${slug}/berichte`} icon={<FileBarChart2 size={20} />} label="Berichte" />
 
-          {/* Spacer, damit Einstellungen unten klebt oder zumindest Abstand hat */}
+          {/* Spacer, damit Kontakte, Abrechnungen & Administration unten klebt */}
           <div className="mt-auto pb-4">
              <div className="my-2 border-t border-slate-800" />
-             <NavItem href={`/dashboard/org/${slug}/settings`} icon={<Settings size={20} />} label="Einstellungen" />
+             <NavItem href={`/dashboard/org/${slug}/contacts`} icon={<BookUser size={20} />} label="Kontakte" />
+             <NavItem href={`/dashboard/org/${slug}/billing`} icon={<CreditCard size={20} />} label="Abrechnungen" />
+             <NavItem href={`/dashboard/org/${slug}/settings`} icon={<Settings size={20} />} label="Administration" />
           </div>
         </nav>
 
@@ -149,13 +161,65 @@ export default async function OrgLayout({
       {/* MAIN CONTENT AREA */}
       {/* WICHTIG: Kein Padding, kein Margin, volle Breite für die Karte */}
       <main className="flex-1 relative w-full h-full overflow-hidden">
-          {children}
+          <TrialExpiredGate org={org} slug={slug}>
+            {children}
+          </TrialExpiredGate>
       </main>
     </div>
   );
 }
 
-// Hilfskomponente für die Links
+// ── Trial-Expired Gate ────────────────────────────────────────────────────────
+async function TrialExpiredGate({
+  org,
+  slug,
+  children,
+}: {
+  org: { subscriptionStatus: string; stripeSubscriptionId: string | null; trialEndsAt: Date | null };
+  slug: string;
+  children: React.ReactNode;
+}) {
+  const isExpired =
+    org.subscriptionStatus === "CANCELED" &&
+    !org.stripeSubscriptionId;
+
+  if (!isExpired) return <>{children}</>;
+
+  // Billing-Seite immer durchlassen
+  const hdrs = await headers();
+  const pathname = hdrs.get("x-current-path") ?? "";
+  if (pathname.endsWith("/billing") || pathname.includes("/billing")) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="flex-1 overflow-auto bg-slate-50 h-full w-full flex items-center justify-center p-8">
+      <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center space-y-5">
+        <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
+          <CreditCard size={24} className="text-amber-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Testzeitraum abgelaufen</h2>
+          <p className="text-slate-500 text-sm mt-2 leading-relaxed">
+            Ihr kostenloser Testzeitraum ist abgelaufen. Wählen Sie ein Paket, um Forest Inventory
+            weiter zu nutzen. Ihre Daten bleiben erhalten.
+          </p>
+        </div>
+        <Link
+          href={`/dashboard/org/${slug}/billing`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-green-700 text-white rounded-xl font-semibold hover:bg-green-800 transition text-sm"
+        >
+          <CreditCard size={16} /> Paket wählen &amp; weitermachen
+        </Link>
+        <p className="text-xs text-slate-400">
+          Fragen? <a href="mailto:info@forest-inventory.eu" className="text-green-700 hover:underline">info@forest-inventory.eu</a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── NavItem ───────────────────────────────────────────────────────────────────
 function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
     <Link 

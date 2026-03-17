@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { ensureDbUser } from "@/lib/ensure-user";
 import { ROLE_TEMPLATES } from "@/lib/permissions";
 import { redirect } from "next/navigation";
-import { OrgType } from "@prisma/client";
+import { OrgType, SubscriptionStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 type CreateOrgData = {
@@ -49,7 +49,8 @@ export async function createOrganization(data: CreateOrgData) {
         zip: data.zip,
         city: data.city,
         country: data.country,
-        subscriptionStatus: "FREE",
+        subscriptionStatus: SubscriptionStatus.FREE,
+        onboardingComplete: true,
       },
     });
 

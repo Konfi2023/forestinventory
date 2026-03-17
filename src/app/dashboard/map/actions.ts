@@ -16,12 +16,13 @@ export async function getMapDataBySlug(slug: string) {
     // 2. Org & Eigene Mitgliedschaft prüfen
     const org = await prisma.organization.findUnique({
       where: { slug },
-      include: { 
-        members: { 
+      include: {
+        members: {
           // Wir laden hier nur UNSEREN eigenen Eintrag, um die Rolle zu prüfen
           where: { userId: session.user.id },
-          include: { role: true } 
-        } 
+          include: { role: true }
+        },
+        plan: true,
       }
     });
 
@@ -65,7 +66,8 @@ export async function getMapDataBySlug(slug: string) {
         habitats: true,
         hunting: true,
         grantedUsers: { select: { id: true } },
-        biomassSnapshots: { orderBy: { date: 'desc' }, take: 10 }
+        biomassSnapshots: { orderBy: { date: 'desc' }, take: 10 },
+        owner: { select: { id: true, name: true } },
       }
     });
 
@@ -105,13 +107,27 @@ export async function getMapDataBySlug(slug: string) {
         role: m.role.name
     }));
 
-    return { 
-        forests, 
-        tasks, 
-        members, 
+    // 6. WALDBESITZER LADEN
+    const owners = await prisma.forestOwner.findMany({
+      where: { organizationId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+
+    // Flächen-Limit berechnen
+    const areaLimitHa: number | null = org.customAreaLimit ?? org.plan?.maxHectares ?? null;
+    const usedAreaHa = forests.reduce((sum, f) => sum + (f.areaHa ?? 0), 0);
+
+    return {
+        forests,
+        tasks,
+        members,
+        owners,
         currentUserId: session.user.id,
         orgSlug: slug,
-        permissions
+        permissions,
+        areaLimitHa,
+        usedAreaHa,
     };
 
   } catch (error) {

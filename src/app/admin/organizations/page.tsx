@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { OrgActions } from "./_components/OrgActions";
+import { ChangePlanSelect } from "./_components/ChangePlanSelect";
 import { AdminSearch } from "@/components/admin/AdminSearch";
 import { requireSystemAdmin } from "@/lib/admin-auth";
 import Link from "next/link";
@@ -25,19 +26,27 @@ export default async function AdminOrgsPage({
   const params = await searchParams;
   const query = params?.query || "";
 
-  // 3. Organisationen laden (mit Filter)
-  const orgs = await prisma.organization.findMany({
-    where: {
-      OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { slug: { contains: query, mode: 'insensitive' } },
-      ]
-    },
-    include: {
-      _count: { select: { members: true, forests: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  // 3. Organisationen + alle Pakete laden
+  const [orgs, plans] = await Promise.all([
+    prisma.organization.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { slug: { contains: query, mode: 'insensitive' } },
+        ]
+      },
+      include: {
+        _count: { select: { members: true, forests: true } },
+        plan: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.plan.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { monthlyPrice: 'asc' },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -54,6 +63,7 @@ export default async function AdminOrgsPage({
           <TableHeader>
             <TableRow>
               <TableHead>Name / Slug</TableHead>
+              <TableHead>Paket</TableHead>
               <TableHead>Mitglieder</TableHead>
               <TableHead>Wälder</TableHead>
               <TableHead>Status</TableHead>
@@ -67,20 +77,29 @@ export default async function AdminOrgsPage({
                   <div className="font-medium">{org.name}</div>
                   <div className="text-xs text-slate-500 font-mono">{org.slug}</div>
                 </TableCell>
+                <TableCell>
+                  <ChangePlanSelect
+                    orgId={org.id}
+                    currentPlanId={org.planId}
+                    plans={plans}
+                  />
+                </TableCell>
                 <TableCell>{org._count.members}</TableCell>
                 <TableCell>{org._count.forests}</TableCell>
                 <TableCell>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className={
-                        org.subscriptionStatus === 'ACTIVE' ? "bg-green-50 text-green-700 border-green-200" : 
-                        org.subscriptionStatus === 'SUSPENDED' ? "bg-red-50 text-red-700 border-red-200" : ""
+                        org.subscriptionStatus === 'ACTIVE' ? "bg-green-50 text-green-700 border-green-200" :
+                        org.subscriptionStatus === 'CANCELED' ? "bg-red-50 text-red-700 border-red-200" :
+                        org.subscriptionStatus === 'TRIAL' ? "bg-blue-50 text-blue-700 border-blue-200" :
+                        org.subscriptionStatus === 'PAST_DUE' ? "bg-amber-50 text-amber-700 border-amber-200" : ""
                     }
                   >
                     {org.subscriptionStatus || 'FREE'}
                   </Badge>
                 </TableCell>
-                
+
                 {/* AKTIONEN SPALTE */}
                 <TableCell className="text-right">
                    <div className="flex items-center justify-end gap-2">
@@ -90,7 +109,7 @@ export default async function AdminOrgsPage({
                                 <Eye className="w-4 h-4 text-slate-500" />
                             </Button>
                         </Link>
-                        
+
                         {/* 2. Status ändern (Sperren/Aktivieren) */}
                         <OrgActions orgId={org.id} currentStatus={org.subscriptionStatus || 'FREE'} />
 
@@ -117,7 +136,7 @@ export default async function AdminOrgsPage({
             {/* Fallback bei leerer Liste */}
             {orgs.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                         Keine Organisationen gefunden.
                     </TableCell>
                 </TableRow>

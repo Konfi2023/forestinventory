@@ -357,7 +357,11 @@ export default function MapViewer({ forestData, children, skipAutoZoom, minimal 
           interactionMode === 'DRAW_HUNTING' ||
           interactionMode === 'DRAW_CALAMITY'
         ) && (
-           <MapGeometryEditor forests={forestData?.forests ?? []} />
+           <MapGeometryEditor
+             forests={forestData?.forests ?? []}
+             areaLimitHa={forestData?.areaLimitHa ?? null}
+             usedAreaHa={forestData?.usedAreaHa ?? 0}
+           />
         )}
 
         {(interactionMode === 'MEASURE_DISTANCE' || interactionMode === 'MEASURE_AREA') && (

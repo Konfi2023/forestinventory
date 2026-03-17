@@ -24,9 +24,11 @@ export function OrgActions({ orgId, currentStatus }: { orgId: string, currentSta
     }
   };
 
+  const isCanceled = currentStatus === "CANCELED";
+
   return (
     <>
-      {currentStatus === "SUSPENDED" ? (
+      {isCanceled ? (
         <Button
           size="sm"
           variant="outline"
@@ -43,7 +45,7 @@ export function OrgActions({ orgId, currentStatus }: { orgId: string, currentSta
           variant="ghost"
           className="text-red-500 hover:text-red-600 hover:bg-red-50"
           disabled={isLoading}
-          onClick={() => setPendingStatus("SUSPENDED")}
+          onClick={() => setPendingStatus("CANCELED")}
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4 mr-1" />}
           Sperren
@@ -53,12 +55,12 @@ export function OrgActions({ orgId, currentStatus }: { orgId: string, currentSta
       <ConfirmDialog
         open={!!pendingStatus}
         onOpenChange={(o) => { if (!o) setPendingStatus(null); }}
-        title={pendingStatus === "SUSPENDED" ? "Organisation sperren?" : "Organisation reaktivieren?"}
-        description={pendingStatus === "SUSPENDED"
-          ? "Die Organisation wird gesperrt. Mitglieder können sich nicht mehr einloggen."
-          : "Die Organisation wird wieder aktiviert."}
-        confirmLabel={pendingStatus === "SUSPENDED" ? "Sperren" : "Reaktivieren"}
-        destructive={pendingStatus === "SUSPENDED"}
+        title={pendingStatus === "CANCELED" ? "Organisation sperren?" : "Organisation reaktivieren?"}
+        description={pendingStatus === "CANCELED"
+          ? "Die Organisation wird auf CANCELED gesetzt. Mitglieder haben keinen aktiven Zugang mehr."
+          : "Die Organisation wird wieder auf ACTIVE gesetzt."}
+        confirmLabel={pendingStatus === "CANCELED" ? "Sperren" : "Reaktivieren"}
+        destructive={pendingStatus === "CANCELED"}
         loading={isLoading}
         onConfirm={handleConfirm}
       />

@@ -43,11 +43,14 @@ interface Props {
 
 export default function MapPageClient({ orgSlug }: Props) {
   const [data, setData] = useState<{
-      forests: any[], 
-      tasks: any[], 
+      forests: any[],
+      tasks: any[],
       members: any[],
+      owners: { id: string; name: string }[],
       currentUserId: string,
-      permissions: string[]
+      permissions: string[],
+      areaLimitHa: number | null,
+      usedAreaHa: number,
   } | null>(null);
 
   const selectedId = useMapStore(s => s.selectedFeatureId);
@@ -68,8 +71,11 @@ export default function MapPageClient({ orgSlug }: Props) {
           forests: res.forests || [],
           tasks: res.tasks || [],
           members: res.members || [],
+          owners: res.owners || [],
           currentUserId: res.currentUserId || "",
-          permissions: res.permissions || []
+          permissions: res.permissions || [],
+          areaLimitHa: res.areaLimitHa ?? null,
+          usedAreaHa: res.usedAreaHa ?? 0,
       };
       setData(cleanData);
     } catch (err) {
@@ -201,6 +207,7 @@ export default function MapPageClient({ orgSlug }: Props) {
           forests={data.forests}
           tasks={data.tasks}
           members={data.members}
+          owners={data.owners}
           orgSlug={orgSlug}
           onForestDeleted={handleOptimisticDelete}
           canEdit={hasPermission('forest:edit')}

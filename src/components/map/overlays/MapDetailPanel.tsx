@@ -13,16 +13,17 @@ import { HuntingDetailView } from './detail-panel/HuntingDetailView';
 import { CalamityDetailView } from './detail-panel/CalamityDetailView';
 
 interface Props {
-  forests: any[]; 
+  forests: any[];
   tasks: any[];
   members: any[];
+  owners: { id: string; name: string }[];
   orgSlug: string;
   onForestDeleted?: (id: string) => void;
   canEdit: boolean;
   canDelete: boolean;
 }
 
-export function MapDetailPanel({ forests, tasks, members, orgSlug, onForestDeleted, canEdit, canDelete }: Props) {
+export function MapDetailPanel({ forests, tasks, members, owners, orgSlug, onForestDeleted, canEdit, canDelete }: Props) {
   const { data: session } = useSession();
   
   const selectedId = useMapStore((s) => s.selectedFeatureId);
@@ -87,20 +88,20 @@ export function MapDetailPanel({ forests, tasks, members, orgSlug, onForestDelet
   
   if (selectedType === 'FOREST' && selectedForest) {
       return (
-          <ForestDetailView 
+          <ForestDetailView
               key={selectedForest.id}
               forest={selectedForest}
               tasks={tasks}
+              owners={owners}
               onClose={handleClose}
               onRefresh={refreshData}
-              onDeleteSuccess={(id) => { 
-                  if(onForestDeleted) onForestDeleted(id); 
-                  handleClose(); 
+              onDeleteSuccess={(id) => {
+                  if(onForestDeleted) onForestDeleted(id);
+                  handleClose();
               }}
               canEdit={canEdit}
               canDelete={canDelete}
               userId={session?.user?.id || ""}
-              // Durchreichen der Daten
               members={members}
               orgSlug={orgSlug}
           />

@@ -15,10 +15,15 @@ export async function updateOrgStatus(orgId: string, status: string) {
   // 2. Audit Log Eintrag vorbereiten (Best Practice)
   // Hier vereinfacht, idealerweise in separate Audit-Tabelle schreiben
 
-  // 3. Update
+  // 3. Update - cast to SubscriptionStatus enum
+  const { SubscriptionStatus } = await import("@prisma/client");
+  const enumStatus = Object.values(SubscriptionStatus).includes(status as any)
+    ? (status as any)
+    : SubscriptionStatus.FREE;
+
   await prisma.organization.update({
     where: { id: orgId },
-    data: { subscriptionStatus: status },
+    data: { subscriptionStatus: enumStatus },
   });
 
   revalidatePath("/admin/organizations");
@@ -125,6 +130,21 @@ export async function updateOrgMemberRole(membershipId: string, newRoleId: strin
 
   // Pfad revalidieren (da wir nicht wissen, welche Org-Page genau, nehmen wir den Admin-Pfad allgemein)
   revalidatePath("/admin/organizations/[id]", "page"); 
+  return { success: true };
+}
+
+/**
+ * Paket einer Organisation ändern (Admin-Override, kein Stripe-Checkout)
+ */
+export async function updateOrgPlan(orgId: string, planId: string) {
+  await requireSystemAdmin();
+
+  await prisma.organization.update({
+    where: { id: orgId },
+    data: { planId },
+  });
+
+  revalidatePath("/admin/organizations");
   return { success: true };
 }
 

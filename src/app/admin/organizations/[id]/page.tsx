@@ -12,6 +12,7 @@ import { revalidatePath } from "next/cache";
 // Komponenten für Interaktion
 import { EditMemberRoleDialog } from "@/components/admin/EditMemberRoleDialog";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+import { OrgCustomLimitsEditor } from "@/components/admin/OrgCustomLimitsEditor";
 
 export default async function AdminOrgDetailPage({
   params,
@@ -97,6 +98,16 @@ export default async function AdminOrgDetailPage({
                   <p className="text-xs text-muted-foreground">Erfasste Flurstücke/Bestände</p>
               </CardContent>
           </Card>
+      </div>
+
+      {/* CUSTOM LIMITS */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+        <h3 className="text-lg font-semibold mb-4">Individuelle Limits (überschreibt Paket-Limits)</h3>
+        <OrgCustomLimitsEditor
+          orgId={org.id}
+          currentCustomAreaLimit={org.customAreaLimit}
+          currentCustomUserLimit={org.customUserLimit}
+        />
       </div>
 
       {/* MITGLIEDER LISTE */}

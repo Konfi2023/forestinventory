@@ -2,7 +2,7 @@
 
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, LayoutDashboard, ClipboardList, Trees, CalendarDays, Settings } from "lucide-react";
+import { Menu, LayoutDashboard, ClipboardList, CalendarDays, Settings, CreditCard, BookUser, Euro, FileBarChart2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -25,9 +25,11 @@ export function MobileNav({ orgName, orgSlug, userEmail, roleName }: Props) {
     { href: `/dashboard/org/${orgSlug}`, label: "Übersicht", icon: LayoutDashboard },
     { href: `/dashboard/org/${orgSlug}/tasks`, label: "Aufgaben & Planung", icon: ClipboardList },
     { href: `/dashboard/org/${orgSlug}/calendar`, label: "Kalender", icon: CalendarDays },
-    { href: `/dashboard/org/${orgSlug}/forest`, label: "Waldbestände", icon: Trees },
-    // Settings als letzter Punkt
-    { href: `/dashboard/org/${orgSlug}/settings`, label: "Einstellungen", icon: Settings },
+    { href: `/dashboard/org/${orgSlug}/contacts`, label: "Kontakte", icon: BookUser },
+    { href: `/dashboard/org/${orgSlug}/kostencontrolling`, label: "Kostencontrolling", icon: Euro },
+    { href: `/dashboard/org/${orgSlug}/berichte`, label: "Berichte", icon: FileBarChart2 },
+{ href: `/dashboard/org/${orgSlug}/billing`, label: "Abrechnungen", icon: CreditCard },
+    { href: `/dashboard/org/${orgSlug}/settings`, label: "Administration", icon: Settings },
   ];
 
   return (

@@ -15,7 +15,8 @@ import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { Save, X } from 'lucide-react';
+import { Save, X, AlertTriangle } from 'lucide-react';
+import { AREA_TOLERANCE_HA } from '@/lib/pricing-config';
 import { calculatePathLengthM } from '@/lib/map-helpers';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -71,7 +72,15 @@ function formatLength(m: number): string {
   return m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`;
 }
 
-export default function MapGeometryEditor({ forests = [] }: { forests?: any[] }) {
+export default function MapGeometryEditor({
+  forests = [],
+  areaLimitHa = null,
+  usedAreaHa = 0,
+}: {
+  forests?: any[];
+  areaLimitHa?: number | null;
+  usedAreaHa?: number;
+}) {
   const map = useMap();
   const { data: session } = useSession();
 
@@ -97,10 +106,17 @@ export default function MapGeometryEditor({ forests = [] }: { forests?: any[] })
   const [showSaveBar,      setShowSaveBar]      = useState(false);
   const [drawnLengthM,     setDrawnLengthM]     = useState<number | null>(null);
   const [pendingPolygon,   setPendingPolygon]   = useState<{ geoJson: any; areaHa: number; mode: string } | null>(null);
+  const [currentEditAreaHa, setCurrentEditAreaHa] = useState<number | null>(null);
 
   // forests via Ref damit onCreated-Callback immer aktuelle Werte liest
   const forestsRef = useRef<any[]>([]);
   forestsRef.current = forests;
+
+  // Limit-Werte via Ref (damit Closures immer aktuell sind)
+  const areaLimitHaRef = useRef<number | null>(null);
+  const usedAreaHaRef  = useRef<number>(0);
+  areaLimitHaRef.current = areaLimitHa;
+  usedAreaHaRef.current  = usedAreaHa;
 
   // ─── POLYGON SPEICHERN (shared) ─────────────────────────────────────────────
   const savePolygon = async (polygonMode: string, geoJson: any, areaHa: number, forestId: string) => {
@@ -157,6 +173,19 @@ export default function MapGeometryEditor({ forests = [] }: { forests?: any[] })
 
       const calculatedAreaSqM = area(geoJson);
       const calculatedAreaHa  = parseFloat((calculatedAreaSqM / 10000).toFixed(4));
+
+      // Pre-Check Flächen-Limit vor Server-Call
+      const limit = areaLimitHaRef.current;
+      const used  = usedAreaHaRef.current;
+      if (limit !== null && used + calculatedAreaHa > limit + AREA_TOLERANCE_HA) {
+        const remaining = Math.max(0, limit - used);
+        toast.error(
+          `Limit überschritten: Noch ${remaining.toFixed(1)} ha verfügbar (Paket: ${limit} ha). ` +
+          `Bitte Polygon verkleinern.`
+        );
+        setMode('VIEW');
+        return;
+      }
 
       try {
         const result = await createForest({
@@ -323,6 +352,32 @@ export default function MapGeometryEditor({ forests = [] }: { forests?: any[] })
     editToolbarRef.current = editHandler;
     setShowSaveBar(true);
 
+    // Live-Fläche initial setzen und bei Vertex-Änderungen aktualisieren (nur Wald-Edits)
+    const featureTypeForArea = editingData.featureType ?? 'FOREST';
+    if (featureTypeForArea === 'FOREST') {
+      const initialArea = parseFloat((area(editingData.geoJson) / 10000).toFixed(4));
+      setCurrentEditAreaHa(initialArea);
+
+      const updateArea = () => {
+        if (createdLayerRef.current) {
+          // @ts-ignore
+          const gj = createdLayerRef.current.toGeoJSON();
+          setCurrentEditAreaHa(parseFloat((area(gj) / 10000).toFixed(4)));
+        }
+      };
+      map.on('draw:editvertex', updateArea);
+      map.on('draw:editmove',   updateArea);
+
+      return () => {
+        map.off('draw:editvertex', updateArea);
+        map.off('draw:editmove',   updateArea);
+        try { if (editToolbarRef.current) { editToolbarRef.current.disable(); editToolbarRef.current = null; } } catch {}
+        try { if (createdLayerRef.current) { map.removeLayer(createdLayerRef.current); createdLayerRef.current = null; } } catch {}
+        setShowSaveBar(false);
+        setCurrentEditAreaHa(null);
+      };
+    }
+
     return () => {
       try { if (editToolbarRef.current) { editToolbarRef.current.disable(); editToolbarRef.current = null; } } catch {}
       try { if (createdLayerRef.current) { map.removeLayer(createdLayerRef.current); createdLayerRef.current = null; } } catch {}
@@ -479,20 +534,39 @@ export default function MapGeometryEditor({ forests = [] }: { forests?: any[] })
 
   // ─── SAVE BAR für EDIT_GEOMETRY ──────────────────────────────────────────────
   if (mode === 'EDIT_GEOMETRY' && showSaveBar) {
+    const isForestEdit = (editingData?.featureType ?? 'FOREST') === 'FOREST';
+    const originalHa   = isForestEdit
+      ? forests.find(f => f.id === editingData?.id)?.areaHa ?? 0
+      : 0;
+    const availableHa  = areaLimitHa != null
+      ? areaLimitHa - (usedAreaHa - originalHa)
+      : null;
+    const areaExceeded = isForestEdit && availableHa != null && currentEditAreaHa != null
+      && currentEditAreaHa > availableHa + AREA_TOLERANCE_HA;
+
     return (
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-2 animate-in fade-in slide-in-from-top-4">
-        <button
-          onClick={handleSaveEdit}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95 border border-green-500"
-        >
-          <Save size={18} /> Geometrie speichern
-        </button>
-        <button
-          onClick={handleCancelEdit}
-          className="bg-white text-gray-700 hover:bg-gray-100 px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95"
-        >
-          <X size={18} /> Abbrechen
-        </button>
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[2000] flex flex-col items-center gap-2 animate-in fade-in slide-in-from-top-4">
+        {areaExceeded && currentEditAreaHa != null && availableHa != null && (
+          <div className="flex items-center gap-2 bg-orange-500/90 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg backdrop-blur">
+            <AlertTriangle size={14} />
+            Polygon zu groß: {currentEditAreaHa.toFixed(1)} ha — max. {availableHa.toFixed(1)} ha verfügbar. Bitte verkleinern.
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            onClick={handleSaveEdit}
+            disabled={areaExceeded}
+            className="bg-green-600 hover:bg-green-700 disabled:bg-slate-500 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95 border border-green-500 disabled:border-slate-400"
+          >
+            <Save size={18} /> Geometrie speichern
+          </button>
+          <button
+            onClick={handleCancelEdit}
+            className="bg-white text-gray-700 hover:bg-gray-100 px-6 py-2.5 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-transform active:scale-95"
+          >
+            <X size={18} /> Abbrechen
+          </button>
+        </div>
       </div>
     );
   }

@@ -10,45 +10,134 @@ datasource db {
 
 // --- IAM & MANDANTEN ---
 
+model Plan {
+  id             String         @id @default(uuid())
+  name           String         @unique
+  maxHectares    Float?         // null = unlimited
+  maxUsers       Int?           // null = unlimited
+  monthlyPriceId String?        // Stripe Price ID
+  yearlyPriceId  String?        // Stripe Price ID
+  monthlyPrice   Float?         // EUR, for display
+  yearlyPrice    Float?         // EUR, for display
+  isActive       Boolean        @default(true)
+  displayOrder   Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organizations  Organization[]
+}
+
 model Organization {
-  id                 String       @id @default(uuid())
-  name               String
-  slug               String       @unique
-  defaultLanguage    String       @default("de")
-  stripeCustomerId   String?
-  subscriptionStatus String?      @default("FREE")
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  members            Membership[]
-  roles              Role[]
-  invites            Invite[]
-  auditLogs          AuditLog[]
-  forests            Forest[]
+  id                   String               @id @default(uuid())
+  name                 String
+  slug                 String               @unique
+  defaultLanguage      String               @default("de")
+  stripeCustomerId     String?
+  subscriptionStatus   SubscriptionStatus   @default(FREE)
+  onboardingComplete   Boolean              @default(false)
+  stripeSubscriptionId String?              @unique
+  stripePriceId        String?
+  planId               String?
+  plan                 Plan?                @relation(fields: [planId], references: [id])
+  planInterval         String?              // "monthly" | "yearly"
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean              @default(false)
+  customAreaLimit      Float?               // overrides plan.maxHectares if set
+  customUserLimit      Int?                 // overrides plan.maxUsers if set
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  members              Membership[]
+  roles                Role[]
+  invites              Invite[]
+  auditLogs            AuditLog[]
+  forests              Forest[]
   // Globale Listen für CRM/Verkauf auf Org-Ebene
-  timberSales        TimberSale[]
-  legalName          String? // Offizieller Firmenname
-  orgType            OrgType      @default(PRIVATE_OWNER)
-  totalHectares      Float? // Betriebsgröße
+  timberSales          TimberSale[]
+  legalName            String? // Offizieller Firmenname
+  orgType              OrgType              @default(PRIVATE_OWNER)
+  totalHectares        Float? // Betriebsgröße
   // Adresse & Rechnung
-  billingEmail       String?
-  vatId              String? // USt-IdNr.
-  street             String?
-  zip                String?
-  city               String?
-  country            String?      @default("Deutschland")
+  billingEmail         String?
+  vatId                String? // USt-IdNr.
+  street               String?
+  zip                  String?
+  city                 String?
+  country              String?              @default("Deutschland")
   // EUDR-Compliance
-  eudrActivityType   String?      @default("DOMESTIC")
-  eoriNumber         String?
-  eudrStatements     DueDiligenceStatement[]
+  eudrActivityType     String?              @default("DOMESTIC")
+  eoriNumber           String?
+  eudrStatements       DueDiligenceStatement[]
 
   // EUDR-API Verbindung (TRACES NT)
-  eudrApiUrl         String?   // Endpunkt-URL des SOAP-Dienstes
-  eudrApiUsername    String?   // TRACES NT Benutzername
-  eudrApiPassword    String?   // TRACES NT Passwort
-  eudrApiClientId    String?   @default("eudr-test")    // WebServiceClientId
-  eudrApiEnvironment String?   @default("ACCEPTANCE")   // ACCEPTANCE | PRODUCTION
-  eudrApiEnabled     Boolean   @default(false)
-  Event              Event[]
+  eudrApiUrl           String?   // Endpunkt-URL des SOAP-Dienstes
+  eudrApiUsername      String?   // TRACES NT Benutzername
+  eudrApiPassword      String?   // TRACES NT Passwort
+  eudrApiClientId      String?   @default("eudr-test")    // WebServiceClientId
+  eudrApiEnvironment   String?   @default("ACCEPTANCE")   // ACCEPTANCE | PRODUCTION
+  eudrApiEnabled       Boolean   @default(false)
+  Event                Event[]
+  forestOwners         ForestOwner[]
+  serviceProviders     ServiceProvider[]
+  rateCategories       RateCategory[]
+  invoices             Invoice[]
+  documents            OrgDocument[]
+  // Bankverbindung & Rechnungseinstellungen
+  iban                 String?
+  bic                  String?
+  bankName             String?
+  isKleinunternehmer   Boolean              @default(false)
+  defaultPaymentDays   Int                  @default(30)
+  vatRates             VatRate[]
+}
+
+model ForestOwner {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  email          String?
+  phone          String?
+  street         String?
+  zip            String?
+  city           String?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  forests        Forest[]
+  invoices       Invoice[]
+  documents      OrgDocument[]
+}
+
+model VatRate {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  countryCode    String       // "DE", "AT", "CH", "FR"
+  countryName    String       // "Deutschland", "Österreich", "Schweiz"
+  rate           Decimal      @db.Decimal(5, 2)  // 19.00
+  label          String       // "Normalsatz (19 %)"
+  isDefault      Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+}
+
+model ServiceProvider {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  email          String?
+  phone          String?
+  street         String?
+  zip            String?
+  city           String?
+  category       String?      // z.B. "Forstunternehmer", "Gutachter", "Sägewerk"
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model User {
@@ -72,7 +161,6 @@ model User {
   updatedAt          DateTime     @updatedAt
   memberships        Membership[]
   auditLogs          AuditLog[]
-  invoices           Invoice[]
   accessibleForests  Forest[]     @relation("ForestAccess")
   
 
@@ -214,6 +302,10 @@ model Forest {
   animalRecords AnimalRecord[]
   grantedUsers  User[]         @relation("ForestAccess")
   Event         Event[]
+
+  // Waldbesitzer
+  ownerId       String?
+  owner         ForestOwner?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 }
 
 // ... (Hier folgen die bestehenden GIS-Modelle unverändert) ...
@@ -696,6 +788,16 @@ model TimeEntry {
 
   category TimeCategory @default(MANUAL_WORK)
 
+  // Stundensatz-Kategorie
+  rateCategoryId     String?
+  rateCategory       RateCategory? @relation(fields: [rateCategoryId], references: [id])
+  hourlyRateOverride Decimal?      @db.Decimal(10, 2)
+
+  // Abrechnung
+  invoiceId String?
+  invoice   Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  billedAt  DateTime?
+
   // Verknüpfung (Entweder Task oder Operation oder beides)
   taskId      String?
   task        Task?      @relation(fields: [taskId], references: [id])
@@ -706,6 +808,22 @@ model TimeEntry {
   user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+model RateCategory {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  key            String?      // Mapping zu TimeCategory enum (z.B. "MANUAL_WORK")
+  hourlyRate     Decimal      @default(0) @db.Decimal(10, 2)
+  color          String?      @default("#94a3b8")
+  sortOrder      Int          @default(0)
+  isBuiltIn      Boolean      @default(false) // Standard-Kategorien sind geschützt
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  timeEntries    TimeEntry[]
 }
 
 // --- DOMAIN: HOLZ & BILANZIERUNG ---
@@ -907,18 +1025,68 @@ model AnimalRecord {
 }
 
 model Invoice {
-  id            String   @id @default(uuid())
-  invoiceNumber String
-  amount        Decimal  @db.Decimal(10, 2)
-  currency      String   @default("EUR")
-  status        String
-  pdfUrl        String?
-  issuedAt      DateTime
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
+  id             String        @id @default(uuid())
+  invoiceNumber  String
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  forestOwnerId  String
+  forestOwner    ForestOwner   @relation(fields: [forestOwnerId], references: [id])
+  status         InvoiceStatus @default(DRAFT)
+  totalAmount    Decimal       @db.Decimal(10, 2)
+  currency       String        @default("EUR")
+  note           String?
+  periodFrom     DateTime?
+  periodTo       DateTime?
+  issuedAt       DateTime?
+  sentAt         DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  timeEntries    TimeEntry[]
+  document       OrgDocument?
+
+  @@index([organizationId, status])
+  @@index([forestOwnerId])
+}
+
+model OrgDocument {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  forestOwnerId  String?
+  forestOwner    ForestOwner? @relation(fields: [forestOwnerId], references: [id])
+  invoiceId      String?      @unique
+  invoice        Invoice?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  type           DocumentType
+  title          String
+  storageKey     String       // S3 key
+  fileSize       Int?
+  forestIds      String[]     // Alle Wälder, auf die sich das Dokument bezieht
+  periodFrom     DateTime?
+  periodTo       DateTime?
+  sentAt         DateTime?
+  sentTo         String?      // E-Mail-Adresse des Empfängers
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@index([forestOwnerId])
 }
 
 // --- ENUMS ---
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  CANCELLED
+}
+
+enum DocumentType {
+  INVOICE
+  ACTIVITY_REPORT
+  COMBINED   // Rechnung + Tätigkeitsnachweis zusammen
+  OTHER
+}
 
 enum OperationType {
   HARVEST
@@ -1097,6 +1265,14 @@ enum StockingDegree {
   MEDIUM     // Mittel
   DENSE      // Dicht
   VERY_DENSE // Sehr dicht
+}
+
+enum SubscriptionStatus {
+  FREE
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
 }
 
 // --- ALARM-QUITTIERUNGEN ---

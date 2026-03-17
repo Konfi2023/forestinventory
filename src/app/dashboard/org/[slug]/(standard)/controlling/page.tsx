@@ -4,6 +4,10 @@ import { redirect, notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getAccessibleForests } from '@/lib/forest-access';
 import { Clock, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { ControllingFilters } from './_components/ControllingFilters';
+import { ControllingExport } from './_components/ControllingExport';
+import { ControllingCharts } from './_components/ControllingCharts';
+import { Suspense } from 'react';
 
 function fmtMins(mins: number): string {
   if (mins === 0) return '0h';
@@ -30,10 +34,17 @@ function Delta({ estimated, actual }: { estimated: number; actual: number }) {
 
 export default async function ControllingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ forest?: string; owner?: string; member?: string; showAll?: string; from?: string; to?: string }>;
 }) {
   const { slug } = await params;
+  const { forest: forestFilter, owner: ownerFilter, member: memberFilter, showAll, from: fromParam, to: toParam } = await searchParams;
+  const showAllTasks = showAll === '1';
+  const dateFrom = fromParam ? new Date(fromParam) : undefined;
+  const dateTo   = toParam   ? new Date(toParam + 'T23:59:59') : undefined;
+
   const session = await getServerSession(authOptions);
   if (!session?.user) return redirect('/api/auth/signin/keycloak');
 
@@ -43,14 +54,60 @@ export default async function ControllingPage({
   const accessible    = await getAccessibleForests(org.id, session.user.id);
   const accessibleIds = accessible.map(f => f.id);
 
+  // Teammitglieder für Filter laden
+  const memberships = await prisma.membership.findMany({
+    where: { organizationId: org.id },
+    include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+    orderBy: { user: { email: 'asc' } },
+  });
+  const members = memberships.map(m => ({
+    id: m.user.id,
+    name: m.user.firstName && m.user.lastName
+      ? `${m.user.firstName} ${m.user.lastName}`
+      : m.user.email,
+  }));
+
+  // Waldbesitzer für Filter laden
+  const owners = await prisma.forestOwner.findMany({
+    where: { organizationId: org.id },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+
+  // Wenn nach Waldbesitzer gefiltert: nur dessen Wälder
+  let filteredForestIds = accessibleIds;
+  if (ownerFilter) {
+    const ownerForests = await prisma.forest.findMany({
+      where: { organizationId: org.id, ownerId: ownerFilter },
+      select: { id: true },
+    });
+    const ownerForestIds = ownerForests.map(f => f.id);
+    filteredForestIds = accessibleIds.filter(id => ownerForestIds.includes(id));
+  } else if (forestFilter) {
+    filteredForestIds = accessibleIds.filter(id => id === forestFilter);
+  }
+
+  // Date filter for timeEntries
+  const dateFilter = (dateFrom || dateTo) ? {
+    ...(dateFrom && { gte: dateFrom }),
+    ...(dateTo   && { lte: dateTo }),
+  } : undefined;
+
   const tasks = await prisma.task.findMany({
-    where: { forestId: { in: accessibleIds } },
+    where: {
+      forestId: { in: filteredForestIds },
+      ...(!showAllTasks && { status: 'DONE' }),
+      ...(memberFilter && { assigneeId: memberFilter }),
+      // If date filter: only tasks with at least one entry in range
+      ...(dateFilter && { timeEntries: { some: { startTime: dateFilter } } }),
+    },
     select: {
       id: true, title: true, status: true, estimatedTime: true,
-      forest:    { select: { name: true } },
+      forest:    { select: { id: true, name: true } },
       operation: { select: { id: true, title: true } },
       assignee:  { select: { id: true, firstName: true, lastName: true, email: true } },
       timeEntries: {
+        where: dateFilter ? { startTime: dateFilter } : undefined,
         select: {
           id: true, durationMinutes: true, category: true, startTime: true,
           user: { select: { id: true, firstName: true, lastName: true, email: true } },
@@ -60,15 +117,17 @@ export default async function ControllingPage({
     orderBy: { createdAt: 'desc' },
   });
 
+  const serializedTasks = tasks;
+
   // ── KPI-Berechnung ───────────────────────────────────────────────────────
-  const totalEstimated  = tasks.reduce((s, t) => s + (t.estimatedTime ?? 0), 0);
-  const totalActual     = tasks.reduce((s, t) => s + t.timeEntries.reduce((ss, e) => ss + (e.durationMinutes ?? 0), 0), 0);
-  const tasksNoEstimate = tasks.filter(t => !t.estimatedTime).length;
+  const totalEstimated  = serializedTasks.reduce((s, t) => s + (t.estimatedTime ?? 0), 0);
+  const totalActual     = serializedTasks.reduce((s, t) => s + t.timeEntries.reduce((ss, e) => ss + (e.durationMinutes ?? 0), 0), 0);
+  const tasksNoEstimate = serializedTasks.filter(t => !t.estimatedTime).length;
   const delta           = totalActual - totalEstimated;
 
   // ── Pro Mitglied ─────────────────────────────────────────────────────────
   const memberMap = new Map<string, { name: string; estimated: number; actual: number; taskCount: number }>();
-  for (const task of tasks) {
+  for (const task of serializedTasks) {
     const key  = task.assignee?.id ?? '__unassigned__';
     const name = task.assignee
       ? (task.assignee.firstName && task.assignee.lastName
@@ -91,14 +150,75 @@ export default async function ControllingPage({
     INSPECTION:   'Begehung',
   };
 
+  // ── Chart-Daten ──────────────────────────────────────────────────────────
+
+  // 1. Nach Kategorie
+  const categoryMap = new Map<string, number>();
+  for (const task of serializedTasks)
+    for (const e of task.timeEntries) {
+      const label = CATEGORY_LABELS[e.category] ?? e.category;
+      categoryMap.set(label, (categoryMap.get(label) ?? 0) + (e.durationMinutes ?? 0));
+    }
+  const categoryData = [...categoryMap.entries()]
+    .map(([name, minutes]) => ({ name, minutes }))
+    .sort((a, b) => b.minutes - a.minutes);
+
+  // 2. Nach Wald
+  const forestMap = new Map<string, number>();
+  for (const task of serializedTasks)
+    for (const e of task.timeEntries)
+      forestMap.set(task.forest.name, (forestMap.get(task.forest.name) ?? 0) + (e.durationMinutes ?? 0));
+  const forestData = [...forestMap.entries()]
+    .map(([name, minutes]) => ({ name, minutes }))
+    .sort((a, b) => b.minutes - a.minutes)
+    .slice(0, 10);
+
+  // 3. Monatlicher Verlauf (letzte 12 Monate)
+  const monthlyMap = new Map<string, number>();
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthlyMap.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, 0);
+  }
+  for (const task of serializedTasks)
+    for (const e of task.timeEntries) {
+      const d = new Date(e.startTime);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (monthlyMap.has(key)) monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + (e.durationMinutes ?? 0));
+    }
+  const monthlyData = [...monthlyMap.entries()].map(([key, minutes]) => ({
+    month: new Date(key + '-01').toLocaleDateString('de-DE', { month: 'short', year: '2-digit' }),
+    stunden: Math.round(minutes / 60 * 10) / 10,
+  }));
+
   return (
     <div className="overflow-y-auto h-full bg-slate-50">
       <div className="p-4 md:p-8 max-w-[1400px] mx-auto space-y-6">
 
         {/* Header */}
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Zeitcontrolling</h2>
-          <p className="text-slate-500 mt-1">Schätzung vs. tatsächlicher Aufwand</p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Zeitcontrolling</h2>
+            <p className="text-slate-500 mt-1 text-sm">Schätzung vs. tatsächlicher Aufwand · {serializedTasks.length} Aufgaben</p>
+          </div>
+          <ControllingExport tasks={serializedTasks} />
+        </div>
+
+        {/* Filter-Leiste */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4">
+          <Suspense>
+            <ControllingFilters
+              forests={accessible.map(f => ({ id: f.id, name: f.name }))}
+              owners={owners}
+              members={members}
+              selectedForestId={forestFilter ?? ""}
+              selectedOwnerId={ownerFilter ?? ""}
+              selectedMemberId={memberFilter ?? ""}
+              showAll={showAllTasks}
+              from={fromParam ?? ""}
+              to={toParam ?? ""}
+            />
+          </Suspense>
         </div>
 
         {/* KPI */}
@@ -125,6 +245,13 @@ export default async function ControllingPage({
             <p className="text-2xl font-bold text-slate-900">{tasksNoEstimate}</p>
           </div>
         </div>
+
+        {/* Charts */}
+        <ControllingCharts
+          categoryData={categoryData}
+          forestData={forestData}
+          monthlyData={monthlyData}
+        />
 
         {/* Nach Mitglied */}
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -183,7 +310,7 @@ export default async function ControllingPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {tasks.map(task => {
+                {serializedTasks.map(task => {
                   const actual = task.timeEntries.reduce((s, e) => s + (e.durationMinutes ?? 0), 0);
                   const assigneeName = task.assignee
                     ? (task.assignee.firstName ?? task.assignee.email.split('@')[0])
@@ -206,7 +333,7 @@ export default async function ControllingPage({
                         {task.operation && (
                           <p className="text-xs text-slate-400 truncate">{task.operation.title}</p>
                         )}
-                        {/* Zeiteinträge aufklappbar */}
+                        {/* Zeiteinträge */}
                         {task.timeEntries.length > 0 && (
                           <div className="mt-1 space-y-0.5">
                             {task.timeEntries.map(e => (

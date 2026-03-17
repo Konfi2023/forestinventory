@@ -40,7 +40,6 @@ export function middleware(req: NextRequest) {
   maybeCleanup();
 
   // Auth-Routen: Brute-Force-Schutz
-  // OAuth-Callbacks (Keycloak redirect) großzügiger — sie kommen automatisch und zählen nicht als Angriffsversuch
   if (pathname.startsWith('/api/auth')) {
     const isCallback = pathname.startsWith('/api/auth/callback') || pathname.startsWith('/api/auth/session') || pathname.startsWith('/api/auth/csrf');
     const limit = isCallback ? 200 : 60;
@@ -62,9 +61,12 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Aktuellen Pfad als Header weitergeben (für Server Components)
+  const res = NextResponse.next();
+  res.headers.set('x-current-path', pathname);
+  return res;
 }
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: ['/api/:path*', '/dashboard/:path*'],
 };

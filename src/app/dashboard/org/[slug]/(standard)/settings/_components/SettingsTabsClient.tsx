@@ -11,6 +11,8 @@ export function SettingsTabsClient({ slug, canManageRoles }: { slug: string; can
     { href: `/dashboard/org/${slug}/settings`, label: "Allgemein", exact: true },
     { href: `/dashboard/org/${slug}/settings/members`, label: "Team & Mitglieder", exact: false },
     ...(canManageRoles ? [{ href: `/dashboard/org/${slug}/settings/roles`, label: "Rollen & Rechte", exact: false }] : []),
+    { href: `/dashboard/org/${slug}/settings/rates`, label: "Stundensätze", exact: false },
+    { href: `/dashboard/org/${slug}/settings/vat`, label: "MwSt.-Sätze", exact: false },
     { href: `/dashboard/org/${slug}/settings/eudr`, label: "EUDR-Compliance", exact: false },
     { href: `/dashboard/org/${slug}/settings/account`, label: "Mein Account", exact: false },
   ];

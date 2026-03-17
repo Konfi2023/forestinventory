@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import {
   Trees, Ruler, Loader2, Plus, Calendar, AlertCircle,
-  Palette, ScanLine, Check, Trash2
+  Palette, ScanLine, Check, Trash2, User
 } from 'lucide-react';
 import { DetailPanelShell } from './DetailPanelShell';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { updateForest, deleteForest } from '@/actions/forest';
+import { assignOwnerToForest } from '@/actions/forest-owners';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -28,6 +29,7 @@ const FOREST_COLORS = [
 interface Props {
     forest: any;
     tasks: any[];
+    owners: { id: string; name: string }[];
     onClose: () => void;
     onRefresh: () => void;
     onDeleteSuccess: (id: string) => void;
@@ -38,9 +40,9 @@ interface Props {
     orgSlug: string;
 }
 
-export function ForestDetailView({ 
-    forest, tasks, onClose, onRefresh, onDeleteSuccess, 
-    canEdit, canDelete, userId, members, orgSlug 
+export function ForestDetailView({
+    forest, tasks, owners, onClose, onRefresh, onDeleteSuccess,
+    canEdit, canDelete, userId, members, orgSlug
 }: Props) {
     const setInteractionMode = useMapStore(s => s.setInteractionMode);
     const setEditingFeature = useMapStore(s => s.setEditingFeature);
@@ -55,6 +57,7 @@ export function ForestDetailView({
     const [name, setName] = useState(forest.name);
     const [desc, setDesc] = useState(forest.description || "");
     const [color, setColor] = useState(forest.color || "#10b981");
+    const [ownerId, setOwnerId] = useState<string>(forest.owner?.id ?? "");
 
     const forestTasks = tasks.filter(t => t.forestId === forest.id && t.status !== 'DONE');
     const isGeometryEditing = interactionMode === 'EDIT_GEOMETRY';
@@ -92,8 +95,10 @@ export function ForestDetailView({
                 name,
                 description: desc,
                 // @ts-ignore
-                color: color 
+                color: color
             });
+            // Eigentümer separat setzen (null wenn leer)
+            await assignOwnerToForest(forest.id, ownerId || null);
             toast.success("Wald aktualisiert");
             setIsEditing(false);
             onRefresh();
@@ -161,6 +166,32 @@ export function ForestDetailView({
                             />
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* 2b. WALDBESITZER */}
+            {isEditing && (
+                <div className="space-y-2 bg-white/5 p-3 rounded-lg border border-white/5">
+                    <label className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-2">
+                        <User size={12}/> Waldbesitzer
+                    </label>
+                    <select
+                        value={ownerId}
+                        onChange={(e) => setOwnerId(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 text-white text-sm rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    >
+                        <option value="">— Kein Besitzer —</option>
+                        {owners.map((o) => (
+                            <option key={o.id} value={o.id}>{o.name}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
+            {!isEditing && forest.owner && (
+                <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex items-center gap-2">
+                    <User size={12} className="text-gray-500" />
+                    <span className="text-[10px] uppercase text-gray-500 font-bold">Eigentümer</span>
+                    <span className="text-sm text-white ml-auto">{forest.owner.name}</span>
                 </div>
             )}
 

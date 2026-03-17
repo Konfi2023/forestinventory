@@ -141,7 +141,22 @@
       "Bash(ssh -i ~/.ssh/hetzner_forestinventory root@46.62.154.200 \"docker exec forestdb_db psql -U forestuser -d forestdb -c 'SELECT id, email, \\\\\"isSystemAdmin\\\\\" FROM app.\\\\\"User\\\\\" ORDER BY \\\\\"createdAt\\\\\";'\" 2>&1)",
       "Bash(ssh -i ~/.ssh/hetzner_forestinventory root@46.62.154.200 \"docker exec forestdb_db psql -U forestuser -d forestdb -c \\\\\"UPDATE app.\\\\\\\\\\\\\"User\\\\\\\\\\\\\" SET \\\\\\\\\\\\\"isSystemAdmin\\\\\\\\\\\\\" = true WHERE id = 'f6cbb0bd-d0f9-409a-ba91-982431e1d7f6';\\\\\"\" 2>&1)",
       "Bash(grep -r \"MANAGE_ROLES\\\\|manageRoles\\\\|roles.*permission\\\\|permission.*roles\" C:/Users/Aschkan/forestinventory/src --include=\"*.ts\" --include=\"*.tsx\" -l 2>/dev/null | head -5)",
-      "Bash(grep -r \"getMembership\\\\|getSession\\\\|requireOrg\\\\|requireMember\" C:/Users/Aschkan/forestinventory/src/lib --include=\"*.ts\" -l 2>/dev/null; grep -r \"Membership\\\\|membership\" C:/Users/Aschkan/forestinventory/src/lib --include=\"*.ts\" -l 2>/dev/null | head -5)"
+      "Bash(grep -r \"getMembership\\\\|getSession\\\\|requireOrg\\\\|requireMember\" C:/Users/Aschkan/forestinventory/src/lib --include=\"*.ts\" -l 2>/dev/null; grep -r \"Membership\\\\|membership\" C:/Users/Aschkan/forestinventory/src/lib --include=\"*.ts\" -l 2>/dev/null | head -5)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(cd:*)",
+      "Bash(pg_isready -h localhost -p 5432 2>&1; pg_isready -h 192.168.178.170 -p 5432 2>&1; netstat -an 2>/dev/null | grep 5432 | head -5)",
+      "Bash(grep:*)",
+      "Bash(docker exec:*)",
+      "Bash(tree:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(ssh:*)",
+      "Bash(sshpass:*)",
+      "Bash(which sshpass:*)",
+      "Bash(python3:*)",
+      "Bash(pip install:*)",
+      "Bash(powershell.exe -Command \"\n\\\\$client = New-Object System.Net.Sockets.TcpClient\n\\\\$client.ConnectAsync\\('46.62.154.200', 22\\).Wait\\(5000\\)\nif \\(\\\\$client.Connected\\) { Write-Output 'Port 22 OPEN'; \\\\$client.Close\\(\\) } else { Write-Output 'Port 22 CLOSED/TIMEOUT' }\n\")"
     ]
   }
 }

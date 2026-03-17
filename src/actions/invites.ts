@@ -27,17 +27,27 @@ export async function inviteUser(orgSlug: string, email: string, roleId: string)
         where: { userId: session.user.id },
         include: { role: true },
       },
+      plan: true,
+      _count: { select: { members: true } },
     },
   });
 
   if (!org || !org.members[0]) throw new Error("Kein Zugriff auf diese Organisation");
-  
+
   const myRole = org.members[0].role;
   const isAdmin = myRole.name === "Administrator";
-  
+
   // Prüfen: Hat der User das Recht 'users:invite' ODER ist er Admin?
   if (!myRole.permissions.includes("users:invite") && !isAdmin) {
     throw new Error("Keine Berechtigung zum Einladen.");
+  }
+
+  // Nutzer-Limit prüfen
+  const maxUsers = org.customUserLimit ?? org.plan?.maxUsers ?? null;
+  if (maxUsers !== null && org._count.members >= maxUsers) {
+    throw new Error(
+      `Ihr Paket erlaubt maximal ${maxUsers} Benutzer. Bitte upgraden Sie Ihr Abonnement.`
+    );
   }
 
   // 2. Prüfen, ob der User bereits ein echtes Mitglied ist

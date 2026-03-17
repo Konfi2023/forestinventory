@@ -6,6 +6,7 @@ import { requireAuthContext } from "@/lib/rbac-middleware";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { AREA_TOLERANCE_HA } from "@/lib/pricing-config";
 
 // --- CREATE & UPDATE (bleiben gleich) ---
 export async function createForest(data: any) {
@@ -17,6 +18,27 @@ export async function createForest(data: any) {
     // HIER DER WICHTIGE TEIL FÜR DICH ZUM EINFÜGEN:
      try {
         const { organizationId, userId } = await requireAuthContext(data.keycloakId, PERMISSIONS.FOREST_EDIT);
+
+        // Flächen-Limit prüfen
+        const org = await prisma.organization.findUnique({
+          where: { id: organizationId },
+          include: { plan: true },
+        });
+        const maxHa = org?.customAreaLimit ?? org?.plan?.maxHectares ?? null;
+        if (maxHa !== null && data.areaHa != null) {
+          const { _sum } = await prisma.forest.aggregate({
+            where: { organizationId },
+            _sum: { areaHa: true },
+          });
+          const usedHa = _sum.areaHa ?? 0;
+          if (usedHa + data.areaHa > maxHa + AREA_TOLERANCE_HA) {
+            throw new Error(
+              `Ihr Paket erlaubt maximal ${maxHa} ha Waldpolygonfläche. ` +
+              `Aktuell belegt: ${usedHa.toFixed(1)} ha. ` +
+              `Das neue Polygon würde das Limit überschreiten.`
+            );
+          }
+        }
 
         const forest = await prisma.forest.create({
         data: {

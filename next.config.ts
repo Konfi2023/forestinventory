@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: ['better-sqlite3'],
+  serverExternalPackages: ['better-sqlite3', '@react-pdf/renderer'],
 };
 
 const combinedConfig = withPWA(withNextIntl(nextConfig));

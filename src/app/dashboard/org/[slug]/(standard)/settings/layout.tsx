@@ -29,9 +29,9 @@ export default async function SettingsLayout({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Einstellungen</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Administration</h2>
         <p className="text-muted-foreground">
-          Verwalten Sie Ihre Organisation, das Team und Berechtigungen.
+          Verwalten Sie Ihre Organisation, das Team, Berechtigungen und Adressbücher.
         </p>
       </div>
 

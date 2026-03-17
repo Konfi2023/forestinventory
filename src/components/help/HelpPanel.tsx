@@ -19,8 +19,11 @@ export function HelpPanel() {
   const content = getHelpContent(pathname);
   if (!content) return null;
 
-  // On the map page the Leaflet ZoomControl sits bottom-right — move help button up
-  const btnPosition = isMap ? "bottom-24 right-3" : "bottom-6 right-6";
+  // On the map page position the button to the left of the Leaflet ZoomControl (bottomright)
+  // Leaflet default: bottom:20px, right:10px, each button ~26px wide, gap 1px → control right edge at ~36px
+  const btnStyle = isMap
+    ? { bottom: "30px", right: "52px" }  // vertically centered on the 2-button stack, left of it
+    : { bottom: "24px", right: "24px" };
 
   return (
     <>
@@ -28,9 +31,14 @@ export function HelpPanel() {
       <button
         onClick={() => setOpen(true)}
         title="Hilfe"
-        className={`fixed ${btnPosition} z-40 w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-white shadow-lg flex items-center justify-center transition-colors border border-slate-700`}
+        style={btnStyle}
+        className={`fixed z-40 flex items-center justify-center transition-colors ${
+          isMap
+            ? "w-[26px] h-[26px] rounded-sm bg-white hover:bg-slate-50 text-slate-700 shadow border border-slate-300 border-b-2 border-b-slate-400"
+            : "w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-white shadow-lg border border-slate-700"
+        }`}
       >
-        <HelpCircle size={20} />
+        <HelpCircle size={isMap ? 14 : 20} />
       </button>
 
       {/* Backdrop */}

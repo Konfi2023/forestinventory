@@ -111,5 +111,34 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 Tage – App bleibt eingeloggt
   },
+  // Explizite Cookie-Konfiguration für iOS Safari / Mobile.
+  // Safari behandelt Cookies ohne maxAge als Session-Cookies und löscht sie
+  // beim Navigieren zu Keycloak und zurück (Background-Tab, PWA-Modus).
+  cookies: {
+    pkceCodeVerifier: {
+      name: process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.pkce.code_verifier'
+        : 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 15, // 15 Minuten – ausreichend für den Auth-Flow
+      },
+    },
+    state: {
+      name: process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.state'
+        : 'next-auth.state',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 15,
+      },
+    },
+  },
   debug: process.env.NODE_ENV === 'development',
 };

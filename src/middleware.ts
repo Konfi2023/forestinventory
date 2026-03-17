@@ -40,14 +40,28 @@ export function middleware(req: NextRequest) {
   maybeCleanup();
 
   // Auth-Routen: Brute-Force-Schutz
+  // Callback/Session/CSRF sind interne Systemaufrufe – separater, großzügiger Counter.
+  // Sign-in-Versuche bekommen einen eigenen, strengeren Counter.
+  // Wichtig: Mobile-Netze nutzen CGNAT (viele Nutzer hinter einer IP) → Limits großzügig genug.
   if (pathname.startsWith('/api/auth')) {
-    const isCallback = pathname.startsWith('/api/auth/callback') || pathname.startsWith('/api/auth/session') || pathname.startsWith('/api/auth/csrf');
-    const limit = isCallback ? 200 : 60;
-    if (!rateLimit(`auth:${ip}`, limit, 15 * 60 * 1000)) {
-      return NextResponse.json(
-        { error: 'Zu viele Anmeldeversuche. Bitte warte 15 Minuten.' },
-        { status: 429, headers: { 'Retry-After': '900' } }
-      );
+    const isSystemCall = pathname.startsWith('/api/auth/callback') ||
+                         pathname.startsWith('/api/auth/session') ||
+                         pathname.startsWith('/api/auth/csrf');
+    if (isSystemCall) {
+      if (!rateLimit(`auth-sys:${ip}`, 600, 15 * 60 * 1000)) {
+        return NextResponse.json(
+          { error: 'Zu viele Anfragen. Bitte warte 15 Minuten.' },
+          { status: 429, headers: { 'Retry-After': '900' } }
+        );
+      }
+    } else {
+      // Eigentliche Sign-in-Versuche (/api/auth/signin, /api/auth/signout, ...)
+      if (!rateLimit(`auth-login:${ip}`, 120, 15 * 60 * 1000)) {
+        return NextResponse.json(
+          { error: 'Zu viele Anmeldeversuche. Bitte warte 15 Minuten.' },
+          { status: 429, headers: { 'Retry-After': '900' } }
+        );
+      }
     }
   }
 

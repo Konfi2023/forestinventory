@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, TreePine, Trees, Mountain, Building2, Lock, Mail } from 'lucide-react';
+import { CheckCircle2, TreePine, Trees, Mountain, Building2, Lock, Mail, Map, Crosshair, ClipboardList, Leaf, BarChart3, Satellite, ShieldCheck, Users } from 'lucide-react';
 
 export type PlanData = {
   id: string;
@@ -14,7 +14,20 @@ export type PlanData = {
   displayOrder: number;
 };
 
-// ─── Feature lists & visual config per plan ───────────────────────────────────
+// ─── Features included in ALL plans ───────────────────────────────────────────
+
+const ALL_FEATURES = [
+  { icon: Map,           label: 'Interaktive Forstkarte' },
+  { icon: Crosshair,     label: 'POIs: Hochsitze, Wege, Hütten, Fahrzeuge' },
+  { icon: ClipboardList, label: 'Aufgaben & Maßnahmenplanung' },
+  { icon: Leaf,          label: 'Baum- & Holzpolterinventar (Mobile App)' },
+  { icon: BarChart3,     label: 'Berichte & Kostencontrolling' },
+  { icon: Satellite,     label: 'Satellitenmonitoring (Biomasse, NDVI)' },
+  { icon: ShieldCheck,   label: 'EUDR-Ready (Konformität ab 2027)' },
+  { icon: Users,         label: 'Team-Einladungen & Rollen' },
+];
+
+// ─── Visual config & support tier per plan ────────────────────────────────────
 
 const PLAN_META: Record<string, {
   icon: React.ComponentType<{ className?: string }>;
@@ -25,7 +38,7 @@ const PLAN_META: Record<string, {
   accentText: string;
   priceCls: string;
   tagline: string;
-  features: string[];
+  support: string;
   highlighted?: boolean;
 }> = {
   Basis: {
@@ -37,15 +50,7 @@ const PLAN_META: Record<string, {
     accentText: 'text-blue-700',
     priceCls: 'text-slate-900',
     tagline: 'Für kleine Privatwälder',
-    features: [
-      'Interaktive Forstkarte',
-      'Waldbestandsverwaltung',
-      'POI-System (Hochsitze, Rückelager, Fahrzeuge…)',
-      'Aufgaben & Terminplanung',
-      'Kalender & Erinnerungen',
-      'Kalamitätsdokumentation',
-      'E-Mail Support',
-    ],
+    support: 'E-Mail Support',
   },
   Pro: {
     icon: Trees,
@@ -56,18 +61,8 @@ const PLAN_META: Record<string, {
     accentText: 'text-green-700',
     priceCls: 'text-green-700',
     tagline: 'Für wachsende Forstbetriebe',
+    support: 'Prioritäts-Support',
     highlighted: true,
-    features: [
-      'Alles aus Basis',
-      'Biomasse-Monitoring',
-      'Pflanzflächen & Kulturen',
-      'Jagdreviere',
-      'Wege & Rückegassen',
-      'Zeitcontrolling',
-      'EUDR-Compliance',
-      'Maßnahmen & Holzverkauf',
-      'Prioritäts-Support',
-    ],
   },
   Expert: {
     icon: Mountain,
@@ -78,14 +73,7 @@ const PLAN_META: Record<string, {
     accentText: 'text-violet-700',
     priceCls: 'text-slate-900',
     tagline: 'Für professionelle Forstunternehmen',
-    features: [
-      'Alles aus Pro',
-      'Sentinel Satellitendaten',
-      'Erweiterte Auswertungen & Reports',
-      'Individuelle Rollenrechte',
-      'Mehrere Organisationen',
-      'Telefonischer Support',
-    ],
+    support: 'Telefonischer Support',
   },
 };
 
@@ -131,8 +119,22 @@ export function PlanCards({
   const enterprise = plans.find(p => p.name === 'Enterprise');
 
   return (
-    <div className="space-y-6">
-      {/* Billing interval toggle */}
+    <div className="space-y-8">
+
+      {/* ── Alle Features Block ───────────────────────────────────────────────── */}
+      <div className="bg-green-50 border border-green-100 rounded-2xl px-6 py-5">
+        <p className="text-xs font-bold text-green-700 uppercase tracking-wider mb-4">In jedem Paket enthalten</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {ALL_FEATURES.map(({ icon: Icon, label }) => (
+            <div key={label} className="flex items-start gap-2">
+              <Icon size={14} className="text-green-600 mt-0.5 shrink-0" />
+              <span className="text-xs text-slate-700 leading-snug">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Billing interval toggle ───────────────────────────────────────────── */}
       <div className="flex items-center justify-center gap-4 flex-wrap">
         <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200">
           <button
@@ -163,7 +165,7 @@ export function PlanCards({
         )}
       </div>
 
-      {/* Plan cards */}
+      {/* ── Plan cards ────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
         {paidPlans.map(plan => {
           const meta = PLAN_META[plan.name];
@@ -220,7 +222,7 @@ export function PlanCards({
 
               {/* Name + tagline */}
               <h3 className="text-lg font-bold text-slate-900 mb-0.5">{plan.name}</h3>
-              <p className="text-xs text-slate-400 mb-4">{meta.tagline}</p>
+              <p className="text-xs text-slate-400 mb-5">{meta.tagline}</p>
 
               {/* Price */}
               <div className="mb-0.5">
@@ -231,25 +233,23 @@ export function PlanCards({
               </div>
               <p className="text-xs text-slate-400 mb-1">zzgl. MwSt.</p>
               {billingInterval === 'yearly' && plan.yearlyPrice && (
-                <p className="text-xs text-slate-400 mb-4">{plan.yearlyPrice} € zzgl. MwSt. jährlich abgerechnet</p>
+                <p className="text-xs text-slate-400 mb-5">{plan.yearlyPrice} € jährlich abgerechnet</p>
               )}
-              {billingInterval === 'monthly' && <div className="mb-4" />}
+              {billingInterval === 'monthly' && <div className="mb-5" />}
 
               {/* Limits badge */}
-              <div className={`text-xs font-semibold px-3 py-2 rounded-lg border text-center mb-5 ${meta.accentBg} ${meta.accentBorder} ${meta.accentText}`}>
-                {plan.maxHectares ? `bis ${plan.maxHectares} ha` : 'unbegrenzt'} ·{' '}
-                {plan.maxUsers ? `${plan.maxUsers} Nutzer` : 'unbegrenzte Nutzer'}
+              <div className={`text-sm font-bold px-4 py-3 rounded-xl border text-center mb-4 ${meta.accentBg} ${meta.accentBorder} ${meta.accentText}`}>
+                {plan.maxHectares ? `bis ${plan.maxHectares} ha` : 'Unbegrenzte Fläche'}
+                <span className="font-normal text-xs ml-2 opacity-75">
+                  · {plan.maxUsers ? `${plan.maxUsers} ${plan.maxUsers === 1 ? 'Nutzer' : 'Nutzer'}` : 'Unbegrenzte Nutzer'}
+                </span>
               </div>
 
-              {/* Features */}
-              <ul className="space-y-2 flex-1 mb-6">
-                {meta.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
-                    <CheckCircle2 size={14} className="text-green-600 mt-0.5 shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
+              {/* Support tier */}
+              <div className="flex items-center gap-2 text-sm text-slate-600 mb-6 flex-1">
+                <CheckCircle2 size={14} className="text-green-600 shrink-0" />
+                {meta.support}
+              </div>
 
               {/* CTA button */}
               {!isBlocked && (
@@ -270,7 +270,7 @@ export function PlanCards({
         })}
       </div>
 
-      {/* Enterprise row */}
+      {/* ── Enterprise row ────────────────────────────────────────────────────── */}
       {enterprise && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">

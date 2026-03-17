@@ -167,7 +167,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
       </header>
 
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-2xl">
+        <div className={`w-full ${step === 3 ? 'max-w-5xl' : 'max-w-2xl'}`}>
           {/* STEP 1: Account type */}
           {step === 1 && (
             <div className="space-y-8">

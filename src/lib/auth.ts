@@ -9,6 +9,12 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer: process.env.KEYCLOAK_ISSUER!,
       allowDangerousEmailAccountLinking: true,
+      // Keycloak läuft hinter Cloudflare (TLS-Termination) und gibt im
+      // Discovery-Dokument http:// URLs zurück. NextAuth folgt bei POST-Requests
+      // keinen 301-Redirects → Token-Exchange schlägt fehl.
+      // Lösung: Endpunkte direkt auf HTTPS setzen (aus KEYCLOAK_ISSUER).
+      token: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+      userinfo: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
     }),
   ],
   callbacks: {

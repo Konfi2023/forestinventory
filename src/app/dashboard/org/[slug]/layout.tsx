@@ -21,6 +21,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MobileNav } from "./_components/MobileNav";
 import { OrgSwitcher } from "./_components/OrgSwitcher";
+import { HelpPanel } from "@/components/help/HelpPanel";
 
 export default async function OrgLayout({
   children,
@@ -169,6 +170,7 @@ export default async function OrgLayout({
           <TrialExpiredGate org={org} slug={slug}>
             {children}
           </TrialExpiredGate>
+          <HelpPanel />
       </main>
     </div>
   );

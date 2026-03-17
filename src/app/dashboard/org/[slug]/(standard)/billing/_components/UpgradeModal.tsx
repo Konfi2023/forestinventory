@@ -51,8 +51,8 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
 
       {/* Modal overlay */}
       {open && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-slate-900/60 backdrop-blur-sm overflow-y-auto py-8 px-4">
-          <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-6xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
               <div>
@@ -70,7 +70,7 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
             </div>
 
             {/* Plan cards */}
-            <div className="px-8 py-6">
+            <div className="px-8 py-6 overflow-y-auto flex-1">
               <PlanCards
                 plans={plans}
                 selectedPlanId={selectedPlan?.id ?? null}
@@ -80,6 +80,7 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
                 currentUsedHa={currentUsedHa}
                 currentMemberCount={currentMemberCount}
                 showAnnualDiscountBadge
+                showFeaturesBlock={false}
               />
             </div>
 

@@ -14,22 +14,25 @@ interface Props {
   orgSlug: string;
   userEmail: string;
   roleName: string;
+  navPermissions: string[];
+  isOrgAdmin: boolean;
 }
 
-export function MobileNav({ orgName, orgSlug, userEmail, roleName }: Props) {
+export function MobileNav({ orgName, orgSlug, userEmail, roleName, navPermissions, isOrgAdmin }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  // Die Links für die mobile Ansicht (angepasst an die neue Struktur)
+  const can = (perm: string) => isOrgAdmin || navPermissions.includes(perm);
+
   const mobileLinks = [
-    { href: `/dashboard/org/${orgSlug}`, label: "Übersicht", icon: LayoutDashboard, soon: false },
-    { href: `/dashboard/org/${orgSlug}/tasks`, label: "Aufgaben & Planung", icon: ClipboardList, soon: false },
-    { href: `/dashboard/org/${orgSlug}/calendar`, label: "Kalender", icon: CalendarDays, soon: false },
-    { href: `/dashboard/org/${orgSlug}/contacts`, label: "Kontakte", icon: BookUser, soon: false },
-    { href: `/dashboard/org/${orgSlug}/kostencontrolling`, label: "Rechnungen & Berichte", icon: Euro, soon: true },
-    { href: `/dashboard/org/${orgSlug}/billing`, label: "Abrechnungen", icon: CreditCard, soon: false },
-    { href: `/dashboard/org/${orgSlug}/settings`, label: "Administration", icon: Settings, soon: false },
-  ];
+    { href: `/dashboard/org/${orgSlug}`,                  label: "Übersicht",              icon: LayoutDashboard, soon: false, perm: null },
+    { href: `/dashboard/org/${orgSlug}/tasks`,             label: "Aufgaben & Planung",     icon: ClipboardList,   soon: false, perm: "nav:tasks" },
+    { href: `/dashboard/org/${orgSlug}/calendar`,          label: "Kalender",               icon: CalendarDays,    soon: false, perm: "nav:calendar" },
+    { href: `/dashboard/org/${orgSlug}/contacts`,          label: "Kontakte",               icon: BookUser,        soon: false, perm: "nav:contacts" },
+    { href: `/dashboard/org/${orgSlug}/kostencontrolling`, label: "Rechnungen & Berichte",  icon: Euro,            soon: true,  perm: null },
+    { href: `/dashboard/org/${orgSlug}/billing`,           label: "Abrechnungen",           icon: CreditCard,      soon: false, perm: "nav:billing" },
+    { href: `/dashboard/org/${orgSlug}/settings`,          label: "Administration",         icon: Settings,        soon: false, perm: null },
+  ].filter(link => link.perm === null || can(link.perm));
 
   return (
     <div className="flex items-center justify-between p-4 border-b bg-slate-900 text-white md:hidden sticky top-0 z-50">

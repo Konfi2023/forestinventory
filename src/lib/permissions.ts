@@ -35,7 +35,20 @@ export const PERMISSION_GROUPS = {
       { key: "tasks:delete", label: "Aufgaben löschen" },
       { key: "schedules:manage", label: "Wiederkehrende Pläne" },
       { key: "time:track", label: "Zeiten erfassen" },
-      { key: "team:manage", label: "Team verwalten" }, // Fehlte im vorherigen Block, wird oft gebraucht
+      { key: "team:manage", label: "Team verwalten" },
+    ]
+  },
+  NAV_ACCESS: {
+    label: "Seitenleiste – Sichtbarkeit",
+    permissions: [
+      { key: "nav:map",         label: "Karte" },
+      { key: "nav:tasks",       label: "Aufgaben & Planung" },
+      { key: "nav:calendar",    label: "Kalender" },
+      { key: "nav:biomass",     label: "Biomasse-Monitoring" },
+      { key: "nav:operations",  label: "Maßnahmen & Holzverkauf" },
+      { key: "nav:controlling", label: "Zeitcontrolling" },
+      { key: "nav:contacts",    label: "Kontakte" },
+      { key: "nav:billing",     label: "Abrechnungen" },
     ]
   }
 } as const;
@@ -55,13 +68,14 @@ export const ROLE_TEMPLATES = {
     permissions: [
       "forest:view", "forest:edit", "users:view",
       "tasks:view", "tasks:create", "tasks:edit", "tasks:assign", "tasks:delete",
-      "schedules:manage", "time:track"
+      "schedules:manage", "time:track",
+      "nav:map", "nav:tasks", "nav:calendar", "nav:biomass", "nav:operations", "nav:controlling", "nav:contacts",
     ]
   },
   VIEWER: {
     name: "Beobachter",
     description: "Nur Lesezugriff",
-    permissions: ["forest:view", "tasks:view"]
+    permissions: ["forest:view", "tasks:view", "nav:map", "nav:tasks"]
   }
 };
 

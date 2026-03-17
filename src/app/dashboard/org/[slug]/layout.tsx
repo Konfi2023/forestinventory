@@ -58,7 +58,7 @@ export default async function OrgLayout({
       userId: session.user.id,
       organizationId: org.id,
     },
-    include: { role: true }
+    include: { role: { select: { name: true, permissions: true } } }
   });
 
   if (!membership) {
@@ -75,6 +75,11 @@ export default async function OrgLayout({
     );
   }
 
+  // 2b. Nav-Sichtbarkeit berechnen (Admin sieht immer alles)
+  const isOrgAdmin = membership.role.name === "Administrator";
+  const navPerms = membership.role.permissions;
+  const canNav = (perm: string) => isOrgAdmin || navPerms.includes(perm);
+
   // 3. Alle Mitgliedschaften laden (für den Org-Switcher)
   const allMemberships = await prisma.membership.findMany({
     where: { userId: session.user.id },
@@ -87,11 +92,13 @@ export default async function OrgLayout({
     <div className="flex h-screen bg-slate-900 overflow-hidden flex-col md:flex-row">
       
       {/* --- MOBILE NAVIGATION (Nur sichtbar auf kleinen Screens) --- */}
-      <MobileNav 
-        orgName={org.name} 
+      <MobileNav
+        orgName={org.name}
         orgSlug={slug}
         userEmail={session.user.email || ""}
         roleName={membership.role.name}
+        navPermissions={navPerms}
+        isOrgAdmin={isOrgAdmin}
       />
 
       {/* --- DESKTOP SIDEBAR (Versteckt auf Mobile, sichtbar ab md) --- */}
@@ -108,26 +115,26 @@ export default async function OrgLayout({
         {/* Navigation Links */}
         <nav className="flex-1 px-3 space-y-1 mt-6 overflow-y-auto custom-scrollbar flex flex-col">
           <NavItem href={`/dashboard/org/${slug}`} icon={<LayoutDashboard size={20} />} label="Übersicht" />
-          
-          <NavItem href={`/dashboard/org/${slug}/map`} icon={<MapIcon size={20} />} label="Karte" />
 
-          <NavItem href={`/dashboard/org/${slug}/tasks`} icon={<ClipboardList size={20} />} label="Aufgaben & Planung" />
-          
-          <NavItem href={`/dashboard/org/${slug}/calendar`} icon={<CalendarDays size={20} />} label="Kalender" />
-          
+          {canNav("nav:map") && <NavItem href={`/dashboard/org/${slug}/map`} icon={<MapIcon size={20} />} label="Karte" />}
 
-          <NavItem href={`/dashboard/org/${slug}/biomass`} icon={<Leaf size={20} />} label="Biomasse-Monitoring" />
+          {canNav("nav:tasks") && <NavItem href={`/dashboard/org/${slug}/tasks`} icon={<ClipboardList size={20} />} label="Aufgaben & Planung" />}
 
-          <NavItem href={`/dashboard/org/${slug}/operations`} icon={<PackageOpen size={20} />} label="Maßnahmen & Holzverkauf" />
+          {canNav("nav:calendar") && <NavItem href={`/dashboard/org/${slug}/calendar`} icon={<CalendarDays size={20} />} label="Kalender" />}
 
-          <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label="Zeitcontrolling" />
+          {canNav("nav:biomass") && <NavItem href={`/dashboard/org/${slug}/biomass`} icon={<Leaf size={20} />} label="Biomasse-Monitoring" />}
+
+          {canNav("nav:operations") && <NavItem href={`/dashboard/org/${slug}/operations`} icon={<PackageOpen size={20} />} label="Maßnahmen & Holzverkauf" />}
+
+          {canNav("nav:controlling") && <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label="Zeitcontrolling" />}
+
           <NavItem href={`/dashboard/org/${slug}/kostencontrolling`} icon={<Euro size={20} />} label="Rechnungen & Berichte" soon />
 
           {/* Spacer, damit Kontakte, Abrechnungen & Administration unten klebt */}
           <div className="mt-auto pb-4">
              <div className="my-2 border-t border-slate-800" />
-             <NavItem href={`/dashboard/org/${slug}/contacts`} icon={<BookUser size={20} />} label="Kontakte" />
-             <NavItem href={`/dashboard/org/${slug}/billing`} icon={<CreditCard size={20} />} label="Abrechnungen" />
+             {canNav("nav:contacts") && <NavItem href={`/dashboard/org/${slug}/contacts`} icon={<BookUser size={20} />} label="Kontakte" />}
+             {canNav("nav:billing") && <NavItem href={`/dashboard/org/${slug}/billing`} icon={<CreditCard size={20} />} label="Abrechnungen" />}
              <NavItem href={`/dashboard/org/${slug}/settings`} icon={<Settings size={20} />} label="Administration" />
           </div>
         </nav>

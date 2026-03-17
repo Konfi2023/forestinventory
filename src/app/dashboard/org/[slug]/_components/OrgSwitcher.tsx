@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronsUpDown, Check } from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuTrigger 
+import { ChevronsUpDown, Check, Plus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -53,24 +54,31 @@ export function OrgSwitcher({ currentOrg, allMemberships }: Props) {
         <DropdownMenuLabel className="text-xs text-muted-foreground">Organisationen</DropdownMenuLabel>
         
         {allMemberships.map((m) => (
-          <DropdownMenuItem 
+          <DropdownMenuItem
             key={m.organization.id}
             onClick={() => handleSwitch(m.organization.slug)}
             className="flex items-center justify-between cursor-pointer py-3"
           >
             <div className="flex items-center gap-2">
-                <Avatar className="h-6 w-6 rounded-sm">
-                    <AvatarFallback className="text-[10px] bg-slate-100 text-slate-700">
-                        {m.organization.name[0]}
-                    </AvatarFallback>
-                </Avatar>
-                <span className="truncate w-40 font-medium">
-                    {m.organization.name}
-                </span>
+              <Avatar className="h-6 w-6 rounded-sm">
+                <AvatarFallback className="text-[10px] bg-slate-100 text-slate-700">
+                  {m.organization.name[0]}
+                </AvatarFallback>
+              </Avatar>
+              <span className="truncate w-40 font-medium">{m.organization.name}</span>
             </div>
             {m.organization.id === currentOrg.id && <Check className="h-4 w-4 text-emerald-600" />}
           </DropdownMenuItem>
         ))}
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => router.push("/onboarding/new-org")}
+          className="flex items-center gap-2 cursor-pointer py-2.5 text-emerald-700 font-medium hover:text-emerald-800"
+        >
+          <Plus className="h-4 w-4" />
+          Neuen Betrieb anlegen
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

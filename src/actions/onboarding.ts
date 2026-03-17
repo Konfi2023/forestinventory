@@ -119,6 +119,36 @@ export async function startTrial(data: OnboardingData): Promise<{ slug: string }
 }
 
 /**
+ * Create an additional org for an already-logged-in user (no Stripe redirect)
+ * Used by the "Neuen Betrieb anlegen" flow from the OrgSwitcher.
+ */
+export async function createAdditionalOrg(
+  data: OnboardingData
+): Promise<{ slug: string; checkoutUrl?: string }> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Nicht eingeloggt");
+
+  // User already exists in DB — ensureDbUser just returns the id
+  const userId = await ensureDbUser(session);
+  const slug = await createOrgWithTrial(data, userId, session.user.email || null);
+
+  if (data.selectedPriceId && data.planInterval) {
+    const org = await prisma.organization.findUnique({ where: { slug } });
+    if (org) {
+      const { createCheckoutSession } = await import("./stripe-actions");
+      const result = await createCheckoutSession(
+        data.selectedPriceId,
+        org.id,
+        data.planInterval
+      );
+      return { slug, checkoutUrl: result.url || undefined };
+    }
+  }
+
+  return { slug };
+}
+
+/**
  * Complete onboarding with payment — creates org and returns Stripe checkout URL
  */
 export async function completeOnboarding(

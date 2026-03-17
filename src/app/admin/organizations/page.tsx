@@ -96,7 +96,7 @@ export default async function AdminOrgsPage({
                         org.subscriptionStatus === 'PAST_DUE' ? "bg-amber-50 text-amber-700 border-amber-200" : ""
                     }
                   >
-                    {org.subscriptionStatus || 'FREE'}
+                    {org.subscriptionStatus || 'PENDING'}
                   </Badge>
                 </TableCell>
 
@@ -111,7 +111,7 @@ export default async function AdminOrgsPage({
                         </Link>
 
                         {/* 2. Status ändern (Sperren/Aktivieren) */}
-                        <OrgActions orgId={org.id} currentStatus={org.subscriptionStatus || 'FREE'} />
+                        <OrgActions orgId={org.id} currentStatus={org.subscriptionStatus || 'PENDING'} />
 
                         {/* 3. Löschen mit Sicherheits-Modal */}
                         <DeleteConfirmDialog 

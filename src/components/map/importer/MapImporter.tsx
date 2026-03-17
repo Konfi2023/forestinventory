@@ -125,6 +125,8 @@ export function MapImporter({ orgSlug, onImportComplete, keycloakId }: Props) {
       }
 
       let successCount = 0;
+      const importErrors: { name: string; reason: string }[] = [];
+
       for (const feature of extractedFeatures) {
         let calculatedAreaHa = 0;
         try {
@@ -139,13 +141,16 @@ export function MapImporter({ orgSlug, onImportComplete, keycloakId }: Props) {
           keycloakId:  keycloakId,
           description: `Importiert aus ${file.name}`,
         });
-        if (result.success) successCount++;
+        if (result.success) {
+          successCount++;
+        } else {
+          importErrors.push({ name: feature.properties.name, reason: result.error ?? 'Unbekannter Fehler' });
+        }
       }
 
       toast.dismiss(toastId);
 
       if (successCount > 0) {
-        // Erfolg + ggf. Hinweis auf übersprungene
         if (skipped.length > 0) {
           toast.success(
             `${successCount} Fläche(n) importiert, ${skipped.length} übersprungen.`,
@@ -160,6 +165,14 @@ export function MapImporter({ orgSlug, onImportComplete, keycloakId }: Props) {
         onImportComplete();
       } else {
         toast.error('Import fehlgeschlagen. Bitte Datei prüfen.');
+      }
+
+      // Fehler einzeln als Toasts anzeigen
+      importErrors.slice(0, 3).forEach(e =>
+        toast.error(`„${e.name}": ${e.reason}`, { duration: 10000 })
+      );
+      if (importErrors.length > 3) {
+        toast.error(`… und ${importErrors.length - 3} weitere Fehler.`, { duration: 10000 });
       }
 
     } catch (err: any) {

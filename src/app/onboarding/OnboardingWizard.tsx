@@ -10,11 +10,12 @@ import {
   ChevronLeft,
   Check,
   Loader2,
+  type LucideIcon,
 } from "lucide-react";
 import { startTrial, completeOnboarding, type OnboardingData } from "@/actions/onboarding";
 import { addDays, format } from "date-fns";
 import { de } from "date-fns/locale";
-import { PlanCards } from "@/components/billing/PlanCards";
+import { PlanCards, ALL_FEATURES } from "@/components/billing/PlanCards";
 
 type PlanData = {
   id: string;
@@ -166,8 +167,8 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className={`w-full ${step === 3 ? 'max-w-5xl' : 'max-w-2xl'}`}>
+      <main className={`flex-1 flex items-center justify-center px-4 ${step === 3 ? 'py-6' : 'py-12'}`}>
+        <div className={`w-full ${step === 3 ? 'max-w-6xl' : 'max-w-2xl'}`}>
           {/* STEP 1: Account type */}
           {step === 1 && (
             <div className="space-y-8">
@@ -333,69 +334,72 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
 
           {/* STEP 3: Plan selection */}
           {step === 3 && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Paket wählen</h1>
-                <p className="mt-2 text-slate-500">
-                  Wählen Sie das passende Paket für Ihren Betrieb — oder starten Sie kostenlos.
-                </p>
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
 
-              <PlanCards
-                plans={plans}
-                selectedPlanId={selectedPlan?.id ?? null}
-                onSelect={setSelectedPlan}
-                billingInterval={billingInterval}
-                onIntervalChange={setBillingInterval}
-                showAnnualDiscountBadge
-              />
-
-              {/* Free trial option */}
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200" />
+              {/* ── Links: Features ── */}
+              <div className="lg:col-span-2 space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900">Paket wählen</h1>
+                  <p className="mt-2 text-slate-500">Alle Pakete beinhalten den vollen Funktionsumfang — der Unterschied liegt nur in Fläche und Teamgröße.</p>
                 </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-white px-4 text-sm text-slate-400">oder ohne Zahlungsmethode starten</span>
-                </div>
-              </div>
 
-              <div className="rounded-2xl border-2 border-dashed border-slate-200 p-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div>
-                    <div className="font-bold text-slate-900">30 Tage kostenlos testen</div>
-                    <div className="text-slate-500 text-sm mt-1">
-                      Keine Kreditkarte erforderlich. Zahlungsmethode kann später in den Abrechnungen hinterlegt werden.
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-green-700 uppercase tracking-wider">In jedem Paket enthalten</p>
+                  {ALL_FEATURES.map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                        <Icon size={13} className="text-green-600" />
+                      </div>
+                      <span className="text-sm text-slate-700">{label}</span>
                     </div>
-                  </div>
+                  ))}
+                </div>
+
+                <div className="pt-2">
                   <button
-                    onClick={handleStartTrial}
-                    disabled={loading || !orgName.trim()}
-                    className="flex items-center gap-2 px-5 py-2.5 border-2 border-green-700 text-green-700 rounded-lg font-medium hover:bg-green-50 transition disabled:opacity-50"
+                    onClick={() => setStep(2)}
+                    className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition"
                   >
-                    {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-                    Kostenlos testen
+                    <ChevronLeft size={15} /> Zurück
                   </button>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setStep(2)}
-                  className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <ChevronLeft size={16} /> Zurück
-                </button>
+              {/* ── Rechts: Pakete ── */}
+              <div className="lg:col-span-3 space-y-4">
+                <PlanCards
+                  plans={plans}
+                  selectedPlanId={selectedPlan?.id ?? null}
+                  onSelect={setSelectedPlan}
+                  billingInterval={billingInterval}
+                  onIntervalChange={setBillingInterval}
+                  showAnnualDiscountBadge
+                  showFeaturesBlock={false}
+                />
+
+                {/* Free trial */}
+                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-3 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">30 Tage kostenlos testen</div>
+                    <div className="text-xs text-slate-400 mt-0.5">Keine Kreditkarte erforderlich.</div>
+                  </div>
+                  <button
+                    onClick={handleStartTrial}
+                    disabled={loading || !orgName.trim()}
+                    className="shrink-0 flex items-center gap-2 px-4 py-2 border-2 border-green-700 text-green-700 rounded-lg text-sm font-medium hover:bg-green-50 transition disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 size={14} className="animate-spin" /> : null}
+                    Kostenlos testen
+                  </button>
+                </div>
+
                 <button
                   onClick={() => {
-                    if (!selectedPlan) {
-                      toast.error("Bitte wählen Sie ein Paket aus.");
-                      return;
-                    }
+                    if (!selectedPlan) { toast.error("Bitte wählen Sie ein Paket aus."); return; }
                     setStep(4);
                   }}
                   disabled={!selectedPlan}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium disabled:opacity-50"
                 >
                   Weiter zur Zusammenfassung <ChevronRight size={16} />
                 </button>

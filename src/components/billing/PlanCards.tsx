@@ -16,7 +16,7 @@ export type PlanData = {
 
 // ─── Features included in ALL plans ───────────────────────────────────────────
 
-const ALL_FEATURES = [
+export const ALL_FEATURES = [
   { icon: Map,           label: 'Interaktive Forstkarte' },
   { icon: Crosshair,     label: 'POIs: Hochsitze, Wege, Hütten, Fahrzeuge' },
   { icon: ClipboardList, label: 'Aufgaben & Maßnahmenplanung' },
@@ -88,6 +88,7 @@ interface Props {
   currentUsedHa?: number;
   currentMemberCount?: number;
   showAnnualDiscountBadge?: boolean;
+  showFeaturesBlock?: boolean;
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -114,6 +115,7 @@ export function PlanCards({
   currentUsedHa = 0,
   currentMemberCount = 0,
   showAnnualDiscountBadge = true,
+  showFeaturesBlock = true,
 }: Props) {
   const paidPlans = plans.filter(p => p.name !== 'Enterprise');
   const enterprise = plans.find(p => p.name === 'Enterprise');
@@ -122,17 +124,19 @@ export function PlanCards({
     <div className="space-y-8">
 
       {/* ── Alle Features Block ───────────────────────────────────────────────── */}
-      <div className="bg-green-50 border border-green-100 rounded-2xl px-6 py-5">
-        <p className="text-xs font-bold text-green-700 uppercase tracking-wider mb-4">In jedem Paket enthalten</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {ALL_FEATURES.map(({ icon: Icon, label }) => (
-            <div key={label} className="flex items-start gap-2">
-              <Icon size={14} className="text-green-600 mt-0.5 shrink-0" />
-              <span className="text-xs text-slate-700 leading-snug">{label}</span>
-            </div>
-          ))}
+      {showFeaturesBlock && (
+        <div className="bg-green-50 border border-green-100 rounded-2xl px-6 py-5">
+          <p className="text-xs font-bold text-green-700 uppercase tracking-wider mb-4">In jedem Paket enthalten</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {ALL_FEATURES.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-start gap-2">
+                <Icon size={14} className="text-green-600 mt-0.5 shrink-0" />
+                <span className="text-xs text-slate-700 leading-snug">{label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Billing interval toggle ───────────────────────────────────────────── */}
       <div className="flex items-center justify-center gap-4 flex-wrap">

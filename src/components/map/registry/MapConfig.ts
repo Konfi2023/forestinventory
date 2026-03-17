@@ -34,15 +34,26 @@ export const BASE_MAPS = {
   },
   OUTDOORS: {
     id: 'OUTDOORS',
-    label: 'Topografie',
+    label: 'OpenStreetMap',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     previewColor: '#cceebb',
     tileSize: 256,
     zoomOffset: 0,
     minZoom: 4,
     maxZoom: 19,
-  }
+  },
+  TOPO: {
+    id: 'TOPO',
+    label: 'Topografie (OpenTopo)',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+    previewColor: '#b5c99a',
+    tileSize: 256,
+    zoomOffset: 0,
+    minZoom: 4,
+    maxZoom: 17,
+  },
 } as const;
 
 // Zoom-Limits für Overlay-Layer (überschreiben die Basis-Karte wenn aktiv)

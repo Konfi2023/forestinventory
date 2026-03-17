@@ -223,14 +223,15 @@ export function PlanCards({
               <p className="text-xs text-slate-400 mb-4">{meta.tagline}</p>
 
               {/* Price */}
-              <div className="mb-1">
+              <div className="mb-0.5">
                 <span className={`text-4xl font-bold ${meta.priceCls}`}>
                   {monthlyEquivalent ? `${monthlyEquivalent} €` : '—'}
                 </span>
                 <span className="text-slate-400 text-sm ml-1">/ Monat</span>
               </div>
+              <p className="text-xs text-slate-400 mb-1">zzgl. MwSt.</p>
               {billingInterval === 'yearly' && plan.yearlyPrice && (
-                <p className="text-xs text-slate-400 mb-4">{plan.yearlyPrice} € jährlich abgerechnet</p>
+                <p className="text-xs text-slate-400 mb-4">{plan.yearlyPrice} € zzgl. MwSt. jährlich abgerechnet</p>
               )}
               {billingInterval === 'monthly' && <div className="mb-4" />}
 

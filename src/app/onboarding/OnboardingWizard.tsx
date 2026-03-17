@@ -428,9 +428,12 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">Preis</span>
-                  <span className="font-semibold text-slate-900">
-                    {getSelectedPrice() ? `${getSelectedPrice()} € / ${billingInterval === "monthly" ? "Monat" : "Jahr"}` : "Auf Anfrage"}
-                  </span>
+                  <div className="text-right">
+                    <span className="font-semibold text-slate-900">
+                      {getSelectedPrice() ? `${getSelectedPrice()} € / ${billingInterval === "monthly" ? "Monat" : "Jahr"}` : "Auf Anfrage"}
+                    </span>
+                    {getSelectedPrice() && <p className="text-xs text-slate-400">zzgl. MwSt.</p>}
+                  </div>
                 </div>
                 <div className="border-t border-slate-200 pt-4">
                   <div className="flex justify-between items-center">

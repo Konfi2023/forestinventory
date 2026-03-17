@@ -274,9 +274,11 @@ export async function upsertPoiLogPile(
   data: {
     volumeFm?: number | null;
     logLength?: number | null;
+    layerCount?: number | null;
     treeSpecies?: string | null;
     woodType?: string | null;
     qualityClass?: string | null;
+    imageKey?: string | null;
     notes?: string;
   },
   orgSlug?: string,
@@ -292,17 +294,21 @@ export async function upsertPoiLogPile(
         poiId,
         volumeFm:    data.volumeFm    ?? null,
         logLength:   data.logLength   ?? null,
+        layerCount:  data.layerCount  ?? null,
         treeSpecies: data.treeSpecies ?? null,
         woodType:    data.woodType    ?? null,
         qualityClass:data.qualityClass?? null,
+        imageKey:    data.imageKey    ?? null,
         notes:       data.notes       ?? null,
       },
       update: {
         volumeFm:    data.volumeFm    ?? null,
         logLength:   data.logLength   ?? null,
+        layerCount:  data.layerCount  ?? null,
         treeSpecies: data.treeSpecies ?? null,
         woodType:    data.woodType    ?? null,
         qualityClass:data.qualityClass?? null,
+        ...(data.imageKey !== undefined ? { imageKey: data.imageKey } : {}),
         notes:       data.notes       ?? null,
       },
     });

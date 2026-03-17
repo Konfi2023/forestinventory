@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { ClipboardList, TreePine, ChevronDown, Check } from 'lucide-react';
+import { ClipboardList, TreePine, PackageOpen, ChevronDown, Check } from 'lucide-react';
 import { TasksTab } from './tabs/TasksTab';
 import { InventoryTab } from './tabs/InventoryTab';
+import { PolterTab } from './tabs/PolterTab';
 
-type Tab = 'tasks' | 'inventory';
+type Tab = 'tasks' | 'inventory' | 'polter';
 
 interface Org { id: string; name: string; slug: string; role: string; }
 interface Forest { id: string; name: string; }
@@ -123,6 +124,9 @@ export function AppShell({
         {tab === 'inventory' && (
           <InventoryTab forests={forests} orgSlug={orgSlug} members={members} />
         )}
+        {tab === 'polter' && (
+          <PolterTab forests={forests} orgSlug={orgSlug} />
+        )}
       </div>
 
       {/* Bottom Tab Bar */}
@@ -144,6 +148,15 @@ export function AppShell({
         >
           <TreePine size={22} />
           <span className="text-xs font-medium">Inventur</span>
+        </button>
+        <button
+          onClick={() => setTab('polter')}
+          className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
+            tab === 'polter' ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <PackageOpen size={22} />
+          <span className="text-xs font-medium">Polter</span>
         </button>
       </div>
     </div>

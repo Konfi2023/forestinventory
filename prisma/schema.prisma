@@ -409,9 +409,11 @@ model ForestPoiLogPile {
   poi          ForestPoi @relation(fields: [poiId], references: [id], onDelete: Cascade)
   volumeFm     Float?    // Festmeter (fm)
   logLength    Float?    // Stammlänge in Metern
+  layerCount   Int?      // Anzahl der Lagen
   treeSpecies  String?   // Baumart
   woodType     String?   @default("LOG") // LOG | INDUSTRIAL | ENERGY | PULP
   qualityClass String?   // A, B, C, D, IL, E
+  imageKey     String?   // S3-Key / lokaler Pfad des Fotos
   notes        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

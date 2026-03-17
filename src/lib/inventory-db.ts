@@ -1,5 +1,23 @@
 import Dexie, { type Table } from 'dexie';
 
+export interface PendingLogPile {
+  id?: number;
+  forestId: string;
+  forestName: string;
+  lat: number;
+  lng: number;
+  treeSpecies: string | null;
+  woodType: string | null;
+  volumeFm: number | null;
+  logLength: number | null;
+  layerCount: number | null;
+  qualityClass: string | null;
+  imageDataUrl: string | null; // base64 preview für Offline
+  notes: string | null;
+  createdAt: string;
+  synced: boolean;
+}
+
 export interface PendingTree {
   id?: number;
   forestId: string;
@@ -29,15 +47,20 @@ export interface PendingTree {
 
 export class InventoryDB extends Dexie {
   pendingTrees!: Table<PendingTree, number>;
+  pendingLogPiles!: Table<PendingLogPile, number>;
 
   constructor() {
     super('ForestInventoryDB');
     this.version(1).stores({
       pendingTrees: '++id, synced, createdAt, forestId',
     });
-    // Version 2: Neue Felder für Standort und Vitalität
     this.version(2).stores({
       pendingTrees: '++id, synced, createdAt, forestId',
+    });
+    // Version 3: Polter-Offline-Erfassung
+    this.version(3).stores({
+      pendingTrees:    '++id, synced, createdAt, forestId',
+      pendingLogPiles: '++id, synced, createdAt, forestId',
     });
   }
 }

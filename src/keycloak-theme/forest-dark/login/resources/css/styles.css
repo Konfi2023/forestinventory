@@ -215,7 +215,7 @@ input:-webkit-autofill:active {
 
 /* Rechte Seite (Bild) */
 .np-auth-right {
-    flex: 1.2;
+    flex: 2.2;
     position: relative;
     border-radius: 20px;
     overflow: hidden;

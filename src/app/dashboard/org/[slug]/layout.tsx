@@ -17,7 +17,6 @@ import {
   Euro,
   CreditCard,
   BookUser,
-  FileBarChart2,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MobileNav } from "./_components/MobileNav";
@@ -123,7 +122,6 @@ export default async function OrgLayout({
 
           <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label="Zeitcontrolling" />
           <NavItem href={`/dashboard/org/${slug}/kostencontrolling`} icon={<Euro size={20} />} label="Kostencontrolling" />
-          <NavItem href={`/dashboard/org/${slug}/berichte`} icon={<FileBarChart2 size={20} />} label="Berichte" />
 
           {/* Spacer, damit Kontakte, Abrechnungen & Administration unten klebt */}
           <div className="mt-auto pb-4">

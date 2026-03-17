@@ -130,7 +130,7 @@ export const useMapStore = create<MapState>()(
     zoom: 6,
     isReady: false,
     
-    activeBaseMap: 'DARK',
+    activeBaseMap: 'SATELLITE',
     activeTheme: 'STANDARD',
     activeLayers: ['FOREST_BOUNDARY', 'SECTIONS', 'TASKS', 'INFRASTRUCTURE'],
     

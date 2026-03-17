@@ -3,7 +3,7 @@
 import { useMapStore } from '../stores/useMapStores';
 import { LAYER_REGISTRY } from '../registry/LayerRegistry';
 import { BASE_MAPS } from '../registry/MapConfig';
-import { Layers, ChevronDown, ChevronUp, Check, Leaf, Play, Pause, Calendar, CloudRain, Zap, Wind, Grid3x3 } from 'lucide-react';
+import { Layers, Check, Leaf, Play, Pause, Calendar, CloudRain, Zap, Wind, Grid3x3 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -138,23 +138,26 @@ export function LayerControl() {
   const overlayLayers = Object.values(LAYER_REGISTRY).filter(l => !l.isBaseLayer);
 
   return (
-    <div className="bg-[#151515]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl transition-all w-72 flex flex-col font-sans">
+    <div className="flex flex-col items-end gap-2 font-sans">
 
-      {/* HEADER */}
+      {/* ICON BUTTON */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-3 flex items-center justify-between text-xs font-bold text-white hover:bg-white/5 transition border-b border-white/5"
+        className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 shadow-xl border",
+          "bg-[#151515]/90 backdrop-blur-md text-white hover:bg-white/10 hover:border-white/30",
+          isOpen
+            ? "border-[#10b981] text-[#10b981]"
+            : "border-white/10"
+        )}
+        title="Kartensteuerung"
       >
-        <span className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-[#10b981]" />
-          Kartensteuerung
-        </span>
-        <span className="text-gray-500">
-          {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </span>
+        <Layers className="w-5 h-5" />
       </button>
 
+      {/* EXPANDED PANEL */}
       {isOpen && (
+        <div className="bg-[#151515]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl w-72 flex flex-col">
         <div className="p-4 space-y-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
 
           {/* 1. HINTERGRUNDKARTE */}
@@ -495,6 +498,7 @@ export function LayerControl() {
             </div>
           </section>
 
+        </div>
         </div>
       )}
     </div>

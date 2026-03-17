@@ -257,30 +257,17 @@ export default function MapViewer({ forestData, children, skipAutoZoom, minimal 
         </div>
       )}
 
-      {/* 1. LAYER CONTROL */}
-      {!minimal && (
-        <div
-          className={cn(
-              "absolute top-6 z-[500] transition-all duration-300 ease-in-out",
-              isTaskOpen ? "right-[40rem]" :
-              isSidebarOpen ? "right-[26rem]" :
-              "right-6"
-          )}
-        >
-          <LayerControl />
-        </div>
-      )}
-
-      {/* 2. NAVIGATION / GPS */}
+      {/* TOP-RIGHT CONTROLS: Layer + GPS */}
       <div
         className={cn(
-            "absolute bottom-24 z-[500] transition-all duration-300 ease-in-out",
+            "absolute top-6 z-[500] transition-all duration-300 ease-in-out flex items-start gap-2",
             isTaskOpen ? "right-[40rem]" :
             isSidebarOpen ? "right-[26rem]" :
-            "right-3"
+            "right-6"
         )}
       >
-         <LocationControl />
+        <LocationControl />
+        {!minimal && <LayerControl />}
       </div>
 
       {/* 3. WETTER-WIDGET */}

@@ -43,10 +43,10 @@ const fixLeafletIcons = () => {
   });
 };
 
-// --- 2a. Scale Bar (custom, mittig unten) ---
+// --- 2a. Scale Bar — syncs to Zustand, rendered OUTSIDE Leaflet via MapViewer ---
 function ScaleBar() {
   const map = useMap();
-  const [scale, setScale] = useState({ width: 80, label: '...' });
+  const setScaleBar = useMapStore((s) => s.setScaleBar);
 
   useEffect(() => {
     const update = () => {
@@ -55,7 +55,7 @@ function ScaleBar() {
       const maxM = metersPerPx * 100;
       const steps = [1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000];
       const nice = steps.find(v => v >= maxM) ?? steps[steps.length - 1];
-      setScale({
+      setScaleBar({
         width: Math.round(nice / metersPerPx),
         label: nice >= 1000 ? `${nice / 1000} km` : `${nice} m`,
       });
@@ -63,19 +63,9 @@ function ScaleBar() {
     update();
     map.on('zoomend moveend', update);
     return () => { map.off('zoomend moveend', update); };
-  }, [map]);
+  }, [map, setScaleBar]);
 
-  return (
-    <div className="map-scale-bar absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] pointer-events-none flex flex-col items-center gap-0.5">
-      <span className="text-[10px] text-white font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-        {scale.label}
-      </span>
-      <div
-        className="border-b-2 border-l-2 border-r-2 border-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
-        style={{ width: scale.width, height: 5 }}
-      />
-    </div>
-  );
+  return null;
 }
 
 // --- 2b. Zoom Limiter — passt min/maxZoom dynamisch an die aktive Kartenansicht an ---
@@ -216,6 +206,7 @@ interface MapViewerProps {
 export default function MapViewer({ forestData, children, skipAutoZoom, minimal = false }: MapViewerProps) {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => { setIsMounted(true); }, []);
+  const scaleBar = useMapStore((s) => s.scaleBar);
 
   const interactionMode = useMapStore((s) => s.interactionMode);
   const activeBaseMapId = useMapStore((s) => s.activeBaseMap);
@@ -252,7 +243,20 @@ export default function MapViewer({ forestData, children, skipAutoZoom, minimal 
 
   return (
     <div className="relative w-full h-full bg-[#050505] overflow-hidden">
-      
+
+      {/* Scale bar — rendered outside Leaflet container so print can see it */}
+      {scaleBar.label && (
+        <div className="map-scale-bar absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] pointer-events-none flex flex-col items-center gap-0.5">
+          <span className="text-[10px] text-white font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            {scaleBar.label}
+          </span>
+          <div
+            className="border-b-2 border-l-2 border-r-2 border-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
+            style={{ width: scaleBar.width, height: 5 }}
+          />
+        </div>
+      )}
+
       {/* 1. LAYER CONTROL */}
       {!minimal && (
         <div

@@ -118,6 +118,10 @@ export interface MapState {
   flyTo: (coords: [number, number], zoom?: number) => void;
   fitBounds: (bounds: any) => void;
   invalidateSize: () => void;
+
+  // Scale bar (synced from inside Leaflet, rendered outside)
+  scaleBar: { width: number; label: string };
+  setScaleBar: (scale: { width: number; label: string }) => void;
 }
 
 export const useMapStore = create<MapState>()(
@@ -233,5 +237,8 @@ export const useMapStore = create<MapState>()(
     flyTo: (coords, zoom) => console.warn("Map not initialized yet", coords, zoom),
     fitBounds: (bounds) => console.warn("Map not initialized yet", bounds),
     invalidateSize: () => console.warn("Map not initialized yet"),
+
+    scaleBar: { width: 80, label: '' },
+    setScaleBar: (scale) => set({ scaleBar: scale }),
   }))
 );

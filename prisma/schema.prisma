@@ -459,7 +459,9 @@ model ForestPoiTree {
   standType     StandType?
   stockingDegree StockingDegree?
 
-  imageKey  String?
+  imageKey       String?  // Stammfoto
+  crownImageKey  String?  // Kronenfoto
+
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

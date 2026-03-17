@@ -126,6 +126,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   const [form, setForm] = useState<TreeForm>(EMPTY_FORM);
   const [speciesSearch, setSpeciesSearch] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [crownPhotoPreview, setCrownPhotoPreview] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -146,6 +147,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoFileRef = useRef<File | null>(null);
+  const crownFileInputRef = useRef<HTMLInputElement>(null);
+  const crownPhotoFileRef = useRef<File | null>(null);
 
   // Online-Status und Pending-Count
   useEffect(() => {
@@ -276,6 +279,15 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     captureGps();
   }
 
+  function handleCrownPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    crownPhotoFileRef.current = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => setCrownPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
   // Komprimiert ein Bild auf max. 1200px und JPEG-Qualität 0.75
   function compressImage(file: File): Promise<Blob> {
     return new Promise((resolve) => {
@@ -302,26 +314,28 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
   async function saveTree() {
     const treeData: Omit<PendingTree, 'id'> = {
-      forestId:       form.forestId,
-      forestName:     form.forestName,
-      lat:            form.lat ?? 0,
-      lng:            form.lng ?? 0,
-      species:        form.species || 'OTHER',
-      diameter:       form.diameter ? parseFloat(form.diameter) : null,
-      height:         form.height   ? parseFloat(form.height)   : null,
-      soilCondition:  form.soilCondition  || null,
-      soilMoisture:   form.soilMoisture   || null,
-      exposition:     form.exposition     || null,
-      slopeClass:     form.slopeClass     || null,
-      slopePosition:  form.slopePosition  || null,
-      standType:      form.standType      || null,
-      stockingDegree: form.stockingDegree || null,
-      damageType:     null,
-      damageSeverity: null,
-      crownCondition: null,
-      notes:          form.notes || null,
-      createdAt:      new Date().toISOString(),
-      synced:         false,
+      forestId:          form.forestId,
+      forestName:        form.forestName,
+      lat:               form.lat ?? 0,
+      lng:               form.lng ?? 0,
+      species:           form.species || 'OTHER',
+      diameter:          form.diameter ? parseFloat(form.diameter) : null,
+      height:            form.height   ? parseFloat(form.height)   : null,
+      soilCondition:     form.soilCondition  || null,
+      soilMoisture:      form.soilMoisture   || null,
+      exposition:        form.exposition     || null,
+      slopeClass:        form.slopeClass     || null,
+      slopePosition:     form.slopePosition  || null,
+      standType:         form.standType      || null,
+      stockingDegree:    form.stockingDegree || null,
+      damageType:        null,
+      damageSeverity:    null,
+      crownCondition:    null,
+      imageDataUrl:      photoPreview,
+      crownImageDataUrl: crownPhotoPreview,
+      notes:             form.notes || null,
+      createdAt:         new Date().toISOString(),
+      synced:            false,
     };
 
     if (isOnline) {
@@ -335,14 +349,24 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
           treeData.synced = true;
           const { poiId } = await res.json();
           setSavedPoiId(poiId ?? null);
-          if (poiId && photoFileRef.current) {
+          if (poiId) {
             setPhotoUploadStatus('uploading');
             try {
-              const compressed = await compressImage(photoFileRef.current);
-              const fd = new FormData();
-              fd.append('file', new File([compressed], 'tree.jpg', { type: 'image/jpeg' }));
-              const imgRes = await fetch(`/api/app/inventory/trees/${poiId}/image`, { method: 'POST', body: fd });
-              setPhotoUploadStatus(imgRes.ok ? 'success' : 'error');
+              // Stammfoto hochladen
+              if (photoFileRef.current) {
+                const compressed = await compressImage(photoFileRef.current);
+                const fd = new FormData();
+                fd.append('file', new File([compressed], 'tree.jpg', { type: 'image/jpeg' }));
+                await fetch(`/api/app/inventory/trees/${poiId}/image?type=trunk`, { method: 'POST', body: fd });
+              }
+              // Kronenfoto hochladen
+              if (crownPhotoFileRef.current) {
+                const compressed = await compressImage(crownPhotoFileRef.current);
+                const fd = new FormData();
+                fd.append('file', new File([compressed], 'crown.jpg', { type: 'image/jpeg' }));
+                await fetch(`/api/app/inventory/trees/${poiId}/image?type=crown`, { method: 'POST', body: fd });
+              }
+              setPhotoUploadStatus('success');
             } catch {
               setPhotoUploadStatus('error');
             }
@@ -384,6 +408,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     setForm({ ...EMPTY_FORM, forestId, forestName });
     setPhotoPreview(null);
     photoFileRef.current = null;
+    setCrownPhotoPreview(null);
+    crownPhotoFileRef.current = null;
     setSpeciesSearch('');
     setGpsError(null);
     setSavedPoiId(null);
@@ -400,6 +426,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     setForm(EMPTY_FORM);
     setPhotoPreview(null);
     photoFileRef.current = null;
+    setCrownPhotoPreview(null);
+    crownPhotoFileRef.current = null;
     setSpeciesSearch('');
     setSavedCount(0);
     setSessionTrees([]);
@@ -574,6 +602,38 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               capture="environment"
               className="hidden"
               onChange={handlePhoto}
+            />
+
+            {/* Kronenfoto */}
+            <p className="text-xs text-slate-500 mb-1.5 mt-1 font-medium uppercase tracking-wide">Kronenfoto <span className="text-slate-600 normal-case">(optional)</span></p>
+            <div
+              onClick={() => crownFileInputRef.current?.click()}
+              className={`relative w-full aspect-video rounded-xl flex items-center justify-center cursor-pointer transition-colors mb-4 overflow-hidden ${
+                crownPhotoPreview ? '' : 'bg-slate-800 hover:bg-slate-700 border-2 border-dashed border-slate-600'
+              }`}
+            >
+              {crownPhotoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={crownPhotoPreview} alt="Krone" className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-slate-400">
+                  <Camera size={40} />
+                  <span className="text-sm">Kronenfoto aufnehmen</span>
+                </div>
+              )}
+              {crownPhotoPreview && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                  <Camera size={32} className="text-white" />
+                </div>
+              )}
+            </div>
+            <input
+              ref={crownFileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleCrownPhoto}
             />
 
             {/* GPS */}

@@ -131,6 +131,13 @@ export function PoiDetailView({
   const [treeImageUploading, setTreeImageUploading] = useState(false);
   const treeFileInputRef = useRef<HTMLInputElement>(null);
 
+  const [treeCrownImageKey,     setTreeCrownImageKey]     = useState<string | null>((poi.tree as any)?.crownImageKey ?? null);
+  const [treeCrownImagePreview, setTreeCrownImagePreview] = useState<string | null>(
+    (poi.tree as any)?.crownImageKey ? `/api/images/poi?key=${encodeURIComponent((poi.tree as any).crownImageKey)}` : null
+  );
+  const [treeCrownImageUploading, setTreeCrownImageUploading] = useState(false);
+  const treeCrownFileInputRef = useRef<HTMLInputElement>(null);
+
   // Polter-Felder
   const [logVolumeFm,    setLogVolumeFm]    = useState<string>(poi.logPile?.volumeFm?.toString() ?? '');
   const [logLength,      setLogLength]      = useState<string>(poi.logPile?.logLength?.toString() ?? '');
@@ -270,6 +277,48 @@ export function PoiDetailView({
     }
   };
 
+  const handleTreeCrownImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
+      toast.error('Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Datei zu groß. Maximum: 10 MB');
+      return;
+    }
+
+    setTreeCrownImageUploading(true);
+    try {
+      const res = await fetch('/api/upload/poi-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poiId: poi.id, contentType: file.type, contentLength: file.size }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? 'Upload-URL konnte nicht erstellt werden');
+      }
+      const { uploadUrl, key } = await res.json();
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
+      setTreeCrownImageKey(key);
+      setTreeCrownImagePreview(URL.createObjectURL(file));
+      toast.success('Kronenfoto hochgeladen');
+    } catch (err: any) {
+      toast.error(err.message ?? 'Fehler beim Upload');
+    } finally {
+      setTreeCrownImageUploading(false);
+      if (treeCrownFileInputRef.current) treeCrownFileInputRef.current.value = '';
+    }
+  };
+
   // ---------------------------------------------------------------------------
   // Speichern
   // ---------------------------------------------------------------------------
@@ -311,6 +360,7 @@ export function PoiDetailView({
               stockingDegree: treeStockingDegree || null,
               notes:          treeNotes          || undefined,
               imageKey:       treeImageKey,
+              crownImageKey:  treeCrownImageKey,
             })
           : null,
 
@@ -458,6 +508,11 @@ export function PoiDetailView({
           fileInputRef={treeFileInputRef}
           onFileSelect={handleTreeImageSelect}
           onImageRemove={() => { setTreeImageKey(null); setTreeImagePreview(null); }}
+          crownImagePreview={treeCrownImagePreview}
+          crownImageUploading={treeCrownImageUploading}
+          crownFileInputRef={treeCrownFileInputRef}
+          onCrownFileSelect={handleTreeCrownImageSelect}
+          onCrownImageRemove={() => { setTreeCrownImageKey(null); setTreeCrownImagePreview(null); }}
         />
       )}
 
@@ -1093,6 +1148,7 @@ function TreeSection({
   treeStockingDegree, setTreeStockingDegree,
   treeNotes, setTreeNotes,
   imagePreview, imageUploading, fileInputRef, onFileSelect, onImageRemove,
+  crownImagePreview, crownImageUploading, crownFileInputRef, onCrownFileSelect, onCrownImageRemove,
 }: any) {
   // CO2-Schätzung live berechnen
   const co2Estimate = useMemo(() => {
@@ -1120,33 +1176,73 @@ function TreeSection({
         <TreePine className="w-3 h-3" /> Baumdaten
       </h4>
 
-      <div className="relative w-full h-40 bg-black/30 rounded-lg overflow-hidden flex items-center justify-center border border-white/10">
-        {imagePreview ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imagePreview} alt="Baumfoto" className="w-full h-full object-cover" />
-            {isEditing && (
+      {/* Stammfoto + Kronenfoto nebeneinander */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Stammfoto */}
+        <div>
+          <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Stammfoto</p>
+          <div className="relative w-full h-32 bg-black/30 rounded-lg overflow-hidden flex items-center justify-center border border-white/10">
+            {imagePreview ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imagePreview} alt="Stammfoto" className="w-full h-full object-cover" />
+                {isEditing && (
+                  <button
+                    onClick={onImageRemove}
+                    className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </>
+            ) : (
               <button
-                onClick={onImageRemove}
-                className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={imageUploading || !isEditing}
+                className="flex flex-col items-center gap-1 text-gray-400 hover:text-white disabled:opacity-40 transition"
               >
-                <X className="w-3 h-3" />
+                {imageUploading
+                  ? <Loader2 className="w-5 h-5 animate-spin" />
+                  : <><Camera className="w-5 h-5" /><span className="text-[10px] text-center">Stammfoto</span></>
+                }
               </button>
             )}
-          </>
-        ) : (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={imageUploading || !isEditing}
-            className="flex flex-col items-center gap-1 text-gray-400 hover:text-white disabled:opacity-40 transition"
-          >
-            {imageUploading
-              ? <Loader2 className="w-5 h-5 animate-spin" />
-              : <><Camera className="w-5 h-5" /><span className="text-xs">Foto hochladen</span><span className="text-[10px] opacity-60">JPEG, PNG, WebP · max. 10 MB</span></>
-            }
-          </button>
-        )}
-        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="hidden" onChange={onFileSelect} />
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="hidden" onChange={onFileSelect} />
+          </div>
+        </div>
+
+        {/* Kronenfoto */}
+        <div>
+          <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Kronenfoto</p>
+          <div className="relative w-full h-32 bg-black/30 rounded-lg overflow-hidden flex items-center justify-center border border-white/10">
+            {crownImagePreview ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={crownImagePreview} alt="Kronenfoto" className="w-full h-full object-cover" />
+                {isEditing && (
+                  <button
+                    onClick={onCrownImageRemove}
+                    className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={() => crownFileInputRef.current?.click()}
+                disabled={crownImageUploading || !isEditing}
+                className="flex flex-col items-center gap-1 text-gray-400 hover:text-white disabled:opacity-40 transition"
+              >
+                {crownImageUploading
+                  ? <Loader2 className="w-5 h-5 animate-spin" />
+                  : <><Camera className="w-5 h-5" /><span className="text-[10px] text-center">Kronenfoto</span></>
+                }
+              </button>
+            )}
+            <input ref={crownFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="hidden" onChange={onCrownFileSelect} />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

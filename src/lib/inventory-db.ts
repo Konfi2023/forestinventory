@@ -37,9 +37,11 @@ export interface PendingTree {
   standType:      string | null;
   stockingDegree: string | null;
   // Vitalität
-  damageType:     string | null;
-  damageSeverity: number | null;
-  crownCondition: number | null;
+  damageType:        string | null;
+  damageSeverity:    number | null;
+  crownCondition:    number | null;
+  imageDataUrl:      string | null; // base64 Stammfoto für Offline
+  crownImageDataUrl: string | null; // base64 Kronenfoto für Offline
   notes: string | null;
   createdAt: string;
   synced: boolean;
@@ -59,6 +61,11 @@ export class InventoryDB extends Dexie {
     });
     // Version 3: Polter-Offline-Erfassung
     this.version(3).stores({
+      pendingTrees:    '++id, synced, createdAt, forestId',
+      pendingLogPiles: '++id, synced, createdAt, forestId',
+    });
+    // Version 4: Kronenfoto für Bäume
+    this.version(4).stores({
       pendingTrees:    '++id, synced, createdAt, forestId',
       pendingLogPiles: '++id, synced, createdAt, forestId',
     });

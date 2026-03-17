@@ -185,6 +185,7 @@ export type UpsertPoiTreeInput = {
   stockingDegree?: string | null;
   notes?: string;
   imageKey?: string | null;
+  crownImageKey?: string | null;
 };
 
 export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput) {
@@ -199,14 +200,17 @@ export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput) {
         ? calculateCo2(data.species ?? "", data.diameter, data.height)
         : null;
 
-    // Altes Bild löschen wenn ein neues gesetzt wird
-    if (data.imageKey !== undefined) {
+    // Alte Bilder löschen wenn neue gesetzt werden
+    if (data.imageKey !== undefined || data.crownImageKey !== undefined) {
       const existing = await prisma.forestPoiTree.findUnique({
         where: { poiId },
-        select: { imageKey: true },
+        select: { imageKey: true, crownImageKey: true },
       });
-      if (existing?.imageKey && existing.imageKey !== data.imageKey) {
+      if (data.imageKey !== undefined && existing?.imageKey && existing.imageKey !== data.imageKey) {
         await deleteFile(existing.imageKey).catch(() => null);
+      }
+      if (data.crownImageKey !== undefined && existing?.crownImageKey && existing.crownImageKey !== data.crownImageKey) {
+        await deleteFile(existing.crownImageKey).catch(() => null);
       }
     }
 
@@ -228,7 +232,8 @@ export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput) {
       standType:      (data.standType      as any) ?? null,
       stockingDegree: (data.stockingDegree as any) ?? null,
       notes:          data.notes          ?? null,
-      ...(data.imageKey !== undefined ? { imageKey: data.imageKey } : {}),
+      ...(data.imageKey      !== undefined ? { imageKey:      data.imageKey      } : {}),
+      ...(data.crownImageKey !== undefined ? { crownImageKey: data.crownImageKey } : {}),
     };
 
     await prisma.forestPoiTree.upsert({

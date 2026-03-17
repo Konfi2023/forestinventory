@@ -30,6 +30,9 @@ export async function POST(
     return NextResponse.json({ error: 'Datei zu groß (max. 10 MB)' }, { status: 400 });
   }
 
+  const imageType = req.nextUrl.searchParams.get('type'); // 'trunk' | 'crown'
+  const isCrown = imageType === 'crown';
+
   let key: string;
   try {
     ({ key } = await uploadFile(file, 'tree-images'));
@@ -40,8 +43,8 @@ export async function POST(
 
   await prisma.forestPoiTree.update({
     where: { poiId },
-    data: { imageKey: key },
+    data: isCrown ? { crownImageKey: key } : { imageKey: key },
   });
 
-  return NextResponse.json({ success: true, imageKey: key });
+  return NextResponse.json({ success: true, imageKey: key, type: isCrown ? 'crown' : 'trunk' });
 }

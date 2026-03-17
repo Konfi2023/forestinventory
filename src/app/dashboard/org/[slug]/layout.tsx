@@ -121,7 +121,7 @@ export default async function OrgLayout({
           <NavItem href={`/dashboard/org/${slug}/operations`} icon={<PackageOpen size={20} />} label="Maßnahmen & Holzverkauf" />
 
           <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label="Zeitcontrolling" />
-          <NavItem href={`/dashboard/org/${slug}/kostencontrolling`} icon={<Euro size={20} />} label="Kostencontrolling" />
+          <NavItem href={`/dashboard/org/${slug}/kostencontrolling`} icon={<Euro size={20} />} label="Rechnungen & Berichte" soon />
 
           {/* Spacer, damit Kontakte, Abrechnungen & Administration unten klebt */}
           <div className="mt-auto pb-4">
@@ -218,10 +218,19 @@ async function TrialExpiredGate({
 }
 
 // ── NavItem ───────────────────────────────────────────────────────────────────
-function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function NavItem({ href, icon, label, soon }: { href: string; icon: React.ReactNode; label: string; soon?: boolean }) {
+  if (soon) {
+    return (
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium opacity-40 cursor-not-allowed select-none">
+        <span className="text-slate-500">{icon}</span>
+        <span className="text-slate-500">{label}</span>
+        <span className="ml-auto text-[10px] font-bold uppercase tracking-wide bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded">Bald</span>
+      </div>
+    );
+  }
   return (
-    <Link 
-      href={href} 
+    <Link
+      href={href}
       className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-slate-800 hover:text-white transition-all text-sm font-medium group"
     >
       <span className="text-slate-400 group-hover:text-white transition-colors">{icon}</span>

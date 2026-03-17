@@ -22,13 +22,13 @@ export function MobileNav({ orgName, orgSlug, userEmail, roleName }: Props) {
 
   // Die Links für die mobile Ansicht (angepasst an die neue Struktur)
   const mobileLinks = [
-    { href: `/dashboard/org/${orgSlug}`, label: "Übersicht", icon: LayoutDashboard },
-    { href: `/dashboard/org/${orgSlug}/tasks`, label: "Aufgaben & Planung", icon: ClipboardList },
-    { href: `/dashboard/org/${orgSlug}/calendar`, label: "Kalender", icon: CalendarDays },
-    { href: `/dashboard/org/${orgSlug}/contacts`, label: "Kontakte", icon: BookUser },
-    { href: `/dashboard/org/${orgSlug}/kostencontrolling`, label: "Kostencontrolling", icon: Euro },
-    { href: `/dashboard/org/${orgSlug}/billing`, label: "Abrechnungen", icon: CreditCard },
-    { href: `/dashboard/org/${orgSlug}/settings`, label: "Administration", icon: Settings },
+    { href: `/dashboard/org/${orgSlug}`, label: "Übersicht", icon: LayoutDashboard, soon: false },
+    { href: `/dashboard/org/${orgSlug}/tasks`, label: "Aufgaben & Planung", icon: ClipboardList, soon: false },
+    { href: `/dashboard/org/${orgSlug}/calendar`, label: "Kalender", icon: CalendarDays, soon: false },
+    { href: `/dashboard/org/${orgSlug}/contacts`, label: "Kontakte", icon: BookUser, soon: false },
+    { href: `/dashboard/org/${orgSlug}/kostencontrolling`, label: "Rechnungen & Berichte", icon: Euro, soon: true },
+    { href: `/dashboard/org/${orgSlug}/billing`, label: "Abrechnungen", icon: CreditCard, soon: false },
+    { href: `/dashboard/org/${orgSlug}/settings`, label: "Administration", icon: Settings, soon: false },
   ];
 
   return (
@@ -50,16 +50,26 @@ export function MobileNav({ orgName, orgSlug, userEmail, roleName }: Props) {
               {mobileLinks.map((link) => {
                 const Icon = link.icon;
                 const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
-                
+
+                if (link.soon) {
+                  return (
+                    <div key={link.href} className="flex items-center gap-3 px-4 py-3 rounded-md opacity-40 cursor-not-allowed select-none">
+                      <Icon size={20} className="text-slate-500" />
+                      <span className="text-slate-500">{link.label}</span>
+                      <span className="ml-auto text-[10px] font-bold uppercase tracking-wide bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded">Bald</span>
+                    </div>
+                  );
+                }
+
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setOpen(false)} // Menü schließen bei Klick
+                    onClick={() => setOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-md transition-colors",
-                      isActive 
-                        ? "bg-slate-800 text-white font-medium" 
+                      isActive
+                        ? "bg-slate-800 text-white font-medium"
                         : "hover:bg-slate-800/50 hover:text-white"
                     )}
                   >

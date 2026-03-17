@@ -34,7 +34,7 @@ export const BASE_MAPS = {
   },
   OUTDOORS: {
     id: 'OUTDOORS',
-    label: 'OpenStreetMap',
+    label: 'Straßenkarte',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     previewColor: '#cceebb',
@@ -45,7 +45,7 @@ export const BASE_MAPS = {
   },
   TOPO: {
     id: 'TOPO',
-    label: 'Topografie (OpenTopo)',
+    label: 'Topografie',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
     previewColor: '#b5c99a',

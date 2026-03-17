@@ -102,7 +102,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
   };
 
   return (
-    <div className="absolute top-6 left-6 z-[400] flex flex-col gap-2 font-sans">
+    <div className="no-print absolute top-6 left-6 z-[400] flex flex-col gap-2 font-sans">
       
       {/* --- 1. DAS HAUPT-DOCK (Vertikale Leiste) --- */}
       <div className="bg-[#151515]/95 backdrop-blur-md border border-white/10 rounded-xl p-1.5 shadow-2xl flex flex-col gap-1 w-12 items-center">

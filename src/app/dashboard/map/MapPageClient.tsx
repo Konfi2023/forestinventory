@@ -203,16 +203,18 @@ export default function MapPageClient({ orgSlug }: Props) {
           />
         </MapViewer>
 
-        <MapDetailPanel
-          forests={data.forests}
-          tasks={data.tasks}
-          members={data.members}
-          owners={data.owners}
-          orgSlug={orgSlug}
-          onForestDeleted={handleOptimisticDelete}
-          canEdit={hasPermission('forest:edit')}
-          canDelete={hasPermission('forest:delete')}
-        />
+        <div className="no-print">
+          <MapDetailPanel
+            forests={data.forests}
+            tasks={data.tasks}
+            members={data.members}
+            owners={data.owners}
+            orgSlug={orgSlug}
+            onForestDeleted={handleOptimisticDelete}
+            canEdit={hasPermission('forest:edit')}
+            canDelete={hasPermission('forest:delete')}
+          />
+        </div>
       </div>
 
       {activeTask && (

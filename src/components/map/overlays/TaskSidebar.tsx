@@ -125,7 +125,7 @@ export function TaskSidebar({ tasks, forests, onRefresh }: Props) {
   };
 
   return (
-    <div className="relative flex h-full shrink-0 z-[450]">
+    <div className="no-print relative flex h-full shrink-0 z-[450]">
       {/* ── Panel ── */}
       <div
         className={cn(

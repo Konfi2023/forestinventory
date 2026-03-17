@@ -125,3 +125,42 @@
   }
 }
 
+/* ── Print styles ────────────────────────────────────────────────────────── */
+@media print {
+  /* Preserve background colors & images */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  /* Hide all chrome except the map */
+  aside,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Hide all Leaflet control containers (zoom, attribution, layers) */
+  .leaflet-top,
+  .leaflet-bottom {
+    display: none !important;
+  }
+
+  /* Scale bar: keep visible, dark for print */
+  .map-scale-bar {
+    display: flex !important;
+  }
+  .map-scale-bar span {
+    color: #000 !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+  .map-scale-bar > div {
+    border-color: #000 !important;
+    filter: none !important;
+  }
+
+  /* Map fills the page */
+  html, body { height: auto !important; }
+  main {
+    width: 100vw !important;
+    overflow: visible !important;
+  }
+}
+

@@ -66,7 +66,7 @@ function ScaleBar() {
   }, [map]);
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] pointer-events-none flex flex-col items-center gap-0.5">
+    <div className="map-scale-bar absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] pointer-events-none flex flex-col items-center gap-0.5">
       <span className="text-[10px] text-white font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
         {scale.label}
       </span>

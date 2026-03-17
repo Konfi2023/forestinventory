@@ -5,13 +5,22 @@ import { useState } from "react";
 import { HelpCircle, X, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { getHelpContent } from "@/lib/help-content";
 
+function useIsMapPage() {
+  const pathname = usePathname();
+  return /\/map(\/|$)/.test(pathname);
+}
+
 export function HelpPanel() {
   const pathname = usePathname();
+  const isMap = useIsMapPage();
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const content = getHelpContent(pathname);
   if (!content) return null;
+
+  // On the map page the Leaflet ZoomControl sits bottom-right — move help button up
+  const btnPosition = isMap ? "bottom-24 right-3" : "bottom-6 right-6";
 
   return (
     <>
@@ -19,7 +28,7 @@ export function HelpPanel() {
       <button
         onClick={() => setOpen(true)}
         title="Hilfe"
-        className="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-white shadow-lg flex items-center justify-center transition-colors border border-slate-700"
+        className={`fixed ${btnPosition} z-40 w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-white shadow-lg flex items-center justify-center transition-colors border border-slate-700`}
       >
         <HelpCircle size={20} />
       </button>

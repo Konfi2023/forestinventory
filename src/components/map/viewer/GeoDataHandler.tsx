@@ -782,33 +782,48 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
                           : path.type === 'WATER'      ? 'Gewässer'
                           :                              'LKW-Weg';
 
+          const pathEventHandlers = {
+            click: (e: any) => {
+              if (interactionMode === 'VIEW') {
+                L.DomEvent.stopPropagation(e);
+                selectFeature(path.id, 'PATH');
+              }
+            },
+            mouseover: () => setHovered(path.id),
+            mouseout:  () => setHovered(null),
+          };
+
           return (
-            <Polyline
-              key={`${path.id}-${color}`}
-              positions={coords}
-              pathOptions={{
-                color,
-                weight: isSelected ? 5 : isHovered ? 4 : path.type === 'SKID_TRAIL' ? 2 : 3,
-                dashArray: path.type === 'SKID_TRAIL' ? '6, 4' : undefined,
-                opacity: isSelected ? 1 : 0.75,
-                pane: 'paths-pane',
-              }}
-              eventHandlers={{
-                click: (e) => {
-                  if (interactionMode === 'VIEW') {
-                    L.DomEvent.stopPropagation(e);
-                    selectFeature(path.id, 'PATH');
-                  }
-                },
-                mouseover: () => setHovered(path.id),
-                mouseout:  () => setHovered(null),
-              }}
-            >
-              <Tooltip direction="top" offset={[0, -4]} opacity={0.9} className="!pointer-events-none">
-                <span className="font-bold text-xs">{path.name ?? typeLabel}</span>
-                <span className="text-gray-500 ml-1 text-xs">· {lengthLabel}</span>
-              </Tooltip>
-            </Polyline>
+            <React.Fragment key={`${path.id}-${color}`}>
+              {/* Sichtbare Linie */}
+              <Polyline
+                positions={coords}
+                pathOptions={{
+                  color,
+                  weight: isSelected ? 5 : isHovered ? 4 : path.type === 'SKID_TRAIL' ? 2 : 3,
+                  dashArray: path.type === 'SKID_TRAIL' ? '6, 4' : undefined,
+                  opacity: isSelected ? 1 : 0.75,
+                  pane: 'paths-pane',
+                  interactive: false,
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -4]} opacity={0.9} className="!pointer-events-none">
+                  <span className="font-bold text-xs">{path.name ?? typeLabel}</span>
+                  <span className="text-gray-500 ml-1 text-xs">· {lengthLabel}</span>
+                </Tooltip>
+              </Polyline>
+              {/* Unsichtbares Hit-Target mit großer Klickfläche */}
+              <Polyline
+                positions={coords}
+                pathOptions={{
+                  color,
+                  weight: 20,
+                  opacity: 0,
+                  pane: 'paths-pane',
+                }}
+                eventHandlers={pathEventHandlers}
+              />
+            </React.Fragment>
           );
         })
       )}

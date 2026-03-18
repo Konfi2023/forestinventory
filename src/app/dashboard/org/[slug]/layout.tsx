@@ -240,6 +240,7 @@ function NavItem({ href, icon, label, soon }: { href: string; icon: React.ReactN
   return (
     <Link
       href={href}
+      prefetch={false}
       className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-slate-800 hover:text-white transition-all text-sm font-medium group"
     >
       <span className="text-slate-400 group-hover:text-white transition-colors">{icon}</span>

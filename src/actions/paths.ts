@@ -16,9 +16,10 @@ export async function createPath(data: {
   lengthM: number;
   note?: string;
   userId: string;
+  orgSlug: string;
 }) {
   try {
-    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT, data.orgSlug);
 
     const path = await prisma.forestPath.create({
       data: {
@@ -47,11 +48,14 @@ export async function updatePath(
     geoJson?: any;
     lengthM?: number;
     note?: string;
+    orgSlug?: string;
   }
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Nicht authentifiziert");
+
+    await requireAuthContext(session.user.id, PERMISSIONS.FOREST_EDIT, data.orgSlug ?? '');
 
     await prisma.forestPath.update({
       where: { id: pathId },

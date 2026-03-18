@@ -10,14 +10,8 @@ import { AREA_TOLERANCE_HA } from "@/lib/pricing-config";
 
 // --- CREATE & UPDATE (bleiben gleich) ---
 export async function createForest(data: any) {
-    // (Hier deinen bestehenden Code für create lassen oder kopieren)
-    // Der Kürze halber hier nicht wiederholt, da Create funktioniert.
-    // Bitte den createForest Code aus dem vorherigen Schritt beibehalten!
-    // Falls du ihn brauchst, sag Bescheid.
-    // ...
-    // HIER DER WICHTIGE TEIL FÜR DICH ZUM EINFÜGEN:
      try {
-        const { organizationId, userId } = await requireAuthContext(data.keycloakId, PERMISSIONS.FOREST_EDIT);
+        const { organizationId, userId } = await requireAuthContext(data.keycloakId, PERMISSIONS.FOREST_EDIT, data.orgSlug ?? '');
 
         // Flächen-Limit prüfen
         const org = await prisma.organization.findUnique({
@@ -65,7 +59,7 @@ export async function createForest(data: any) {
 
 export async function updateForest(data: any) {
     try {
-        const { organizationId } = await requireAuthContext(data.keycloakId, PERMISSIONS.FOREST_EDIT);
+        const { organizationId } = await requireAuthContext(data.keycloakId, PERMISSIONS.FOREST_EDIT, data.orgSlug ?? '');
         const existing = await prisma.forest.findFirst({ where: { id: data.id, organizationId } });
         if (!existing) throw new Error("Wald nicht gefunden oder kein Zugriff");
 
@@ -89,7 +83,7 @@ export async function updateForest(data: any) {
 
 
 // --- DELETE (DEBUG VERSION) ---
-export async function deleteForest(forestId: string) {
+export async function deleteForest(forestId: string, orgSlug: string = '') {
   console.log("--- DELETE FOREST START ---");
   console.log("Angefragte ID:", forestId);
 
@@ -101,7 +95,7 @@ export async function deleteForest(forestId: string) {
     console.log("User ID:", userId);
 
     // Rechte prüfen
-    const { organizationId } = await requireAuthContext(userId, PERMISSIONS.FOREST_DELETE);
+    const { organizationId } = await requireAuthContext(userId, PERMISSIONS.FOREST_DELETE, orgSlug);
     console.log("Org ID:", organizationId);
 
     // 1. Existenz prüfen
@@ -142,13 +136,13 @@ export async function deleteForest(forestId: string) {
 
 // ─── Batch-Delete ─────────────────────────────────────────────────────────────
 
-export async function batchDeleteForests(forestIds: string[]) {
+export async function batchDeleteForests(forestIds: string[], orgSlug: string = '') {
   if (!forestIds.length) return { success: true, deleted: 0 };
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) throw new Error("Nicht eingeloggt");
 
-    const { organizationId } = await requireAuthContext(session.user.id, PERMISSIONS.FOREST_DELETE);
+    const { organizationId } = await requireAuthContext(session.user.id, PERMISSIONS.FOREST_DELETE, orgSlug);
 
     // Nur Forests dieser Org löschen — Sicherheitscheck
     const existing = await prisma.forest.findMany({

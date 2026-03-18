@@ -32,10 +32,11 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 interface Props {
   tasks: any[];
   forests: any[];
+  orgSlug?: string;
   onRefresh?: () => void;
 }
 
-export function TaskSidebar({ tasks, forests, onRefresh }: Props) {
+export function TaskSidebar({ tasks, forests, orgSlug = '', onRefresh }: Props) {
   const isOpen          = useMapStore(s => s.taskSidebarOpen);
   const setOpen         = useMapStore(s => s.setTaskSidebarOpen);
   const setHoveredTask  = useMapStore(s => s.setHoveredTaskId);
@@ -183,7 +184,7 @@ export function TaskSidebar({ tasks, forests, onRefresh }: Props) {
         {/* Inhalt */}
         {activeTab === 'FEATURES' ? (
           <div className="flex-1 overflow-hidden min-w-[288px]">
-            <FeatureList forests={forests} onRefresh={onRefresh} />
+            <FeatureList forests={forests} orgSlug={orgSlug} onRefresh={onRefresh} />
           </div>
         ) : activeTab === 'BIOMASS' ? (
           <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 min-w-[288px] space-y-4">

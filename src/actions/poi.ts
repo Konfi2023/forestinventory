@@ -22,7 +22,7 @@ export async function createPoi(data: {
   forestId: string;
 }) {
   try {
-    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT, data.orgSlug);
 
     await prisma.forestPoi.create({
       data: {
@@ -43,13 +43,13 @@ export async function createPoi(data: {
 
 export async function updatePoi(
   poiId: string,
-  data: { name?: string; note?: string; lat?: number; lng?: number }
+  data: { name?: string; note?: string; lat?: number; lng?: number; orgSlug?: string }
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized");
 
-    await requireAuthContext(session.user.id, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(session.user.id!, PERMISSIONS.FOREST_EDIT, data.orgSlug ?? '');
 
     await prisma.forestPoi.update({
       where: { id: poiId },
@@ -68,12 +68,12 @@ export async function updatePoi(
   }
 }
 
-export async function deletePoi(poiId: string, deleteTasks?: boolean) {
+export async function deletePoi(poiId: string, deleteTasks?: boolean, orgSlug?: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized");
 
-    await requireAuthContext(session.user.id, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(session.user.id!, PERMISSIONS.FOREST_EDIT, orgSlug ?? '');
 
     // Bild aus S3 löschen falls vorhanden
     const existing = await prisma.forestPoi.findUnique({
@@ -114,13 +114,14 @@ export type UpsertPoiVehicleInput = {
 
 export async function upsertPoiVehicle(
   poiId: string,
-  data: UpsertPoiVehicleInput
+  data: UpsertPoiVehicleInput,
+  orgSlug?: string,
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized");
 
-    await requireAuthContext(session.user.id, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(session.user.id!, PERMISSIONS.FOREST_EDIT, orgSlug ?? '');
 
     // Wenn ein neues Bild hochgeladen wurde, altes Bild aus S3 löschen
     if (data.imageKey !== undefined) {
@@ -188,12 +189,12 @@ export type UpsertPoiTreeInput = {
   crownImageKey?: string | null;
 };
 
-export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput) {
+export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput, orgSlug?: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized");
 
-    await requireAuthContext(session.user.id, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(session.user.id!, PERMISSIONS.FOREST_EDIT, orgSlug ?? '');
 
     const co2 =
       data.diameter && data.height
@@ -291,7 +292,7 @@ export async function upsertPoiLogPile(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized");
-    await requireAuthContext(session.user.id, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(session.user.id!, PERMISSIONS.FOREST_EDIT, orgSlug ?? '');
 
     await prisma.forestPoiLogPile.upsert({
       where: { poiId },

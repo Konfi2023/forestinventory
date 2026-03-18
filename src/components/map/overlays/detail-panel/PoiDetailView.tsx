@@ -327,7 +327,7 @@ export function PoiDetailView({
     setIsSaving(true);
     try {
       const results = await Promise.all([
-        updatePoi(poi.id, { name, note, lat: activeData.lat, lng: activeData.lng }),
+        updatePoi(poi.id, { name, note, lat: activeData.lat, lng: activeData.lng, orgSlug }),
 
         poi.type === 'VEHICLE'
           ? upsertPoiVehicle(poi.id, {
@@ -338,7 +338,7 @@ export function PoiDetailView({
               nextInspection:  nextInspection  ? new Date(nextInspection)             : null,
               imageKey,
               notes: vehicleNotes || undefined,
-            })
+            }, orgSlug)
           : null,
 
         poi.type === 'TREE'
@@ -361,7 +361,7 @@ export function PoiDetailView({
               notes:          treeNotes          || undefined,
               imageKey:       treeImageKey,
               crownImageKey:  treeCrownImageKey,
-            })
+            }, orgSlug)
           : null,
 
         poi.type === 'LOG_PILE'
@@ -624,7 +624,7 @@ export function PoiDetailView({
                 description="Diese Aktion ist unwiderruflich."
                 confirmString={poi.name}
                 onConfirm={async () => {
-                  await deletePoi(poi.id, deleteTasksToo);
+                  await deletePoi(poi.id, deleteTasksToo, orgSlug);
                   onRefresh();
                   onClose();
                 }}

@@ -96,7 +96,7 @@ export default async function ForestPage({
                                 confirmString="LÖSCHEN"
                                 onConfirm={async () => {
                                     "use server";
-                                    await deleteForest(slug, forest.id);
+                                    await deleteForest(forest.id, slug);
                                 }}
                             />
                         </div>

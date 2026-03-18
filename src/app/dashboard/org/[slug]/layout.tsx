@@ -76,15 +76,7 @@ export default async function OrgLayout({
     );
   }
 
-  // 2b. lastActiveOrgId aktualisieren wenn der User in einer anderen Org ist
-  if (session.user.id) {
-    const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { lastActiveOrgId: true } });
-    if (dbUser?.lastActiveOrgId !== org.id) {
-      await prisma.user.update({ where: { id: session.user.id }, data: { lastActiveOrgId: org.id } });
-    }
-  }
-
-  // 2c. Nav-Sichtbarkeit berechnen (Admin sieht immer alles)
+  // 2b. Nav-Sichtbarkeit berechnen (Admin sieht immer alles)
   const isOrgAdmin = membership.role.name === "Administrator";
   const navPerms = membership.role.permissions;
   const canNav = (perm: string) => isOrgAdmin || navPerms.includes(perm);

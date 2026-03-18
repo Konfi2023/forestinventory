@@ -171,6 +171,7 @@ function buildFeatureList(forests: any[]): NormalizedFeature[] {
 
 interface Props {
   forests: any[];
+  orgSlug?: string;
   onRefresh?: () => void;
 }
 
@@ -182,7 +183,7 @@ const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   PATH:    'Wege',
 };
 
-export function FeatureList({ forests, onRefresh }: Props) {
+export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
   const flyTo         = useMapStore(s => s.flyTo);
   const fitBounds     = useMapStore(s => s.fitBounds);
   const selectFeature = useMapStore(s => s.selectFeature);
@@ -267,7 +268,7 @@ export function FeatureList({ forests, onRefresh }: Props) {
     setIsDeleting(true);
     const toastId = toast.loading(`Lösche ${ids.length} Waldfläche(n)…`);
     try {
-      const res = await batchDeleteForests(ids);
+      const res = await batchDeleteForests(ids, orgSlug);
       toast.dismiss(toastId);
       if (res.success) {
         toast.success(`${res.deleted} Waldfläche(n) gelöscht.`);

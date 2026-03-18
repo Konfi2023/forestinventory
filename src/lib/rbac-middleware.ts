@@ -3,22 +3,29 @@ import { prisma } from '@/lib/prisma';
 /**
  * Validiert den User und gibt den Kontext (User + Aktive Org) zurück.
  * Wirft einen Fehler, wenn Rechte fehlen.
- * 
+ *
  * @param userId - Die interne DB-ID des Users
  * @param requiredPermission - Der Permission-String (z.B. 'forest:view')
+ * @param orgSlug - Der Slug der Organisation aus der URL
  */
-export async function requireAuthContext(userId: string, requiredPermission: string) {
+export async function requireAuthContext(userId: string, requiredPermission: string, orgSlug: string) {
   if (!userId) {
     throw new Error("Nicht authentifiziert (Keine ID)");
   }
 
-  // 1. User & Mitgliedschaften laden
+  // 1. Organisation per Slug finden
+  const org = await prisma.organization.findUnique({ where: { slug: orgSlug } });
+  if (!org) {
+    throw new Error("Organisation nicht gefunden");
+  }
+
+  // 2. User laden
   const user = await prisma.user.findUnique({
-    where: { id: userId }, 
-    include: { 
+    where: { id: userId },
+    include: {
       memberships: {
         include: { role: true }
-      } 
+      }
     }
   });
 
@@ -26,28 +33,22 @@ export async function requireAuthContext(userId: string, requiredPermission: str
     throw new Error("Nutzer nicht in Datenbank gefunden");
   }
 
-  // 2. Aktive Organisation bestimmen
-  let activeOrgId = user.lastActiveOrgId;
-  let activeMembership = user.memberships.find(m => m.organizationId === activeOrgId);
+  // 3. Mitgliedschaft in dieser spezifischen Org finden
+  let activeMembership = user.memberships.find(m => m.organizationId === org.id);
 
-  if (!activeOrgId || !activeMembership) {
-    // Fallback: Nimm die erste gefundene Org
+  if (!activeMembership) {
+    // Fallback für System-Admins: nimm die erste verfügbare Mitgliedschaft
     if (user.memberships.length > 0) {
       activeMembership = user.memberships[0];
-      activeOrgId = activeMembership.organizationId;
-      
-      // DB Selbstheilung
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { lastActiveOrgId: activeOrgId }
-      });
     } else {
       throw new Error("Keine Organisation gefunden / Kein Mitglied");
     }
   }
 
-  // 3. Berechtigung prüfen (RBAC)
-  
+  const activeOrgId = org.id;
+
+  // 4. Berechtigung prüfen (RBAC)
+
   // A. System-Admin (Superuser) darf alles
   if (user.isSystemAdmin) {
       return { userId: user.id, keycloakId: user.keycloakId, organizationId: activeOrgId, user };
@@ -65,11 +66,11 @@ export async function requireAuthContext(userId: string, requiredPermission: str
     throw new Error(`Zugriff verweigert. Fehlende Berechtigung: ${requiredPermission}`);
   }
 
-  // 4. Kontext zurückgeben
+  // 5. Kontext zurückgeben
   return {
     userId: user.id,
     keycloakId: user.keycloakId,
     organizationId: activeOrgId,
-    user 
+    user
   };
 }

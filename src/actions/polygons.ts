@@ -18,7 +18,7 @@ export async function createPlanting(data: {
   orgSlug: string;
 }) {
   try {
-    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT, data.orgSlug);
     const record = await prisma.forestPlanting.create({
       data: {
         forestId: data.forestId,
@@ -77,7 +77,7 @@ export async function createHunting(data: {
   orgSlug: string;
 }) {
   try {
-    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT, data.orgSlug);
     const record = await prisma.forestHunting.create({
       data: {
         forestId: data.forestId,
@@ -138,7 +138,7 @@ export async function createCalamity(data: {
   orgSlug: string;
 }) {
   try {
-    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT);
+    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT, data.orgSlug);
     const record = await prisma.forestCalamity.create({
       data: {
         forestId: data.forestId,

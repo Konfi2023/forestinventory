@@ -79,7 +79,7 @@ export function PathDetailView({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const res = await updatePath(path.id, { name, note, color });
+      const res = await updatePath(path.id, { name, note, color, orgSlug });
       if (!res.success) throw new Error(res.error ?? 'Unbekannter Fehler');
       toast.success('Weg aktualisiert');
       setIsEditing(false);

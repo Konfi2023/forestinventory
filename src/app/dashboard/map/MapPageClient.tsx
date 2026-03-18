@@ -186,7 +186,7 @@ export default function MapPageClient({ orgSlug }: Props) {
   return (
     <div className="flex w-full h-full overflow-hidden">
       {/* ── Linke Aufgaben-Sidebar ── */}
-      <TaskSidebar tasks={data.tasks} forests={data.forests} onRefresh={loadMapData} />
+      <TaskSidebar tasks={data.tasks} forests={data.forests} orgSlug={orgSlug} onRefresh={loadMapData} />
 
       {/* ── Karte + rechtes Detail-Panel ── */}
       <div className="relative flex-1 overflow-hidden min-w-0">

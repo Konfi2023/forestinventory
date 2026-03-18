@@ -193,6 +193,7 @@ export default function MapGeometryEditor({
           geoJson,
           areaHa: calculatedAreaHa,
           keycloakId: currentUserIdRef.current,
+          orgSlug: editingDataRef.current?.orgSlug ?? '',
         });
 
         if (result.success) {
@@ -412,6 +413,7 @@ export default function MapGeometryEditor({
         geoJson,
         lengthM,
         userId: currentUserId,
+        orgSlug: editingData?.orgSlug ?? '',
       });
 
       if (result.success) {
@@ -443,7 +445,7 @@ export default function MapGeometryEditor({
     try {
       if (featureType === 'PATH') {
         const newLengthM = calculatePathLengthM(newGeoJson);
-        await updatePath(currentId, { geoJson: newGeoJson, lengthM: newLengthM });
+        await updatePath(currentId, { geoJson: newGeoJson, lengthM: newLengthM, orgSlug });
         toast.success('Weg aktualisiert!');
         refreshData();
         setTimeout(() => selectFeature(currentId, 'PATH'), 100);
@@ -473,6 +475,7 @@ export default function MapGeometryEditor({
           name: editingData.name,
           geoJson: newGeoJson,
           areaHa: calculatedAreaHa,
+          orgSlug,
         });
         toast.success('Grenzen aktualisiert!');
         refreshData();

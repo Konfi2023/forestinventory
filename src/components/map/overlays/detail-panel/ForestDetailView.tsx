@@ -284,7 +284,7 @@ export function ForestDetailView({
                             description="Dieser Vorgang ist unwiderruflich. Folgende Daten werden dabei permanent gelöscht:"
                             confirmString={forest.name}
                             onConfirm={async () => {
-                                const res = await deleteForest(forest.id);
+                                const res = await deleteForest(forest.id, orgSlug);
                                 if (res.success) {
                                     onDeleteSuccess(forest.id);
                                     onClose();

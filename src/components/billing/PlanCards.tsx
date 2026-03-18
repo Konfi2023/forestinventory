@@ -290,6 +290,12 @@ export function PlanCards({
           const monthlyEquivalent = billingInterval === 'yearly' && plan.yearlyPrice
             ? (plan.yearlyPrice / 12).toFixed(2)
             : plan.monthlyPrice?.toFixed(2);
+          const originalMonthlyEquivalent = billingInterval === 'yearly' && plan.yearlyPrice
+            ? ((plan.yearlyPrice * 2) / 12).toFixed(2)
+            : null;
+          const originalYearlyPrice = billingInterval === 'yearly' && plan.yearlyPrice
+            ? (plan.yearlyPrice * 2).toFixed(2)
+            : null;
 
           return (
             <div
@@ -335,14 +341,24 @@ export function PlanCards({
               <p className="text-xs text-slate-400 mb-5">{meta.tagline}</p>
 
               {/* Price */}
-              <div className="mb-0.5">
+              <div className="mb-0.5 flex items-baseline gap-2">
+                {originalMonthlyEquivalent && (
+                  <span className="text-xl text-slate-400 line-through">
+                    {originalMonthlyEquivalent} €
+                  </span>
+                )}
                 <span className={`text-4xl font-bold ${meta.priceCls}`}>
                   {monthlyEquivalent ? `${monthlyEquivalent} €` : '—'}
                 </span>
-                <span className="text-slate-400 text-sm ml-1">/ Monat</span>
+                <span className="text-slate-400 text-sm">/ Monat</span>
               </div>
               {billingInterval === 'yearly' && plan.yearlyPrice && (
-                <p className="text-xs text-slate-400 mb-1">{plan.yearlyPrice} € jährlich abgerechnet</p>
+                <p className="text-xs text-slate-400 mb-1">
+                  {originalYearlyPrice && (
+                    <span className="line-through mr-1">{originalYearlyPrice} €</span>
+                  )}
+                  <span className="text-green-600 font-semibold">{plan.yearlyPrice} € jährlich abgerechnet</span>
+                </p>
               )}
               <p className="text-xs text-slate-400 mb-5">zzgl. MwSt.</p>
 

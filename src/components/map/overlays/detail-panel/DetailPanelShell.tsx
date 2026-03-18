@@ -1,14 +1,8 @@
 'use client';
 
-import { X, Edit3, MoreHorizontal, Trash2 } from 'lucide-react';
+import { X, Edit3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
 
 interface ShellProps {
   isVisible: boolean;
@@ -77,21 +71,6 @@ export function DetailPanelShell({
                     </button>
                 )}
                 
-                {canDelete && (
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <button className="p-2 hover:bg-black/20 rounded-full text-white/80 hover:text-white transition">
-                                <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10 text-gray-200">
-                            <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-400 cursor-pointer focus:bg-red-900/20">
-                                <Trash2 className="w-4 h-4 mr-2" /> Löschen
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
-
                 <button onClick={onClose} className="p-2 hover:bg-black/20 rounded-full text-white/80 hover:text-white transition">
                     <X className="w-5 h-5" />
                 </button>

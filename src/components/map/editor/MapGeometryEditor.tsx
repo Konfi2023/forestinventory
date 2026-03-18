@@ -76,11 +76,13 @@ export default function MapGeometryEditor({
   areaLimitHa = null,
   usedAreaHa = 0,
   currentUserId = '',
+  orgSlug = '',
 }: {
   forests?: any[];
   areaLimitHa?: number | null;
   usedAreaHa?: number;
   currentUserId?: string;
+  orgSlug?: string;
 }) {
   const map = useMap();
 
@@ -100,8 +102,10 @@ export default function MapGeometryEditor({
   // Refs zum Lesen aktueller Werte in Draw-Callbacks ohne Dependency-Schleife
   const editingDataRef   = useRef<any>(null);
   const currentUserIdRef = useRef<string>('');
+  const orgSlugRef       = useRef<string>('');
   editingDataRef.current   = editingData;
   currentUserIdRef.current = currentUserId;
+  orgSlugRef.current       = orgSlug;
 
   const [showSaveBar,      setShowSaveBar]      = useState(false);
   const [drawnLengthM,     setDrawnLengthM]     = useState<number | null>(null);
@@ -120,7 +124,7 @@ export default function MapGeometryEditor({
 
   // ─── POLYGON SPEICHERN (shared) ─────────────────────────────────────────────
   const savePolygon = async (polygonMode: string, geoJson: any, areaHa: number, forestId: string) => {
-    const orgSlug = editingDataRef.current?.orgSlug ?? '';
+    const orgSlug = editingDataRef.current?.orgSlug ?? orgSlugRef.current;
     const userId  = currentUserIdRef.current;
     try {
       if (polygonMode === 'DRAW_PLANTING') {
@@ -193,7 +197,7 @@ export default function MapGeometryEditor({
           geoJson,
           areaHa: calculatedAreaHa,
           keycloakId: currentUserIdRef.current,
-          orgSlug: editingDataRef.current?.orgSlug ?? '',
+          orgSlug: editingDataRef.current?.orgSlug ?? orgSlugRef.current,
         });
 
         if (result.success) {
@@ -413,7 +417,7 @@ export default function MapGeometryEditor({
         geoJson,
         lengthM,
         userId: currentUserId,
-        orgSlug: editingData?.orgSlug ?? '',
+        orgSlug: editingData?.orgSlug ?? orgSlug,
       });
 
       if (result.success) {
@@ -440,7 +444,7 @@ export default function MapGeometryEditor({
     const newGeoJson  = createdLayerRef.current.toGeoJSON();
     const currentId   = editingData.id;
     const featureType = editingData.featureType ?? 'FOREST';
-    const orgSlug     = editingData.orgSlug ?? '';
+    const orgSlug     = editingData.orgSlug ?? orgSlugRef.current;
 
     try {
       if (featureType === 'PATH') {

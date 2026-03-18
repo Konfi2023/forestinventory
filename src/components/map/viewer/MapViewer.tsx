@@ -353,6 +353,7 @@ export default function MapViewer({ forestData, children, skipAutoZoom, minimal 
              areaLimitHa={forestData?.areaLimitHa ?? null}
              usedAreaHa={forestData?.usedAreaHa ?? 0}
              currentUserId={forestData?.currentUserId ?? ''}
+             orgSlug={forestData?.orgSlug ?? ''}
            />
         )}
 

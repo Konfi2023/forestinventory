@@ -37,16 +37,29 @@ async function refreshAccessToken(token: any) {
 export const authOptions: NextAuthOptions = {
   providers: [
     KeycloakProvider({
+      id: 'keycloak',
       clientId: process.env.KEYCLOAK_CLIENT_ID!,
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer: process.env.KEYCLOAK_ISSUER!,
       allowDangerousEmailAccountLinking: true,
-      // Keycloak läuft hinter Cloudflare (TLS-Termination) und gibt im
-      // Discovery-Dokument http:// URLs zurück. NextAuth folgt bei POST-Requests
-      // keinen 301-Redirects → Token-Exchange schlägt fehl.
-      // Lösung: Endpunkte direkt auf HTTPS setzen (aus KEYCLOAK_ISSUER).
       token: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
       userinfo: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
+    }),
+    // Zweiter Provider für direkte Registrierung — zeigt auf /registrations statt /auth.
+    // prompt:"create" ist in manchen Keycloak-Versionen unzuverlässig.
+    KeycloakProvider({
+      id: 'keycloak-register',
+      name: 'Keycloak Register',
+      clientId: process.env.KEYCLOAK_CLIENT_ID!,
+      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
+      issuer: process.env.KEYCLOAK_ISSUER!,
+      allowDangerousEmailAccountLinking: true,
+      token: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+      userinfo: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
+      authorization: {
+        url: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/registrations`,
+        params: { scope: 'openid email profile' },
+      },
     }),
   ],
   callbacks: {

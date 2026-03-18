@@ -42,16 +42,31 @@ async function checkPermission(orgSlug: string, requiredPermission: string) {
  * Entfernt ein Mitglied aus der Organisation.
  */
 export async function removeMember(orgSlug: string, memberId: string) {
-  // 1. Berechtigung prüfen
-  const { org, session, isAdmin } = await checkPermission(orgSlug, "users:delete");
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Nicht eingeloggt");
 
-  // 2. Ziel-Mitgliedschaft laden
+  // Ziel-Mitgliedschaft vorab laden, um Self-Remove zu erkennen
   const targetMembership = await prisma.membership.findUnique({
     where: { id: memberId },
-    include: { role: true }
+    include: { role: true },
   });
-
   if (!targetMembership) throw new Error("Mitglied nicht gefunden");
+
+  const isSelfRemove = targetMembership.userId === session.user.id;
+
+  // 1. Berechtigung prüfen — bei Self-Remove reicht normale Org-Mitgliedschaft
+  let org: any;
+  let isAdmin: boolean;
+  if (isSelfRemove) {
+    const orgRecord = await prisma.organization.findUnique({ where: { slug: orgSlug } });
+    if (!orgRecord) throw new Error("Organisation nicht gefunden");
+    org = orgRecord;
+    isAdmin = targetMembership.role.name === "Administrator";
+  } else {
+    const result = await checkPermission(orgSlug, "users:delete");
+    org = result.org;
+    isAdmin = result.isAdmin;
+  }
 
   // --- SICHERHEITS-CHECKS ---
 

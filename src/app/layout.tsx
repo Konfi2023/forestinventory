@@ -11,6 +11,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 // Du hast die Datei unter src/components/providers/ angelegt
 import { NextAuthProvider } from "@/components/providers/NextAuthProvider";
 import { SentryProvider } from "@/components/providers/SentryProvider";
+import { SessionGuard } from "@/components/providers/SessionGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,6 +60,7 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <SentryProvider dsn={process.env.NEXT_PUBLIC_SENTRY_DSN} />
           <NextAuthProvider>
+            <SessionGuard />
             {children}
             <Toaster />
           </NextAuthProvider>

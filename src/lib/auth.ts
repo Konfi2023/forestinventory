@@ -2,6 +2,37 @@ import { NextAuthOptions } from "next-auth";
 import KeycloakProvider from "next-auth/providers/keycloak";
 import { prisma } from "@/lib/prisma";
 
+async function refreshAccessToken(token: any) {
+  try {
+    const response = await fetch(
+      `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: process.env.KEYCLOAK_CLIENT_ID!,
+          client_secret: process.env.KEYCLOAK_CLIENT_SECRET!,
+          grant_type: 'refresh_token',
+          refresh_token: token.refreshToken as string,
+        }),
+      }
+    );
+    const data = await response.json();
+    if (!response.ok) throw data;
+    return {
+      ...token,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token ?? token.refreshToken,
+      idToken: data.id_token ?? token.idToken,
+      accessTokenExpires: Date.now() + (data.expires_in as number) * 1000,
+      error: undefined,
+    };
+  } catch {
+    console.warn('[auth] Token refresh failed — forcing re-login');
+    return { ...token, error: 'RefreshAccessTokenError' };
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     KeycloakProvider({
@@ -20,20 +51,36 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // 1. JWT Callback: Hier landen die Daten von Keycloak
     async jwt({ token, profile, account }) {
-      // Auch bei bestehenden Tokens prüfen ob der User noch in der DB existiert
-      // (z.B. nach DB-Reset oder Migration). Falls nicht → wie neuer Login behandeln.
-      if (!profile && !account && token.dbId) {
-        const exists = await prisma.user.findUnique({ where: { id: token.dbId as string }, select: { id: true } });
-        if (!exists) {
-          delete token.dbId;
-          delete token.lastActiveOrgId;
-        }
-      }
-
-      if (account?.id_token) {
+      // ── Initial sign-in: store tokens ──────────────────────────────────────
+      if (account) {
         token.idToken = account.id_token;
+        token.refreshToken = account.refresh_token;
+        token.accessTokenExpires = Date.now() + ((account.expires_in as number) ?? 300) * 1000;
       }
 
+      // ── Returning session: validate ─────────────────────────────────────────
+      if (!profile && !account) {
+        // Propagate existing error to client (SessionGuard will force re-login)
+        if (token.error === 'RefreshAccessTokenError') return token;
+
+        // Check if DB user still exists (e.g. after manual deletion or DB reset)
+        if (token.dbId) {
+          const exists = await prisma.user.findUnique({ where: { id: token.dbId as string }, select: { id: true } });
+          if (!exists) {
+            delete token.dbId;
+            delete token.lastActiveOrgId;
+          }
+        }
+
+        // If access token is expired, try to refresh via Keycloak
+        if (token.refreshToken && token.accessTokenExpires && Date.now() > (token.accessTokenExpires as number)) {
+          return refreshAccessToken(token);
+        }
+
+        return token;
+      }
+
+      // ── New login or missing dbId: DB user lookup / create ─────────────────
       if (profile && account || (!token.dbId && token.sub)) {
         const email = token.email;
         const keycloakId = token.sub;
@@ -102,8 +149,10 @@ export const authOptions: NextAuthOptions = {
     // 2. Session Callback: Das ist das, was im Frontend ankommt
     async session({ session, token }) {
       if (session.user && token.sub) {
-        // Erweitere das Session-Objekt um unsere DB-Daten
-        session.user.id = token.dbId as string; 
+        session.user.id = token.dbId as string;
+      }
+      if (token.error) {
+        (session as any).error = token.error;
       }
       return session;
     },

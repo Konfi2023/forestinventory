@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { deleteAccount } from "@/actions/account";
 import { Button } from "@/components/ui/button";
@@ -23,15 +22,16 @@ export function DeleteAccountSection({ email }: { email: string }) {
   const [open, setOpen] = useState(false);
   const [inputEmail, setInputEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleDelete = async () => {
     setLoading(true);
     try {
       await deleteAccount(inputEmail);
       toast.success("Account wurde gelöscht.");
+      const res = await fetch('/api/auth/keycloak-logout?callbackUrl=/');
+      const { url: keycloakLogoutUrl } = await res.json();
       await signOut({ redirect: false });
-      router.push("/");
+      window.location.href = keycloakLogoutUrl;
     } catch (e: any) {
       toast.error(e.message || "Fehler beim Löschen");
       setLoading(false);

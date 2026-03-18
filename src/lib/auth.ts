@@ -60,7 +60,8 @@ export const authOptions: NextAuthOptions = {
         url: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/registrations`,
         params: { scope: 'openid email profile' },
       },
-    }),
+      checks: ['pkce', 'state'],
+    } as any),
   ],
   callbacks: {
     // 1. JWT Callback: Hier landen die Daten von Keycloak

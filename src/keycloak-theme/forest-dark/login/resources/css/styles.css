@@ -7,7 +7,6 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     font-family: 'Inter', sans-serif !important;
-    overflow: hidden !important;
 }
 
 /* Verstecke Standard Keycloak Elemente */
@@ -15,7 +14,7 @@ body {
 
 /* 2. TOP NAVIGATION */
 .np-top-nav {
-    position: absolute; top: 40px; left: 40px; z-index: 10002;
+    position: fixed; top: 40px; left: 40px; z-index: 10002;
     display: flex; align-items: center; gap: 30px;
 }
 .np-back-link {
@@ -33,6 +32,7 @@ body {
     position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh;
     background-color: #f8fafc; z-index: 9999;
     display: flex; align-items: center; justify-content: center; overflow-y: auto; color: #0f172a;
+    padding-top: 90px; box-sizing: border-box;
 }
 .np-auth-container {
     width: 95%; max-width: 1600px; height: 800px;
@@ -116,5 +116,6 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
     .np-auth-right { display: none; }
     .np-auth-container { width: 100%; padding: 40px 20px; gap: 0; }
     .np-top-nav { top: 20px; left: 20px; }
+    .np-auth-page { padding-top: 70px; }
     .np-auth-left { width: 100%; max-width: 460px; }
 }

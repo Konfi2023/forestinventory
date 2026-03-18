@@ -6,7 +6,6 @@ import { useMapStore } from '../stores/useMapStores';
 import { createForest, updateForest } from '@/actions/forest';
 import { createPath, updatePath } from '@/actions/paths';
 import { createPlanting, updatePlanting, createHunting, updateHunting, createCalamity, updateCalamity } from '@/actions/polygons';
-import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import L from 'leaflet';
 import area from '@turf/area';
@@ -76,13 +75,14 @@ export default function MapGeometryEditor({
   forests = [],
   areaLimitHa = null,
   usedAreaHa = 0,
+  currentUserId = '',
 }: {
   forests?: any[];
   areaLimitHa?: number | null;
   usedAreaHa?: number;
+  currentUserId?: string;
 }) {
   const map = useMap();
-  const { data: session } = useSession();
 
   const mode           = useMapStore(s => s.interactionMode);
   const editingData    = useMapStore(s => s.editingFeatureData);
@@ -98,10 +98,10 @@ export default function MapGeometryEditor({
   const pathLengthRef   = useRef<number>(0);
 
   // Refs zum Lesen aktueller Werte in Draw-Callbacks ohne Dependency-Schleife
-  const editingDataRef = useRef<any>(null);
-  const sessionRef     = useRef<any>(null);
-  editingDataRef.current = editingData;
-  sessionRef.current     = session;
+  const editingDataRef   = useRef<any>(null);
+  const currentUserIdRef = useRef<string>('');
+  editingDataRef.current   = editingData;
+  currentUserIdRef.current = currentUserId;
 
   const [showSaveBar,      setShowSaveBar]      = useState(false);
   const [drawnLengthM,     setDrawnLengthM]     = useState<number | null>(null);
@@ -121,7 +121,7 @@ export default function MapGeometryEditor({
   // ─── POLYGON SPEICHERN (shared) ─────────────────────────────────────────────
   const savePolygon = async (polygonMode: string, geoJson: any, areaHa: number, forestId: string) => {
     const orgSlug = editingDataRef.current?.orgSlug ?? '';
-    const userId  = sessionRef.current?.user?.id as string;
+    const userId  = currentUserIdRef.current;
     try {
       if (polygonMode === 'DRAW_PLANTING') {
         const result = await createPlanting({ forestId, treeSpecies: 'Unbekannt', description: 'Pflanzfläche', geoJson, areaHa, userId, orgSlug });
@@ -192,7 +192,7 @@ export default function MapGeometryEditor({
           name: 'Mein Wald',
           geoJson,
           areaHa: calculatedAreaHa,
-          keycloakId: sessionRef.current?.user?.id as string,
+          keycloakId: currentUserIdRef.current,
         });
 
         if (result.success) {
@@ -411,7 +411,7 @@ export default function MapGeometryEditor({
         name,
         geoJson,
         lengthM,
-        userId: session?.user?.id as string,
+        userId: currentUserId,
       });
 
       if (result.success) {
@@ -469,7 +469,7 @@ export default function MapGeometryEditor({
         const calculatedAreaHa = parseFloat((area(newGeoJson) / 10000).toFixed(4));
         await updateForest({
           id: currentId,
-          keycloakId: session?.user?.id as string,
+          keycloakId: currentUserId,
           name: editingData.name,
           geoJson: newGeoJson,
           areaHa: calculatedAreaHa,

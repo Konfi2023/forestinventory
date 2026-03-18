@@ -32,7 +32,7 @@ export function Header() {
             </g>
             <text x="58" y="33" fill="#0f172a" fontFamily="sans-serif" fontWeight="bold" fontSize="26" letterSpacing="-0.5">Forest</text>
             <rect x="141" y="20" width="9" height="4" rx="1" fill="#15803d" />
-            <text x="154" y="33" fill="#15803d" fontFamily="sans-serif" fontWeight="bold" fontSize="26" letterSpacing="-0.5">Inventory</text>
+            <text x="154" y="33" fill="#15803d" fontFamily="sans-serif" fontWeight="bold" fontSize="26" letterSpacing="-0.5">Manager</text>
           </svg>
         </Link>
 

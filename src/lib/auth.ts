@@ -46,22 +46,32 @@ export const authOptions: NextAuthOptions = {
       userinfo: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
     }),
     // Zweiter Provider für direkte Registrierung — zeigt auf /registrations statt /auth.
-    // prompt:"create" ist in manchen Keycloak-Versionen unzuverlässig.
-    KeycloakProvider({
+    // WICHTIG: type:'oauth' (nicht 'oidc') damit kein OIDC-Discovery die authorization.url überschreibt.
+    // KeycloakProvider (type:'oidc') holt immer den authorization_endpoint aus dem Discovery-Dokument
+    // und ignoriert dabei unsere custom URL — daher plain OAuth2.
+    {
       id: 'keycloak-register',
       name: 'Keycloak Register',
+      type: 'oauth',
       clientId: process.env.KEYCLOAK_CLIENT_ID!,
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
-      issuer: process.env.KEYCLOAK_ISSUER!,
+      checks: ['pkce', 'state'],
       allowDangerousEmailAccountLinking: true,
-      token: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
-      userinfo: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
       authorization: {
         url: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/registrations`,
-        params: { scope: 'openid email profile' },
+        params: { scope: 'openid email profile', response_type: 'code' },
       },
-      checks: ['pkce', 'state'],
-    } as any),
+      token: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+      userinfo: `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
+      profile(profile: any) {
+        return {
+          id: profile.sub,
+          name: profile.name ?? profile.preferred_username ?? '',
+          email: profile.email,
+          image: profile.picture ?? null,
+        };
+      },
+    } as any,
   ],
   callbacks: {
     // 1. JWT Callback: Hier landen die Daten von Keycloak

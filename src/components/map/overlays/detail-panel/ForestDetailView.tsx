@@ -92,6 +92,7 @@ export function ForestDetailView({
             await updateForest({
                 id: forest.id,
                 keycloakId: userId,
+                orgSlug,
                 name,
                 description: desc,
                 // @ts-ignore

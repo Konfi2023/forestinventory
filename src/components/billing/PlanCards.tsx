@@ -92,6 +92,7 @@ interface Props {
   currentMemberCount?: number;
   showAnnualDiscountBadge?: boolean;
   showFeaturesBlock?: boolean;
+  onEnterpriseAfterSend?: () => Promise<void>;
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -111,7 +112,7 @@ function getBlockedReason(plan: PlanData, usedHa: number, memberCount: number): 
 
 // ─── Enterprise Contact Modal ─────────────────────────────────────────────────
 
-function EnterpriseContactModal({ onClose }: { onClose: () => void }) {
+function EnterpriseContactModal({ onClose, onAfterSend }: { onClose: () => void; onAfterSend?: () => Promise<void> }) {
   const { data: session } = useSession();
   const [name, setName] = useState(session?.user?.name ?? '');
   const [email, setEmail] = useState(session?.user?.email ?? '');
@@ -130,7 +131,11 @@ function EnterpriseContactModal({ onClose }: { onClose: () => void }) {
       });
       if (!res.ok) throw new Error();
       toast.success('Ihre Anfrage wurde gesendet. Wir melden uns bald.');
-      onClose();
+      if (onAfterSend) {
+        await onAfterSend();
+      } else {
+        onClose();
+      }
     } catch {
       toast.error('Fehler beim Senden. Bitte versuchen Sie es erneut.');
     } finally {
@@ -215,6 +220,7 @@ export function PlanCards({
   currentMemberCount = 0,
   showAnnualDiscountBadge = true,
   showFeaturesBlock = true,
+  onEnterpriseAfterSend,
 }: Props) {
   const [enterpriseModalOpen, setEnterpriseModalOpen] = useState(false);
   const paidPlans = plans.filter(p => p.name !== 'Enterprise');
@@ -389,7 +395,7 @@ export function PlanCards({
               <Mail size={14} /> Kontakt aufnehmen
             </button>
           </div>
-          {enterpriseModalOpen && <EnterpriseContactModal onClose={() => setEnterpriseModalOpen(false)} />}
+          {enterpriseModalOpen && <EnterpriseContactModal onClose={() => setEnterpriseModalOpen(false)} onAfterSend={onEnterpriseAfterSend} />}
         </>
       )}
     </div>

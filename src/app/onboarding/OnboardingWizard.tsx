@@ -375,6 +375,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                   onIntervalChange={setBillingInterval}
                   showAnnualDiscountBadge
                   showFeaturesBlock={false}
+                  onEnterpriseAfterSend={handleStartTrial}
                 />
 
                 {/* Free trial */}

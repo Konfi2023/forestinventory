@@ -48,6 +48,7 @@ export default function MapPageClient({ orgSlug }: Props) {
       members: any[],
       owners: { id: string; name: string }[],
       currentUserId: string,
+      orgSlug: string,
       permissions: string[],
       areaLimitHa: number | null,
       usedAreaHa: number,

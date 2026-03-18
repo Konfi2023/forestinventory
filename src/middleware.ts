@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * In-memory Sliding-Window Rate Limiter.
- * Funktioniert zuverlässig auf selbst-gehostetem Next.js (single Node.js-Prozess).
- * Kein Redis erforderlich.
+ * Im PM2-Cluster-Modus hat jede Instanz eigene Counter.
+ * Limits sind pro Instanz auf die Hälfte gesetzt → kombiniert entspricht das dem
+ * gewünschten Gesamtlimit. Für exakte Limits später auf Redis migrieren.
  */
 const counters = new Map<string, { count: number; resetAt: number }>();
 let cleanupTick = 0;
@@ -48,7 +49,7 @@ export function middleware(req: NextRequest) {
                          pathname.startsWith('/api/auth/session') ||
                          pathname.startsWith('/api/auth/csrf');
     if (isSystemCall) {
-      if (!rateLimit(`auth-sys:${ip}`, 600, 15 * 60 * 1000)) {
+      if (!rateLimit(`auth-sys:${ip}`, 300, 15 * 60 * 1000)) {
         return NextResponse.json(
           { error: 'Zu viele Anfragen. Bitte warte 15 Minuten.' },
           { status: 429, headers: { 'Retry-After': '900' } }
@@ -56,7 +57,7 @@ export function middleware(req: NextRequest) {
       }
     } else {
       // Eigentliche Sign-in-Versuche (/api/auth/signin, /api/auth/signout, ...)
-      if (!rateLimit(`auth-login:${ip}`, 120, 15 * 60 * 1000)) {
+      if (!rateLimit(`auth-login:${ip}`, 60, 15 * 60 * 1000)) {
         return NextResponse.json(
           { error: 'Zu viele Anmeldeversuche. Bitte warte 15 Minuten.' },
           { status: 429, headers: { 'Retry-After': '900' } }
@@ -67,7 +68,7 @@ export function middleware(req: NextRequest) {
 
   // App-API-Routen: 300 Anfragen / Minute (normaler Betrieb)
   if (pathname.startsWith('/api/')) {
-    if (!rateLimit(`api:${ip}`, 300, 60 * 1000)) {
+    if (!rateLimit(`api:${ip}`, 150, 60 * 1000)) {
       return NextResponse.json(
         { error: 'Zu viele Anfragen. Bitte warte kurz.' },
         { status: 429, headers: { 'Retry-After': '60' } }

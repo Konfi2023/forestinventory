@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import KeycloakProvider from "next-auth/providers/keycloak";
 import { prisma } from "@/lib/prisma";
+import { markEmailVerified } from "@/lib/keycloak-admin";
 
 async function refreshAccessToken(token: any) {
   try {
@@ -118,6 +119,16 @@ export const authOptions: NextAuthOptions = {
                 lastName: (profile as any)?.name?.split(" ")[1] || "",
               },
             });
+
+            // Eingeladene Nutzer: E-Mail sofort als verifiziert markieren.
+            // Der Einladungslink selbst bestätigt implizit die E-Mail-Adresse.
+            const pendingInvite = await prisma.invite.findFirst({
+              where: { email: email.toLowerCase() },
+              select: { id: true },
+            });
+            if (pendingInvite && keycloakId) {
+              markEmailVerified(keycloakId).catch(console.error);
+            }
 
             // DEV-ONLY: Der allererste User wird automatisch Admin der Demo-Org.
             // In Production läuft dieser Block nie – Memberships werden über Einladungen verwaltet.

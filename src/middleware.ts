@@ -76,6 +76,17 @@ export function middleware(req: NextRequest) {
     }
   }
 
+  // Landingpage: eingeloggte Nutzer sofort zum Dashboard leiten (cookie-basiert,
+  // ohne Keycloak-Roundtrip → Seite bleibt statisch und schnell für alle anderen)
+  if (pathname === '/') {
+    const sessionCookie =
+      req.cookies.get('__Secure-next-auth.session-token') ??
+      req.cookies.get('next-auth.session-token');
+    if (sessionCookie) {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+  }
+
   // Aktuellen Pfad als Header weitergeben (für Server Components)
   const res = NextResponse.next();
   res.headers.set('x-current-path', pathname);
@@ -83,5 +94,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/dashboard/:path*'],
+  matcher: ['/', '/api/:path*', '/dashboard/:path*'],
 };

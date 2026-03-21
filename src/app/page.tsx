@@ -1,7 +1,8 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
+
+// Seite ist vollständig statisch – kein Session-Check im SSR.
+// Eingeloggte Nutzer werden via Middleware (cookie-basiert) zum Dashboard geleitet.
+export const dynamic = 'force-static';
 import {
   Map, Leaf, ShieldCheck, PackageOpen,
   ClipboardList, Trees, Radio, Zap,
@@ -11,10 +12,7 @@ import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
 import { SignInButton } from '@/components/marketing/SignInButton';
 
-export default async function Home() {
-  const session = await getServerSession(authOptions);
-  if (session) redirect('/dashboard');
-
+export default function Home() {
   return (
     <div className="bg-white text-slate-800 min-h-screen">
       <Header />

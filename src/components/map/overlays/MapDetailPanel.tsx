@@ -213,6 +213,9 @@ export function MapDetailPanel({ forests, tasks, members, owners, orgSlug, onFor
   }
 
   if (selectedType === 'COMPARTMENT' && selectedCompartment) {
+    const compartmentTrees = selectedCompartmentForest?.pois
+      ?.filter((p: any) => p.tree && p.tree.compartmentId === selectedCompartment.id)
+      ?.map((p: any) => p.tree) ?? [];
     return (
       <CompartmentDetailView
         key={selectedCompartment.id}
@@ -222,6 +225,7 @@ export function MapDetailPanel({ forests, tasks, members, owners, orgSlug, onFor
         tasks={tasks}
         members={members}
         forests={forests}
+        compartmentTrees={compartmentTrees}
         onClose={handleClose}
         onRefresh={refreshData}
         onDeleteSuccess={() => { refreshData(); handleClose(); }}

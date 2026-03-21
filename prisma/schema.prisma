@@ -479,9 +479,50 @@ model ForestCompartment {
   geoJson      Json    @db.JsonB
   areaHa       Float?
   name         String?
+  number       String?           // Abteilungsnummer
   color        String? @default("#3b82f6")
   note         String?
   trackBiomass Boolean @default(false)
+
+  // Standort
+  soilType         String?       // Bodentyp
+  waterBalance     String?       // Wasserhaushalt
+  nutrientLevel    String?       // Nährstoffstufe
+  exposition       String?       // N/NO/O/SO/S/SW/W/NW/eben
+  slopeClass       String?       // eben/schwach/mittel/steil/sehr steil
+  protectionStatus String?       // Schutzstatus
+  restrictions     String?       // Restriktionen/Auflagen
+
+  // Bestand
+  standAge         Int?          // Bestandesalter (Jahre)
+  developmentStage String?       // Blöße/Verjüngung/Dickung/Stangenholz/…
+  mainSpecies      Json?         // [{species: string, percent: number}]
+  sideSpecies      Json?         // [{species: string, percent: number}]
+  mixingForm       String?       // rein/horst/trupp/gruppen/einzeln/misch
+  structure        String?       // einschichtig/mehrschichtig/plenterartig
+
+  // Kennzahlen (manuell; auto-werte kommen von TreePOIs)
+  volumePerHa      Float?        // Vorrat m³/ha
+  incrementPerHa   Float?        // Zuwachs m³/ha/a
+  stockingDegree   Float?        // Bestockungsgrad 0–1
+  deadwoodPerHa    Float?        // Totholz m³/ha
+  yieldClass       Float?        // Bonität (Ertragsklasse)
+  siteProductivity String?       // Wuchsleistung (gering/mittel/hoch/sehr hoch)
+
+  // Verjüngung
+  rejuvenation     Json?         // [{species: string, heightCm: number, density: string}]
+
+  // Zustand
+  vitalityNote     String?       // Vitalitätsbeschreibung
+  damageNote       String?       // Schadensbeschreibung
+  stabilityNote    String?       // Stabilitätsbeschreibung
+
+  // Bewirtschaftung
+  lastMeasureDate  String?       // Datum letzte Nutzung/Maßnahme
+  lastMeasureType  String?       // Art der Maßnahme
+  maintenanceStatus String?      // Pflegezustand
+  accessibility    String?       // Befahrbarkeit
+
   forestId     String
   forest       Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
   trees        ForestPoiTree[]

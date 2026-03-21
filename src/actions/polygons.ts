@@ -281,7 +281,26 @@ export async function createCompartment(data: {
 
 export async function updateCompartment(
   id: string,
-  data: { name?: string; color?: string; note?: string; geoJson?: any; areaHa?: number },
+  data: {
+    name?: string; number?: string; color?: string; note?: string; geoJson?: any; areaHa?: number;
+    // Standort
+    soilType?: string; waterBalance?: string; nutrientLevel?: string;
+    exposition?: string; slopeClass?: string; protectionStatus?: string; restrictions?: string;
+    // Bestand
+    standAge?: number | null; developmentStage?: string;
+    mainSpecies?: any; sideSpecies?: any; mixingForm?: string; structure?: string;
+    // Kennzahlen
+    volumePerHa?: number | null; incrementPerHa?: number | null;
+    stockingDegree?: number | null; deadwoodPerHa?: number | null;
+    yieldClass?: number | null; siteProductivity?: string;
+    // Verjüngung
+    rejuvenation?: any;
+    // Zustand
+    vitalityNote?: string; damageNote?: string; stabilityNote?: string;
+    // Bewirtschaftung
+    lastMeasureDate?: string; lastMeasureType?: string;
+    maintenanceStatus?: string; accessibility?: string;
+  },
   orgSlug: string
 ) {
   try {

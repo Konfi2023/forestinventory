@@ -23,6 +23,7 @@ export interface PendingTree {
   id?: number;
   forestId: string;
   forestName: string;
+  compartmentId?: string;
   lat: number;
   lng: number;
   species: string;
@@ -72,6 +73,11 @@ export class InventoryDB extends Dexie {
     });
     // Version 5: orgSlug in pendingLogPiles für Hintergrund-Sync
     this.version(5).stores({
+      pendingTrees:    '++id, synced, createdAt, forestId',
+      pendingLogPiles: '++id, synced, createdAt, forestId',
+    });
+    // Version 6: compartmentId in pendingTrees
+    this.version(6).stores({
       pendingTrees:    '++id, synced, createdAt, forestId',
       pendingLogPiles: '++id, synced, createdAt, forestId',
     });

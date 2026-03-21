@@ -20,6 +20,7 @@ import {
   Crosshair,
   AlertTriangle,
   Layers,
+  Grid3x3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MapImporter } from '../importer/MapImporter';
@@ -95,7 +96,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
       setShowPathMenu(false);
   };
 
-  const handlePolygonSelect = (drawMode: 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY') => {
+  const handlePolygonSelect = (drawMode: 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY' | 'DRAW_COMPARTMENT') => {
       setEditingFeature({ forestId: lastForestId, orgSlug });
       setMode(drawMode);
       setShowPolygonMenu(false);
@@ -185,7 +186,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                 onClick={() => { setShowPolygonMenu(!showPolygonMenu); setShowPoiMenu(false); setShowPathMenu(false); }}
                 className={cn(
                 "p-2.5 rounded-lg transition-all duration-200 group relative",
-                (mode === 'DRAW_PLANTING' || mode === 'DRAW_HUNTING' || mode === 'DRAW_CALAMITY') || showPolygonMenu
+                (mode === 'DRAW_PLANTING' || mode === 'DRAW_HUNTING' || mode === 'DRAW_CALAMITY' || mode === 'DRAW_COMPARTMENT') || showPolygonMenu
                     ? "bg-white/10 text-white border border-white/20"
                     : "text-gray-400 hover:text-white hover:bg-white/10"
                 )}
@@ -325,6 +326,12 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
               >
                 <AlertTriangle size={16} className="text-orange-400" /> Kalamität
               </button>
+              <button
+                onClick={() => handlePolygonSelect('DRAW_COMPARTMENT')}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider w-full text-left hover:bg-white/10 text-gray-400 hover:text-white"
+              >
+                <Grid3x3 size={16} className="text-blue-400" /> Abteilung
+              </button>
           </div>
       )}
 
@@ -369,15 +376,19 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
         )
       )}
 
-      {(mode === 'DRAW_PLANTING' || mode === 'DRAW_HUNTING' || mode === 'DRAW_CALAMITY') && (
+      {(mode === 'DRAW_PLANTING' || mode === 'DRAW_HUNTING' || mode === 'DRAW_CALAMITY' || mode === 'DRAW_COMPARTMENT') && (
         <div className={cn(
           "ml-14 absolute top-48 font-bold px-4 py-3 rounded-xl shadow-2xl text-xs whitespace-nowrap animate-in slide-in-from-left-2 fade-in border z-50",
-          mode === 'DRAW_PLANTING' ? "bg-green-700 text-white border-green-500" :
-          mode === 'DRAW_HUNTING'  ? "bg-lime-700 text-white border-lime-500" :
+          mode === 'DRAW_PLANTING'   ? "bg-green-700 text-white border-green-500" :
+          mode === 'DRAW_HUNTING'    ? "bg-lime-700 text-white border-lime-500" :
+          mode === 'DRAW_COMPARTMENT'? "bg-blue-700 text-white border-blue-500" :
           "bg-orange-700 text-white border-orange-500"
         )}>
           <p>Klicke auf die Karte,</p>
           <p className="font-normal opacity-90">um Eckpunkte zu setzen.</p>
+          {mode === 'DRAW_COMPARTMENT' && (
+            <p className="font-normal opacity-75 text-[10px] mt-0.5">Nur innerhalb des Waldes</p>
+          )}
           <p className="mt-1 text-[10px] opacity-75 uppercase tracking-wider">Doppelklick zum Beenden</p>
           <button
             onClick={() => { setMode('VIEW'); setEditingFeature(null); }}

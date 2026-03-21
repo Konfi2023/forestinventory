@@ -5,7 +5,7 @@ import { useMap } from 'react-leaflet';
 import { useMapStore } from '../stores/useMapStores';
 import { createForest, updateForest } from '@/actions/forest';
 import { createPath, updatePath } from '@/actions/paths';
-import { createPlanting, updatePlanting, createHunting, updateHunting, createCalamity, updateCalamity } from '@/actions/polygons';
+import { createPlanting, updatePlanting, createHunting, updateHunting, createCalamity, updateCalamity, createCompartment, updateCompartment } from '@/actions/polygons';
 import { toast } from 'sonner';
 import L from 'leaflet';
 import area from '@turf/area';
@@ -28,8 +28,9 @@ function ForestAssignDialog({ forests, polygonType, onConfirm, onCancel }: {
   onCancel: () => void;
 }) {
   const [selectedForestId, setSelectedForestId] = useState('');
-  const typeLabel = polygonType === 'DRAW_PLANTING' ? 'Pflanzfläche'
-                  : polygonType === 'DRAW_HUNTING'  ? 'Jagdfläche'
+  const typeLabel = polygonType === 'DRAW_PLANTING'    ? 'Pflanzfläche'
+                  : polygonType === 'DRAW_HUNTING'     ? 'Jagdfläche'
+                  : polygonType === 'DRAW_COMPARTMENT' ? 'Abteilung'
                   : 'Kalamitätsfläche';
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
@@ -138,6 +139,10 @@ export default function MapGeometryEditor({
       } else if (polygonMode === 'DRAW_CALAMITY') {
         const result = await createCalamity({ forestId, geoJson, areaHa, userId, orgSlug });
         if (result.success) { toast.success('Kalamitätsfläche angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'CALAMITY'), 300); }
+        else throw new Error(result.error);
+      } else if (polygonMode === 'DRAW_COMPARTMENT') {
+        const result = await createCompartment({ forestId, name: 'Abteilung', geoJson, areaHa, userId, orgSlug });
+        if (result.success) { toast.success('Abteilung angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'COMPARTMENT'), 300); }
         else throw new Error(result.error);
       }
     } catch (err: any) {
@@ -268,15 +273,16 @@ export default function MapGeometryEditor({
   }, [map, mode, activePathType]);
 
 
-  // ─── DRAW PLANTING / HUNTING / CALAMITY ─────────────────────────────────────
+  // ─── DRAW PLANTING / HUNTING / CALAMITY / COMPARTMENT ───────────────────────
   useEffect(() => {
-    const isPolygonDraw = mode === 'DRAW_PLANTING' || mode === 'DRAW_HUNTING' || mode === 'DRAW_CALAMITY';
+    const isPolygonDraw = mode === 'DRAW_PLANTING' || mode === 'DRAW_HUNTING' || mode === 'DRAW_CALAMITY' || mode === 'DRAW_COMPARTMENT';
     if (!map || !isPolygonDraw) return;
 
     const colorMap: Record<string, string> = {
-      DRAW_PLANTING: '#22c55e',
-      DRAW_HUNTING:  '#84cc16',
-      DRAW_CALAMITY: '#f97316',
+      DRAW_PLANTING:    '#22c55e',
+      DRAW_HUNTING:     '#84cc16',
+      DRAW_CALAMITY:    '#f97316',
+      DRAW_COMPARTMENT: '#3b82f6',
     };
     const color = colorMap[mode] ?? '#3b82f6';
 
@@ -471,6 +477,12 @@ export default function MapGeometryEditor({
         toast.success('Kalamitätsfläche aktualisiert!');
         refreshData();
         setTimeout(() => selectFeature(currentId, 'CALAMITY'), 100);
+      } else if (featureType === 'COMPARTMENT') {
+        const areaHa = parseFloat((area(newGeoJson) / 10000).toFixed(4));
+        await updateCompartment(currentId, { geoJson: newGeoJson, areaHa }, orgSlug);
+        toast.success('Abteilung aktualisiert!');
+        refreshData();
+        setTimeout(() => selectFeature(currentId, 'COMPARTMENT'), 100);
       } else {
         const calculatedAreaHa = parseFloat((area(newGeoJson) / 10000).toFixed(4));
         await updateForest({
@@ -497,7 +509,7 @@ export default function MapGeometryEditor({
     const currentId = editingData?.id;
     const ft        = editingData?.featureType ?? 'FOREST';
     const reSelectTypeMap: Record<string, any> = {
-      PATH: 'PATH', PLANTING: 'PLANTING', HUNTING: 'HUNTING', CALAMITY: 'CALAMITY',
+      PATH: 'PATH', PLANTING: 'PLANTING', HUNTING: 'HUNTING', CALAMITY: 'CALAMITY', COMPARTMENT: 'COMPARTMENT',
     };
     const reSelectType = reSelectTypeMap[ft] ?? 'FOREST';
     setMode('VIEW');

@@ -11,6 +11,7 @@ import { PathDetailView } from './detail-panel/PathDetailView';
 import { PlantingDetailView } from './detail-panel/PlantingDetailView';
 import { HuntingDetailView } from './detail-panel/HuntingDetailView';
 import { CalamityDetailView } from './detail-panel/CalamityDetailView';
+import { CompartmentDetailView } from './detail-panel/CompartmentDetailView';
 
 interface Props {
   forests: any[];
@@ -68,11 +69,19 @@ export function MapDetailPanel({ forests, tasks, members, owners, orgSlug, onFor
     ? forests?.find(f => f.id === selectedCalamity.forestId)
     : null;
 
+  const selectedCompartment = selectedType === 'COMPARTMENT'
+    ? forests?.flatMap(f => f.compartments || []).find(c => c.id === selectedId)
+    : null;
+  const selectedCompartmentForest = selectedCompartment
+    ? forests?.find(f => f.id === selectedCompartment.forestId)
+    : null;
+
   // --- ANIMATION STEUERN ---
   useEffect(() => {
     const hasSelection = !!selectedId && (
       selectedType === 'FOREST' || selectedType === 'POI' || selectedType === 'PATH' ||
-      selectedType === 'PLANTING' || selectedType === 'HUNTING' || selectedType === 'CALAMITY'
+      selectedType === 'PLANTING' || selectedType === 'HUNTING' || selectedType === 'CALAMITY' ||
+      selectedType === 'COMPARTMENT'
     );
     setIsVisible(hasSelection);
   }, [selectedId, selectedType]);
@@ -194,6 +203,22 @@ export function MapDetailPanel({ forests, tasks, members, owners, orgSlug, onFor
         tasks={tasks}
         members={members}
         forests={forests}
+        onClose={handleClose}
+        onRefresh={refreshData}
+        onDeleteSuccess={() => { refreshData(); handleClose(); }}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
+    );
+  }
+
+  if (selectedType === 'COMPARTMENT' && selectedCompartment) {
+    return (
+      <CompartmentDetailView
+        key={selectedCompartment.id}
+        compartment={selectedCompartment}
+        forest={selectedCompartmentForest}
+        orgSlug={orgSlug}
         onClose={handleClose}
         onRefresh={refreshData}
         onDeleteSuccess={() => { refreshData(); handleClose(); }}

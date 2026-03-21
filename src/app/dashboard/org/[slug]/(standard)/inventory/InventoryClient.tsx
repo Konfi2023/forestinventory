@@ -65,7 +65,7 @@ const STOCKING_DEGREES = [
   { id: 'VERY_DENSE', label: 'Sehr dicht' },
 ];
 
-type Step = 'forest' | 'camera' | 'species' | 'details' | 'saved' | 'task' | 'summary';
+type Step = 'forest' | 'compartment' | 'camera' | 'species' | 'details' | 'saved' | 'task' | 'summary';
 
 interface SessionTree {
   species: string;
@@ -84,7 +84,8 @@ interface SessionTree {
   synced: boolean;
 }
 
-interface Forest { id: string; name: string; }
+interface Compartment { id: string; name: string | null; color: string | null; }
+interface Forest { id: string; name: string; compartments?: Compartment[]; }
 
 interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
 
@@ -97,6 +98,8 @@ interface InventoryClientProps {
 interface TreeForm {
   forestId: string;
   forestName: string;
+  compartmentId: string;
+  compartmentName: string;
   lat: number | null;
   lng: number | null;
   species: string;
@@ -113,7 +116,8 @@ interface TreeForm {
 }
 
 const EMPTY_FORM: TreeForm = {
-  forestId: '', forestName: '', lat: null, lng: null,
+  forestId: '', forestName: '', compartmentId: '', compartmentName: '',
+  lat: null, lng: null,
   species: '', diameter: '', height: '',
   soilCondition: '', soilMoisture: '',
   exposition: '', slopeClass: '', slopePosition: '',
@@ -187,6 +191,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             forestId:       tree.forestId,
+            compartmentId:  tree.compartmentId ?? undefined,
             lat:            tree.lat,
             lng:            tree.lng,
             species:        tree.species,
@@ -316,6 +321,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     const treeData: Omit<PendingTree, 'id'> = {
       forestId:          form.forestId,
       forestName:        form.forestName,
+      compartmentId:     form.compartmentId || undefined,
       lat:               form.lat ?? 0,
       lng:               form.lng ?? 0,
       species:           form.species || 'OTHER',
@@ -403,9 +409,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   }
 
   function nextTree() {
-    const forestId = form.forestId;
-    const forestName = form.forestName;
-    setForm({ ...EMPTY_FORM, forestId, forestName });
+    const forestId       = form.forestId;
+    const forestName     = form.forestName;
+    const compartmentId   = form.compartmentId;
+    const compartmentName = form.compartmentName;
+    setForm({ ...EMPTY_FORM, forestId, forestName, compartmentId, compartmentName });
     setPhotoPreview(null);
     photoFileRef.current = null;
     setCrownPhotoPreview(null);
@@ -516,7 +524,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
       </div>
 
       {/* Steps Indicator */}
-      {step !== 'forest' && step !== 'saved' && (
+      {step !== 'forest' && step !== 'compartment' && step !== 'saved' && (
         <div className="flex px-4 pt-3 gap-1.5 shrink-0">
           {(['camera', 'species', 'details'] as const).map((s, i) => (
             <div
@@ -547,7 +555,14 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               {forests.map(f => (
                 <button
                   key={f.id}
-                  onClick={() => { setForm(form => ({ ...form, forestId: f.id, forestName: f.name })); setStep('camera'); }}
+                  onClick={() => {
+                    setForm(form => ({ ...form, forestId: f.id, forestName: f.name, compartmentId: '', compartmentName: '' }));
+                    if (f.compartments && f.compartments.length > 0) {
+                      setStep('compartment');
+                    } else {
+                      setStep('camera');
+                    }
+                  }}
                   className="w-full flex items-center justify-between p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-left"
                 >
                   <div className="flex items-center gap-3">
@@ -560,6 +575,39 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               {forests.length === 0 && (
                 <p className="text-slate-500 text-center py-8">Keine Wälder gefunden.</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* SCHRITT 0b: Abteilung wählen */}
+        {step === 'compartment' && (
+          <div className="p-4">
+            <button onClick={() => setStep('forest')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+              <ChevronLeft size={16} /> Wald wechseln
+            </button>
+            <h2 className="text-xl font-bold mb-1">Abteilung wählen</h2>
+            <p className="text-slate-400 text-sm mb-6">Welcher Abteilung gehört dieser Baum?</p>
+            <div className="space-y-2">
+              {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => { setForm(f => ({ ...f, compartmentId: c.id, compartmentName: c.name ?? '' })); setStep('camera'); }}
+                  className="w-full flex items-center justify-between p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-4 h-4 rounded-sm shrink-0 border border-white/20" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
+                    <span className="font-medium">{c.name || 'Abteilung'}</span>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-500" />
+                </button>
+              ))}
+              <button
+                onClick={() => { setForm(f => ({ ...f, compartmentId: '', compartmentName: '' })); setStep('camera'); }}
+                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-colors text-left border border-dashed border-slate-700"
+              >
+                <span className="text-slate-400 text-sm">Keine Abteilung zuweisen</span>
+                <ChevronRight size={18} className="text-slate-600" />
+              </button>
             </div>
           </div>
         )}

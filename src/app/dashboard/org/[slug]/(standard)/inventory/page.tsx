@@ -19,7 +19,11 @@ export default async function InventoryPage({
   const [forests, memberships] = await Promise.all([
     prisma.forest.findMany({
       where: { organizationId: org.id },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        compartments: { select: { id: true, name: true, color: true }, orderBy: { name: 'asc' } },
+      },
       orderBy: { name: 'asc' },
     }),
     prisma.membership.findMany({

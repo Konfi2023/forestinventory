@@ -13,17 +13,18 @@ export type LayerId =
 
 export type BaseMapId = keyof typeof BASE_MAPS;
 
-export type FeatureType = 
-  | 'FOREST' 
-  | 'TASK' 
-  | 'POI' 
-  | 'POLYGON' 
+export type FeatureType =
+  | 'FOREST'
+  | 'TASK'
+  | 'POI'
+  | 'POLYGON'
   | 'PATH'
   | 'PLANTING'
   | 'MAINTENANCE'
   | 'CALAMITY'
   | 'HABITAT'
-  | 'HUNTING';
+  | 'HUNTING'
+  | 'COMPARTMENT';
 
 export type PoiType = 'HUNTING_STAND' | 'HUT' | 'LOG_PILE' | 'BARRIER' | 'VEHICLE' | 'TREE' | null;
 export type PathType = 'ROAD' | 'SKID_TRAIL' | 'WATER' | null;
@@ -50,7 +51,7 @@ export interface MapState {
   previousFeatureType: FeatureType | null;
   
   // Interaktions-Modus
-  interactionMode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY';
+  interactionMode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY' | 'DRAW_COMPARTMENT';
 
   // Hält das GeoJSON-Objekt oder die POI-Daten, die gerade bearbeitet werden
   editingFeatureData: any | null;

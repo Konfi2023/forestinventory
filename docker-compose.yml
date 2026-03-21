@@ -1,6 +1,6 @@
-# HINWEIS: Auf dem Produktionsserver wird die Docker-Infrastruktur
-# aus /var/www/forestdb2/docker-compose.yml verwaltet.
-# Diese Datei dient der lokalen Entwicklung.
+# HINWEIS: Auf dem Produktionsserver liegt die Docker-Infrastruktur
+# unter /var/www/forestinventory/docker-compose.yml.
+# Diese Datei dient auch als Vorlage für die Produktion.
 
 services:
   postgres:

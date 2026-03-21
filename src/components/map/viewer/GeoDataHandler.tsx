@@ -413,9 +413,10 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
   const polygonCoords = useMemo(() => {
     const m = new Map<string, ReturnType<typeof geoJSONToLeaflet>>();
     data.forests.forEach(f => {
-      f.plantings?.forEach((p: any)   => m.set(p.id, geoJSONToLeaflet(p.geoJson)));
-      f.hunting?.forEach((h: any)     => m.set(h.id, geoJSONToLeaflet(h.geoJson)));
-      f.calamities?.forEach((c: any)  => m.set(c.id, geoJSONToLeaflet(c.geoJson)));
+      f.plantings?.forEach((p: any)     => m.set(p.id, geoJSONToLeaflet(p.geoJson)));
+      f.hunting?.forEach((h: any)       => m.set(h.id, geoJSONToLeaflet(h.geoJson)));
+      f.calamities?.forEach((c: any)    => m.set(c.id, geoJSONToLeaflet(c.geoJson)));
+      f.compartments?.forEach((c: any)  => m.set(c.id, geoJSONToLeaflet(c.geoJson)));
     });
     return m;
   }, [data.forests]);
@@ -429,7 +430,8 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
   }, [data.forests]);
 
   const isDrawMode = interactionMode === 'DRAW_FOREST' || interactionMode === 'DRAW_PATH' ||
-    interactionMode === 'DRAW_PLANTING' || interactionMode === 'DRAW_HUNTING' || interactionMode === 'DRAW_CALAMITY';
+    interactionMode === 'DRAW_PLANTING' || interactionMode === 'DRAW_HUNTING' || interactionMode === 'DRAW_CALAMITY' ||
+    interactionMode === 'DRAW_COMPARTMENT';
 
   const poisVisible = showInfrastructure && currentZoom >= POI_VISIBILITY_THRESHOLD;
 
@@ -587,6 +589,40 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
                 )}
               </Polygon>
             )}
+
+            {/* ABTEILUNGEN — zuerst rendern (unter allen anderen Flächen) */}
+            {showSections && forest.compartments?.map((c: any) => {
+              const coords = polygonCoords.get(c.id) ?? [];
+              if (!coords.length) return null;
+              const isSel = selectedId === c.id;
+              const isHov = hoveredId === c.id;
+              const color = c.color ?? '#3b82f6';
+              return (
+                <Polygon
+                  key={c.id}
+                  positions={coords}
+                  interactive={!isDrawMode}
+                  pathOptions={{
+                    color,
+                    weight: isSel ? 3 : 2,
+                    fillColor: color,
+                    fillOpacity: isSel ? 0.2 : isHov ? 0.15 : 0.08,
+                    dashArray: isSel ? undefined : '8, 6',
+                    opacity: isSel ? 1 : isHov ? 0.9 : 0.75,
+                  }}
+                  eventHandlers={{
+                    click: (e) => { if (interactionMode === 'VIEW') { L.DomEvent.stopPropagation(e); selectFeature(c.id, 'COMPARTMENT'); } },
+                    mouseover: () => setHovered(c.id),
+                    mouseout:  () => setHovered(null),
+                  }}
+                >
+                  <Tooltip sticky direction="top" opacity={0.9} className="!pointer-events-none">
+                    <span className="font-bold text-xs">{c.name || 'Abteilung'}</span>
+                    {c.areaHa && <span className="text-gray-500 ml-1 text-xs">· {c.areaHa.toFixed(2)} ha</span>}
+                  </Tooltip>
+                </Polygon>
+              );
+            })}
 
             {/* JAGDFLÄCHEN — zuerst rendern (unter Pflanz- und Kalamitätsflächen) */}
             {showSections && forest.hunting?.map((h: any) => {

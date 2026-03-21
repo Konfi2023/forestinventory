@@ -245,3 +245,58 @@ export async function togglePolygonBiomass(
     return { success: false, error: e.message };
   }
 }
+
+// ─── COMPARTMENT (Abteilung) ──────────────────────────────────────────────────
+
+export async function createCompartment(data: {
+  forestId: string;
+  name?: string;
+  color?: string;
+  note?: string;
+  geoJson: any;
+  areaHa?: number;
+  userId: string;
+  orgSlug: string;
+}) {
+  try {
+    await requireAuthContext(data.userId, PERMISSIONS.FOREST_EDIT, data.orgSlug);
+    const record = await prisma.forestCompartment.create({
+      data: {
+        forestId: data.forestId,
+        name: data.name,
+        color: data.color ?? '#3b82f6',
+        note: data.note,
+        geoJson: data.geoJson,
+        areaHa: data.areaHa,
+      },
+    });
+    revalidatePath(`/dashboard/org/${data.orgSlug}/map`);
+    return { success: true, id: record.id };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function updateCompartment(
+  id: string,
+  data: { name?: string; color?: string; note?: string; geoJson?: any; areaHa?: number },
+  orgSlug: string
+) {
+  try {
+    await prisma.forestCompartment.update({ where: { id }, data });
+    revalidatePath(`/dashboard/org/${orgSlug}/map`);
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function deleteCompartment(id: string, orgSlug: string) {
+  try {
+    await prisma.forestCompartment.delete({ where: { id } });
+    revalidatePath(`/dashboard/org/${orgSlug}/map`);
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}

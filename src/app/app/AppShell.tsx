@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ClipboardList, TreePine, PackageOpen, ChevronDown, Check } from 'lucide-react';
 import { TasksTab } from './tabs/TasksTab';
 import { InventoryTab } from './tabs/InventoryTab';
 import { PolterTab } from './tabs/PolterTab';
+import { db } from '@/lib/inventory-db';
 
 type Tab = 'tasks' | 'inventory' | 'polter';
 
@@ -64,6 +65,49 @@ export function AppShell({
       }
     } catch { /* Offline */ }
   }, [orgSlug]);
+
+  // Hintergrund-Sync: offline erfasste Polter hochladen wenn Netz wiederkommt
+  const syncPending = useCallback(async () => {
+    try {
+      const pendingPiles = await db.pendingLogPiles
+        .filter(p => !p.synced)
+        .toArray();
+
+      for (const pile of pendingPiles) {
+        const slug = pile.orgSlug ?? orgSlug;
+        try {
+          const res = await fetch('/api/app/inventory/logpiles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orgSlug: slug,
+              forestId: pile.forestId,
+              lat: pile.lat,
+              lng: pile.lng,
+              treeSpecies: pile.treeSpecies,
+              woodType: pile.woodType,
+              volumeFm: pile.volumeFm,
+              logLength: pile.logLength,
+              layerCount: pile.layerCount,
+              qualityClass: pile.qualityClass,
+              notes: pile.notes,
+            }),
+          });
+          if (res.ok && pile.id != null) {
+            await db.pendingLogPiles.delete(pile.id);
+          }
+        } catch { /* immer noch offline – beim nächsten Mal */ }
+      }
+    } catch { /* DB-Fehler ignorieren */ }
+  }, [orgSlug]);
+
+  useEffect(() => {
+    const handleOnline = () => syncPending();
+    window.addEventListener('online', handleOnline);
+    // Beim Start prüfen falls direkt online
+    if (typeof navigator !== 'undefined' && navigator.onLine) syncPending();
+    return () => window.removeEventListener('online', handleOnline);
+  }, [syncPending]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-950 text-white overflow-hidden">

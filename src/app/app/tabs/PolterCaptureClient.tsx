@@ -130,6 +130,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
       if (!res.ok) {
         // Offline → lokal speichern
         await db.pendingLogPiles.add({
+          orgSlug,
           forestId:    form.forestId,
           forestName:  form.forestName,
           lat:         form.lat,
@@ -169,6 +170,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
     } catch {
       // Netzwerkfehler → offline speichern
       await db.pendingLogPiles.add({
+        orgSlug,
         forestId:    form.forestId,
         forestName:  form.forestName,
         lat:         form.lat!,

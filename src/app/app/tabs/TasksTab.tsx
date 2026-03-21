@@ -291,7 +291,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
             forests={forests}
             members={members}
             orgSlug={orgSlug}
-            onCreated={task => { setLocalTasks(ts => [task, ...ts]); setShowCreate(false); }}
+            onCreated={task => { setLocalTasks(ts => [task, ...ts]); setShowCreate(false); onTasksChange?.(); }}
           />
         </Sheet>
       )}

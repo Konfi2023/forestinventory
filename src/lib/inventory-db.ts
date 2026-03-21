@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 
 export interface PendingLogPile {
   id?: number;
+  orgSlug?: string; // gespeichert für Hintergrund-Sync
   forestId: string;
   forestName: string;
   lat: number;
@@ -66,6 +67,11 @@ export class InventoryDB extends Dexie {
     });
     // Version 4: Kronenfoto für Bäume
     this.version(4).stores({
+      pendingTrees:    '++id, synced, createdAt, forestId',
+      pendingLogPiles: '++id, synced, createdAt, forestId',
+    });
+    // Version 5: orgSlug in pendingLogPiles für Hintergrund-Sync
+    this.version(5).stores({
       pendingTrees:    '++id, synced, createdAt, forestId',
       pendingLogPiles: '++id, synced, createdAt, forestId',
     });

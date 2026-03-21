@@ -11,6 +11,28 @@ const withPWA = withPWAInit({
   aggressiveFrontEndNavCaching: true,
   workboxOptions: {
     runtimeCaching: [
+      // App-Shell: /app Route (NetworkFirst – immer fresh wenn online, Fallback offline)
+      {
+        urlPattern: /^\/app(\/.*)?$/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'app-shell',
+          networkTimeoutSeconds: 3,
+          expiration: { maxEntries: 10, maxAgeSeconds: 24 * 60 * 60 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+      // App API-Daten (NetworkFirst – offline zeigt letzten bekannten Stand)
+      {
+        urlPattern: /^\/api\/app\/.*/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'api-app-data',
+          networkTimeoutSeconds: 5,
+          expiration: { maxEntries: 50, maxAgeSeconds: 5 * 60 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
       // CARTO Basemap Tiles (Dark, Light, Labels)
       {
         urlPattern: /^https:\/\/[a-z]\.basemaps\.cartocdn\.com\/.*/i,

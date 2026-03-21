@@ -1,11 +1,13 @@
 {
-  "name": "Forest Inventory",
-  "short_name": "ForestDB",
+  "id": "/app",
+  "name": "Forest Manager",
+  "short_name": "ForestApp",
   "description": "Digitale Forstverwaltung",
-  "start_url": "/dashboard",
+  "start_url": "/app",
+  "scope": "/",
   "display": "standalone",
   "categories": ["productivity", "utilities"],
-  "background_color": "#ffffff",
+  "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "portrait",
   "icons": [

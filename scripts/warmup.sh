@@ -35,9 +35,9 @@ echo "$CHUNKS" | sed "s|$STATIC_DIR|$DOMAIN/_next/static|" | \
 # Wichtige Seiten warm machen
 echo ""
 echo "Wichtige Seiten aufwärmen..."
-for PATH in "/" "/signin" "/app"; do
-  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DOMAIN$PATH")
-  echo "  $STATUS $DOMAIN$PATH"
+for ROUTE in "/" "/signin" "/app"; do
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DOMAIN$ROUTE")
+  echo "  $STATUS $DOMAIN$ROUTE"
 done
 
 echo ""

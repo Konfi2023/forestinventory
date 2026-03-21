@@ -346,7 +346,8 @@ export default function MapViewer({ forestData, children, skipAutoZoom, minimal 
           interactionMode === 'DRAW_PATH' ||
           interactionMode === 'DRAW_PLANTING' ||
           interactionMode === 'DRAW_HUNTING' ||
-          interactionMode === 'DRAW_CALAMITY'
+          interactionMode === 'DRAW_CALAMITY' ||
+          interactionMode === 'DRAW_COMPARTMENT'
         ) && (
            <MapGeometryEditor
              forests={forestData?.forests ?? []}

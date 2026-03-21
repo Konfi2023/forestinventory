@@ -475,15 +475,16 @@ model ForestPoiTree {
 }
 
 model ForestCompartment {
-  id       String  @id @default(uuid())
-  geoJson  Json    @db.JsonB
-  areaHa   Float?
-  name     String?
-  color    String? @default("#3b82f6")
-  note     String?
-  forestId String
-  forest   Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
-  trees    ForestPoiTree[]
+  id           String  @id @default(uuid())
+  geoJson      Json    @db.JsonB
+  areaHa       Float?
+  name         String?
+  color        String? @default("#3b82f6")
+  note         String?
+  trackBiomass Boolean @default(false)
+  forestId     String
+  forest       Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  trees        ForestPoiTree[]
 }
 
 // Historische Messwerte pro Baum (Phase 2: Zeitreihe)

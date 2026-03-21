@@ -219,6 +219,9 @@ export function MapDetailPanel({ forests, tasks, members, owners, orgSlug, onFor
         compartment={selectedCompartment}
         forest={selectedCompartmentForest}
         orgSlug={orgSlug}
+        tasks={tasks}
+        members={members}
+        forests={forests}
         onClose={handleClose}
         onRefresh={refreshData}
         onDeleteSuccess={() => { refreshData(); handleClose(); }}

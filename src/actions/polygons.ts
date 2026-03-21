@@ -228,13 +228,15 @@ export async function deleteCalamity(id: string, orgSlug: string, taskIds?: stri
 
 export async function togglePolygonBiomass(
   id: string,
-  type: 'PLANTING' | 'CALAMITY',
+  type: 'PLANTING' | 'CALAMITY' | 'COMPARTMENT',
   enabled: boolean,
   orgSlug: string,
 ) {
   try {
     if (type === 'PLANTING') {
       await prisma.forestPlanting.update({ where: { id }, data: { trackBiomass: enabled } });
+    } else if (type === 'COMPARTMENT') {
+      await prisma.forestCompartment.update({ where: { id }, data: { trackBiomass: enabled } });
     } else {
       await prisma.forestCalamity.update({ where: { id }, data: { trackBiomass: enabled } });
     }

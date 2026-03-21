@@ -11,6 +11,7 @@ import L from 'leaflet';
 import area from '@turf/area';
 import centroid from '@turf/centroid';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { booleanWithin } from '@turf/turf';
 
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -320,6 +321,26 @@ export default function MapGeometryEditor({
         // Centroid liegt außerhalb aller Wälder → Modal anzeigen
         setPendingPolygon({ geoJson, areaHa, mode: capturedMode });
         return;
+      }
+
+      // Abteilungen müssen vollständig innerhalb der Waldgrenze liegen
+      if (capturedMode === 'DRAW_COMPARTMENT') {
+        const forest = forestsRef.current.find(f => f.id === forestId);
+        if (forest?.geoJson) {
+          try {
+            const forestFeature = forest.geoJson.type === 'Feature'
+              ? forest.geoJson
+              : { type: 'Feature', geometry: forest.geoJson, properties: {} };
+            if (!booleanWithin(geoJson, forestFeature)) {
+              toast.error('Abteilung muss vollständig innerhalb der Waldgrenzen liegen.');
+              setMode('VIEW');
+              setEditingFeature(null);
+              return;
+            }
+          } catch {
+            // Geometrie-Fehler ignorieren, Speichern erlauben
+          }
+        }
       }
 
       await savePolygon(capturedMode, geoJson, areaHa, forestId);

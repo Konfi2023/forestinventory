@@ -17,6 +17,7 @@ import {
   Euro,
   CreditCard,
   BookUser,
+  Grid3x3,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MobileNav } from "./_components/MobileNav";
@@ -126,6 +127,8 @@ export default async function OrgLayout({
           {canNav("nav:biomass") && <NavItem href={`/dashboard/org/${slug}/biomass`} icon={<Leaf size={20} />} label="Biomasse-Monitoring" />}
 
           {canNav("nav:operations") && <NavItem href={`/dashboard/org/${slug}/operations`} icon={<PackageOpen size={20} />} label="Maßnahmen & Holzverkauf" />}
+
+          {canNav("nav:map") && <NavItem href={`/dashboard/org/${slug}/forsteinrichtung`} icon={<Grid3x3 size={20} />} label="Forsteinrichtung" />}
 
           {canNav("nav:controlling") && <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label="Zeitcontrolling" />}
 

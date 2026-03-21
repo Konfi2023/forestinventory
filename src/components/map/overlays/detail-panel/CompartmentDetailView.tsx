@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import {
   Grid3x3, Ruler, Loader2, ScanLine, Check, Trash2, Radio, PlusCircle,
   Calendar, User, AlertCircle, ChevronDown, ChevronRight, Trees, Mountain,
-  Layers, BarChart3, Sprout, Heart, Wrench,
+  Layers, BarChart3, Sprout, Heart, Wrench, Search, X,
 } from 'lucide-react';
 import { DetailPanelShell } from './DetailPanelShell';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +21,7 @@ import { de } from 'date-fns/locale';
 import { cn, getUserColor, getInitials } from '@/lib/utils';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
+import { TREE_SPECIES, getSpeciesColor, getSpeciesLabel } from '@/lib/tree-species';
 
 function formatArea(ha?: number | null): string {
   if (!ha) return '—';
@@ -160,43 +161,113 @@ function TextField({ label, value, onChange, placeholder }: {
   );
 }
 
+// ─── Species Picker Dropdown ──────────────────────────────────────────────────
+function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; onClose: () => void }) {
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(
+    () => TREE_SPECIES.filter(s => s.label.toLowerCase().includes(query.toLowerCase())),
+    [query]
+  );
+  return (
+    <div className="bg-[#1a1a1a] border border-white/15 rounded-lg overflow-hidden shadow-xl z-50">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10">
+        <Search size={12} className="text-gray-500 shrink-0" />
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Baumart suchen…"
+          className="bg-transparent text-xs text-white placeholder-gray-600 outline-none flex-1"
+          autoFocus
+        />
+        <button onClick={onClose} className="text-gray-600 hover:text-gray-300">
+          <X size={12} />
+        </button>
+      </div>
+      <div className="max-h-48 overflow-y-auto">
+        {filtered.map(s => (
+          <button
+            key={s.id}
+            onClick={() => { onSelect(s.id); onClose(); }}
+            className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-white/10 text-left transition-colors"
+          >
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+            <span className="text-xs text-gray-300">{s.label}</span>
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <p className="text-xs text-gray-600 px-3 py-2">Keine Treffer</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Species List Editor ──────────────────────────────────────────────────────
 function SpeciesEditor({ label, entries, onChange }: {
   label: string; entries: SpeciesEntry[]; onChange: (e: SpeciesEntry[]) => void;
 }) {
-  const add = () => onChange([...entries, { species: '', percent: 0 }]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+
   const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
-  const update = (i: number, field: keyof SpeciesEntry, val: string) => {
-    const next = entries.map((e, idx) => idx === i
-      ? { ...e, [field]: field === 'percent' ? Number(val) : val }
-      : e);
-    onChange(next);
+  const updatePercent = (i: number, val: string) => {
+    onChange(entries.map((e, idx) => idx === i ? { ...e, percent: Number(val) } : e));
   };
+  const setSpecies = (i: number, id: string) => {
+    onChange(entries.map((e, idx) => idx === i ? { ...e, species: id } : e));
+    setEditingIdx(null);
+  };
+  const addSpecies = (id: string) => {
+    if (entries.some(e => e.species === id)) return;
+    onChange([...entries, { species: id, percent: 0 }]);
+    setPickerOpen(false);
+  };
+
   return (
     <div>
-      <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">{label}</label>
+      <label className="text-[10px] uppercase text-gray-500 font-bold mb-1.5 block">{label}</label>
       <div className="space-y-1.5">
-        {entries.map((e, i) => (
-          <div key={i} className="flex gap-1.5 items-center">
-            <Input
-              value={e.species}
-              onChange={ev => update(i, 'species', ev.target.value)}
-              placeholder="Baumart"
-              className="bg-black/50 border-white/20 text-white text-xs h-7 flex-1"
-            />
-            <Input
-              type="number" min="0" max="100"
-              value={e.percent || ''}
-              onChange={ev => update(i, 'percent', ev.target.value)}
-              placeholder="%"
-              className="bg-black/50 border-white/20 text-white text-xs h-7 w-16"
-            />
-            <button onClick={() => remove(i)} className="text-gray-600 hover:text-red-400 text-xs px-1">×</button>
-          </div>
-        ))}
-        <button onClick={add} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
-          <PlusCircle size={11} /> Baumart hinzufügen
-        </button>
+        {entries.map((e, i) => {
+          const color = getSpeciesColor(e.species);
+          const lbl   = e.species ? getSpeciesLabel(e.species) : '– Baumart wählen –';
+          return (
+            <div key={i} className="flex gap-1.5 items-center relative">
+              <button
+                onClick={() => setEditingIdx(editingIdx === i ? null : i)}
+                className="flex items-center gap-1.5 flex-1 bg-black/50 border border-white/20 rounded-md px-2 py-1 text-xs text-left hover:border-white/40 transition-colors"
+              >
+                {e.species && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />}
+                <span className={e.species ? 'text-gray-200' : 'text-gray-600'}>{lbl}</span>
+              </button>
+              <Input
+                type="number" min="0" max="100"
+                value={e.percent || ''}
+                onChange={ev => updatePercent(i, ev.target.value)}
+                placeholder="%"
+                className="bg-black/50 border-white/20 text-white text-xs h-7 w-16"
+              />
+              <button onClick={() => remove(i)} className="text-gray-600 hover:text-red-400 text-xs px-1">×</button>
+              {editingIdx === i && (
+                <div className="absolute top-full left-0 right-16 mt-1 z-50">
+                  <SpeciesPicker onSelect={(id) => setSpecies(i, id)} onClose={() => setEditingIdx(null)} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <div className="relative">
+          <button
+            onClick={() => setPickerOpen(p => !p)}
+            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+          >
+            <PlusCircle size={11} /> Baumart hinzufügen
+          </button>
+          {pickerOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 z-50">
+              <SpeciesPicker onSelect={addSpecies} onClose={() => setPickerOpen(false)} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -207,15 +278,20 @@ function SpeciesBar({ entries }: { entries: SpeciesEntry[] }) {
   if (!entries?.length) return <span className="text-xs text-gray-600">—</span>;
   return (
     <div className="space-y-1.5">
-      {entries.map((e, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <span className="text-xs text-gray-300 w-28 truncate">{e.species}</span>
-          <div className="flex-1 bg-white/10 rounded-full h-1.5">
-            <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${Math.min(e.percent, 100)}%` }} />
+      {entries.map((e, i) => {
+        const color = getSpeciesColor(e.species);
+        const lbl   = getSpeciesLabel(e.species);
+        return (
+          <div key={i} className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+            <span className="text-xs text-gray-300 w-28 truncate">{lbl}</span>
+            <div className="flex-1 bg-white/10 rounded-full h-1.5">
+              <div className="h-1.5 rounded-full" style={{ width: `${Math.min(e.percent, 100)}%`, backgroundColor: color }} />
+            </div>
+            <span className="text-[10px] text-gray-500 w-8 text-right">{e.percent}%</span>
           </div>
-          <span className="text-[10px] text-gray-500 w-8 text-right">{e.percent}%</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -224,30 +300,63 @@ function SpeciesBar({ entries }: { entries: SpeciesEntry[] }) {
 function RejuvEditor({ entries, onChange }: {
   entries: RejuvEntry[]; onChange: (e: RejuvEntry[]) => void;
 }) {
-  const add = () => onChange([...entries, { species: '', heightCm: 0, density: '' }]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+
   const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
-  const update = (i: number, field: keyof RejuvEntry, val: string) => {
-    const next = entries.map((e, idx) => idx === i
+  const update = (i: number, field: 'heightCm' | 'density', val: string) => {
+    onChange(entries.map((e, idx) => idx === i
       ? { ...e, [field]: field === 'heightCm' ? Number(val) : val }
-      : e);
-    onChange(next);
+      : e));
   };
+  const setSpecies = (i: number, id: string) => {
+    onChange(entries.map((e, idx) => idx === i ? { ...e, species: id } : e));
+    setEditingIdx(null);
+  };
+  const addSpecies = (id: string) => {
+    onChange([...entries, { species: id, heightCm: 0, density: '' }]);
+    setPickerOpen(false);
+  };
+
   return (
     <div className="space-y-1.5">
-      {entries.map((e, i) => (
-        <div key={i} className="flex gap-1.5 items-center">
-          <Input value={e.species} onChange={ev => update(i, 'species', ev.target.value)}
-            placeholder="Baumart" className="bg-black/50 border-white/20 text-white text-xs h-7 flex-1" />
-          <Input type="number" value={e.heightCm || ''} onChange={ev => update(i, 'heightCm', ev.target.value)}
-            placeholder="cm" className="bg-black/50 border-white/20 text-white text-xs h-7 w-16" />
-          <Input value={e.density} onChange={ev => update(i, 'density', ev.target.value)}
-            placeholder="Dichte" className="bg-black/50 border-white/20 text-white text-xs h-7 w-20" />
-          <button onClick={() => remove(i)} className="text-gray-600 hover:text-red-400 text-xs px-1">×</button>
-        </div>
-      ))}
-      <button onClick={add} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
-        <PlusCircle size={11} /> Baumart hinzufügen
-      </button>
+      {entries.map((e, i) => {
+        const color = getSpeciesColor(e.species);
+        const lbl   = e.species ? getSpeciesLabel(e.species) : '– Baumart wählen –';
+        return (
+          <div key={i} className="flex gap-1.5 items-start relative">
+            <div className="flex-1 relative">
+              <button
+                onClick={() => setEditingIdx(editingIdx === i ? null : i)}
+                className="flex items-center gap-1.5 w-full bg-black/50 border border-white/20 rounded-md px-2 py-1 text-xs text-left hover:border-white/40 transition-colors"
+              >
+                {e.species && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />}
+                <span className={e.species ? 'text-gray-200' : 'text-gray-600'}>{lbl}</span>
+              </button>
+              {editingIdx === i && (
+                <div className="absolute top-full left-0 right-0 mt-1 z-50">
+                  <SpeciesPicker onSelect={(id) => setSpecies(i, id)} onClose={() => setEditingIdx(null)} />
+                </div>
+              )}
+            </div>
+            <Input type="number" value={e.heightCm || ''} onChange={ev => update(i, 'heightCm', ev.target.value)}
+              placeholder="cm" className="bg-black/50 border-white/20 text-white text-xs h-7 w-16" />
+            <Input value={e.density} onChange={ev => update(i, 'density', ev.target.value)}
+              placeholder="Dichte" className="bg-black/50 border-white/20 text-white text-xs h-7 w-20" />
+            <button onClick={() => remove(i)} className="text-gray-600 hover:text-red-400 text-xs px-1 mt-1">×</button>
+          </div>
+        );
+      })}
+      <div className="relative">
+        <button onClick={() => setPickerOpen(p => !p)} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
+          <PlusCircle size={11} /> Baumart hinzufügen
+        </button>
+        {pickerOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 z-50">
+            <SpeciesPicker onSelect={addSpecies} onClose={() => setPickerOpen(false)} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -632,7 +741,7 @@ export function CompartmentDetailView({
               </div>
               {rejuvenation.map((e: RejuvEntry, i: number) => (
                 <div key={i} className="grid grid-cols-3 text-xs text-gray-300">
-                  <span className="truncate">{e.species}</span>
+                  <span className="truncate">{getSpeciesLabel(e.species)}</span>
                   <span className="text-center text-gray-400">{e.heightCm ? `${e.heightCm} cm` : '—'}</span>
                   <span className="text-right text-gray-400">{e.density || '—'}</span>
                 </div>

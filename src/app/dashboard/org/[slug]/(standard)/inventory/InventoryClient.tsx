@@ -567,17 +567,17 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0">
         <div className="flex items-center gap-2">
-          <TreePine size={20} className="text-emerald-400" />
+          <TreePine size={20} className="text-emerald-600" />
           <span className="font-semibold text-sm">Forstinventur</span>
           {form.forestName && (
             <span className="text-xs text-slate-400 hidden sm:block">· {form.forestName}</span>
           )}
           {plotSession && (
-            <span className="flex items-center gap-1 text-xs bg-violet-900/60 text-violet-300 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1 text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
               <CircleDot size={10} /> {plotSession.name} · r={plotSession.radiusM}m
             </span>
           )}
@@ -585,7 +585,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         <div className="flex items-center gap-3">
           {/* Offline-Badge */}
           {!isOnline && (
-            <span className="flex items-center gap-1 text-xs bg-amber-900/50 text-amber-300 px-2 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
               <CloudOff size={12} /> Offline
             </span>
           )}
@@ -593,8 +593,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
           {syncResult && (
             <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
               syncResult.fail > 0
-                ? 'bg-amber-900/50 text-amber-300'
-                : 'bg-emerald-900/50 text-emerald-300'
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-emerald-100 text-emerald-700'
             }`}>
               {syncResult.fail > 0
                 ? `✓ ${syncResult.ok} sync · ${syncResult.fail} fehlgeschlagen`
@@ -607,7 +607,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             <button
               onClick={syncPending}
               disabled={!isOnline || isSyncing}
-              className="flex items-center gap-1 text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded-full hover:bg-blue-900/80 disabled:opacity-50"
+              className="flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-100 hover:bg-blue-200 disabled:opacity-50"
             >
               <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
               {isSyncing ? 'Sync läuft…' : `${pendingCount} ausstehend`}
@@ -618,11 +618,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
       {/* Aktiver Plot-Banner */}
       {mode === 'plot' && plotSession && step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'summary' && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-violet-900/80 border-b border-violet-700 shrink-0">
-          <CircleDot size={13} className="text-violet-300 shrink-0" />
-          <span className="text-xs font-semibold text-violet-200">{plotSession.name}</span>
-          <span className="text-xs text-violet-400">· Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} erfasst</span>
-          <button onClick={finishPlot} className="ml-auto text-xs text-violet-300 hover:text-white underline shrink-0">
+        <div className="flex items-center gap-2 px-4 py-2 bg-violet-100 border-b border-violet-200 shrink-0">
+          <CircleDot size={13} className="text-violet-700 shrink-0" />
+          <span className="text-xs font-semibold text-violet-800">{plotSession.name}</span>
+          <span className="text-xs text-violet-600">· Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} erfasst</span>
+          <button onClick={finishPlot} className="ml-auto text-xs text-violet-700 hover:text-violet-900 underline shrink-0">
             Plot abschließen
           </button>
         </div>
@@ -642,7 +642,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                   ? ['camera', 'species', 'details']
                   : ['camera', 'location', 'species', 'details']
                 ).indexOf(step) >= i
-                  ? 'bg-emerald-500' : 'bg-slate-700'
+                  ? 'bg-emerald-500' : 'bg-slate-200'
               }`}
             />
           ))}
@@ -661,10 +661,10 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             </div>
             <button
               onClick={() => { setMode('single'); setStep('camera'); }}
-              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-600 rounded-2xl transition-colors text-left"
+              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 rounded-2xl transition-colors text-left shadow-sm"
             >
               <div className="flex items-center gap-2 mb-1">
-                <TreePine size={22} className="text-emerald-400" />
+                <TreePine size={22} className="text-emerald-600" />
                 <span className="text-lg font-bold">Einzelbaum</span>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed">
@@ -673,10 +673,10 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             </button>
             <button
               onClick={() => { setMode('plot'); setStep('plot-setup'); captureGps(); }}
-              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-violet-600 rounded-2xl transition-colors text-left"
+              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-white hover:bg-violet-50 border border-slate-200 hover:border-violet-400 rounded-2xl transition-colors text-left shadow-sm"
             >
               <div className="flex items-center gap-2 mb-1">
-                <CircleDot size={22} className="text-violet-400" />
+                <CircleDot size={22} className="text-violet-600" />
                 <span className="text-lg font-bold">Plot-Stichprobe</span>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed">
@@ -685,7 +685,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             </button>
             {(pendingCount > 0 || sessionTrees.length > 0) && (
               <button onClick={() => setStep('summary')}
-                className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm text-slate-300 transition-colors">
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm text-slate-700 transition-colors">
                 Letzte Session ansehen ({savedCount} Bäume)
               </button>
             )}
@@ -699,27 +699,27 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             <p className="text-slate-400 text-sm mb-5">GPS wird als Mittelpunkt gesetzt. Alle Bäume dieses Plots werden automatisch zugeordnet.</p>
 
             {/* GPS Status */}
-            <div className="bg-slate-800 rounded-xl p-3 mb-4 flex items-center gap-3">
-              <MapPin size={16} className={locating || gpsLoading ? 'text-amber-400 animate-pulse' : form.lat ? 'text-emerald-400' : 'text-slate-500'} />
+            <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex items-center gap-3">
+              <MapPin size={16} className={locating || gpsLoading ? 'text-amber-600 animate-pulse' : form.lat ? 'text-emerald-600' : 'text-slate-500'} />
               <div className="flex-1 min-w-0">
                 {locating || gpsLoading ? (
-                  <p className="text-sm text-amber-400">GPS wird ermittelt…</p>
+                  <p className="text-sm text-amber-600">GPS wird ermittelt…</p>
                 ) : form.lat ? (
-                  <p className="text-sm text-emerald-400 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
+                  <p className="text-sm text-emerald-600 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
                 ) : (
                   <p className="text-sm text-slate-500">Kein GPS-Signal</p>
                 )}
               </div>
               <button onClick={captureGps} disabled={gpsLoading || locating}
-                className="text-xs text-slate-400 hover:text-emerald-400 disabled:opacity-40 shrink-0">
+                className="text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 shrink-0">
                 Neu
               </button>
             </div>
 
             {/* Wald */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
-                <Trees size={14} className="text-emerald-400" /> Wald
+              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                <Trees size={14} className="text-emerald-600" /> Wald
               </label>
               <select
                 value={form.forestId}
@@ -727,7 +727,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                   const f = forests.find(f => f.id === e.target.value);
                   setForm(prev => ({ ...prev, forestId: e.target.value, forestName: f?.name ?? '', compartmentId: '', compartmentName: '' }));
                 }}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-violet-500"
               >
                 <option value="">– Wald wählen –</option>
                 {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -737,7 +737,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             {/* Abteilung */}
             {form.forestId && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-300 mb-2">Abteilung</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Abteilung</label>
                 <div className="space-y-2">
                   {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
                     <button key={c.id}
@@ -745,22 +745,22 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors border ${
                         form.compartmentId === c.id
                           ? 'bg-violet-600/20 border-violet-500 text-white'
-                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
                         <span className="font-medium">{c.name || 'Abteilung'}</span>
                       </div>
-                      {form.compartmentId === c.id && <Check size={16} className="text-violet-400" />}
+                      {form.compartmentId === c.id && <Check size={16} className="text-violet-600" />}
                     </button>
                   ))}
                   <button
                     onClick={() => setForm(f => ({ ...f, compartmentId: '', compartmentName: '' }))}
                     className={`w-full px-4 py-3 rounded-xl text-left text-sm border transition-colors ${
                       form.compartmentId === ''
-                        ? 'bg-slate-700 border-slate-500 text-slate-300'
-                        : 'bg-slate-800/50 border-dashed border-slate-700 text-slate-500 hover:bg-slate-700/50'
+                        ? 'bg-slate-200 border-slate-400 text-slate-700'
+                        : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:bg-slate-100'
                     }`}
                   >
                     Keine Abteilung
@@ -772,23 +772,23 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             {/* Radius + Name */}
             <div className="grid grid-cols-2 gap-3 mb-5">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Radius (m)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Radius (m)</label>
                 <input
                   type="number" inputMode="decimal"
                   value={plotRadius}
                   onChange={e => setPlotRadius(e.target.value)}
                   placeholder="10"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-violet-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Bezeichnung (opt.)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Bezeichnung (opt.)</label>
                 <input
                   type="text"
                   value={plotName}
                   onChange={e => setPlotName(e.target.value)}
                   placeholder="z.B. Plot 1"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-violet-500"
                 />
               </div>
             </div>
@@ -802,10 +802,10 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               Plot starten
             </button>
             {!form.lat && (
-              <p className="text-xs text-amber-400 mt-2 text-center">Warte auf GPS-Signal…</p>
+              <p className="text-xs text-amber-600 mt-2 text-center">Warte auf GPS-Signal…</p>
             )}
             {!form.forestId && form.lat && (
-              <p className="text-xs text-amber-400 mt-2 text-center">Bitte Wald auswählen.</p>
+              <p className="text-xs text-amber-600 mt-2 text-center">Bitte Wald auswählen.</p>
             )}
           </div>
         )}
@@ -820,7 +820,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             <div
               onClick={() => fileInputRef.current?.click()}
               className={`relative w-full aspect-video rounded-xl flex items-center justify-center cursor-pointer transition-colors mb-4 overflow-hidden ${
-                photoPreview ? '' : 'bg-slate-800 hover:bg-slate-700 border-2 border-dashed border-slate-600'
+                photoPreview ? '' : 'bg-slate-100 hover:bg-slate-200 border-2 border-dashed border-slate-300'
               }`}
             >
               {photoPreview ? (
@@ -852,7 +852,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             <div
               onClick={() => crownFileInputRef.current?.click()}
               className={`relative w-full aspect-video rounded-xl flex items-center justify-center cursor-pointer transition-colors mb-4 overflow-hidden ${
-                crownPhotoPreview ? '' : 'bg-slate-800 hover:bg-slate-700 border-2 border-dashed border-slate-600'
+                crownPhotoPreview ? '' : 'bg-slate-100 hover:bg-slate-200 border-2 border-dashed border-slate-300'
               }`}
             >
               {crownPhotoPreview ? (
@@ -882,54 +882,54 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             {/* GPS-Status (mini, im Hintergrund) */}
             {(gpsLoading || form.lat) && (
               <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
-                <MapPin size={12} className={gpsLoading ? 'animate-pulse text-emerald-500' : 'text-emerald-400'} />
+                <MapPin size={12} className={gpsLoading ? 'animate-pulse text-emerald-500' : 'text-emerald-600'} />
                 {gpsLoading ? 'GPS wird ermittelt…' : `${form.lat?.toFixed(5)}, ${form.lng?.toFixed(5)}`}
               </div>
             )}
 
             {false && gpsError === 'insecure' ? (
                 <div className="mt-1 space-y-2">
-                  <p className="text-sm text-red-400 font-medium">GPS erfordert HTTPS.</p>
+                  <p className="text-sm text-red-600 font-medium">GPS erfordert HTTPS.</p>
                   <p className="text-xs text-slate-400 leading-relaxed">
                     Safari blockiert GPS auf unsicheren Verbindungen (HTTP). Öffne die App über eine HTTPS-Adresse.
                   </p>
                   <p className="text-xs text-slate-400 leading-relaxed">
                     Schnellste Lösung: Starte auf dem PC einen HTTPS-Tunnel:
                   </p>
-                  <p className="text-xs font-mono bg-slate-900 rounded px-2 py-1.5 text-emerald-400">
+                  <p className="text-xs font-mono bg-slate-100 rounded px-2 py-1.5 text-emerald-700 font-mono">
                     npx ngrok http 3000
                   </p>
                   <p className="text-xs text-slate-500">
-                    ngrok gibt eine <span className="text-slate-300">https://…ngrok-free.app</span>-URL aus — diese im iPhone-Safari öffnen.
+                    ngrok gibt eine <span className="text-slate-700">https://…ngrok-free.app</span>-URL aus — diese im iPhone-Safari öffnen.
                   </p>
                 </div>
               ) : gpsError === 'denied' ? (
                 <div className="mt-1 space-y-2">
-                  <p className="text-sm text-amber-400 font-medium">Ortungsdienste sind deaktiviert.</p>
+                  <p className="text-sm text-amber-600 font-medium">Ortungsdienste sind deaktiviert.</p>
                   <p className="text-xs text-slate-400 leading-relaxed">
                     Bitte erlaube den Standortzugriff in deinen Geräteeinstellungen:
                   </p>
                   <ul className="text-xs text-slate-400 list-disc list-inside space-y-0.5">
-                    <li><span className="text-slate-300">iOS:</span> Einstellungen → Datenschutz → Ortungsdienste → Safari/Browser → „Beim Verwenden"</li>
-                    <li><span className="text-slate-300">Android:</span> Einstellungen → Apps → Browser → Berechtigungen → Standort</li>
+                    <li><span className="text-slate-700">iOS:</span> Einstellungen → Datenschutz → Ortungsdienste → Safari/Browser → „Beim Verwenden"</li>
+                    <li><span className="text-slate-700">Android:</span> Einstellungen → Apps → Browser → Berechtigungen → Standort</li>
                   </ul>
                   <button
                     onClick={captureGps}
-                    className="mt-1 text-xs text-emerald-400 underline hover:text-emerald-300"
+                    className="mt-1 text-xs text-emerald-600 underline hover:text-emerald-700"
                   >
                     Nochmal versuchen
                   </button>
                 </div>
               ) : gpsError === 'timeout' ? (
                 <div className="mt-1">
-                  <p className="text-sm text-amber-400">GPS-Signal zu schwach. Im Freien erneut versuchen.</p>
-                  <button onClick={captureGps} className="mt-1 text-xs text-emerald-400 underline hover:text-emerald-300">
+                  <p className="text-sm text-amber-600">GPS-Signal zu schwach. Im Freien erneut versuchen.</p>
+                  <button onClick={captureGps} className="mt-1 text-xs text-emerald-600 underline hover:text-emerald-700">
                     Nochmal versuchen
                   </button>
                 </div>
               ) : gpsError === 'unavailable' ? (
                 <div className="mt-1">
-                  <p className="text-sm text-amber-400">GPS nicht verfügbar auf diesem Gerät.</p>
+                  <p className="text-sm text-amber-600">GPS nicht verfügbar auf diesem Gerät.</p>
                 </div>
               ) : null}
 
@@ -946,33 +946,33 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         {/* SCHRITT 1b: Standort (nur im Einzelbaum-Modus) */}
         {step === 'location' && (
           <div className="p-4">
-            <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+            <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Standort</h2>
             <p className="text-slate-400 text-sm mb-5">Wald und Abteilung werden per GPS vorgeschlagen. Bei Bedarf anpassen.</p>
 
             {/* GPS Status */}
-            <div className="bg-slate-800 rounded-xl p-3 mb-4 flex items-center gap-3">
-              <MapPin size={16} className={locating || gpsLoading ? 'text-amber-400 animate-pulse' : form.lat ? 'text-emerald-400' : 'text-slate-500'} />
+            <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex items-center gap-3">
+              <MapPin size={16} className={locating || gpsLoading ? 'text-amber-600 animate-pulse' : form.lat ? 'text-emerald-600' : 'text-slate-500'} />
               <div className="flex-1 min-w-0">
                 {locating || gpsLoading ? (
-                  <p className="text-sm text-amber-400">GPS & Standort werden ermittelt…</p>
+                  <p className="text-sm text-amber-600">GPS & Standort werden ermittelt…</p>
                 ) : form.lat ? (
-                  <p className="text-sm text-emerald-400 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
+                  <p className="text-sm text-emerald-600 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
                 ) : (
                   <p className="text-sm text-slate-500">Kein GPS-Signal</p>
                 )}
               </div>
               <button onClick={captureGps} disabled={gpsLoading || locating}
-                className="text-xs text-slate-400 hover:text-emerald-400 disabled:opacity-40 shrink-0">
+                className="text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 shrink-0">
                 Neu
               </button>
             </div>
 
             {/* GPS-Fehler */}
             {gpsError && !gpsLoading && (
-              <div className="bg-amber-900/30 border border-amber-700 rounded-xl p-3 mb-4 text-sm text-amber-300">
+              <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 mb-4 text-sm text-amber-700">
                 {gpsError === 'denied' && 'GPS-Zugriff verweigert. Bitte in den Einstellungen freigeben.'}
                 {gpsError === 'insecure' && 'GPS erfordert HTTPS. Bitte App über HTTPS öffnen.'}
                 {gpsError === 'timeout' && 'GPS-Signal zu schwach. Im Freien erneut versuchen.'}
@@ -982,8 +982,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Wald */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
-                <Trees size={14} className="text-emerald-400" /> Wald
+              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                <Trees size={14} className="text-emerald-600" /> Wald
               </label>
               <select
                 value={form.forestId}
@@ -991,13 +991,13 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                   const f = forests.find(f => f.id === e.target.value);
                   setForm(prev => ({ ...prev, forestId: e.target.value, forestName: f?.name ?? '', compartmentId: '', compartmentName: '' }));
                 }}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500"
               >
                 <option value="">– Wald wählen –</option>
                 {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
               {form.forestId && !gpsLoading && !locating && (
-                <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
                   <Check size={10} /> GPS-Vorschlag
                 </p>
               )}
@@ -1006,7 +1006,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             {/* Abteilung */}
             {form.forestId && (
               <div className="mb-5">
-                <label className="block text-sm font-medium text-slate-300 mb-2">Abteilung</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Abteilung</label>
                 <div className="space-y-2">
                   {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
                     <button key={c.id}
@@ -1014,22 +1014,22 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors border ${
                         form.compartmentId === c.id
                           ? 'bg-emerald-600/20 border-emerald-500 text-white'
-                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
                         <span className="font-medium">{c.name || 'Abteilung'}</span>
                       </div>
-                      {form.compartmentId === c.id && <Check size={16} className="text-emerald-400" />}
+                      {form.compartmentId === c.id && <Check size={16} className="text-emerald-600" />}
                     </button>
                   ))}
                   <button
                     onClick={() => setForm(f => ({ ...f, compartmentId: '', compartmentName: '' }))}
                     className={`w-full px-4 py-3 rounded-xl text-left text-sm border transition-colors ${
                       form.compartmentId === ''
-                        ? 'bg-slate-700 border-slate-500 text-slate-300'
-                        : 'bg-slate-800/50 border-dashed border-slate-700 text-slate-500 hover:bg-slate-700/50'
+                        ? 'bg-slate-200 border-slate-400 text-slate-700'
+                        : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:bg-slate-100'
                     }`}
                   >
                     Keine Abteilung
@@ -1051,7 +1051,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         {/* SCHRITT 2: Baumart + Durchmesser */}
         {step === 'species' && (
           <div className="p-4">
-            <button onClick={() => setStep(mode === 'plot' ? 'camera' : 'location')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+            <button onClick={() => setStep(mode === 'plot' ? 'camera' : 'location')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Baumart & Maße</h2>
@@ -1059,7 +1059,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Durchmesser */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Brusthöhendurchmesser (BHD) in cm
               </label>
               <input
@@ -1068,19 +1068,19 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 placeholder="z.B. 42"
                 value={form.diameter}
                 onChange={e => setForm(f => ({ ...f, diameter: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Baumartensuche */}
             <div className="mb-3">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Baumart</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Baumart</label>
               <input
                 type="text"
                 placeholder="Suchen…"
                 value={speciesSearch}
                 onChange={e => setSpeciesSearch(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 mb-2"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-2"
               />
               <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto">
                 {filteredSpecies.map(s => (
@@ -1090,7 +1090,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
                       form.species === s.id
                         ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
                     <span
@@ -1116,7 +1116,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         {/* SCHRITT 3: Höhe + Boden */}
         {step === 'details' && (
           <div className="p-4">
-            <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+            <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Eigenschaften</h2>
@@ -1124,7 +1124,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Höhe */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Geschätzte Baumhöhe in m
               </label>
               <input
@@ -1133,13 +1133,13 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 placeholder="z.B. 28"
                 value={form.height}
                 onChange={e => setForm(f => ({ ...f, height: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Geschätztes Alter */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Geschätztes Alter (Jahre)
               </label>
               <input
@@ -1148,14 +1148,14 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 placeholder="z.B. 80"
                 value={form.age}
                 onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Bodenbeschaffenheit */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
-                <Leaf size={14} className="text-emerald-400" /> Bodenbeschaffenheit
+              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
+                <Leaf size={14} className="text-emerald-600" /> Bodenbeschaffenheit
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {SOIL_CONDITIONS.map(s => (
@@ -1165,7 +1165,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                     className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       form.soilCondition === s.id
                         ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
                     {s.label}
@@ -1176,7 +1176,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Bodenfeuchtigkeit */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
+              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
                 <Droplets size={14} className="text-blue-400" /> Bodenfeuchtigkeit
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -1187,7 +1187,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                     className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       form.soilMoisture === s.id
                         ? 'bg-blue-600 text-white'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
                     {s.label}
@@ -1198,11 +1198,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Exposition */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Exposition (Hangrichtung)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Exposition (Hangrichtung)</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {EXPOSITIONS.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, exposition: f.exposition === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.exposition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.exposition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
                     {s.label}
                   </button>
                 ))}
@@ -1211,11 +1211,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Hangneigung */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Hangneigung</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Hangneigung</label>
               <div className="grid grid-cols-2 gap-1.5">
                 {SLOPE_CLASSES.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, slopeClass: f.slopeClass === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
                     {s.label}
                   </button>
                 ))}
@@ -1224,11 +1224,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Hangposition */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Hangposition</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Hangposition</label>
               <div className="grid grid-cols-2 gap-1.5">
                 {SLOPE_POSITIONS.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, slopePosition: f.slopePosition === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
                     {s.label}
                   </button>
                 ))}
@@ -1237,11 +1237,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Bestandstyp */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Bestandstyp</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Bestandstyp</label>
               <div className="grid grid-cols-2 gap-1.5">
                 {STAND_TYPES.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, standType: f.standType === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.standType === s.id ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.standType === s.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
                     {s.label}
                   </button>
                 ))}
@@ -1250,11 +1250,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Bestockungsgrad */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Bestockungsgrad</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Bestockungsgrad</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {STOCKING_DEGREES.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, stockingDegree: f.stockingDegree === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.stockingDegree === s.id ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.stockingDegree === s.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
                     {s.label}
                   </button>
                 ))}
@@ -1263,13 +1263,13 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Notizen */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Notizen (optional)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Notizen (optional)</label>
               <textarea
                 rows={2}
                 placeholder="Besonderheiten, Schäden, …"
                 value={form.notes}
                 onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 resize-none"
               />
             </div>
 
@@ -1289,8 +1289,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         {/* SCHRITT 4: Gespeichert */}
         {step === 'saved' && (
           <div className="p-4 flex flex-col items-center text-center pt-12">
-            <div className="w-20 h-20 bg-emerald-900/50 rounded-full flex items-center justify-center mb-6">
-              <Check size={40} className="text-emerald-400" />
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
+              <Check size={40} className="text-emerald-600" />
             </div>
             <h2 className="text-2xl font-bold mb-2">Baum gespeichert</h2>
             <p className="text-slate-400 mb-2">
@@ -1304,12 +1304,12 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               </p>
             )}
             {!isOnline && (
-              <p className="text-sm text-amber-400 mt-2 mb-4 flex items-center gap-1.5">
+              <p className="text-sm text-amber-600 mt-2 mb-4 flex items-center gap-1.5">
                 <CloudOff size={14} /> Offline gespeichert – wird synchronisiert sobald online
               </p>
             )}
             {isOnline && (
-              <p className="text-sm text-emerald-400 mt-2">
+              <p className="text-sm text-emerald-600 mt-2">
                 ✓ Auf der Karte sichtbar
               </p>
             )}
@@ -1319,10 +1319,10 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               </p>
             )}
             {photoUploadStatus === 'success' && (
-              <p className="text-sm text-emerald-400 mt-2 mb-2">✓ Foto gespeichert</p>
+              <p className="text-sm text-emerald-600 mt-2 mb-2">✓ Foto gespeichert</p>
             )}
             {photoUploadStatus === 'error' && (
-              <p className="text-sm text-amber-400 mt-2 mb-2">
+              <p className="text-sm text-amber-600 mt-2 mb-2">
                 ⚠ Foto konnte nicht hochgeladen werden – Baum ist trotzdem gespeichert
               </p>
             )}
@@ -1352,7 +1352,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               ) : (
                 <button
                   onClick={finish}
-                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-slate-300 transition-colors"
+                  className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-700 transition-colors"
                 >
                   Inventur beenden ({savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'})
                 </button>
@@ -1364,7 +1364,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         {/* SCHRITT 4b: Aufgabe erstellen */}
         {step === 'task' && (
           <div className="p-4">
-            <button onClick={() => setStep('saved')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+            <button onClick={() => setStep('saved')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Aufgabe erstellen</h2>
@@ -1374,26 +1374,26 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Titel */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Titel *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Titel *</label>
               <input
                 type="text"
                 placeholder="z.B. Schaden kontrollieren"
                 value={taskTitle}
                 onChange={e => setTaskTitle(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
               />
             </div>
 
             {/* Priorität */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Priorität</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Priorität</label>
               <div className="grid grid-cols-3 gap-2">
                 {([['LOW', 'Niedrig', 'bg-slate-600'], ['MEDIUM', 'Mittel', 'bg-amber-600'], ['HIGH', 'Hoch', 'bg-red-600']] as [string, string, string][]).map(([val, label, active]) => (
                   <button
                     key={val}
                     onClick={() => setTaskPriority(val)}
                     className={`py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      taskPriority === val ? `${active} text-white` : 'bg-slate-800 text-slate-300'
+                      taskPriority === val ? `${active} text-white` : 'bg-slate-100 text-slate-700'
                     }`}
                   >
                     {label}
@@ -1404,7 +1404,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             {/* Fälligkeitsdatum */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Fällig bis (optional)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Fällig bis (optional)</label>
               <DateTrigger
                 value={taskDueDate}
                 placeholder="Kein Datum gewählt"
@@ -1423,14 +1423,14 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             {/* Zuweisung */}
             {members.length > 0 && (
               <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   <span className="flex items-center gap-1.5"><User size={14} /> Zuweisen an (optional)</span>
                 </label>
                 <div className="space-y-1.5">
                   <button
                     onClick={() => setTaskAssigneeId('')}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${
-                      taskAssigneeId === '' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-300'
+                      taskAssigneeId === '' ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-700'
                     }`}
                   >
                     Nicht zugewiesen
@@ -1440,7 +1440,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                       key={m.id}
                       onClick={() => setTaskAssigneeId(m.id)}
                       className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${
-                        taskAssigneeId === m.id ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-300'
+                        taskAssigneeId === m.id ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-700'
                       }`}
                     >
                       {m.firstName && m.lastName ? `${m.firstName} ${m.lastName}` : m.email}
@@ -1451,9 +1451,9 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             )}
 
             {taskSaveError && (
-              <div className="px-4 py-3 bg-red-900/50 border border-red-700 rounded-xl flex items-center justify-between gap-3">
-                <span className="text-sm text-red-300">{taskSaveError}</span>
-                <button onClick={() => setTaskSaveError(null)} className="text-red-400 shrink-0">
+              <div className="px-4 py-3 bg-red-50 border border-red-300 rounded-xl flex items-center justify-between gap-3">
+                <span className="text-sm text-red-700">{taskSaveError}</span>
+                <button onClick={() => setTaskSaveError(null)} className="text-red-600 shrink-0">
                   <span aria-hidden>✕</span>
                 </button>
               </div>
@@ -1476,11 +1476,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         {/* PLOT-DONE: Plot abgeschlossen */}
         {step === 'plot-done' && plotSession && (
           <div className="p-4 flex flex-col items-center text-center pt-10">
-            <div className="w-20 h-20 bg-violet-900/50 rounded-full flex items-center justify-center mb-6">
-              <CircleDot size={40} className="text-violet-400" />
+            <div className="w-20 h-20 bg-violet-100 rounded-full flex items-center justify-center mb-6">
+              <CircleDot size={40} className="text-violet-600" />
             </div>
             <h2 className="text-2xl font-bold mb-1">Plot abgeschlossen</h2>
-            <p className="text-slate-300 text-base font-medium mb-1">{plotSession.name}</p>
+            <p className="text-slate-700 text-base font-medium mb-1">{plotSession.name}</p>
             <p className="text-slate-400 text-sm mb-2">
               Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} erfasst
             </p>
@@ -1496,7 +1496,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               </button>
               <button
                 onClick={finish}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-slate-300 transition-colors"
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-700 transition-colors"
               >
                 Inventur beenden ({savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'})
               </button>
@@ -1509,8 +1509,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
           <div className="p-4">
             {/* Header */}
             <div className="flex flex-col items-center text-center pt-6 pb-6">
-              <div className="w-16 h-16 bg-emerald-900/50 rounded-full flex items-center justify-center mb-4">
-                <Check size={32} className="text-emerald-400" />
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <Check size={32} className="text-emerald-600" />
               </div>
               <h2 className="text-2xl font-bold mb-1">Inventur abgeschlossen</h2>
               <p className="text-slate-400 text-sm">
@@ -1518,15 +1518,15 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               </p>
               {pendingCount > 0 && (
                 <div className="mt-3 flex items-center gap-2 bg-amber-900/30 border border-amber-800 rounded-xl px-3 py-2">
-                  <CloudOff size={14} className="text-amber-400 shrink-0" />
-                  <p className="text-xs text-amber-300">
+                  <CloudOff size={14} className="text-amber-600 shrink-0" />
+                  <p className="text-xs text-amber-700">
                     {pendingCount} {pendingCount === 1 ? 'Datensatz' : 'Datensätze'} warten auf Synchronisation
                   </p>
                   {isOnline && (
                     <button
                       onClick={syncPending}
                       disabled={isSyncing}
-                      className="ml-auto shrink-0 text-xs text-emerald-400 underline disabled:opacity-50"
+                      className="ml-auto shrink-0 text-xs text-emerald-600 underline disabled:opacity-50"
                     >
                       {isSyncing ? 'Sync…' : 'Jetzt sync'}
                     </button>
@@ -1534,7 +1534,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 </div>
               )}
               {pendingCount === 0 && (
-                <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
+                <p className="mt-2 text-xs text-emerald-600 flex items-center gap-1">
                   <Check size={12} /> Alle Daten synchronisiert
                 </p>
               )}
@@ -1551,7 +1551,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                     const soilLabel = SOIL_CONDITIONS.find(s => s.id === tree.soilCondition)?.label;
                     const moistLabel = SOIL_MOISTURE.find(s => s.id === tree.soilMoisture)?.label;
                     return (
-                      <div key={i} className="bg-slate-800 rounded-xl p-3">
+                      <div key={i} className="bg-white border border-slate-200 rounded-xl p-3">
                         <div className="flex items-center gap-2 mb-1.5">
                           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: speciesColor }} />
                           <span className="font-medium text-sm">{speciesLabel}</span>
@@ -1567,7 +1567,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                           )}
                         </div>
                         {!tree.synced && (
-                          <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-400">
+                          <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-600">
                             <CloudOff size={10} /> Offline gespeichert
                           </span>
                         )}

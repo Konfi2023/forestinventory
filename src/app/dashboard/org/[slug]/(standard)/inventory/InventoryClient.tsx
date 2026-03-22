@@ -150,6 +150,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   const [taskSaveError, setTaskSaveError] = useState<string | null>(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [locating, setLocating] = useState(false);
+  const [isSavingTree, setIsSavingTree] = useState(false);
+  const savingTreeRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoFileRef = useRef<File | null>(null);
   const crownFileInputRef = useRef<HTMLInputElement>(null);
@@ -329,6 +331,9 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   }
 
   async function saveTree() {
+    if (savingTreeRef.current) return;
+    savingTreeRef.current = true;
+    setIsSavingTree(true);
     const treeData: Omit<PendingTree, 'id'> = {
       forestId:          form.forestId,
       forestName:        form.forestName,
@@ -416,6 +421,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
       synced:         treeData.synced,
     }]);
     setSavedCount(c => c + 1);
+    setIsSavingTree(false);
+    savingTreeRef.current = false;
     setStep('saved');
   }
 
@@ -1002,9 +1009,13 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
             <button
               onClick={saveTree}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+              disabled={isSavingTree}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
-              <Check size={18} /> Baum speichern
+              {isSavingTree
+                ? <><Loader2 size={18} className="animate-spin" /> Wird gespeichert…</>
+                : <><Check size={18} /> Baum speichern</>
+              }
             </button>
           </div>
         )}

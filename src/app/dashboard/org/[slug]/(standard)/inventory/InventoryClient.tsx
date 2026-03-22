@@ -6,7 +6,7 @@ import { db, type PendingTree, type PendingPlot } from '@/lib/inventory-db';
 import {
   Camera, MapPin, Trees, ChevronRight, ChevronLeft,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
-  ClipboardList, User, Loader2, CircleDot, X,
+  ClipboardList, User, Loader2, CircleDot,
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 
@@ -65,7 +65,7 @@ const STOCKING_DEGREES = [
   { id: 'VERY_DENSE', label: 'Sehr dicht' },
 ];
 
-type Step = 'camera' | 'location' | 'species' | 'details' | 'saved' | 'task' | 'summary';
+type Step = 'mode' | 'plot-setup' | 'camera' | 'location' | 'species' | 'details' | 'saved' | 'task' | 'plot-done' | 'summary';
 
 interface SessionTree {
   species: string;
@@ -127,7 +127,8 @@ const EMPTY_FORM: TreeForm = {
 };
 
 export function InventoryClient({ forests, orgSlug, members = [] }: InventoryClientProps) {
-  const [step, setStep] = useState<Step>('camera');
+  const [step, setStep] = useState<Step>('mode');
+  const [mode, setMode] = useState<'single' | 'plot' | null>(null);
   const [form, setForm] = useState<TreeForm>(EMPTY_FORM);
   const [speciesSearch, setSpeciesSearch] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -436,8 +437,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   }
 
   function nextTree() {
-    const forestId       = form.forestId;
-    const forestName     = form.forestName;
+    const forestId        = form.forestId;
+    const forestName      = form.forestName;
     const compartmentId   = form.compartmentId;
     const compartmentName = form.compartmentName;
     setForm({ ...EMPTY_FORM, forestId, forestName, compartmentId, compartmentName });
@@ -473,7 +474,8 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     setPlotSession(null);
     setPlotRadius('10');
     setPlotName('');
-    setStep('camera');
+    setMode(null);
+    setStep('mode');
   }
 
   async function saveTask() {
@@ -504,19 +506,20 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     setTaskSaving(false);
   }
 
-  async function createPlot() {
-    if (!form.forestId || !form.lat) return;
+  async function createPlot(): Promise<boolean> {
+    if (!form.forestId || !form.lat) return false;
     setIsCreatingPlot(true);
     const radiusM = parseFloat(plotRadius) || 10;
+    const autoName = plotName || `Plot ${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
     const pendingPlot: Omit<PendingPlot, 'id'> = {
-      forestId:     form.forestId,
+      forestId:      form.forestId,
       compartmentId: form.compartmentId || undefined,
-      lat:          form.lat,
-      lng:          form.lng ?? 0,
+      lat:           form.lat,
+      lng:           form.lng ?? 0,
       radiusM,
-      name:         plotName || undefined,
-      createdAt:    new Date().toISOString(),
-      synced:       false,
+      name:          plotName || undefined,
+      createdAt:     new Date().toISOString(),
+      synced:        false,
     };
     if (isOnline) {
       try {
@@ -527,19 +530,36 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         });
         if (res.ok) {
           const { plotId } = await res.json();
-          pendingPlot.plotId = plotId;
-          pendingPlot.synced = true;
-          setPlotSession({ id: plotId, radiusM, name: plotName || `Plot ${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` });
+          setPlotSession({ id: plotId, radiusM, name: autoName });
           setIsCreatingPlot(false);
-          return;
+          return true;
         }
       } catch {}
     }
-    // Offline: save locally, use a temporary ID
     const localId = await db.pendingPlots.add(pendingPlot);
-    const tempId = `local-${localId}`;
-    setPlotSession({ id: tempId, radiusM, name: plotName || `Plot ${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` });
+    setPlotSession({ id: `local-${localId}`, radiusM, name: autoName });
     setIsCreatingPlot(false);
+    return true;
+  }
+
+  function finishPlot() {
+    setStep('plot-done');
+  }
+
+  function startNewPlot() {
+    setPlotSession(null);
+    setPlotRadius('10');
+    setPlotName('');
+    setForm(EMPTY_FORM);
+    setPhotoPreview(null);
+    photoFileRef.current = null;
+    setCrownPhotoPreview(null);
+    crownPhotoFileRef.current = null;
+    setSpeciesSearch('');
+    setGpsError(null);
+    setSavedPoiId(null);
+    setPhotoUploadStatus('idle');
+    setStep('plot-setup');
   }
 
   const filteredSpecies = TREE_SPECIES.filter(s =>
@@ -596,14 +616,32 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         </div>
       </div>
 
+      {/* Aktiver Plot-Banner */}
+      {mode === 'plot' && plotSession && step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'summary' && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-violet-900/80 border-b border-violet-700 shrink-0">
+          <CircleDot size={13} className="text-violet-300 shrink-0" />
+          <span className="text-xs font-semibold text-violet-200">{plotSession.name}</span>
+          <span className="text-xs text-violet-400">· Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} erfasst</span>
+          <button onClick={finishPlot} className="ml-auto text-xs text-violet-300 hover:text-white underline shrink-0">
+            Plot abschließen
+          </button>
+        </div>
+      )}
+
       {/* Steps Indicator */}
-      {step !== 'saved' && step !== 'summary' && (
+      {step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'saved' && step !== 'summary' && (
         <div className="flex px-4 pt-3 gap-1.5 shrink-0">
-          {(['camera', 'location', 'species', 'details'] as const).map((s, i) => (
+          {(mode === 'plot'
+            ? (['camera', 'species', 'details'] as const)
+            : (['camera', 'location', 'species', 'details'] as const)
+          ).map((s, i) => (
             <div
               key={s}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                ['camera', 'location', 'species', 'details'].indexOf(step) >= i
+                (mode === 'plot'
+                  ? ['camera', 'species', 'details']
+                  : ['camera', 'location', 'species', 'details']
+                ).indexOf(step) >= i
                   ? 'bg-emerald-500' : 'bg-slate-700'
               }`}
             />
@@ -613,6 +651,164 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
+
+        {/* MODE: Auswahl */}
+        {step === 'mode' && (
+          <div className="p-6 flex flex-col gap-4 pt-10">
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-bold mb-1">Erfassung starten</h2>
+              <p className="text-slate-400 text-sm">Wie möchtest du heute messen?</p>
+            </div>
+            <button
+              onClick={() => { setMode('single'); setStep('camera'); }}
+              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-600 rounded-2xl transition-colors text-left"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <TreePine size={22} className="text-emerald-400" />
+                <span className="text-lg font-bold">Einzelbaum</span>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Bäume einzeln erfassen — Foto, GPS, BHD, Höhe, Art. Kein Probekreis. Ideal für Stichproben, Einzelmarkierungen oder Bestandsergänzungen.
+              </p>
+            </button>
+            <button
+              onClick={() => { setMode('plot'); setStep('plot-setup'); captureGps(); }}
+              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-violet-600 rounded-2xl transition-colors text-left"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <CircleDot size={22} className="text-violet-400" />
+                <span className="text-lg font-bold">Plot-Stichprobe</span>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Probekreis-Inventur: Plot anlegen → alle Bäume im Radius erfassen → Plot abschließen → nächsten Plot starten. Ergibt N/ha, G/ha, V/ha und Ertragstafel-Vergleich.
+              </p>
+            </button>
+            {(pendingCount > 0 || sessionTrees.length > 0) && (
+              <button onClick={() => setStep('summary')}
+                className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm text-slate-300 transition-colors">
+                Letzte Session ansehen ({savedCount} Bäume)
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* PLOT-SETUP */}
+        {step === 'plot-setup' && (
+          <div className="p-4">
+            <h2 className="text-xl font-bold mb-1">Plot einrichten</h2>
+            <p className="text-slate-400 text-sm mb-5">GPS wird als Mittelpunkt gesetzt. Alle Bäume dieses Plots werden automatisch zugeordnet.</p>
+
+            {/* GPS Status */}
+            <div className="bg-slate-800 rounded-xl p-3 mb-4 flex items-center gap-3">
+              <MapPin size={16} className={locating || gpsLoading ? 'text-amber-400 animate-pulse' : form.lat ? 'text-emerald-400' : 'text-slate-500'} />
+              <div className="flex-1 min-w-0">
+                {locating || gpsLoading ? (
+                  <p className="text-sm text-amber-400">GPS wird ermittelt…</p>
+                ) : form.lat ? (
+                  <p className="text-sm text-emerald-400 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
+                ) : (
+                  <p className="text-sm text-slate-500">Kein GPS-Signal</p>
+                )}
+              </div>
+              <button onClick={captureGps} disabled={gpsLoading || locating}
+                className="text-xs text-slate-400 hover:text-emerald-400 disabled:opacity-40 shrink-0">
+                Neu
+              </button>
+            </div>
+
+            {/* Wald */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
+                <Trees size={14} className="text-emerald-400" /> Wald
+              </label>
+              <select
+                value={form.forestId}
+                onChange={e => {
+                  const f = forests.find(f => f.id === e.target.value);
+                  setForm(prev => ({ ...prev, forestId: e.target.value, forestName: f?.name ?? '', compartmentId: '', compartmentName: '' }));
+                }}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+              >
+                <option value="">– Wald wählen –</option>
+                {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+            </div>
+
+            {/* Abteilung */}
+            {form.forestId && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-300 mb-2">Abteilung</label>
+                <div className="space-y-2">
+                  {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
+                    <button key={c.id}
+                      onClick={() => setForm(f => ({ ...f, compartmentId: c.id, compartmentName: c.name ?? '' }))}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors border ${
+                        form.compartmentId === c.id
+                          ? 'bg-violet-600/20 border-violet-500 text-white'
+                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
+                        <span className="font-medium">{c.name || 'Abteilung'}</span>
+                      </div>
+                      {form.compartmentId === c.id && <Check size={16} className="text-violet-400" />}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setForm(f => ({ ...f, compartmentId: '', compartmentName: '' }))}
+                    className={`w-full px-4 py-3 rounded-xl text-left text-sm border transition-colors ${
+                      form.compartmentId === ''
+                        ? 'bg-slate-700 border-slate-500 text-slate-300'
+                        : 'bg-slate-800/50 border-dashed border-slate-700 text-slate-500 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    Keine Abteilung
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Radius + Name */}
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Radius (m)</label>
+                <input
+                  type="number" inputMode="decimal"
+                  value={plotRadius}
+                  onChange={e => setPlotRadius(e.target.value)}
+                  placeholder="10"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Bezeichnung (opt.)</label>
+                <input
+                  type="text"
+                  value={plotName}
+                  onChange={e => setPlotName(e.target.value)}
+                  placeholder="z.B. Plot 1"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={async () => { const ok = await createPlot(); if (ok) setStep('camera'); }}
+              disabled={!form.forestId || !form.lat || isCreatingPlot}
+              className="w-full py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+            >
+              {isCreatingPlot ? <Loader2 size={18} className="animate-spin" /> : <CircleDot size={18} />}
+              Plot starten
+            </button>
+            {!form.lat && (
+              <p className="text-xs text-amber-400 mt-2 text-center">Warte auf GPS-Signal…</p>
+            )}
+            {!form.forestId && form.lat && (
+              <p className="text-xs text-amber-400 mt-2 text-center">Bitte Wald auswählen.</p>
+            )}
+          </div>
+        )}
 
         {/* SCHRITT 1: Kamera */}
         {step === 'camera' && (
@@ -738,7 +934,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               ) : null}
 
             <button
-              onClick={() => setStep('location')}
+              onClick={() => setStep(mode === 'plot' ? 'species' : 'location')}
               disabled={!photoPreview}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
@@ -747,7 +943,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
           </div>
         )}
 
-        {/* SCHRITT 1b: Standort (Wald & Abteilung, GPS-vorgeschlagen) */}
+        {/* SCHRITT 1b: Standort (nur im Einzelbaum-Modus) */}
         {step === 'location' && (
           <div className="p-4">
             <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
@@ -842,62 +1038,6 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               </div>
             )}
 
-            {/* Probekreis (Plot) */}
-            <div className="mb-5">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-slate-300 flex items-center gap-1.5">
-                  <CircleDot size={14} className="text-violet-400" /> Probekreis
-                  <span className="text-xs text-slate-500 font-normal">(optional)</span>
-                </label>
-                {plotSession && (
-                  <button onClick={() => setPlotSession(null)} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300">
-                    <X size={12} /> Plot beenden
-                  </button>
-                )}
-              </div>
-              {plotSession ? (
-                <div className="bg-violet-900/20 border border-violet-700/50 rounded-xl px-4 py-3">
-                  <p className="text-sm font-medium text-violet-300">{plotSession.name}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">Radius {plotSession.radiusM} m · Alle Bäume in diesem Plot</p>
-                </div>
-              ) : (
-                <div className="bg-slate-800 rounded-xl p-3 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">Radius (m)</p>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={plotRadius}
-                        onChange={e => setPlotRadius(e.target.value)}
-                        placeholder="10"
-                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">Bezeichnung (opt.)</p>
-                      <input
-                        type="text"
-                        value={plotName}
-                        onChange={e => setPlotName(e.target.value)}
-                        placeholder="z.B. Plot 1"
-                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    onClick={createPlot}
-                    disabled={!form.forestId || !form.lat || isCreatingPlot}
-                    className="w-full py-2 bg-violet-700 hover:bg-violet-600 disabled:opacity-40 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                  >
-                    {isCreatingPlot ? <Loader2 size={14} className="animate-spin" /> : <CircleDot size={14} />}
-                    Plot anlegen
-                  </button>
-                  <p className="text-xs text-slate-500">GPS-Mittelpunkt wird automatisch gesetzt. Alle folgenden Bäume gehören zu diesem Plot.</p>
-                </div>
-              )}
-            </div>
-
             <button
               onClick={() => setStep('species')}
               disabled={!form.forestId}
@@ -911,7 +1051,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         {/* SCHRITT 2: Baumart + Durchmesser */}
         {step === 'species' && (
           <div className="p-4">
-            <button onClick={() => setStep('location')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+            <button onClick={() => setStep(mode === 'plot' ? 'camera' : 'location')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Baumart & Maße</h2>
@@ -1202,12 +1342,21 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               >
                 <TreePine size={18} /> Nächster Baum
               </button>
-              <button
-                onClick={finish}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-slate-300 transition-colors"
-              >
-                Inventur beenden ({savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'})
-              </button>
+              {mode === 'plot' ? (
+                <button
+                  onClick={finishPlot}
+                  className="w-full py-3 bg-violet-700 hover:bg-violet-600 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
+                >
+                  <CircleDot size={16} /> Plot abschließen
+                </button>
+              ) : (
+                <button
+                  onClick={finish}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-slate-300 transition-colors"
+                >
+                  Inventur beenden ({savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'})
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1321,6 +1470,37 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 <><ClipboardList size={18} /> Aufgabe speichern</>
               )}
             </button>
+          </div>
+        )}
+
+        {/* PLOT-DONE: Plot abgeschlossen */}
+        {step === 'plot-done' && plotSession && (
+          <div className="p-4 flex flex-col items-center text-center pt-10">
+            <div className="w-20 h-20 bg-violet-900/50 rounded-full flex items-center justify-center mb-6">
+              <CircleDot size={40} className="text-violet-400" />
+            </div>
+            <h2 className="text-2xl font-bold mb-1">Plot abgeschlossen</h2>
+            <p className="text-slate-300 text-base font-medium mb-1">{plotSession.name}</p>
+            <p className="text-slate-400 text-sm mb-2">
+              Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} erfasst
+            </p>
+            <p className="text-xs text-slate-500 mb-8">
+              Die Auswertung (N/ha, G/ha, V/ha, Ertragstafel) erscheint in der Forsteinrichtung.
+            </p>
+            <div className="w-full space-y-3">
+              <button
+                onClick={startNewPlot}
+                className="w-full py-4 bg-violet-700 hover:bg-violet-600 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                <CircleDot size={18} /> Neuen Plot starten
+              </button>
+              <button
+                onClick={finish}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-slate-300 transition-colors"
+              >
+                Inventur beenden ({savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'})
+              </button>
+            </div>
           </div>
         )}
 

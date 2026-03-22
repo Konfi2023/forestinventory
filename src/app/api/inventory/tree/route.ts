@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { point } from '@turf/helpers';
 
 function calculateCo2(species: string, diameter: number, height: number): number {
   const radius = diameter / 200;
@@ -15,6 +17,22 @@ function calculateCo2(species: string, diameter: number, height: number): number
   return Math.round(volume * d * 0.5 * 3.67 * 10) / 10;
 }
 
+/** Detect compartment from GPS coordinates via point-in-polygon */
+async function detectCompartment(forestId: string, lat: number, lng: number): Promise<string | null> {
+  try {
+    const forest = await prisma.forest.findUnique({
+      where: { id: forestId },
+      include: { compartments: { select: { id: true, geoJson: true } } },
+    });
+    if (!forest?.compartments?.length) return null;
+    const p = point([lng, lat]);
+    for (const c of forest.compartments) {
+      if (c.geoJson && booleanPointInPolygon(p, c.geoJson as any)) return c.id;
+    }
+  } catch {}
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,14 +42,31 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const {
-      forestId, compartmentId, lat, lng, species, diameter, height, notes,
+      forestId, lat, lng, species, diameter, height, notes,
       soilCondition, soilMoisture,
       exposition, slopeClass, slopePosition, standType, stockingDegree,
       damageType, damageSeverity, crownCondition,
     } = body;
 
+    let { compartmentId } = body;
+
     if (!forestId || lat == null || lng == null) {
       return NextResponse.json({ error: 'forestId, lat und lng sind Pflichtfelder' }, { status: 400 });
+    }
+
+    // ── Duplicate guard ────────────────────────────────────────────────────────
+    // Prevent multiple trees from rapid taps on the same GPS position
+    const duplicate = await prisma.forestPoi.findFirst({
+      where: { type: 'TREE', forestId, lat, lng },
+      select: { id: true },
+    });
+    if (duplicate) {
+      return NextResponse.json({ success: true, poiId: duplicate.id, duplicate: true });
+    }
+
+    // ── Auto-detect compartment ────────────────────────────────────────────────
+    if (!compartmentId) {
+      compartmentId = await detectCompartment(forestId, lat, lng);
     }
 
     const co2 = species && diameter && height
@@ -81,7 +116,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, poiId: poi.id });
+    return NextResponse.json({ success: true, poiId: poi.id, compartmentId: compartmentId ?? null });
   } catch (err) {
     console.error('Inventory tree error:', err);
     return NextResponse.json({ error: 'Serverfehler' }, { status: 500 });

@@ -245,25 +245,42 @@ export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput, org
       update: treeData,
     });
 
-    // Phase 2: Messung als Zeitreiheneintrag speichern (nur wenn Messwerte vorhanden)
+    // Phase 2: Messung als Zeitreiheneintrag speichern
+    // Nur wenn Messwerte vorhanden UND sich etwas geändert hat (Duplikate verhindern)
     if (data.diameter || data.height || data.health) {
-      await prisma.treeMeasurement.create({
-        data: {
-          poiId,
-          measuredById:  session.user.id,
-          diameter:      data.diameter       ?? null,
-          height:        data.height         ?? null,
-          age:           data.age            ?? null,
-          co2Storage:    co2,
-          health:        (data.health as any) ?? "HEALTHY",
-          damageType:    data.damageType     ?? null,
-          damageSeverity:data.damageSeverity ?? null,
-          crownCondition:data.crownCondition ?? null,
-          soilMoisture:  (data.soilMoisture  as any) ?? null,
-          notes:         data.notes          ?? null,
-          imageKey:      data.imageKey       ?? null,
-        },
+      const lastMeasurement = await prisma.treeMeasurement.findFirst({
+        where: { poiId },
+        orderBy: { measuredAt: 'desc' },
+        select: { diameter: true, height: true, health: true, damageType: true, damageSeverity: true, crownCondition: true },
       });
+
+      const unchanged = lastMeasurement &&
+        lastMeasurement.diameter      === (data.diameter       ?? null) &&
+        lastMeasurement.height        === (data.height         ?? null) &&
+        lastMeasurement.health        === ((data.health as any) ?? 'HEALTHY') &&
+        lastMeasurement.damageType    === (data.damageType     ?? null) &&
+        lastMeasurement.damageSeverity=== (data.damageSeverity ?? null) &&
+        lastMeasurement.crownCondition=== (data.crownCondition ?? null);
+
+      if (!unchanged) {
+        await prisma.treeMeasurement.create({
+          data: {
+            poiId,
+            measuredById:  session.user.id,
+            diameter:      data.diameter       ?? null,
+            height:        data.height         ?? null,
+            age:           data.age            ?? null,
+            co2Storage:    co2,
+            health:        (data.health as any) ?? "HEALTHY",
+            damageType:    data.damageType     ?? null,
+            damageSeverity:data.damageSeverity ?? null,
+            crownCondition:data.crownCondition ?? null,
+            soilMoisture:  (data.soilMoisture  as any) ?? null,
+            notes:         data.notes          ?? null,
+            imageKey:      data.imageKey       ?? null,
+          },
+        });
+      }
     }
 
     revalidatePath("/dashboard/map");

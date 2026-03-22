@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const {
-      forestId, lat, lng, species, diameter, height, notes,
+      forestId, lat, lng, species, diameter, height, age, notes,
       soilCondition, soilMoisture,
       exposition, slopeClass, slopePosition, standType, stockingDegree,
       damageType, damageSeverity, crownCondition,
@@ -85,6 +85,7 @@ export async function POST(req: Request) {
             species:        species        ?? null,
             diameter:       diameter       ?? null,
             height:         height         ?? null,
+            age:            age            ?? null,
             co2Storage:     co2,
             soilCondition:  soilCondition  ?? null,
             soilMoisture:   soilMoisture   ?? null,

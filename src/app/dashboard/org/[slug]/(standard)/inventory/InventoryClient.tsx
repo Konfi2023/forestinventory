@@ -105,6 +105,7 @@ interface TreeForm {
   species: string;
   diameter: string;
   height: string;
+  age: string;
   soilCondition:  string;
   soilMoisture:   string;
   exposition:     string;
@@ -118,7 +119,7 @@ interface TreeForm {
 const EMPTY_FORM: TreeForm = {
   forestId: '', forestName: '', compartmentId: '', compartmentName: '',
   lat: null, lng: null,
-  species: '', diameter: '', height: '',
+  species: '', diameter: '', height: '', age: '',
   soilCondition: '', soilMoisture: '',
   exposition: '', slopeClass: '', slopePosition: '',
   standType: '', stockingDegree: '',
@@ -200,6 +201,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             species:        tree.species,
             diameter:       tree.diameter,
             height:         tree.height,
+            age:            tree.age,
             soilCondition:  tree.soilCondition,
             soilMoisture:   tree.soilMoisture,
             exposition:     tree.exposition,
@@ -343,6 +345,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
       species:           form.species || 'OTHER',
       diameter:          form.diameter ? parseFloat(form.diameter) : null,
       height:            form.height   ? parseFloat(form.height)   : null,
+      age:               form.age      ? parseInt(form.age)        : null,
       soilCondition:     form.soilCondition  || null,
       soilMoisture:      form.soilMoisture   || null,
       exposition:        form.exposition     || null,
@@ -882,6 +885,21 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 placeholder="z.B. 28"
                 value={form.height}
                 onChange={e => setForm(f => ({ ...f, height: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Geschätztes Alter */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Geschätztes Alter (Jahre)
+              </label>
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="z.B. 80"
+                value={form.age}
+                onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
               />
             </div>

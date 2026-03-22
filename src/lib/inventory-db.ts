@@ -29,6 +29,7 @@ export interface PendingTree {
   species: string;
   diameter: number | null;
   height: number | null;
+  age: number | null;
   // Boden
   soilCondition:  string | null;
   soilMoisture:   string | null;

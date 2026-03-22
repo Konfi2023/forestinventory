@@ -138,6 +138,40 @@ export function PoiDetailView({
   const [treeCrownImageUploading, setTreeCrownImageUploading] = useState(false);
   const treeCrownFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Abteilungs-Zuweisung: aus DB oder per Point-in-Polygon auto-detektiert
+  const [compartmentId, setCompartmentId] = useState<string>(() => {
+    if (poi.tree?.compartmentId) return poi.tree.compartmentId;
+    try {
+      const p = point([poi.lng, poi.lat]);
+      for (const f of (forests || [])) {
+        for (const c of (f.compartments || [])) {
+          if (c.geoJson && booleanPointInPolygon(p, c.geoJson)) return c.id;
+        }
+      }
+    } catch {}
+    return '';
+  });
+  const [selectedForestId, setSelectedForestId] = useState<string>(() => {
+    const cId = poi.tree?.compartmentId;
+    if (cId) {
+      const f = (forests || []).find((f: any) => f.compartments?.some((c: any) => c.id === cId));
+      if (f) return f.id;
+    }
+    // auto-detect forest from coords if no compartment assigned
+    try {
+      const p = point([poi.lng, poi.lat]);
+      for (const f of (forests || [])) {
+        for (const c of (f.compartments || [])) {
+          if (c.geoJson && booleanPointInPolygon(p, c.geoJson)) return f.id;
+        }
+      }
+    } catch {}
+    return poi.forestId ?? '';
+  });
+
+  // Double-save guard
+  const savingRef = useRef(false);
+
   // Polter-Felder
   const [logVolumeFm,    setLogVolumeFm]    = useState<string>(poi.logPile?.volumeFm?.toString() ?? '');
   const [logLength,      setLogLength]      = useState<string>(poi.logPile?.logLength?.toString() ?? '');
@@ -324,6 +358,8 @@ export function PoiDetailView({
   // ---------------------------------------------------------------------------
 
   const handleSave = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const results = await Promise.all([
@@ -361,6 +397,7 @@ export function PoiDetailView({
               notes:          treeNotes          || undefined,
               imageKey:       treeImageKey,
               crownImageKey:  treeCrownImageKey,
+              compartmentId:  compartmentId      || null,
             }, orgSlug)
           : null,
 
@@ -391,6 +428,7 @@ export function PoiDetailView({
       toast.error(e.message ?? 'Fehler beim Speichern');
     } finally {
       setIsSaving(false);
+      savingRef.current = false;
     }
   };
 
@@ -513,6 +551,9 @@ export function PoiDetailView({
           crownFileInputRef={treeCrownFileInputRef}
           onCrownFileSelect={handleTreeCrownImageSelect}
           onCrownImageRemove={() => { setTreeCrownImageKey(null); setTreeCrownImagePreview(null); }}
+          forests={forests}
+          compartmentId={compartmentId}           setCompartmentId={setCompartmentId}
+          selectedForestId={selectedForestId}     setSelectedForestId={setSelectedForestId}
         />
       )}
 
@@ -1149,7 +1190,18 @@ function TreeSection({
   treeNotes, setTreeNotes,
   imagePreview, imageUploading, fileInputRef, onFileSelect, onImageRemove,
   crownImagePreview, crownImageUploading, crownFileInputRef, onCrownFileSelect, onCrownImageRemove,
+  forests, compartmentId, setCompartmentId, selectedForestId, setSelectedForestId,
 }: any) {
+  // Derive labels for view mode
+  const selectedForest      = (forests || []).find((f: any) => f.id === selectedForestId);
+  const forestCompartments  = selectedForest?.compartments || [];
+  const selectedCompartment = forestCompartments.find((c: any) => c.id === compartmentId)
+    ?? (forests || []).flatMap((f: any) => f.compartments || []).find((c: any) => c.id === compartmentId);
+
+  const handleForestChange = (fId: string) => {
+    setSelectedForestId(fId);
+    setCompartmentId(''); // reset compartment when forest changes
+  };
   // CO2-Schätzung live berechnen
   const co2Estimate = useMemo(() => {
     const d = parseFloat(treeDiameter);
@@ -1175,6 +1227,60 @@ function TreeSection({
       <h4 className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-1.5">
         <TreePine className="w-3 h-3" /> Baumdaten
       </h4>
+
+      {/* Wald & Abteilung */}
+      <div className="bg-white/5 rounded-lg border border-white/10 p-3 space-y-2">
+        <p className="text-[10px] uppercase text-gray-500 font-bold">Wald & Abteilung</p>
+        {isEditing ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-gray-500 block mb-1">Wald</label>
+              <select
+                value={selectedForestId}
+                onChange={e => handleForestChange(e.target.value)}
+                className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-2 py-1.5 focus:outline-none focus:border-emerald-500"
+              >
+                <option value="">– kein –</option>
+                {(forests || []).map((f: any) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-500 block mb-1">Abteilung</label>
+              <select
+                value={compartmentId}
+                onChange={e => setCompartmentId(e.target.value)}
+                className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-2 py-1.5 focus:outline-none focus:border-emerald-500"
+                disabled={!selectedForestId}
+              >
+                <option value="">– keine –</option>
+                {forestCompartments.map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.number ? `[${c.number}] ` : ''}{c.name || 'Abteilung'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm">
+            {selectedCompartment ? (
+              <>
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedCompartment.color ?? '#3b82f6' }} />
+                <span className="text-gray-300">
+                  {selectedForest?.name ?? ''}
+                  {selectedForest && selectedCompartment ? ' · ' : ''}
+                  {selectedCompartment.number ? `[${selectedCompartment.number}] ` : ''}
+                  {selectedCompartment.name || 'Abteilung'}
+                </span>
+              </>
+            ) : (
+              <span className="text-gray-600 italic text-xs">Keine Abteilung zugewiesen</span>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Stammfoto + Kronenfoto nebeneinander */}
       <div className="grid grid-cols-2 gap-2">

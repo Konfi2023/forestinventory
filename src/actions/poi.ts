@@ -187,6 +187,7 @@ export type UpsertPoiTreeInput = {
   notes?: string;
   imageKey?: string | null;
   crownImageKey?: string | null;
+  compartmentId?: string | null;
 };
 
 export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput, orgSlug?: string) {
@@ -233,6 +234,7 @@ export async function upsertPoiTree(poiId: string, data: UpsertPoiTreeInput, org
       standType:      (data.standType      as any) ?? null,
       stockingDegree: (data.stockingDegree as any) ?? null,
       notes:          data.notes          ?? null,
+      ...(data.compartmentId !== undefined ? { compartmentId: data.compartmentId } : {}),
       ...(data.imageKey      !== undefined ? { imageKey:      data.imageKey      } : {}),
       ...(data.crownImageKey !== undefined ? { crownImageKey: data.crownImageKey } : {}),
     };

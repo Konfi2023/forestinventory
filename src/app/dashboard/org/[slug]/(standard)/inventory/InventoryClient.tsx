@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TREE_SPECIES } from '@/lib/tree-species';
-import { db, type PendingTree } from '@/lib/inventory-db';
+import { db, type PendingTree, type PendingPlot } from '@/lib/inventory-db';
 import {
   Camera, MapPin, Trees, ChevronRight, ChevronLeft,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
-  ClipboardList, User, Loader2,
+  ClipboardList, User, Loader2, CircleDot, X,
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 
@@ -153,6 +153,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   const [locating, setLocating] = useState(false);
   const [isSavingTree, setIsSavingTree] = useState(false);
   const savingTreeRef = useRef(false);
+  // Plot-Session (Probekreis)
+  const [plotSession, setPlotSession] = useState<{ id: string; radiusM: number; name: string } | null>(null);
+  const [plotRadius, setPlotRadius] = useState('10');
+  const [plotName, setPlotName] = useState('');
+  const [isCreatingPlot, setIsCreatingPlot] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoFileRef = useRef<File | null>(null);
   const crownFileInputRef = useRef<HTMLInputElement>(null);
@@ -340,6 +345,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
       forestId:          form.forestId,
       forestName:        form.forestName,
       compartmentId:     form.compartmentId || undefined,
+      plotId:            plotSession?.id && !plotSession.id.startsWith('local-') ? plotSession.id : undefined,
       lat:               form.lat ?? 0,
       lng:               form.lng ?? 0,
       species:           form.species || 'OTHER',
@@ -464,6 +470,9 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     setSavedPoiId(null);
     setTaskTitle(''); setTaskPriority('MEDIUM'); setTaskDueDate(''); setTaskAssigneeId(''); setTaskShowDatePicker(false);
     setPhotoUploadStatus('idle');
+    setPlotSession(null);
+    setPlotRadius('10');
+    setPlotName('');
     setStep('camera');
   }
 
@@ -495,6 +504,44 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     setTaskSaving(false);
   }
 
+  async function createPlot() {
+    if (!form.forestId || !form.lat) return;
+    setIsCreatingPlot(true);
+    const radiusM = parseFloat(plotRadius) || 10;
+    const pendingPlot: Omit<PendingPlot, 'id'> = {
+      forestId:     form.forestId,
+      compartmentId: form.compartmentId || undefined,
+      lat:          form.lat,
+      lng:          form.lng ?? 0,
+      radiusM,
+      name:         plotName || undefined,
+      createdAt:    new Date().toISOString(),
+      synced:       false,
+    };
+    if (isOnline) {
+      try {
+        const res = await fetch('/api/inventory/plot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...pendingPlot }),
+        });
+        if (res.ok) {
+          const { plotId } = await res.json();
+          pendingPlot.plotId = plotId;
+          pendingPlot.synced = true;
+          setPlotSession({ id: plotId, radiusM, name: plotName || `Plot ${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` });
+          setIsCreatingPlot(false);
+          return;
+        }
+      } catch {}
+    }
+    // Offline: save locally, use a temporary ID
+    const localId = await db.pendingPlots.add(pendingPlot);
+    const tempId = `local-${localId}`;
+    setPlotSession({ id: tempId, radiusM, name: plotName || `Plot ${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` });
+    setIsCreatingPlot(false);
+  }
+
   const filteredSpecies = TREE_SPECIES.filter(s =>
     s.label.toLowerCase().includes(speciesSearch.toLowerCase())
   );
@@ -508,6 +555,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
           <span className="font-semibold text-sm">Forstinventur</span>
           {form.forestName && (
             <span className="text-xs text-slate-400 hidden sm:block">· {form.forestName}</span>
+          )}
+          {plotSession && (
+            <span className="flex items-center gap-1 text-xs bg-violet-900/60 text-violet-300 px-2 py-0.5 rounded-full">
+              <CircleDot size={10} /> {plotSession.name} · r={plotSession.radiusM}m
+            </span>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -789,6 +841,62 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 </div>
               </div>
             )}
+
+            {/* Probekreis (Plot) */}
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-slate-300 flex items-center gap-1.5">
+                  <CircleDot size={14} className="text-violet-400" /> Probekreis
+                  <span className="text-xs text-slate-500 font-normal">(optional)</span>
+                </label>
+                {plotSession && (
+                  <button onClick={() => setPlotSession(null)} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300">
+                    <X size={12} /> Plot beenden
+                  </button>
+                )}
+              </div>
+              {plotSession ? (
+                <div className="bg-violet-900/20 border border-violet-700/50 rounded-xl px-4 py-3">
+                  <p className="text-sm font-medium text-violet-300">{plotSession.name}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Radius {plotSession.radiusM} m · Alle Bäume in diesem Plot</p>
+                </div>
+              ) : (
+                <div className="bg-slate-800 rounded-xl p-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Radius (m)</p>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={plotRadius}
+                        onChange={e => setPlotRadius(e.target.value)}
+                        placeholder="10"
+                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Bezeichnung (opt.)</p>
+                      <input
+                        type="text"
+                        value={plotName}
+                        onChange={e => setPlotName(e.target.value)}
+                        placeholder="z.B. Plot 1"
+                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={createPlot}
+                    disabled={!form.forestId || !form.lat || isCreatingPlot}
+                    className="w-full py-2 bg-violet-700 hover:bg-violet-600 disabled:opacity-40 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                  >
+                    {isCreatingPlot ? <Loader2 size={14} className="animate-spin" /> : <CircleDot size={14} />}
+                    Plot anlegen
+                  </button>
+                  <p className="text-xs text-slate-500">GPS-Mittelpunkt wird automatisch gesetzt. Alle folgenden Bäume gehören zu diesem Plot.</p>
+                </div>
+              )}
+            </div>
 
             <button
               onClick={() => setStep('species')}

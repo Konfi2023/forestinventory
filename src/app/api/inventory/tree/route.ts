@@ -46,6 +46,7 @@ export async function POST(req: Request) {
       soilCondition, soilMoisture,
       exposition, slopeClass, slopePosition, standType, stockingDegree,
       damageType, damageSeverity, crownCondition,
+      plotId,
     } = body;
 
     let { compartmentId } = body;
@@ -99,6 +100,7 @@ export async function POST(req: Request) {
             crownCondition: crownCondition ?? null,
             notes:          notes          ?? null,
             ...(compartmentId ? { compartmentId } : {}),
+            ...(plotId        ? { plotId }        : {}),
           },
         },
         measurements: {

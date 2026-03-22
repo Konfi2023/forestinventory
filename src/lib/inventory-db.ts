@@ -24,6 +24,7 @@ export interface PendingTree {
   forestId: string;
   forestName: string;
   compartmentId?: string;
+  plotId?: string; // Probekreis-ID (optional)
   lat: number;
   lng: number;
   species: string;
@@ -50,9 +51,24 @@ export interface PendingTree {
   synced: boolean;
 }
 
+export interface PendingPlot {
+  id?: number;
+  plotId?: string;          // server-seitige UUID nach Sync
+  forestId: string;
+  compartmentId?: string;
+  lat: number;
+  lng: number;
+  radiusM: number;
+  name?: string;
+  notes?: string;
+  createdAt: string;
+  synced: boolean;
+}
+
 export class InventoryDB extends Dexie {
   pendingTrees!: Table<PendingTree, number>;
   pendingLogPiles!: Table<PendingLogPile, number>;
+  pendingPlots!: Table<PendingPlot, number>;
 
   constructor() {
     super('ForestInventoryDB');
@@ -81,6 +97,12 @@ export class InventoryDB extends Dexie {
     this.version(6).stores({
       pendingTrees:    '++id, synced, createdAt, forestId',
       pendingLogPiles: '++id, synced, createdAt, forestId',
+    });
+    // Version 7: plotId in pendingTrees + pendingPlots Tabelle
+    this.version(7).stores({
+      pendingTrees:    '++id, synced, createdAt, forestId, plotId',
+      pendingLogPiles: '++id, synced, createdAt, forestId',
+      pendingPlots:    '++id, synced, createdAt, forestId',
     });
   }
 }

@@ -26,6 +26,16 @@ export default async function ForsteinrichtungPage({
     include: {
       compartments: {
         orderBy: [{ number: "asc" }, { name: "asc" }],
+        include: {
+          inventoryPlots: {
+            include: {
+              trees: {
+                include: { poi: { select: { lat: true, lng: true } } },
+              },
+            },
+            orderBy: { measuredAt: "desc" },
+          },
+        },
       },
       pois: {
         where: { type: "TREE" },

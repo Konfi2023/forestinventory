@@ -176,6 +176,7 @@ model User {
   sentNotifications     Notification[]    @relation("NotifActor")
   TaskSchedule          TaskSchedule[]
   treeMeasurements      TreeMeasurement[] @relation("TreeMeasurements")
+  inventoryPlots        InventoryPlot[]   @relation("InventoryPlots")
 }
 
 model Membership {
@@ -292,6 +293,7 @@ model Forest {
   hunting     ForestHunting[]
   skidTrails  SkidTrail[]
   compartments ForestCompartment[]
+  inventoryPlots InventoryPlot[]
 
   // Operative Daten
   operations    Operation[]
@@ -467,11 +469,16 @@ model ForestPoiTree {
   compartmentId String?
   compartment   ForestCompartment? @relation(fields: [compartmentId], references: [id], onDelete: SetNull)
 
+  // Probekreis (Plot-Stichprobe)
+  plotId String?
+  plot   InventoryPlot? @relation(fields: [plotId], references: [id], onDelete: SetNull)
+
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([species])
+  @@index([plotId])
 }
 
 model ForestCompartment {
@@ -526,6 +533,32 @@ model ForestCompartment {
   forestId     String
   forest       Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
   trees        ForestPoiTree[]
+  inventoryPlots InventoryPlot[]
+}
+
+// Probekreis für Plot-Stichprobeninventur
+model InventoryPlot {
+  id            String   @id @default(uuid())
+  name          String?  // z. B. "Plot 1" oder "P-A3-01"
+  lat           Float    // Mittelpunkt des Probekreises
+  lng           Float
+  radiusM       Float    @default(10.0) // Probekreisradius in Metern
+  measuredAt    DateTime @default(now())
+  measuredById  String?
+  measuredBy    User?    @relation("InventoryPlots", fields: [measuredById], references: [id], onDelete: SetNull)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  forestId      String
+  forest        Forest             @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  compartmentId String?
+  compartment   ForestCompartment? @relation(fields: [compartmentId], references: [id], onDelete: SetNull)
+
+  trees         ForestPoiTree[]
+
+  @@index([forestId])
+  @@index([compartmentId])
 }
 
 // Historische Messwerte pro Baum (Phase 2: Zeitreihe)

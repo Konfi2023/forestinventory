@@ -2,12 +2,17 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Search, ChevronDown, ChevronRight, TreePine, Pencil, Layers, BarChart2,
+  Search, ChevronDown, ChevronRight, TreePine, Pencil, Layers, BarChart2, CircleDot,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { getSpeciesLabel, getSpeciesColor } from '@/lib/tree-species';
 import { CompartmentEditSheet } from './CompartmentEditSheet';
+import {
+  estimateSiteClass, getYieldTableValues, calcStockingDegree,
+  isYieldTableSpecies, SITE_CLASS_LABELS,
+  type Species, type SiteClass,
+} from '@/lib/yield-tables';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,6 +27,26 @@ interface Tree {
   height: number | null;
   health: string | null;
   compartmentId: string | null;
+}
+
+interface PlotTree {
+  id: string;
+  species: string | null;
+  age: number | null;
+  diameter: number | null;
+  height: number | null;
+  health: string | null;
+  poi: { lat: number; lng: number };
+}
+
+interface InventoryPlotData {
+  id: string;
+  name: string | null;
+  lat: number;
+  lng: number;
+  radiusM: number;
+  measuredAt: string | Date;
+  trees: PlotTree[];
 }
 
 interface TreePoi {
@@ -64,6 +89,7 @@ interface Compartment {
   lastMeasureType: string | null;
   maintenanceStatus: string | null;
   accessibility: string | null;
+  inventoryPlots: InventoryPlotData[];
 }
 
 interface Forest {
@@ -252,6 +278,177 @@ function InventoryStatsBlock({ trees }: { trees: TreePoi[] }) {
   );
 }
 
+// ── Plot-Stats ────────────────────────────────────────────────────────────────
+
+interface PlotStats {
+  n: number;
+  plotAreaHa: number;
+  nHa: number;
+  gHa: number;
+  vHa: number | null;
+  dg: number;
+  meanHeight: number | null;
+  dominantSpecies: Species | null;
+  siteClass: SiteClass | null;
+  refGHa: number | null;
+  refVHa: number | null;
+  refIvHa: number | null;
+  bestockungsgrad: number | null;
+}
+
+function computePlotStats(plot: InventoryPlotData, compartmentAge: number | null): PlotStats | null {
+  const withBhd = plot.trees.filter(t => t.diameter != null);
+  if (withBhd.length === 0) return null;
+
+  const plotAreaHa = Math.PI * plot.radiusM ** 2 / 10000;
+  const n = withBhd.length;
+
+  const dg = Math.sqrt(withBhd.reduce((s, t) => s + t.diameter! ** 2, 0) / n);
+
+  const basalAreaSum = withBhd.reduce((s, t) => s + Math.PI * (t.diameter! / 200) ** 2, 0);
+  const gHa = basalAreaSum / plotAreaHa;
+
+  const withH = withBhd.filter(t => t.height != null);
+  const meanHeight = withH.length > 0 ? withH.reduce((s, t) => s + t.height!, 0) / withH.length : null;
+
+  const volumeSum = withBhd.reduce((s, t) => {
+    if (!t.height) return s;
+    const g = Math.PI * (t.diameter! / 200) ** 2;
+    const f = FORM_FACTORS[t.species ?? ''] ?? 0.45;
+    return s + g * t.height * f;
+  }, 0);
+  const vHa = withH.length > 0 ? volumeSum / plotAreaHa : null;
+
+  // Dominant species (from YIELD_TABLE_SPECIES only)
+  const spCount = new Map<string, number>();
+  withBhd.forEach(t => {
+    if (t.species && isYieldTableSpecies(t.species)) {
+      spCount.set(t.species, (spCount.get(t.species) ?? 0) + 1);
+    }
+  });
+  const dominantSpecies = spCount.size > 0
+    ? ([...spCount.entries()].sort((a, b) => b[1] - a[1])[0][0] as Species)
+    : null;
+
+  // Oberhöhe: mean height of top-20% trees by diameter (min 1 tree)
+  let siteClass: SiteClass | null = null;
+  let refGHa: number | null = null;
+  let refVHa: number | null = null;
+  let refIvHa: number | null = null;
+  let bestockungsgrad: number | null = null;
+
+  const age = compartmentAge ??
+    (withBhd.filter(t => t.age != null).length > 0
+      ? Math.round(withBhd.filter(t => t.age != null).reduce((s, t) => s + t.age!, 0) / withBhd.filter(t => t.age != null).length)
+      : null);
+
+  if (dominantSpecies && age && meanHeight) {
+    // Oberhöhe estimate: use top-20% BHD trees' mean height
+    const sorted = [...withH].sort((a, b) => b.diameter! - a.diameter!);
+    const topK = Math.max(1, Math.round(sorted.length * 0.2));
+    const hTop = sorted.slice(0, topK).reduce((s, t) => s + t.height!, 0) / topK;
+
+    siteClass = estimateSiteClass(dominantSpecies, age, hTop);
+    const ref = getYieldTableValues(dominantSpecies, age, siteClass);
+    if (ref) {
+      refGHa  = ref.gHa;
+      refVHa  = ref.vHa;
+      refIvHa = ref.ivHa;
+      bestockungsgrad = calcStockingDegree(gHa, dominantSpecies, age, siteClass);
+    }
+  }
+
+  return {
+    n, plotAreaHa, nHa: n / plotAreaHa, gHa, vHa, dg, meanHeight,
+    dominantSpecies, siteClass, refGHa, refVHa, refIvHa, bestockungsgrad,
+  };
+}
+
+function PlotStatsBlock({ plot, compartmentAge }: { plot: InventoryPlotData; compartmentAge: number | null }) {
+  const stats = useMemo(() => computePlotStats(plot, compartmentAge), [plot, compartmentAge]);
+  const dateStr = new Date(plot.measuredAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  return (
+    <div className="border border-violet-100 rounded-xl bg-violet-50/40 overflow-hidden mb-3">
+      {/* Plot header */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-violet-50 border-b border-violet-100">
+        <CircleDot size={12} className="text-violet-600 shrink-0" />
+        <span className="text-xs font-semibold text-violet-700">{plot.name || 'Probekreis'}</span>
+        <span className="text-[10px] text-violet-400 ml-1">r = {plot.radiusM} m · {(Math.PI * plot.radiusM ** 2).toFixed(0)} m² · {dateStr}</span>
+        <span className="ml-auto text-[10px] text-violet-400">{plot.trees.length} Bäume</span>
+      </div>
+
+      {stats ? (
+        <div className="p-3 space-y-3">
+          {/* Kernkennzahlen */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100">
+              <div className="text-sm font-bold text-slate-800">{Math.round(stats.nHa)}</div>
+              <div className="text-[10px] text-slate-500">N/ha</div>
+            </div>
+            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100">
+              <div className="text-sm font-bold text-slate-800">{stats.gHa.toFixed(1)}</div>
+              <div className="text-[10px] text-slate-500">G/ha (m²)</div>
+            </div>
+            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100">
+              <div className="text-sm font-bold text-slate-800">{stats.vHa != null ? Math.round(stats.vHa) : '–'}</div>
+              <div className="text-[10px] text-slate-500">V/ha (m³)</div>
+            </div>
+          </div>
+
+          {/* Weitere Kennzahlen */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="text-slate-500">Dg (BHD quadr.) <span className="font-medium text-slate-700">{stats.dg.toFixed(1)} cm</span></div>
+            <div className="text-slate-500">Mittl. Höhe <span className="font-medium text-slate-700">{stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'}</span></div>
+          </div>
+
+          {/* Ertragstafel-Vergleich */}
+          {stats.siteClass && stats.dominantSpecies && (
+            <div className="bg-white border border-emerald-100 rounded-lg p-2 text-xs space-y-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">
+                Ertragstafel · {getSpeciesLabel(stats.dominantSpecies)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Bonität</span>
+                <span className="font-medium text-slate-700">{SITE_CLASS_LABELS[stats.siteClass]}</span>
+              </div>
+              {stats.bestockungsgrad != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Bestockungsgrad</span>
+                  <span className={`font-bold ${
+                    stats.bestockungsgrad >= 1.0 ? 'text-emerald-700' :
+                    stats.bestockungsgrad >= 0.7 ? 'text-amber-600' : 'text-red-500'
+                  }`}>{stats.bestockungsgrad.toFixed(2)}</span>
+                </div>
+              )}
+              {stats.refGHa != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Tafel G/ha</span>
+                  <span className="font-medium text-slate-700">{stats.refGHa.toFixed(0)} m²/ha</span>
+                </div>
+              )}
+              {stats.refVHa != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Tafel V/ha</span>
+                  <span className="font-medium text-slate-700">{stats.refVHa.toFixed(0)} m³/ha</span>
+                </div>
+              )}
+              {stats.refIvHa != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Zuwachs (iV)</span>
+                  <span className="font-medium text-slate-700">{stats.refIvHa.toFixed(1)} m³/ha/a</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400 px-3 py-2">Keine BHD-Messungen — Kennzahlen nicht berechenbar.</p>
+      )}
+    </div>
+  );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number | null | undefined, unit?: string) {
@@ -316,6 +513,7 @@ function CompartmentCard({
 }: {
   compartment: Compartment; orgSlug: string; trees: TreePoi[];
 }) {
+  const plots = compartment.inventoryPlots ?? [];
   const [expanded,  setExpanded]  = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [liveData,  setLiveData]  = useState<Compartment>(compartment);
@@ -338,6 +536,11 @@ function CompartmentCard({
           {trees.length > 0 && (
             <span className="ml-1 flex items-center gap-0.5 text-xs text-emerald-600 font-medium">
               <TreePine size={11} /> {trees.length}
+            </span>
+          )}
+          {plots.length > 0 && (
+            <span className="ml-1 flex items-center gap-0.5 text-xs text-violet-600 font-medium">
+              <CircleDot size={11} /> {plots.length}
             </span>
           )}
           <span className="ml-auto text-slate-400">
@@ -442,6 +645,18 @@ function CompartmentCard({
             <Row label="Pflegezustand"   value={liveData.maintenanceStatus} />
             <Row label="Befahrbarkeit"   value={liveData.accessibility} />
           </div>
+
+          {/* Probekreise (Plots) */}
+          {plots.length > 0 && (
+            <div className="px-4 py-3 border-t border-slate-100">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-violet-600 mb-3 flex items-center gap-1.5">
+                <CircleDot size={11} /> Probekreise ({plots.length})
+              </div>
+              {plots.map(plot => (
+                <PlotStatsBlock key={plot.id} plot={plot} compartmentAge={liveData.standAge} />
+              ))}
+            </div>
+          )}
 
           {/* Inventur-Auswertung (automatisch aus Tree-POIs berechnet) */}
           {trees.length > 0 && <InventoryStatsBlock trees={trees} />}

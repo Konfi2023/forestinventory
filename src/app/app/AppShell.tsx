@@ -10,7 +10,7 @@ import { db } from '@/lib/inventory-db';
 type Tab = 'tasks' | 'inventory' | 'polter';
 
 interface Org { id: string; name: string; slug: string; role: string; }
-interface Compartment { id: string; name: string | null; number: string | null; color: string | null; }
+interface Compartment { id: string; name: string | null; color: string | null; }
 interface Forest { id: string; name: string; compartments?: Compartment[]; }
 interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
 interface Task {

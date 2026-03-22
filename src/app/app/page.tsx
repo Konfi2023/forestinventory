@@ -52,7 +52,7 @@ export default async function AppPage() {
       where: { organizationId: firstOrg.id },
       select: {
         id: true, name: true,
-        compartments: { select: { id: true, name: true, number: true, color: true }, orderBy: [{ number: 'asc' }, { name: 'asc' }] },
+        compartments: { select: { id: true, name: true, color: true }, orderBy: { name: 'asc' } },
       },
       orderBy: { name: 'asc' },
     }),

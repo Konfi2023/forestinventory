@@ -6,7 +6,7 @@ import { db, type PendingTree } from '@/lib/inventory-db';
 import {
   Camera, MapPin, Trees, ChevronRight, ChevronLeft,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
-  ClipboardList, User,
+  ClipboardList, User, Loader2,
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 
@@ -65,7 +65,7 @@ const STOCKING_DEGREES = [
   { id: 'VERY_DENSE', label: 'Sehr dicht' },
 ];
 
-type Step = 'forest' | 'compartment' | 'camera' | 'species' | 'details' | 'saved' | 'task' | 'summary';
+type Step = 'camera' | 'location' | 'species' | 'details' | 'saved' | 'task' | 'summary';
 
 interface SessionTree {
   species: string;
@@ -126,7 +126,7 @@ const EMPTY_FORM: TreeForm = {
 };
 
 export function InventoryClient({ forests, orgSlug, members = [] }: InventoryClientProps) {
-  const [step, setStep] = useState<Step>('forest');
+  const [step, setStep] = useState<Step>('camera');
   const [form, setForm] = useState<TreeForm>(EMPTY_FORM);
   const [speciesSearch, setSpeciesSearch] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -149,6 +149,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
   const [taskSaving, setTaskSaving]     = useState(false);
   const [taskSaveError, setTaskSaveError] = useState<string | null>(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [locating, setLocating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoFileRef = useRef<File | null>(null);
   const crownFileInputRef = useRef<HTMLInputElement>(null);
@@ -227,51 +228,60 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     return ok;
   }, []);
 
+  function captureGpsPromise(): Promise<{ lat: number; lng: number }> {
+    return new Promise((resolve, reject) => {
+      if (typeof window !== 'undefined' && !window.isSecureContext) { reject(new Error('insecure')); return; }
+      if (!navigator.geolocation) { reject(new Error('unavailable')); return; }
+      navigator.geolocation.getCurrentPosition(
+        pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        err => {
+          if (err.code === 3) {
+            navigator.geolocation.getCurrentPosition(
+              pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+              err2 => reject(err2),
+              { enableHighAccuracy: false, timeout: 10000 }
+            );
+          } else reject(err);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  }
+
   function captureGps() {
-    // GPS requires a secure context (HTTPS or localhost)
-    if (typeof window !== 'undefined' && !window.isSecureContext) {
-      setGpsError('insecure');
-      return;
-    }
-    if (!navigator.geolocation) {
-      setGpsError('unavailable');
-      return;
-    }
+    if (typeof window !== 'undefined' && !window.isSecureContext) { setGpsError('insecure'); return; }
+    if (!navigator.geolocation) { setGpsError('unavailable'); return; }
     setGpsLoading(true);
     setGpsError(null);
-
-    // Try with high accuracy first; on timeout fall back to low accuracy
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setForm(f => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }));
+    setLocating(true);
+    captureGpsPromise()
+      .then(coords => {
+        setForm(f => ({ ...f, lat: coords.lat, lng: coords.lng }));
         setGpsLoading(false);
-        setGpsError(null);
-      },
-      (err) => {
-        if (err.code === 3) {
-          // Timeout with high accuracy → retry without it
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              setForm(f => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }));
-              setGpsLoading(false);
-              setGpsError(null);
-            },
-            (err2) => {
-              setGpsLoading(false);
-              if (err2.code === 1) setGpsError('denied');
-              else if (err2.code === 3) setGpsError('timeout');
-              else setGpsError('unavailable');
-            },
-            { enableHighAccuracy: false, timeout: 10000 }
-          );
-        } else {
-          setGpsLoading(false);
-          if (err.code === 1) setGpsError('denied');
-          else setGpsError('unavailable');
+        return fetch(`/api/app/locate?lat=${coords.lat}&lng=${coords.lng}&orgSlug=${orgSlug}`);
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.forestId) {
+          setForm(f => ({
+            ...f,
+            forestId:        data.forestId,
+            forestName:      data.forestName,
+            compartmentId:   data.compartmentId   ?? '',
+            compartmentName: data.compartmentName ?? '',
+          }));
         }
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+      })
+      .catch(err => {
+        setGpsLoading(false);
+        const code = err?.code;
+        if (err?.message === 'insecure') setGpsError('insecure');
+        else if (err?.message === 'unavailable') setGpsError('unavailable');
+        else if (code === 1) setGpsError('denied');
+        else if (code === 3) setGpsError('timeout');
+        else setGpsError('unavailable');
+      })
+      .finally(() => setLocating(false));
   }
 
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -281,6 +291,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     const reader = new FileReader();
     reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
+    // Trigger GPS + locate silently in background
     captureGps();
   }
 
@@ -443,7 +454,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
     setSavedPoiId(null);
     setTaskTitle(''); setTaskPriority('MEDIUM'); setTaskDueDate(''); setTaskAssigneeId(''); setTaskShowDatePicker(false);
     setPhotoUploadStatus('idle');
-    setStep('forest');
+    setStep('camera');
   }
 
   async function saveTask() {
@@ -524,13 +535,13 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
       </div>
 
       {/* Steps Indicator */}
-      {step !== 'forest' && step !== 'compartment' && step !== 'saved' && (
+      {step !== 'saved' && step !== 'summary' && (
         <div className="flex px-4 pt-3 gap-1.5 shrink-0">
-          {(['camera', 'species', 'details'] as const).map((s, i) => (
+          {(['camera', 'location', 'species', 'details'] as const).map((s, i) => (
             <div
               key={s}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                ['camera', 'species', 'details'].indexOf(step) >= i
+                ['camera', 'location', 'species', 'details'].indexOf(step) >= i
                   ? 'bg-emerald-500' : 'bg-slate-700'
               }`}
             />
@@ -541,85 +552,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
 
-        {/* SCHRITT 0: Waldauswahl */}
-        {step === 'forest' && (
-          <div className="p-4">
-            <h1 className="text-xl font-bold mb-1">Wald wählen</h1>
-            <p className="text-slate-400 text-sm mb-6">Welchen Wald inventarisierst du heute?</p>
-            {savedCount > 0 && (
-              <div className="mb-4 bg-emerald-900/30 border border-emerald-800 rounded-xl p-3 text-sm text-emerald-300">
-                ✓ {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} in dieser Session gespeichert
-              </div>
-            )}
-            <div className="space-y-2">
-              {forests.map(f => (
-                <button
-                  key={f.id}
-                  onClick={() => {
-                    setForm(form => ({ ...form, forestId: f.id, forestName: f.name, compartmentId: '', compartmentName: '' }));
-                    if (f.compartments && f.compartments.length > 0) {
-                      setStep('compartment');
-                    } else {
-                      setStep('camera');
-                    }
-                  }}
-                  className="w-full flex items-center justify-between p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <Trees size={20} className="text-emerald-400 shrink-0" />
-                    <span className="font-medium">{f.name}</span>
-                  </div>
-                  <ChevronRight size={18} className="text-slate-500" />
-                </button>
-              ))}
-              {forests.length === 0 && (
-                <p className="text-slate-500 text-center py-8">Keine Wälder gefunden.</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* SCHRITT 0b: Abteilung wählen */}
-        {step === 'compartment' && (
-          <div className="p-4">
-            <button onClick={() => setStep('forest')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
-              <ChevronLeft size={16} /> Wald wechseln
-            </button>
-            <h2 className="text-xl font-bold mb-1">Abteilung wählen</h2>
-            <p className="text-slate-400 text-sm mb-6">Welcher Abteilung gehört dieser Baum?</p>
-            <div className="space-y-2">
-              {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => { setForm(f => ({ ...f, compartmentId: c.id, compartmentName: c.name ?? '' })); setStep('camera'); }}
-                  className="w-full flex items-center justify-between p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-4 h-4 rounded-sm shrink-0 border border-white/20" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
-                    <span className="font-medium">{c.name || 'Abteilung'}</span>
-                  </div>
-                  <ChevronRight size={18} className="text-slate-500" />
-                </button>
-              ))}
-              <button
-                onClick={() => { setForm(f => ({ ...f, compartmentId: '', compartmentName: '' })); setStep('camera'); }}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-colors text-left border border-dashed border-slate-700"
-              >
-                <span className="text-slate-400 text-sm">Keine Abteilung zuweisen</span>
-                <ChevronRight size={18} className="text-slate-600" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* SCHRITT 1: Kamera + GPS */}
+        {/* SCHRITT 1: Kamera */}
         {step === 'camera' && (
           <div className="p-4">
-            <button onClick={() => setStep('forest')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
-              <ChevronLeft size={16} /> Wald wechseln
-            </button>
-            <h2 className="text-xl font-bold mb-1">Foto & Position</h2>
-            <p className="text-slate-400 text-sm mb-5">Fotografiere den Baum und erfasse den Standort.</p>
+            <h2 className="text-xl font-bold mb-1">Baum fotografieren</h2>
+            <p className="text-slate-400 text-sm mb-5">Stammfoto aufnehmen — GPS und Standort werden automatisch ermittelt.</p>
 
             {/* Foto */}
             <div
@@ -684,29 +621,15 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               onChange={handleCrownPhoto}
             />
 
-            {/* GPS */}
-            <div className="bg-slate-800 rounded-xl p-4 mb-5">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <MapPin size={16} className="text-emerald-400" />
-                  GPS-Position
-                </div>
-                <button
-                  onClick={captureGps}
-                  disabled={gpsLoading}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
-                >
-                  {gpsLoading ? 'Wird ermittelt…' : form.lat ? 'Neu erfassen' : 'Position ermitteln'}
-                </button>
+            {/* GPS-Status (mini, im Hintergrund) */}
+            {(gpsLoading || form.lat) && (
+              <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
+                <MapPin size={12} className={gpsLoading ? 'animate-pulse text-emerald-500' : 'text-emerald-400'} />
+                {gpsLoading ? 'GPS wird ermittelt…' : `${form.lat?.toFixed(5)}, ${form.lng?.toFixed(5)}`}
               </div>
+            )}
 
-              {form.lat && form.lng ? (
-                <p className="text-sm text-slate-300 font-mono">
-                  {form.lat.toFixed(6)}, {form.lng.toFixed(6)}
-                </p>
-              ) : gpsLoading ? (
-                <p className="text-sm text-slate-500">GPS wird ermittelt…</p>
-              ) : gpsError === 'insecure' ? (
+            {false && gpsError === 'insecure' ? (
                 <div className="mt-1 space-y-2">
                   <p className="text-sm text-red-400 font-medium">GPS erfordert HTTPS.</p>
                   <p className="text-xs text-slate-400 leading-relaxed">
@@ -750,14 +673,117 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 <div className="mt-1">
                   <p className="text-sm text-amber-400">GPS nicht verfügbar auf diesem Gerät.</p>
                 </div>
-              ) : (
-                <p className="text-sm text-slate-500">Noch nicht erfasst – tippe auf „Position ermitteln"</p>
+              ) : null}
+
+            <button
+              onClick={() => setStep('location')}
+              disabled={!photoPreview}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+            >
+              Weiter <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 1b: Standort (Wald & Abteilung, GPS-vorgeschlagen) */}
+        {step === 'location' && (
+          <div className="p-4">
+            <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Standort</h2>
+            <p className="text-slate-400 text-sm mb-5">Wald und Abteilung werden per GPS vorgeschlagen. Bei Bedarf anpassen.</p>
+
+            {/* GPS Status */}
+            <div className="bg-slate-800 rounded-xl p-3 mb-4 flex items-center gap-3">
+              <MapPin size={16} className={locating || gpsLoading ? 'text-amber-400 animate-pulse' : form.lat ? 'text-emerald-400' : 'text-slate-500'} />
+              <div className="flex-1 min-w-0">
+                {locating || gpsLoading ? (
+                  <p className="text-sm text-amber-400">GPS & Standort werden ermittelt…</p>
+                ) : form.lat ? (
+                  <p className="text-sm text-emerald-400 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
+                ) : (
+                  <p className="text-sm text-slate-500">Kein GPS-Signal</p>
+                )}
+              </div>
+              <button onClick={captureGps} disabled={gpsLoading || locating}
+                className="text-xs text-slate-400 hover:text-emerald-400 disabled:opacity-40 shrink-0">
+                Neu
+              </button>
+            </div>
+
+            {/* GPS-Fehler */}
+            {gpsError && !gpsLoading && (
+              <div className="bg-amber-900/30 border border-amber-700 rounded-xl p-3 mb-4 text-sm text-amber-300">
+                {gpsError === 'denied' && 'GPS-Zugriff verweigert. Bitte in den Einstellungen freigeben.'}
+                {gpsError === 'insecure' && 'GPS erfordert HTTPS. Bitte App über HTTPS öffnen.'}
+                {gpsError === 'timeout' && 'GPS-Signal zu schwach. Im Freien erneut versuchen.'}
+                {gpsError === 'unavailable' && 'GPS nicht verfügbar.'}
+              </div>
+            )}
+
+            {/* Wald */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
+                <Trees size={14} className="text-emerald-400" /> Wald
+              </label>
+              <select
+                value={form.forestId}
+                onChange={e => {
+                  const f = forests.find(f => f.id === e.target.value);
+                  setForm(prev => ({ ...prev, forestId: e.target.value, forestName: f?.name ?? '', compartmentId: '', compartmentName: '' }));
+                }}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+              >
+                <option value="">– Wald wählen –</option>
+                {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+              {form.forestId && !gpsLoading && !locating && (
+                <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                  <Check size={10} /> GPS-Vorschlag
+                </p>
               )}
             </div>
 
+            {/* Abteilung */}
+            {form.forestId && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-slate-300 mb-2">Abteilung</label>
+                <div className="space-y-2">
+                  {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
+                    <button key={c.id}
+                      onClick={() => setForm(f => ({ ...f, compartmentId: c.id, compartmentName: c.name ?? '' }))}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors border ${
+                        form.compartmentId === c.id
+                          ? 'bg-emerald-600/20 border-emerald-500 text-white'
+                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
+                        <span className="font-medium">{c.name || 'Abteilung'}</span>
+                      </div>
+                      {form.compartmentId === c.id && <Check size={16} className="text-emerald-400" />}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setForm(f => ({ ...f, compartmentId: '', compartmentName: '' }))}
+                    className={`w-full px-4 py-3 rounded-xl text-left text-sm border transition-colors ${
+                      form.compartmentId === ''
+                        ? 'bg-slate-700 border-slate-500 text-slate-300'
+                        : 'bg-slate-800/50 border-dashed border-slate-700 text-slate-500 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    Keine Abteilung
+                  </button>
+                </div>
+              </div>
+            )}
+
             <button
               onClick={() => setStep('species')}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+              disabled={!form.forestId}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               Weiter <ChevronRight size={18} />
             </button>
@@ -767,7 +793,7 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
         {/* SCHRITT 2: Baumart + Durchmesser */}
         {step === 'species' && (
           <div className="p-4">
-            <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
+            <button onClick={() => setStep('location')} className="flex items-center gap-1 text-sm text-slate-400 mb-4 hover:text-white">
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Baumart & Maße</h2>

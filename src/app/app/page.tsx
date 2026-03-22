@@ -50,7 +50,10 @@ export default async function AppPage() {
     }),
     prisma.forest.findMany({
       where: { organizationId: firstOrg.id },
-      select: { id: true, name: true },
+      select: {
+        id: true, name: true,
+        compartments: { select: { id: true, name: true, number: true, color: true }, orderBy: [{ number: 'asc' }, { name: 'asc' }] },
+      },
       orderBy: { name: 'asc' },
     }),
     prisma.membership.findMany({

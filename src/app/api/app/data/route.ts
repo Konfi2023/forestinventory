@@ -52,7 +52,10 @@ export async function GET(req: Request) {
     }),
     prisma.forest.findMany({
       where:   { organizationId: org.id },
-      select:  { id: true, name: true },
+      select:  {
+        id: true, name: true,
+        compartments: { select: { id: true, name: true, number: true, color: true }, orderBy: [{ number: 'asc' }, { name: 'asc' }] },
+      },
       orderBy: { name: 'asc' },
     }),
     prisma.membership.findMany({

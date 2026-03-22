@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Search, ChevronDown, ChevronRight, TreePine, Pencil, Layers,
+  Search, ChevronDown, ChevronRight, TreePine, Pencil, Layers, BarChart2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -71,6 +71,185 @@ interface Forest {
   name: string;
   compartments: Compartment[];
   pois: TreePoi[];
+}
+
+// ── Formzahlen (baumartenspezifisch) ─────────────────────────────────────────
+// Quelle: Standardwerte der deutschen Forstpraxis (Assmann/Franz)
+const FORM_FACTORS: Record<string, number> = {
+  SPRUCE:  0.45,
+  PINE:    0.45,
+  FIR:     0.45,
+  DOUGLAS: 0.45,
+  LARCH:   0.46,
+  OAK:     0.42,
+  BEECH:   0.43,
+  ASH:     0.42,
+  MAPLE:   0.43,
+  BIRCH:   0.43,
+  ALDER:   0.42,
+  POPLAR:  0.40,
+};
+
+// ── Inventur-Berechnungen ─────────────────────────────────────────────────────
+
+interface InventoryStats {
+  n: number;
+  dg: number;                  // quadratischer Mitteldurchmesser (cm)
+  meanHeight: number | null;   // mittlere Höhe (m)
+  treesWithHeight: number;
+  basalAreaSum: number;        // Grundfläche Σ (m²)
+  volumeEstimate: number;      // Vorrat ≈ (m³)
+  speciesBreakdown: { species: string; count: number; pct: number }[];
+  healthBreakdown:  { health: string;  count: number; pct: number }[];
+}
+
+function computeInventoryStats(trees: TreePoi[]): InventoryStats | null {
+  const withBhd = trees.filter(p => p.tree?.diameter != null);
+  if (withBhd.length === 0) return null;
+
+  const n = withBhd.length;
+
+  // Quadratischer Mitteldurchmesser Dg = sqrt(Σ BHD² / n)
+  const dg = Math.sqrt(withBhd.reduce((s, p) => s + p.tree!.diameter! ** 2, 0) / n);
+
+  // Mittlere Höhe (nur Bäume mit Höhenmessung)
+  const withH = withBhd.filter(p => p.tree?.height != null);
+  const meanHeight = withH.length > 0
+    ? withH.reduce((s, p) => s + p.tree!.height!, 0) / withH.length
+    : null;
+
+  // Grundfläche Σ = Σ (π/4 × (BHD/100)²)
+  const basalAreaSum = withBhd.reduce(
+    (s, p) => s + Math.PI * (p.tree!.diameter! / 200) ** 2,
+    0,
+  );
+
+  // Vorrat ≈ = Σ (g_i × h_i × f_i) — nur Bäume mit Höhe
+  const volumeEstimate = withBhd.reduce((s, p) => {
+    const t = p.tree!;
+    if (!t.height) return s;
+    const g = Math.PI * (t.diameter! / 200) ** 2;
+    const f = FORM_FACTORS[t.species ?? ''] ?? 0.45;
+    return s + g * t.height * f;
+  }, 0);
+
+  // Artverteilung
+  const spMap = new Map<string, number>();
+  withBhd.forEach(p => {
+    const sp = p.tree!.species ?? 'UNKNOWN';
+    spMap.set(sp, (spMap.get(sp) ?? 0) + 1);
+  });
+  const speciesBreakdown = [...spMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([species, count]) => ({ species, count, pct: Math.round(count / n * 100) }));
+
+  // Vitalitätsverteilung
+  const hMap = new Map<string, number>();
+  trees.forEach(p => {
+    const h = p.tree?.health ?? 'UNKNOWN';
+    hMap.set(h, (hMap.get(h) ?? 0) + 1);
+  });
+  const healthBreakdown = [...hMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([health, count]) => ({ health, count, pct: Math.round(count / trees.length * 100) }));
+
+  return { n, dg, meanHeight, treesWithHeight: withH.length, basalAreaSum, volumeEstimate, speciesBreakdown, healthBreakdown };
+}
+
+// ── StatPill ──────────────────────────────────────────────────────────────────
+
+function StatPill({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="bg-white border border-emerald-100 rounded-lg px-3 py-2 text-center">
+      <div className="text-sm font-bold text-slate-800">{value}</div>
+      <div className="text-[10px] text-slate-500 mt-0.5">{label}</div>
+      {sub && <div className="text-[9px] text-slate-400 mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+// ── InventoryStatsBlock ───────────────────────────────────────────────────────
+
+const HEALTH_LABEL_MAP: Record<string, string> = {
+  HEALTHY:            'Vital',
+  DAMAGED:            'Geschädigt',
+  DEAD:               'Abgestorben',
+  MARKED_FOR_FELLING: 'Zum Fällen',
+};
+
+const HEALTH_COLOR_MAP: Record<string, string> = {
+  HEALTHY:            'text-emerald-600',
+  DAMAGED:            'text-amber-500',
+  DEAD:               'text-red-500',
+  MARKED_FOR_FELLING: 'text-orange-500',
+};
+
+function InventoryStatsBlock({ trees }: { trees: TreePoi[] }) {
+  const stats = useMemo(() => computeInventoryStats(trees), [trees]);
+  if (!stats) return null;
+
+  return (
+    <div className="px-4 py-3 bg-emerald-50/60 border-t border-emerald-100">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-2.5 flex items-center gap-1.5">
+        <BarChart2 size={11} />
+        Inventur-Auswertung · {stats.n} Bäume
+      </div>
+
+      {/* Kennzahlen-Pills */}
+      <div className="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-4">
+        <StatPill
+          label="Mittl. BHD (Dg)"
+          value={`${stats.dg.toFixed(1)} cm`}
+        />
+        <StatPill
+          label="Mittl. Höhe"
+          value={stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'}
+          sub={stats.meanHeight != null && stats.treesWithHeight < stats.n
+            ? `aus ${stats.treesWithHeight} Bäumen`
+            : undefined}
+        />
+        <StatPill
+          label="Grundfläche Σ"
+          value={`${stats.basalAreaSum.toFixed(2)} m²`}
+        />
+        <StatPill
+          label="Vorrat ≈"
+          value={stats.volumeEstimate > 0 ? `${stats.volumeEstimate.toFixed(1)} m³` : '–'}
+          sub={stats.volumeEstimate > 0 ? 'Schätzwert' : undefined}
+        />
+      </div>
+
+      {/* Artverteilung */}
+      {stats.speciesBreakdown.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {stats.speciesBreakdown.map(s => (
+            <span
+              key={s.species}
+              className="flex items-center gap-1 text-xs text-slate-700 bg-white border border-slate-100 rounded-full px-2 py-0.5"
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: getSpeciesColor(s.species) }}
+              />
+              {getSpeciesLabel(s.species)} {s.pct}%
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Vitalität */}
+      <div className="flex flex-wrap gap-3">
+        {stats.healthBreakdown.map(h => (
+          <span
+            key={h.health}
+            className={`text-xs font-medium ${HEALTH_COLOR_MAP[h.health] ?? 'text-slate-500'}`}
+          >
+            {HEALTH_LABEL_MAP[h.health] ?? h.health} {h.pct}%
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -189,12 +368,12 @@ function CompartmentCard({
 
             {/* Standort */}
             <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-1">Standort</div>
-            <Row label="Bodentyp"      value={liveData.soilType} />
+            <Row label="Bodentyp"       value={liveData.soilType} />
             <Row label="Wasserhaushalt" value={liveData.waterBalance} />
             <Row label="Nährstoffstufe" value={liveData.nutrientLevel} />
-            <Row label="Exposition"    value={liveData.exposition} />
-            <Row label="Hangneigung"   value={liveData.slopeClass} />
-            <Row label="Schutzstatus"  value={liveData.protectionStatus} />
+            <Row label="Exposition"     value={liveData.exposition} />
+            <Row label="Hangneigung"    value={liveData.slopeClass} />
+            <Row label="Schutzstatus"   value={liveData.protectionStatus} />
             {liveData.restrictions && (
               <div className="col-span-2">
                 <span className="text-slate-400">Restriktionen </span>
@@ -221,14 +400,14 @@ function CompartmentCard({
               </div>
             )}
 
-            {/* Kennzahlen */}
-            <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Kennzahlen</div>
-            <Row label="Vorrat"           value={fmt(liveData.volumePerHa, 'm³/ha')} />
-            <Row label="Zuwachs"          value={fmt(liveData.incrementPerHa, 'm³/ha/a')} />
-            <Row label="Bestockungsgrad"  value={liveData.stockingDegree?.toFixed(2) ?? null} />
-            <Row label="Totholz"          value={fmt(liveData.deadwoodPerHa, 'm³/ha')} />
-            <Row label="Bonität (EKL)"    value={liveData.yieldClass?.toString() ?? null} />
-            <Row label="Wuchsleistung"    value={liveData.siteProductivity} />
+            {/* Kennzahlen (manuell) */}
+            <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Kennzahlen (manuell)</div>
+            <Row label="Vorrat"          value={fmt(liveData.volumePerHa, 'm³/ha')} />
+            <Row label="Zuwachs"         value={fmt(liveData.incrementPerHa, 'm³/ha/a')} />
+            <Row label="Bestockungsgrad" value={liveData.stockingDegree?.toFixed(2) ?? null} />
+            <Row label="Totholz"         value={fmt(liveData.deadwoodPerHa, 'm³/ha')} />
+            <Row label="Bonität (EKL)"   value={liveData.yieldClass?.toString() ?? null} />
+            <Row label="Wuchsleistung"   value={liveData.siteProductivity} />
 
             {/* Verjüngung */}
             {(liveData.rejuvenation?.length ?? 0) > 0 && (
@@ -251,18 +430,21 @@ function CompartmentCard({
             {(liveData.vitalityNote || liveData.damageNote || liveData.stabilityNote) && (
               <>
                 <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Zustand</div>
-                {liveData.vitalityNote  && <NoteRow label="Vitalität"   value={liveData.vitalityNote} />}
-                {liveData.damageNote    && <NoteRow label="Schäden"     value={liveData.damageNote} />}
-                {liveData.stabilityNote && <NoteRow label="Stabilität"  value={liveData.stabilityNote} />}
+                {liveData.vitalityNote  && <NoteRow label="Vitalität"  value={liveData.vitalityNote} />}
+                {liveData.damageNote    && <NoteRow label="Schäden"    value={liveData.damageNote} />}
+                {liveData.stabilityNote && <NoteRow label="Stabilität" value={liveData.stabilityNote} />}
               </>
             )}
 
             {/* Bewirtschaftung */}
             <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Bewirtschaftung</div>
-            <Row label="Letzte Maßnahme"  value={liveData.lastMeasureDate ? `${liveData.lastMeasureDate}${liveData.lastMeasureType ? ' – ' + liveData.lastMeasureType : ''}` : null} />
-            <Row label="Pflegezustand"    value={liveData.maintenanceStatus} />
-            <Row label="Befahrbarkeit"    value={liveData.accessibility} />
+            <Row label="Letzte Maßnahme" value={liveData.lastMeasureDate ? `${liveData.lastMeasureDate}${liveData.lastMeasureType ? ' – ' + liveData.lastMeasureType : ''}` : null} />
+            <Row label="Pflegezustand"   value={liveData.maintenanceStatus} />
+            <Row label="Befahrbarkeit"   value={liveData.accessibility} />
           </div>
+
+          {/* Inventur-Auswertung (automatisch aus Tree-POIs berechnet) */}
+          {trees.length > 0 && <InventoryStatsBlock trees={trees} />}
 
           {/* Tree POI list */}
           {trees.length > 0 && (
@@ -359,8 +541,8 @@ function ForestGroup({ forest, orgSlug, query }: { forest: Forest; orgSlug: stri
 // ── Main Client ───────────────────────────────────────────────────────────────
 
 export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]; orgSlug: string }) {
-  const [query,          setQuery]          = useState('');
-  const [forestFilter,   setForestFilter]   = useState('');
+  const [query,        setQuery]        = useState('');
+  const [forestFilter, setForestFilter] = useState('');
 
   const totalCompartments = forests.reduce((s, f) => s + f.compartments.length, 0);
   const totalHa           = forests.reduce((s, f) => s + f.compartments.reduce((a, c) => a + (c.areaHa ?? 0), 0), 0);
@@ -375,8 +557,8 @@ export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]
         {/* Stats bar */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Abteilungen', value: totalCompartments },
-            { label: 'Gesamtfläche', value: `${totalHa.toFixed(1)} ha` },
+            { label: 'Abteilungen',   value: totalCompartments },
+            { label: 'Gesamtfläche',  value: `${totalHa.toFixed(1)} ha` },
             { label: 'Erfasste Bäume', value: totalTrees },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-4 text-center shadow-sm">

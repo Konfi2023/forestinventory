@@ -20,11 +20,11 @@ type ViewMode = 'calendar' | 'list';
 type LucideIcon = React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
 
 const STATUS_CONFIG: Record<string, { label: string; textColor: string; bgColor: string; Icon: LucideIcon }> = {
-  OPEN:        { label: 'Offen',     textColor: '#94a3b8', bgColor: 'rgba(51,65,85,0.6)',   Icon: CircleDot },
-  IN_PROGRESS: { label: 'In Arbeit', textColor: '#60a5fa', bgColor: 'rgba(30,58,138,0.4)',  Icon: RefreshCw },
-  REVIEW:      { label: 'Review',    textColor: '#c084fc', bgColor: 'rgba(88,28,135,0.4)',  Icon: Eye },
-  BLOCKED:     { label: 'Blockiert', textColor: '#f87171', bgColor: 'rgba(127,29,29,0.4)',  Icon: CircleOff },
-  DONE:        { label: 'Erledigt',  textColor: '#34d399', bgColor: 'rgba(6,78,59,0.4)',    Icon: CheckCircle2 },
+  OPEN:        { label: 'Offen',     textColor: '#64748b', bgColor: 'rgba(226,232,240,0.8)', Icon: CircleDot },
+  IN_PROGRESS: { label: 'In Arbeit', textColor: '#2563eb', bgColor: 'rgba(219,234,254,0.8)', Icon: RefreshCw },
+  REVIEW:      { label: 'Review',    textColor: '#9333ea', bgColor: 'rgba(243,232,255,0.8)', Icon: Eye },
+  BLOCKED:     { label: 'Blockiert', textColor: '#dc2626', bgColor: 'rgba(254,226,226,0.8)', Icon: CircleOff },
+  DONE:        { label: 'Erledigt',  textColor: '#16a34a', bgColor: 'rgba(220,252,231,0.8)', Icon: CheckCircle2 },
 };
 
 // Feste Farben als inline-style – umgeht Tailwind-Purge bei dynamischen Klassen
@@ -154,7 +154,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
     <div className="relative flex flex-col h-full w-full">
 
       {/* ── Toolbar ── */}
-      <div className="shrink-0 w-full bg-slate-900 border-b border-slate-800 px-4 pt-3 pb-3 space-y-3">
+      <div className="shrink-0 w-full bg-white border-b border-slate-200 px-4 pt-3 pb-3 space-y-3">
 
         {/* Filter-Chips */}
         <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
@@ -168,7 +168,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
               key={key}
               onClick={() => setFilter(key)}
               className={`shrink-0 px-5 py-3 rounded-full text-sm font-semibold transition-colors ${
-                filter === key ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 active:bg-slate-700'
+                filter === key ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 active:bg-slate-200'
               }`}
             >
               {label}
@@ -177,11 +177,11 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
         </div>
 
         {/* View-Toggle – volle Breite, große Tap-Fläche */}
-        <div className="flex w-full rounded-xl bg-slate-800 p-1 gap-1">
+        <div className="flex w-full rounded-xl bg-slate-100 p-1 gap-1">
           <button
             onClick={() => setViewMode('calendar')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${
-              viewMode === 'calendar' ? 'bg-slate-600 text-white' : 'text-slate-500 active:bg-slate-700'
+              viewMode === 'calendar' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 active:bg-slate-200'
             }`}
           >
             <Calendar size={17} /> Kalender
@@ -189,7 +189,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
           <button
             onClick={() => setViewMode('list')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${
-              viewMode === 'list' ? 'bg-slate-600 text-white' : 'text-slate-500 active:bg-slate-700'
+              viewMode === 'list' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 active:bg-slate-200'
             }`}
           >
             <List size={17} /> Liste
@@ -199,9 +199,9 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
 
       {/* Fehler-Banner (z.B. nach Status-Update) */}
       {cycleError && (
-        <div className="shrink-0 mx-4 mt-2 px-4 py-3 bg-red-900/60 border border-red-700 rounded-xl flex items-center justify-between gap-3">
-          <span className="text-sm text-red-300">{cycleError}</span>
-          <button onClick={() => setCycleError(null)} className="text-red-400 shrink-0 text-lg leading-none">×</button>
+        <div className="shrink-0 mx-4 mt-2 px-4 py-3 bg-red-50 border border-red-300 rounded-xl flex items-center justify-between gap-3">
+          <span className="text-sm text-red-600">{cycleError}</span>
+          <button onClick={() => setCycleError(null)} className="text-red-500 shrink-0 text-lg leading-none">×</button>
         </div>
       )}
 
@@ -223,7 +223,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
                 <span className="text-sm font-bold" style={{ color: group.iconColor }}>
                   {group.label}
                 </span>
-                <span className="text-xs text-slate-600 font-medium">{group.tasks.length}</span>
+                <span className="text-xs text-slate-400 font-medium">{group.tasks.length}</span>
               </div>
               <div className="space-y-2 w-full">
                 {group.tasks.map(task => (
@@ -316,7 +316,7 @@ function TaskCard({ task, updatingId, onCycle, onOpen }: {
 
   return (
     <div
-      className="w-full bg-slate-800 rounded-xl overflow-hidden"
+      className="w-full bg-white border border-slate-200 rounded-xl overflow-hidden"
       style={{ borderLeft: `5px solid ${borderColor}` }}
     >
       <div className="flex items-stretch w-full">
@@ -324,7 +324,7 @@ function TaskCard({ task, updatingId, onCycle, onOpen }: {
         <button
           onClick={() => onCycle(task)}
           disabled={updatingId === task.id}
-          className="flex items-center justify-center w-16 shrink-0 active:bg-slate-700 transition-colors disabled:opacity-50"
+          className="flex items-center justify-center w-16 shrink-0 active:bg-slate-100 transition-colors disabled:opacity-50"
           style={{ color: cfg.textColor }}
         >
           <StatusIcon size={26} className={updatingId === task.id ? 'animate-spin' : ''} />
@@ -335,7 +335,7 @@ function TaskCard({ task, updatingId, onCycle, onOpen }: {
           className="flex-1 text-left px-3 py-4 min-w-0"
           onClick={() => onOpen(task)}
         >
-          <p className={`text-base font-semibold leading-snug ${isDone ? 'line-through text-slate-500' : 'text-white'}`}>
+          <p className={`text-base font-semibold leading-snug ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}`}>
             {task.title}
           </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5">
@@ -365,13 +365,13 @@ function TaskCard({ task, updatingId, onCycle, onOpen }: {
 function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-40 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-slate-900 rounded-t-2xl max-h-[90vh] overflow-y-auto">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-12 h-1.5 bg-slate-700 rounded-full" />
+          <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
         </div>
         <div className="flex justify-end px-4">
-          <button onClick={onClose} className="p-2.5 text-slate-400 hover:text-white">
+          <button onClick={onClose} className="p-2.5 text-slate-400 hover:text-slate-800">
             <X size={24} />
           </button>
         </div>
@@ -452,11 +452,11 @@ function TaskDetail({ task, onStatusChange, updatingId }: {
       {/* Fotos */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-slate-300">Fotos</span>
+          <span className="text-sm font-semibold text-slate-700">Fotos</span>
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 rounded-xl text-sm text-emerald-400 disabled:opacity-50 active:bg-slate-700"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl text-sm text-emerald-600 disabled:opacity-50 active:bg-slate-200"
           >
             <Camera size={16} />{uploading ? 'Lädt hoch…' : 'Foto hinzufügen'}
           </button>
@@ -466,11 +466,11 @@ function TaskDetail({ task, onStatusChange, updatingId }: {
           <div className="grid grid-cols-3 gap-1.5">
             {images.map(img => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={img.id} src={img.url} alt={img.name} className="w-full aspect-square object-cover rounded-lg bg-slate-800" />
+              <img key={img.id} src={img.url} alt={img.name} className="w-full aspect-square object-cover rounded-lg bg-slate-100" />
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-600 text-center py-6">Noch keine Fotos</p>
+          <p className="text-sm text-slate-400 text-center py-6">Noch keine Fotos</p>
         )}
       </div>
     </div>
@@ -479,9 +479,9 @@ function TaskDetail({ task, onStatusChange, updatingId }: {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between py-3.5 border-b border-slate-800">
-      <span className="text-sm text-slate-400">{label}</span>
-      <span className="text-sm font-semibold">{value}</span>
+    <div className="flex items-center justify-between py-3.5 border-b border-slate-200">
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="text-sm font-semibold text-slate-900">{value}</span>
     </div>
   );
 }
@@ -541,24 +541,24 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
       <div className="space-y-5">
 
         <div>
-          <label className="block text-sm font-semibold text-slate-300 mb-2">Titel *</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Titel *</label>
           <input
             type="text" placeholder="Was muss erledigt werden?" value={title}
             onChange={e => setTitle(e.target.value)} autoFocus
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-4 text-base text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-4 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-300 mb-2">Wald *</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Wald *</label>
           <select value={forestId} onChange={e => setForestId(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-4 text-base text-white focus:outline-none focus:border-emerald-500">
+            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-4 text-base text-slate-900 focus:outline-none focus:border-emerald-500">
             {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-300 mb-2">Priorität</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Priorität</label>
           <div className="grid grid-cols-2 gap-2">
             {([
               ['LOW', 'Niedrig', '#475569'], ['MEDIUM', 'Mittel', '#ca8a04'],
@@ -568,7 +568,7 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
                 className="py-3.5 rounded-xl text-sm font-semibold transition-all"
                 style={priority === val
                   ? { backgroundColor: color, color: '#fff' }
-                  : { backgroundColor: 'rgb(30 41 59)', color: '#94a3b8' }
+                  : { backgroundColor: 'rgb(241 245 249)', color: '#475569' }
                 }
               >
                 {label}
@@ -579,15 +579,15 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
 
         {members.length > 0 && (
           <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-2">Zuweisen an</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Zuweisen an</label>
             <div className="space-y-2">
               <button onClick={() => setAssigneeId('')}
-                className={`w-full text-left px-4 py-3.5 rounded-xl text-base transition-colors ${assigneeId === '' ? 'bg-emerald-700 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                className={`w-full text-left px-4 py-3.5 rounded-xl text-base transition-colors ${assigneeId === '' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
                 Nicht zugewiesen
               </button>
               {members.map(m => (
                 <button key={m.id} onClick={() => setAssigneeId(m.id)}
-                  className={`w-full text-left px-4 py-3.5 rounded-xl text-base transition-colors ${assigneeId === m.id ? 'bg-emerald-700 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                  className={`w-full text-left px-4 py-3.5 rounded-xl text-base transition-colors ${assigneeId === m.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
                   {memberName(m)}
                 </button>
               ))}
@@ -596,7 +596,7 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
         )}
 
         <div>
-          <label className="block text-sm font-semibold text-slate-300 mb-2">Fällig am</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Fällig am</label>
           <DateTrigger value={dueDate} placeholder="Kein Datum gewählt" onClick={() => setShowDatePicker(true)} />
           {showDatePicker && (
             <DatePickerSheet
@@ -609,7 +609,7 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-300 mb-2">Foto (optional)</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Foto (optional)</label>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
           {photoPreview ? (
             <div className="relative">
@@ -622,7 +622,7 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
             </div>
           ) : (
             <button onClick={() => fileRef.current?.click()}
-              className="w-full flex items-center justify-center gap-3 py-5 bg-slate-800 border-2 border-dashed border-slate-600 rounded-xl text-base text-slate-400 active:bg-slate-700">
+              className="w-full flex items-center justify-center gap-3 py-5 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl text-base text-slate-400 active:bg-slate-100">
               <Camera size={22} /> Foto aufnehmen
             </button>
           )}

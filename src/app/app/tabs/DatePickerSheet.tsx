@@ -80,17 +80,17 @@ export function DatePickerSheet({ value, label = 'Datum wählen', onChange, onCl
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-slate-900 rounded-t-3xl w-full">
+      <div className="relative bg-white rounded-t-3xl w-full">
 
         {/* Griffleiste */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-12 h-1.5 bg-slate-700 rounded-full" />
+          <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
         </div>
 
         {/* Kopfzeile */}
         <div className="flex items-center justify-between px-5 pt-2 pb-3">
-          <span className="text-base font-bold text-white">{label}</span>
-          <button onClick={onClose} className="p-2.5 text-slate-400 active:text-white rounded-xl active:bg-slate-800">
+          <span className="text-base font-bold text-slate-900">{label}</span>
+          <button onClick={onClose} className="p-2.5 text-slate-400 active:text-slate-800 rounded-xl active:bg-slate-100">
             <X size={22} />
           </button>
         </div>
@@ -101,7 +101,7 @@ export function DatePickerSheet({ value, label = 'Datum wählen', onChange, onCl
             <button
               key={d}
               onClick={() => pickOffset(d)}
-              className="flex-1 py-2.5 rounded-xl bg-slate-800 text-xs font-semibold text-slate-300 active:bg-emerald-700 active:text-white transition-colors"
+              className="flex-1 py-2.5 rounded-xl bg-slate-100 text-xs font-semibold text-slate-600 active:bg-emerald-600 active:text-white transition-colors"
             >
               {lbl}
             </button>
@@ -112,16 +112,16 @@ export function DatePickerSheet({ value, label = 'Datum wählen', onChange, onCl
         <div className="flex items-center justify-between px-4 mb-3">
           <button
             onClick={prevMonth}
-            className="w-14 h-14 flex items-center justify-center rounded-2xl bg-slate-800 active:bg-slate-700"
+            className="w-14 h-14 flex items-center justify-center rounded-2xl bg-slate-100 active:bg-slate-200 text-slate-700"
           >
             <ChevronLeft size={26} />
           </button>
-          <span className="text-lg font-bold">
+          <span className="text-lg font-bold text-slate-900">
             {MONTHS[viewMonth]} {viewYear}
           </span>
           <button
             onClick={nextMonth}
-            className="w-14 h-14 flex items-center justify-center rounded-2xl bg-slate-800 active:bg-slate-700"
+            className="w-14 h-14 flex items-center justify-center rounded-2xl bg-slate-100 active:bg-slate-200 text-slate-700"
           >
             <ChevronRight size={26} />
           </button>
@@ -130,7 +130,7 @@ export function DatePickerSheet({ value, label = 'Datum wählen', onChange, onCl
         {/* Wochentag-Kopf */}
         <div className="grid grid-cols-7 px-4 mb-1">
           {DAY_NAMES.map(d => (
-            <div key={d} className="text-center text-xs font-bold text-slate-500 py-1">
+            <div key={d} className="text-center text-xs font-bold text-slate-400 py-1">
               {d}
             </div>
           ))}
@@ -147,8 +147,8 @@ export function DatePickerSheet({ value, label = 'Datum wählen', onChange, onCl
                     isSelected(day)
                       ? 'bg-emerald-500 text-white'
                       : isToday(day)
-                      ? 'bg-slate-700 text-emerald-400 ring-2 ring-emerald-500'
-                      : 'text-slate-200 active:bg-slate-700'
+                      ? 'bg-slate-100 text-emerald-600 ring-2 ring-emerald-500'
+                      : 'text-slate-800 active:bg-slate-100'
                   }`}
                 >
                   {day}
@@ -164,7 +164,7 @@ export function DatePickerSheet({ value, label = 'Datum wählen', onChange, onCl
         <div className="px-4 pt-2 pb-10">
           <button
             onClick={() => { onChange(''); onClose(); }}
-            className="w-full py-4 rounded-2xl bg-slate-800 text-slate-400 text-sm font-semibold active:bg-slate-700"
+            className="w-full py-4 rounded-2xl bg-slate-100 text-slate-500 text-sm font-semibold active:bg-slate-200"
           >
             Kein Datum
           </button>
@@ -194,10 +194,10 @@ export function DateTrigger({ value, placeholder = 'Kein Datum gewählt', onClic
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-4 px-4 py-4 bg-slate-800 border border-slate-700 rounded-xl active:bg-slate-700 transition-colors text-left"
+      className="w-full flex items-center gap-4 px-4 py-4 bg-white border border-slate-300 rounded-xl active:bg-slate-50 transition-colors text-left"
     >
-      <CalendarDays size={24} className="text-emerald-400 shrink-0" />
-      <span className={`text-base ${label ? 'text-white font-medium' : 'text-slate-500'}`}>
+      <CalendarDays size={24} className="text-emerald-500 shrink-0" />
+      <span className={`text-base ${label ? 'text-slate-900 font-medium' : 'text-slate-400'}`}>
         {label ?? placeholder}
       </span>
     </button>

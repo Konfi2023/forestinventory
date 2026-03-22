@@ -20,7 +20,7 @@ export function PolterTab({ forests, orgSlug }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="shrink-0 bg-slate-900 border-b border-slate-800 flex">
+      <div className="shrink-0 bg-white border-b border-slate-200 flex">
         {([
           ['capture', 'Erfassen', PlusCircle],
           ['list',    'Liste',    List],
@@ -31,8 +31,8 @@ export function PolterTab({ forests, orgSlug }: Props) {
             onClick={() => setSubTab(key)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
               subTab === key
-                ? 'text-amber-400 border-b-2 border-amber-400'
-                : 'text-slate-500 hover:text-slate-300'
+                ? 'text-amber-600 border-b-2 border-amber-500'
+                : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             <Icon size={14} />

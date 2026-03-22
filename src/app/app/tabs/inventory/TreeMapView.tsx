@@ -165,13 +165,13 @@ export function TreeMapView({ orgSlug, forests }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Forest-Selektor */}
-      <div className="shrink-0 bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center gap-2">
-        <TreePine size={15} className="text-emerald-400 shrink-0" />
+      <div className="shrink-0 bg-white border-b border-slate-200 px-3 py-2 flex items-center gap-2">
+        <TreePine size={15} className="text-emerald-600 shrink-0" />
         <div className="relative flex-1">
           <select
             value={forestId}
             onChange={e => setForestId(e.target.value)}
-            className="w-full appearance-none bg-slate-800 text-sm text-white rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full appearance-none bg-slate-50 text-sm text-slate-800 rounded-lg px-3 py-1.5 pr-7 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
             {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
@@ -180,7 +180,7 @@ export function TreeMapView({ orgSlug, forests }: Props) {
         <button
           onClick={() => loadTrees(forestId)}
           disabled={loading}
-          className="shrink-0 text-slate-400 hover:text-white disabled:opacity-40"
+          className="shrink-0 text-slate-400 hover:text-slate-700 disabled:opacity-40"
           title="Aktualisieren"
         >
           <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
@@ -193,17 +193,17 @@ export function TreeMapView({ orgSlug, forests }: Props) {
 
         {/* Lade-Overlay */}
         {loading && (
-          <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-slate-950/60 pointer-events-none">
-            <RefreshCw size={22} className="animate-spin text-slate-300" />
+          <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-white/60 pointer-events-none">
+            <RefreshCw size={22} className="animate-spin text-slate-500" />
           </div>
         )}
 
         {/* Zähler */}
         {!loading && (
-          <div className="absolute top-2 left-2 z-[1000] bg-slate-900/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs text-slate-300 flex items-center gap-1.5">
-            <TreePine size={12} className="text-emerald-400" />
+          <div className="absolute top-2 left-2 z-[1000] bg-white/90 backdrop-blur border border-slate-200 px-2.5 py-1 rounded-lg text-xs text-slate-600 flex items-center gap-1.5">
+            <TreePine size={12} className="text-emerald-600" />
             {treeCount} Bäume
-            {offlineCount > 0 && <span className="text-amber-400">· {offlineCount} offline</span>}
+            {offlineCount > 0 && <span className="text-amber-500">· {offlineCount} offline</span>}
           </div>
         )}
 
@@ -217,24 +217,24 @@ export function TreeMapView({ orgSlug, forests }: Props) {
 
         {/* Detail-Popup */}
         {selected && (
-          <div className="absolute bottom-4 left-3 right-3 z-[1000] bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-xl">
+          <div className="absolute bottom-4 left-3 right-3 z-[1000] bg-white border border-slate-200 rounded-2xl p-4 shadow-xl">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span
                   className="w-3 h-3 rounded-full shrink-0"
                   style={{ backgroundColor: TREE_SPECIES.find(s => s.id === selected.species)?.color ?? '#64748b' }}
                 />
-                <span className="font-semibold text-sm">
+                <span className="font-semibold text-sm text-slate-900">
                   {TREE_SPECIES.find(s => s.id === selected.species)?.label ?? selected.species ?? 'Unbekannte Baumart'}
                 </span>
               </div>
-              <button onClick={() => setSelected(null)} className="text-slate-500 hover:text-white text-xl leading-none">×</button>
+              <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-800 text-xl leading-none">×</button>
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-400">
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-500">
               {selected.diameter && <span>Ø {selected.diameter} cm</span>}
               {selected.height   && <span>↕ {selected.height} m</span>}
               <span className="font-mono">{selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}</span>
-              {!selected.synced  && <span className="text-amber-400">Offline – nicht sync.</span>}
+              {!selected.synced  && <span className="text-amber-500">Offline – nicht sync.</span>}
             </div>
           </div>
         )}

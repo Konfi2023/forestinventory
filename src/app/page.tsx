@@ -427,6 +427,10 @@ export default function Home() {
                       {f}
                     </li>
                   ))}
+                  <li className={`flex items-start gap-2 text-sm font-medium pt-1 border-t ${plan.highlight ? 'text-green-200 border-green-700' : 'text-slate-700 border-slate-100'}`}>
+                    <CheckCircle2 size={14} className={`shrink-0 mt-0.5 ${plan.highlight ? 'text-green-300' : 'text-green-600'}`} />
+                    {plan.support}
+                  </li>
                 </ul>
 
                 <SignInButton
@@ -485,54 +489,59 @@ export default function Home() {
 // ─── Plan data ────────────────────────────────────────────────────────────────
 
 const PLAN_FEATURES = [
-  'Alle Karten-Funktionen',
-  'Holzernte & Poltererfassung',
-  'Aufgaben & Maßnahmen',
-  'Mobile App (Offline)',
-  'Dokumenten-Upload',
-  'E-Mail Support',
-  'Regelmäßige Updates',
+  'Interaktive Forstkarte',
+  'POIs: Hochsitze, Wege, Hütten, Fahrzeuge',
+  'Aufgaben & Maßnahmenplanung',
+  'Baum- & Holzpolterinventar (Mobile App)',
+  'Berichte & Kostencontrolling',
+  'Satellitenmonitoring (Biomasse, NDVI)',
+  'Waldgesundheitsmonitoring',
+  'Team-Einladungen & Rollen',
 ];
 
 const PLANS = [
   {
-    name:       'Starter',
+    name:       'Basis',
     desc:       'Für kleine Privatwälder',
-    limit:      'Bis 25 Hektar',
-    price:      '9 €',
+    limit:      'bis 20 ha · 1 Nutzer',
+    price:      '4,90 €',
     badge:      null,
     highlight:  false,
     enterprise: false,
+    support:    'E-Mail Support',
     cta:        'Kostenlos testen',
   },
   {
-    name:       'Standard',
-    desc:       'Unser Bestseller',
-    limit:      'Bis 100 Hektar',
-    price:      '19 €',
-    badge:      'Bestseller',
+    name:       'Pro',
+    desc:       'Für wachsende Forstbetriebe',
+    limit:      'bis 100 ha · 3 Nutzer',
+    price:      '19,90 €',
+    badge:      'Beliebt',
     highlight:  true,
     enterprise: false,
+    support:    'Prioritäts-Support',
     cta:        'Kostenlos testen',
   },
   {
-    name:       'Premium',
-    desc:       'Für große Betriebe',
-    limit:      'Bis 250 Hektar',
-    price:      '29 €',
+    name:       'Expert',
+    desc:       'Für professionelle Forstunternehmen',
+    limit:      'bis 200 ha · 7 Nutzer',
+    price:      '39,90 €',
     badge:      null,
     highlight:  false,
     enterprise: false,
+    support:    'Telefonischer Support',
     cta:        'Kostenlos testen',
   },
   {
     name:       'Enterprise',
     desc:       'Kommunen & Verbände',
-    limit:      'Ab 250 Hektar',
+    limit:      'Unbegrenzte Fläche · Unbegrenzte Nutzer',
     price:      null,
     badge:      null,
     highlight:  false,
     enterprise: true,
+    support:    'Dedizierter Support & SLA',
     cta:        'Kontakt aufnehmen',
   },
 ];

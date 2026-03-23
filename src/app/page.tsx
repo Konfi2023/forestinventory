@@ -7,6 +7,8 @@ import {
   Map, Leaf, ShieldCheck, PackageOpen,
   ClipboardList, Trees, Radio, Zap,
   ArrowRight, CheckCircle2, Globe, Lock,
+  TreePine, Mountain, Building2, Mail,
+  Crosshair, BarChart3, Satellite, Users,
 } from 'lucide-react';
 import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
@@ -365,86 +367,104 @@ export default function Home() {
 
       {/* ── PREISE ───────────────────────────────────────────────────────────── */}
       <section id="preise" className="py-24 px-6 bg-stone-50 border-t border-stone-200">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14 space-y-3">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10 space-y-3">
             <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Preise</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Einfach und transparent.</h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              Starten Sie kostenlos — skalieren Sie mit Ihrem Betrieb.
-              Alle Pläne beinhalten den vollen Funktionsumfang.
+              30 Tage kostenlos testen — keine Kreditkarte erforderlich.
+              Alle Pakete beinhalten den vollen Funktionsumfang.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
-            {PLANS.map(plan => (
+          {/* Features-Block wie in PlanCards */}
+          <div className="bg-green-50 border border-green-100 rounded-2xl px-6 py-5 mb-8">
+            <p className="text-xs font-bold text-green-700 uppercase tracking-wider mb-4">In jedem Paket enthalten</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {PLAN_FEATURES.map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-start gap-2">
+                  <Icon size={14} className="text-green-600 mt-0.5 shrink-0" />
+                  <span className="text-xs text-slate-700 leading-snug">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Plan-Karten wie in PlanCards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch mb-5">
+            {PLANS.filter(p => !p.enterprise).map(plan => (
               <div
                 key={plan.name}
-                className={`relative rounded-2xl p-6 flex flex-col gap-5 ${
+                className={`relative bg-white rounded-2xl p-6 flex flex-col shadow-sm transition-all duration-200 border-2 ${
                   plan.highlight
-                    ? 'bg-green-800 text-white ring-2 ring-green-600 shadow-xl'
-                    : 'bg-white border border-stone-200 shadow-sm'
+                    ? 'border-green-700 shadow-lg md:-translate-y-2'
+                    : 'border-slate-200'
                 }`}
               >
                 {plan.badge && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-700 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow">
                     {plan.badge}
-                  </span>
+                  </div>
                 )}
 
-                <div>
-                  <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${plan.highlight ? 'text-green-300' : 'text-green-700'}`}>
-                    {plan.name}
-                  </p>
-                  <p className={`text-sm mb-1 ${plan.highlight ? 'text-green-200' : 'text-slate-500'}`}>
-                    {plan.desc}
-                  </p>
-                  <p className={`text-xs font-medium mb-3 ${plan.highlight ? 'text-green-300' : 'text-green-700'}`}>
-                    {plan.limit}
-                  </p>
-                  {plan.price ? (
-                    <div className="flex items-end gap-1">
-                      <span className={`text-3xl font-bold ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
-                        {plan.price}
-                      </span>
-                      <span className={`text-sm mb-1 ${plan.highlight ? 'text-green-300' : 'text-slate-400'}`}>/Monat</span>
-                    </div>
-                  ) : (
-                    <p className={`text-2xl font-bold ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
-                      Auf Anfrage
-                    </p>
-                  )}
-                  {plan.price && (
-                    <p className={`text-xs mt-0.5 ${plan.highlight ? 'text-green-300' : 'text-slate-400'}`}>
-                      zzgl. 19 % MwSt.
-                    </p>
-                  )}
+                {/* Icon */}
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${plan.iconBg}`}>
+                  <plan.icon className={`w-5 h-5 ${plan.iconColor}`} />
                 </div>
 
-                <ul className="space-y-2 flex-1">
-                  {PLAN_FEATURES.map(f => (
-                    <li key={f} className={`flex items-start gap-2 text-sm ${plan.highlight ? 'text-green-100' : 'text-slate-600'}`}>
-                      <CheckCircle2 size={14} className={`shrink-0 mt-0.5 ${plan.highlight ? 'text-green-400' : 'text-green-600'}`} />
-                      {f}
-                    </li>
-                  ))}
-                  <li className={`flex items-start gap-2 text-sm font-medium pt-1 border-t ${plan.highlight ? 'text-green-200 border-green-700' : 'text-slate-700 border-slate-100'}`}>
-                    <CheckCircle2 size={14} className={`shrink-0 mt-0.5 ${plan.highlight ? 'text-green-300' : 'text-green-600'}`} />
-                    {plan.support}
-                  </li>
-                </ul>
+                {/* Name + tagline */}
+                <h3 className="text-lg font-bold text-slate-900 mb-0.5">{plan.name}</h3>
+                <p className="text-xs text-slate-400 mb-5">{plan.desc}</p>
 
-                <SignInButton
-                  label={plan.cta}
-                  className={`w-full py-2.5 rounded-xl text-sm font-semibold text-center transition-colors ${
-                    plan.highlight
-                      ? 'bg-white text-green-800 hover:bg-green-50'
-                      : plan.enterprise
-                      ? 'bg-stone-100 text-slate-700 hover:bg-stone-200'
-                      : 'bg-green-700 text-white hover:bg-green-600'
-                  }`}
-                />
+                {/* Preis */}
+                <div className="mb-0.5 flex items-baseline gap-1">
+                  <span className={`text-4xl font-bold ${plan.highlight ? 'text-green-700' : 'text-slate-900'}`}>
+                    {plan.price}
+                  </span>
+                  <span className="text-slate-400 text-sm">/ Monat</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-5">zzgl. MwSt.</p>
+
+                {/* Limit-Badge */}
+                <div className={`text-sm font-bold px-4 py-3 rounded-xl border text-center mb-4 ${plan.accentBg} ${plan.accentBorder} ${plan.accentText}`}>
+                  {plan.limit}
+                  <span className="font-normal text-xs ml-2 opacity-75">· {plan.users}</span>
+                </div>
+
+                {/* CTA */}
+                <div className="mt-auto">
+                  <SignInButton
+                    label="Kostenlos testen"
+                    className={`w-full py-2.5 rounded-xl text-sm font-bold text-center transition-colors ${
+                      plan.highlight
+                        ? 'bg-green-700 text-white hover:bg-green-800'
+                        : 'border-2 border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                    }`}
+                  />
+                </div>
               </div>
             ))}
+          </div>
+
+          {/* Enterprise-Banner wie in PlanCards */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-amber-100 w-11 h-11 rounded-xl flex items-center justify-center text-amber-600 shrink-0">
+                <Building2 size={20} />
+              </div>
+              <div>
+                <p className="text-slate-900 font-bold">Enterprise</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Unbegrenzte Fläche · Unbegrenzte Nutzer · Alle Funktionen · Individuelle SLA · Dedizierter Support · API-Zugang
+                </p>
+              </div>
+            </div>
+            <a
+              href="mailto:info@natureport.eu"
+              className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition"
+            >
+              <Mail size={14} /> Kontakt aufnehmen
+            </a>
           </div>
         </div>
       </section>
@@ -489,60 +509,80 @@ export default function Home() {
 // ─── Plan data ────────────────────────────────────────────────────────────────
 
 const PLAN_FEATURES = [
-  'Interaktive Forstkarte',
-  'POIs: Hochsitze, Wege, Hütten, Fahrzeuge',
-  'Aufgaben & Maßnahmenplanung',
-  'Baum- & Holzpolterinventar (Mobile App)',
-  'Berichte & Kostencontrolling',
-  'Satellitenmonitoring (Biomasse, NDVI)',
-  'Waldgesundheitsmonitoring',
-  'Team-Einladungen & Rollen',
+  { icon: Map,           label: 'Interaktive Forstkarte' },
+  { icon: Crosshair,     label: 'POIs: Hochsitze, Wege, Hütten, Fahrzeuge' },
+  { icon: ClipboardList, label: 'Aufgaben & Maßnahmenplanung' },
+  { icon: Leaf,          label: 'Baum- & Holzpolterinventar (Mobile App)' },
+  { icon: BarChart3,     label: 'Berichte & Kostencontrolling' },
+  { icon: Satellite,     label: 'Satellitenmonitoring (Biomasse, NDVI)' },
+  { icon: ShieldCheck,   label: 'Waldgesundheitsmonitoring' },
+  { icon: Users,         label: 'Team-Einladungen & Rollen' },
 ];
 
 const PLANS = [
   {
-    name:       'Basis',
-    desc:       'Für kleine Privatwälder',
-    limit:      'bis 20 ha · 1 Nutzer',
-    price:      '4,90 €',
-    badge:      null,
-    highlight:  false,
-    enterprise: false,
-    support:    'E-Mail Support',
-    cta:        'Kostenlos testen',
+    name:        'Basis',
+    desc:        'Für kleine Privatwälder',
+    limit:       'bis 20 ha',
+    users:       '1 Nutzer',
+    price:       '4,90 €',
+    badge:       null,
+    highlight:   false,
+    enterprise:  false,
+    icon:        TreePine,
+    iconBg:      'bg-blue-50',
+    iconColor:   'text-blue-600',
+    accentBg:    'bg-blue-50',
+    accentBorder:'border-blue-200',
+    accentText:  'text-blue-700',
   },
   {
-    name:       'Pro',
-    desc:       'Für wachsende Forstbetriebe',
-    limit:      'bis 100 ha · 3 Nutzer',
-    price:      '19,90 €',
-    badge:      'Beliebt',
-    highlight:  true,
-    enterprise: false,
-    support:    'Prioritäts-Support',
-    cta:        'Kostenlos testen',
+    name:        'Pro',
+    desc:        'Für wachsende Forstbetriebe',
+    limit:       'bis 100 ha',
+    users:       '3 Nutzer',
+    price:       '19,90 €',
+    badge:       'Beliebt',
+    highlight:   true,
+    enterprise:  false,
+    icon:        Trees,
+    iconBg:      'bg-green-50',
+    iconColor:   'text-green-700',
+    accentBg:    'bg-green-50',
+    accentBorder:'border-green-200',
+    accentText:  'text-green-700',
   },
   {
-    name:       'Expert',
-    desc:       'Für professionelle Forstunternehmen',
-    limit:      'bis 200 ha · 7 Nutzer',
-    price:      '39,90 €',
-    badge:      null,
-    highlight:  false,
-    enterprise: false,
-    support:    'Telefonischer Support',
-    cta:        'Kostenlos testen',
+    name:        'Expert',
+    desc:        'Für professionelle Forstunternehmen',
+    limit:       'bis 200 ha',
+    users:       '7 Nutzer',
+    price:       '39,90 €',
+    badge:       null,
+    highlight:   false,
+    enterprise:  false,
+    icon:        Mountain,
+    iconBg:      'bg-violet-50',
+    iconColor:   'text-violet-600',
+    accentBg:    'bg-violet-50',
+    accentBorder:'border-violet-200',
+    accentText:  'text-violet-700',
   },
   {
-    name:       'Enterprise',
-    desc:       'Kommunen & Verbände',
-    limit:      'Unbegrenzte Fläche · Unbegrenzte Nutzer',
-    price:      null,
-    badge:      null,
-    highlight:  false,
-    enterprise: true,
-    support:    'Dedizierter Support & SLA',
-    cta:        'Kontakt aufnehmen',
+    name:        'Enterprise',
+    desc:        'Kommunen & Verbände',
+    limit:       '',
+    users:       '',
+    price:       null,
+    badge:       null,
+    highlight:   false,
+    enterprise:  true,
+    icon:        Building2,
+    iconBg:      '',
+    iconColor:   '',
+    accentBg:    '',
+    accentBorder:'',
+    accentText:  '',
   },
 ];
 

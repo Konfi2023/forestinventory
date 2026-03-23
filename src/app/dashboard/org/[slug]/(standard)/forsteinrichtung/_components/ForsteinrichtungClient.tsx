@@ -2,12 +2,14 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Search, ChevronDown, ChevronRight, TreePine, Pencil, Layers, BarChart2, CircleDot,
+  Search, TreePine, Layers, BarChart2, CircleDot, PlusCircle, X, Loader2, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { getSpeciesLabel, getSpeciesColor } from '@/lib/tree-species';
-import { CompartmentEditSheet } from './CompartmentEditSheet';
+import { Textarea } from '@/components/ui/textarea';
+import { getSpeciesLabel, getSpeciesColor, TREE_SPECIES } from '@/lib/tree-species';
+import { updateCompartment } from '@/actions/polygons';
+import { toast } from 'sonner';
 import {
   estimateSiteClass, getYieldTableValues, calcStockingDegree,
   isYieldTableSpecies, SITE_CLASS_LABELS,
@@ -99,32 +101,34 @@ interface Forest {
   pois: TreePoi[];
 }
 
-// ── Formzahlen (baumartenspezifisch) ─────────────────────────────────────────
-// Quelle: Standardwerte der deutschen Forstpraxis (Assmann/Franz)
+// ── Formzahlen ────────────────────────────────────────────────────────────────
 const FORM_FACTORS: Record<string, number> = {
-  SPRUCE:  0.45,
-  PINE:    0.45,
-  FIR:     0.45,
-  DOUGLAS: 0.45,
-  LARCH:   0.46,
-  OAK:     0.42,
-  BEECH:   0.43,
-  ASH:     0.42,
-  MAPLE:   0.43,
-  BIRCH:   0.43,
-  ALDER:   0.42,
-  POPLAR:  0.40,
+  SPRUCE: 0.45, PINE: 0.45, FIR: 0.45, DOUGLAS: 0.45, LARCH: 0.46,
+  OAK: 0.42, BEECH: 0.43, ASH: 0.42, MAPLE: 0.43, BIRCH: 0.43,
+  ALDER: 0.42, POPLAR: 0.40,
 };
+
+// ── Form Konstanten ───────────────────────────────────────────────────────────
+const EXPOSITION_OPTIONS  = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW', 'eben'];
+const SLOPE_OPTIONS       = ['eben', 'schwach (<15°)', 'mittel (15–25°)', 'steil (25–35°)', 'sehr steil (>35°)'];
+const DEVELOP_OPTIONS     = ['Blöße', 'Verjüngung', 'Dickung', 'Stangenholz', 'Baumholz I', 'Baumholz II', 'Baumholz III', 'Altholz', 'Plenterwald'];
+const MIXING_OPTIONS      = ['rein', 'truppweise', 'horst', 'gruppen', 'einzeln', 'gemischt'];
+const STRUCTURE_OPTIONS   = ['einschichtig', 'zweischichtig', 'mehrschichtig', 'plenterartig'];
+const PRODUCTIVITY_OPTIONS = ['sehr gering', 'gering', 'mittel', 'hoch', 'sehr hoch'];
+const MAINTENANCE_OPTIONS = ['vernachlässigt', 'mangelhaft', 'ausreichend', 'gut', 'sehr gut'];
+const ACCESSIBILITY_OPTIONS = ['nicht befahrbar', 'bedingt befahrbar', 'befahrbar', 'gut befahrbar'];
+const NUTRIENT_OPTIONS    = ['sehr arm', 'arm', 'mäßig', 'mittel', 'reich', 'sehr reich'];
+const WATER_OPTIONS       = ['trocken', 'mäßig trocken', 'frisch', 'mäßig feucht', 'feucht', 'nass', 'staunass'];
 
 // ── Inventur-Berechnungen ─────────────────────────────────────────────────────
 
 interface InventoryStats {
   n: number;
-  dg: number;                  // quadratischer Mitteldurchmesser (cm)
-  meanHeight: number | null;   // mittlere Höhe (m)
+  dg: number;
+  meanHeight: number | null;
   treesWithHeight: number;
-  basalAreaSum: number;        // Grundfläche Σ (m²)
-  volumeEstimate: number;      // Vorrat ≈ (m³)
+  basalAreaSum: number;
+  volumeEstimate: number;
   speciesBreakdown: { species: string; count: number; pct: number }[];
   healthBreakdown:  { health: string;  count: number; pct: number }[];
 }
@@ -132,57 +136,249 @@ interface InventoryStats {
 function computeInventoryStats(trees: TreePoi[]): InventoryStats | null {
   const withBhd = trees.filter(p => p.tree?.diameter != null);
   if (withBhd.length === 0) return null;
-
   const n = withBhd.length;
-
-  // Quadratischer Mitteldurchmesser Dg = sqrt(Σ BHD² / n)
   const dg = Math.sqrt(withBhd.reduce((s, p) => s + p.tree!.diameter! ** 2, 0) / n);
-
-  // Mittlere Höhe (nur Bäume mit Höhenmessung)
   const withH = withBhd.filter(p => p.tree?.height != null);
-  const meanHeight = withH.length > 0
-    ? withH.reduce((s, p) => s + p.tree!.height!, 0) / withH.length
-    : null;
-
-  // Grundfläche Σ = Σ (π/4 × (BHD/100)²)
-  const basalAreaSum = withBhd.reduce(
-    (s, p) => s + Math.PI * (p.tree!.diameter! / 200) ** 2,
-    0,
-  );
-
-  // Vorrat ≈ = Σ (g_i × h_i × f_i) — nur Bäume mit Höhe
+  const meanHeight = withH.length > 0 ? withH.reduce((s, p) => s + p.tree!.height!, 0) / withH.length : null;
+  const basalAreaSum = withBhd.reduce((s, p) => s + Math.PI * (p.tree!.diameter! / 200) ** 2, 0);
   const volumeEstimate = withBhd.reduce((s, p) => {
     const t = p.tree!;
     if (!t.height) return s;
     const g = Math.PI * (t.diameter! / 200) ** 2;
-    const f = FORM_FACTORS[t.species ?? ''] ?? 0.45;
-    return s + g * t.height * f;
+    return s + g * t.height * (FORM_FACTORS[t.species ?? ''] ?? 0.45);
   }, 0);
-
-  // Artverteilung
   const spMap = new Map<string, number>();
-  withBhd.forEach(p => {
-    const sp = p.tree!.species ?? 'UNKNOWN';
-    spMap.set(sp, (spMap.get(sp) ?? 0) + 1);
-  });
-  const speciesBreakdown = [...spMap.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([species, count]) => ({ species, count, pct: Math.round(count / n * 100) }));
-
-  // Vitalitätsverteilung
+  withBhd.forEach(p => { const sp = p.tree!.species ?? 'UNKNOWN'; spMap.set(sp, (spMap.get(sp) ?? 0) + 1); });
+  const speciesBreakdown = [...spMap.entries()].sort((a, b) => b[1] - a[1]).map(([species, count]) => ({ species, count, pct: Math.round(count / n * 100) }));
   const hMap = new Map<string, number>();
-  trees.forEach(p => {
-    const h = p.tree?.health ?? 'UNKNOWN';
-    hMap.set(h, (hMap.get(h) ?? 0) + 1);
-  });
-  const healthBreakdown = [...hMap.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([health, count]) => ({ health, count, pct: Math.round(count / trees.length * 100) }));
-
+  trees.forEach(p => { const h = p.tree?.health ?? 'UNKNOWN'; hMap.set(h, (hMap.get(h) ?? 0) + 1); });
+  const healthBreakdown = [...hMap.entries()].sort((a, b) => b[1] - a[1]).map(([health, count]) => ({ health, count, pct: Math.round(count / trees.length * 100) }));
   return { n, dg, meanHeight, treesWithHeight: withH.length, basalAreaSum, volumeEstimate, speciesBreakdown, healthBreakdown };
 }
 
-// ── StatPill ──────────────────────────────────────────────────────────────────
+interface PlotStats {
+  n: number; plotAreaHa: number; nHa: number; gHa: number; vHa: number | null;
+  dg: number; meanHeight: number | null; dominantSpecies: Species | null;
+  siteClass: SiteClass | null; refGHa: number | null; refVHa: number | null;
+  refIvHa: number | null; bestockungsgrad: number | null;
+}
+
+function computePlotStats(plot: InventoryPlotData, compartmentAge: number | null): PlotStats | null {
+  const withBhd = plot.trees.filter(t => t.diameter != null);
+  if (withBhd.length === 0) return null;
+  const plotAreaHa = Math.PI * plot.radiusM ** 2 / 10000;
+  const n = withBhd.length;
+  const dg = Math.sqrt(withBhd.reduce((s, t) => s + t.diameter! ** 2, 0) / n);
+  const basalAreaSum = withBhd.reduce((s, t) => s + Math.PI * (t.diameter! / 200) ** 2, 0);
+  const gHa = basalAreaSum / plotAreaHa;
+  const withH = withBhd.filter(t => t.height != null);
+  const meanHeight = withH.length > 0 ? withH.reduce((s, t) => s + t.height!, 0) / withH.length : null;
+  const volumeSum = withBhd.reduce((s, t) => {
+    if (!t.height) return s;
+    return s + Math.PI * (t.diameter! / 200) ** 2 * t.height * (FORM_FACTORS[t.species ?? ''] ?? 0.45);
+  }, 0);
+  const vHa = withH.length > 0 ? volumeSum / plotAreaHa : null;
+  const spCount = new Map<string, number>();
+  withBhd.forEach(t => { if (t.species && isYieldTableSpecies(t.species)) spCount.set(t.species, (spCount.get(t.species) ?? 0) + 1); });
+  const dominantSpecies = spCount.size > 0 ? ([...spCount.entries()].sort((a, b) => b[1] - a[1])[0][0] as Species) : null;
+  let siteClass: SiteClass | null = null, refGHa: number | null = null, refVHa: number | null = null, refIvHa: number | null = null, bestockungsgrad: number | null = null;
+  const age = compartmentAge ?? (withBhd.filter(t => t.age != null).length > 0 ? Math.round(withBhd.filter(t => t.age != null).reduce((s, t) => s + t.age!, 0) / withBhd.filter(t => t.age != null).length) : null);
+  if (dominantSpecies && age && meanHeight) {
+    const sorted = [...withH].sort((a, b) => b.diameter! - a.diameter!);
+    const topK = Math.max(1, Math.round(sorted.length * 0.2));
+    const hTop = sorted.slice(0, topK).reduce((s, t) => s + t.height!, 0) / topK;
+    siteClass = estimateSiteClass(dominantSpecies, age, hTop);
+    const ref = getYieldTableValues(dominantSpecies, age, siteClass);
+    if (ref) { refGHa = ref.gHa; refVHa = ref.vHa; refIvHa = ref.ivHa; bestockungsgrad = calcStockingDegree(gHa, dominantSpecies, age, siteClass); }
+  }
+  return { n, plotAreaHa, nHa: n / plotAreaHa, gHa, vHa, dg, meanHeight, dominantSpecies, siteClass, refGHa, refVHa, refIvHa, bestockungsgrad };
+}
+
+// ── UI Helpers ────────────────────────────────────────────────────────────────
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <label className="text-xs font-semibold text-slate-600 mb-1 block uppercase tracking-wide">{children}</label>;
+}
+
+function SField({ label, value, onChange, options, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; options: string[]; placeholder?: string;
+}) {
+  return (
+    <div>
+      <Label>{label}</Label>
+      <select value={value} onChange={e => onChange(e.target.value)}
+        className="w-full border border-slate-200 rounded-md text-sm px-3 py-2 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <option value="">{placeholder ?? '– wählen –'}</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function NField({ label, value, onChange, unit, step }: {
+  label: string; value: string; onChange: (v: string) => void; unit?: string; step?: string;
+}) {
+  return (
+    <div>
+      <Label>{label}{unit ? ` (${unit})` : ''}</Label>
+      <Input type="number" value={value} onChange={e => onChange(e.target.value)}
+        step={step ?? '0.1'} className="border-slate-200 text-slate-800 focus:ring-emerald-500 text-sm" />
+    </div>
+  );
+}
+
+function TField({ label, value, onChange, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  return (
+    <div>
+      <Label>{label}</Label>
+      <Input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="border-slate-200 text-slate-800 focus:ring-emerald-500 text-sm" />
+    </div>
+  );
+}
+
+function Section({ title, children, cols = 2 }: { title: string; children: React.ReactNode; cols?: number }) {
+  return (
+    <div className="border border-slate-100 rounded-lg overflow-hidden">
+      <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
+        <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</span>
+      </div>
+      <div className={`p-4 grid gap-3`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>{children}</div>
+    </div>
+  );
+}
+
+function SectionFull({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-slate-100 rounded-lg overflow-hidden">
+      <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
+        <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</span>
+      </div>
+      <div className="p-4 space-y-3">{children}</div>
+    </div>
+  );
+}
+
+// ── Species Picker ────────────────────────────────────────────────────────────
+function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; onClose: () => void }) {
+  const [query, setQuery] = useState('');
+  const filtered = TREE_SPECIES.filter(s => s.label.toLowerCase().includes(query.toLowerCase()));
+  return (
+    <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
+        <Search size={12} className="text-slate-400 shrink-0" />
+        <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Baumart suchen…" autoFocus
+          className="text-sm text-slate-800 outline-none flex-1" />
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={12} /></button>
+      </div>
+      <div className="max-h-48 overflow-y-auto">
+        {filtered.map(s => (
+          <button key={s.id} onClick={() => { onSelect(s.id); onClose(); }}
+            className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-slate-50 text-left text-sm text-slate-700">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+            {s.label}
+          </button>
+        ))}
+        {filtered.length === 0 && <p className="text-sm text-slate-400 px-3 py-2">Keine Treffer</p>}
+      </div>
+    </div>
+  );
+}
+
+function SpeciesEditor({ label, entries, onChange }: {
+  label: string; entries: SpeciesEntry[]; onChange: (e: SpeciesEntry[]) => void;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
+  const updatePct = (i: number, v: string) => onChange(entries.map((e, idx) => idx === i ? { ...e, percent: Number(v) } : e));
+  return (
+    <div>
+      <Label>{label}</Label>
+      <div className="space-y-1.5">
+        {entries.map((e, i) => (
+          <div key={i} className="flex gap-2 items-center relative">
+            <div className="flex-1 relative">
+              <button onClick={() => setEditIdx(editIdx === i ? null : i)}
+                className="flex items-center gap-2 w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm text-left hover:border-slate-300">
+                {e.species && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getSpeciesColor(e.species) }} />}
+                <span className={e.species ? 'text-slate-800' : 'text-slate-400'}>
+                  {e.species ? getSpeciesLabel(e.species) : '– Baumart wählen –'}
+                </span>
+              </button>
+              {editIdx === i && (
+                <SpeciesPicker onSelect={id => { onChange(entries.map((en, idx) => idx === i ? { ...en, species: id } : en)); setEditIdx(null); }} onClose={() => setEditIdx(null)} />
+              )}
+            </div>
+            <Input type="number" min="0" max="100" value={e.percent || ''} onChange={ev => updatePct(i, ev.target.value)}
+              placeholder="%" className="w-20 border-slate-200 text-sm" />
+            <button onClick={() => remove(i)} className="text-slate-400 hover:text-red-400">×</button>
+          </div>
+        ))}
+        <div className="relative">
+          <button onClick={() => setPickerOpen(p => !p)} className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+            <PlusCircle size={13} /> Baumart hinzufügen
+          </button>
+          {pickerOpen && (
+            <SpeciesPicker onSelect={id => { if (!entries.some(e => e.species === id)) onChange([...entries, { species: id, percent: 0 }]); setPickerOpen(false); }} onClose={() => setPickerOpen(false)} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RejuvEditor({ entries, onChange }: { entries: RejuvEntry[]; onChange: (e: RejuvEntry[]) => void }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
+  const upd = (i: number, f: 'heightCm' | 'density', v: string) =>
+    onChange(entries.map((e, idx) => idx === i ? { ...e, [f]: f === 'heightCm' ? Number(v) : v } : e));
+  return (
+    <div>
+      <Label>Verjüngung (Baumart / Höhe cm / Dichte)</Label>
+      <div className="space-y-1.5">
+        {entries.map((e, i) => (
+          <div key={i} className="flex gap-2 items-center relative">
+            <div className="flex-1 relative">
+              <button onClick={() => setEditIdx(editIdx === i ? null : i)}
+                className="flex items-center gap-2 w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm text-left hover:border-slate-300">
+                {e.species && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getSpeciesColor(e.species) }} />}
+                <span className={e.species ? 'text-slate-800' : 'text-slate-400'}>
+                  {e.species ? getSpeciesLabel(e.species) : '– Baumart –'}
+                </span>
+              </button>
+              {editIdx === i && (
+                <SpeciesPicker onSelect={id => { onChange(entries.map((en, idx) => idx === i ? { ...en, species: id } : en)); setEditIdx(null); }} onClose={() => setEditIdx(null)} />
+              )}
+            </div>
+            <Input type="number" value={e.heightCm || ''} onChange={ev => upd(i, 'heightCm', ev.target.value)}
+              placeholder="cm" className="w-20 border-slate-200 text-sm" />
+            <Input value={e.density} onChange={ev => upd(i, 'density', ev.target.value)}
+              placeholder="Dichte" className="w-24 border-slate-200 text-sm" />
+            <button onClick={() => remove(i)} className="text-slate-400 hover:text-red-400">×</button>
+          </div>
+        ))}
+        <div className="relative">
+          <button onClick={() => setPickerOpen(p => !p)} className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+            <PlusCircle size={13} /> Baumart hinzufügen
+          </button>
+          {pickerOpen && (
+            <SpeciesPicker onSelect={id => { onChange([...entries, { species: id, heightCm: 0, density: '' }]); setPickerOpen(false); }} onClose={() => setPickerOpen(false)} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Stats Blocks ──────────────────────────────────────────────────────────────
+
+const HEALTH_LABEL_MAP: Record<string, string> = { HEALTHY: 'Vital', DAMAGED: 'Geschädigt', DEAD: 'Abgestorben', MARKED_FOR_FELLING: 'Zum Fällen' };
+const HEALTH_COLOR_MAP: Record<string, string> = { HEALTHY: 'text-emerald-600', DAMAGED: 'text-amber-500', DEAD: 'text-red-500', MARKED_FOR_FELLING: 'text-orange-500' };
+const HEALTH_LABEL: Record<string, string> = { HEALTHY: 'Vital', STRESSED: 'Gestresst', DAMAGED: 'Geschädigt', DEAD: 'Abgestorben' };
 
 function StatPill({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -194,251 +390,75 @@ function StatPill({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
-// ── InventoryStatsBlock ───────────────────────────────────────────────────────
-
-const HEALTH_LABEL_MAP: Record<string, string> = {
-  HEALTHY:            'Vital',
-  DAMAGED:            'Geschädigt',
-  DEAD:               'Abgestorben',
-  MARKED_FOR_FELLING: 'Zum Fällen',
-};
-
-const HEALTH_COLOR_MAP: Record<string, string> = {
-  HEALTHY:            'text-emerald-600',
-  DAMAGED:            'text-amber-500',
-  DEAD:               'text-red-500',
-  MARKED_FOR_FELLING: 'text-orange-500',
-};
-
 function InventoryStatsBlock({ trees }: { trees: TreePoi[] }) {
   const stats = useMemo(() => computeInventoryStats(trees), [trees]);
   if (!stats) return null;
-
   return (
-    <div className="px-4 py-3 bg-emerald-50/60 border-t border-emerald-100">
-      <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-2.5 flex items-center gap-1.5">
-        <BarChart2 size={11} />
-        Inventur-Auswertung · {stats.n} Bäume
+    <div className="border border-slate-100 rounded-lg overflow-hidden">
+      <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+        <span className="text-xs font-bold uppercase tracking-wide text-emerald-700 flex items-center gap-1.5">
+          <BarChart2 size={11} /> Inventur-Auswertung · {stats.n} Bäume
+        </span>
       </div>
-
-      {/* Kennzahlen-Pills */}
-      <div className="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-4">
-        <StatPill
-          label="Mittl. BHD (Dg)"
-          value={`${stats.dg.toFixed(1)} cm`}
-        />
-        <StatPill
-          label="Mittl. Höhe"
-          value={stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'}
-          sub={stats.meanHeight != null && stats.treesWithHeight < stats.n
-            ? `aus ${stats.treesWithHeight} Bäumen`
-            : undefined}
-        />
-        <StatPill
-          label="Grundfläche Σ"
-          value={`${stats.basalAreaSum.toFixed(2)} m²`}
-        />
-        <StatPill
-          label="Vorrat ≈"
-          value={stats.volumeEstimate > 0 ? `${stats.volumeEstimate.toFixed(1)} m³` : '–'}
-          sub={stats.volumeEstimate > 0 ? 'Schätzwert' : undefined}
-        />
-      </div>
-
-      {/* Artverteilung */}
-      {stats.speciesBreakdown.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {stats.speciesBreakdown.map(s => (
-            <span
-              key={s.species}
-              className="flex items-center gap-1 text-xs text-slate-700 bg-white border border-slate-100 rounded-full px-2 py-0.5"
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: getSpeciesColor(s.species) }}
-              />
-              {getSpeciesLabel(s.species)} {s.pct}%
+      <div className="p-4 space-y-3">
+        <div className="grid grid-cols-4 gap-2">
+          <StatPill label="Mittl. BHD (Dg)" value={`${stats.dg.toFixed(1)} cm`} />
+          <StatPill label="Mittl. Höhe" value={stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'} sub={stats.meanHeight != null && stats.treesWithHeight < stats.n ? `aus ${stats.treesWithHeight} Bäumen` : undefined} />
+          <StatPill label="Grundfläche Σ" value={`${stats.basalAreaSum.toFixed(2)} m²`} />
+          <StatPill label="Vorrat ≈" value={stats.volumeEstimate > 0 ? `${stats.volumeEstimate.toFixed(1)} m³` : '–'} sub={stats.volumeEstimate > 0 ? 'Schätzwert' : undefined} />
+        </div>
+        {stats.speciesBreakdown.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {stats.speciesBreakdown.map(s => (
+              <span key={s.species} className="flex items-center gap-1 text-xs text-slate-700 bg-white border border-slate-100 rounded-full px-2 py-0.5">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: getSpeciesColor(s.species) }} />
+                {getSpeciesLabel(s.species)} {s.pct}%
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-3">
+          {stats.healthBreakdown.map(h => (
+            <span key={h.health} className={`text-xs font-medium ${HEALTH_COLOR_MAP[h.health] ?? 'text-slate-500'}`}>
+              {HEALTH_LABEL_MAP[h.health] ?? h.health} {h.pct}%
             </span>
           ))}
         </div>
-      )}
-
-      {/* Vitalität */}
-      <div className="flex flex-wrap gap-3">
-        {stats.healthBreakdown.map(h => (
-          <span
-            key={h.health}
-            className={`text-xs font-medium ${HEALTH_COLOR_MAP[h.health] ?? 'text-slate-500'}`}
-          >
-            {HEALTH_LABEL_MAP[h.health] ?? h.health} {h.pct}%
-          </span>
-        ))}
       </div>
     </div>
   );
 }
 
-// ── Plot-Stats ────────────────────────────────────────────────────────────────
-
-interface PlotStats {
-  n: number;
-  plotAreaHa: number;
-  nHa: number;
-  gHa: number;
-  vHa: number | null;
-  dg: number;
-  meanHeight: number | null;
-  dominantSpecies: Species | null;
-  siteClass: SiteClass | null;
-  refGHa: number | null;
-  refVHa: number | null;
-  refIvHa: number | null;
-  bestockungsgrad: number | null;
-}
-
-function computePlotStats(plot: InventoryPlotData, compartmentAge: number | null): PlotStats | null {
-  const withBhd = plot.trees.filter(t => t.diameter != null);
-  if (withBhd.length === 0) return null;
-
-  const plotAreaHa = Math.PI * plot.radiusM ** 2 / 10000;
-  const n = withBhd.length;
-
-  const dg = Math.sqrt(withBhd.reduce((s, t) => s + t.diameter! ** 2, 0) / n);
-
-  const basalAreaSum = withBhd.reduce((s, t) => s + Math.PI * (t.diameter! / 200) ** 2, 0);
-  const gHa = basalAreaSum / plotAreaHa;
-
-  const withH = withBhd.filter(t => t.height != null);
-  const meanHeight = withH.length > 0 ? withH.reduce((s, t) => s + t.height!, 0) / withH.length : null;
-
-  const volumeSum = withBhd.reduce((s, t) => {
-    if (!t.height) return s;
-    const g = Math.PI * (t.diameter! / 200) ** 2;
-    const f = FORM_FACTORS[t.species ?? ''] ?? 0.45;
-    return s + g * t.height * f;
-  }, 0);
-  const vHa = withH.length > 0 ? volumeSum / plotAreaHa : null;
-
-  // Dominant species (from YIELD_TABLE_SPECIES only)
-  const spCount = new Map<string, number>();
-  withBhd.forEach(t => {
-    if (t.species && isYieldTableSpecies(t.species)) {
-      spCount.set(t.species, (spCount.get(t.species) ?? 0) + 1);
-    }
-  });
-  const dominantSpecies = spCount.size > 0
-    ? ([...spCount.entries()].sort((a, b) => b[1] - a[1])[0][0] as Species)
-    : null;
-
-  // Oberhöhe: mean height of top-20% trees by diameter (min 1 tree)
-  let siteClass: SiteClass | null = null;
-  let refGHa: number | null = null;
-  let refVHa: number | null = null;
-  let refIvHa: number | null = null;
-  let bestockungsgrad: number | null = null;
-
-  const age = compartmentAge ??
-    (withBhd.filter(t => t.age != null).length > 0
-      ? Math.round(withBhd.filter(t => t.age != null).reduce((s, t) => s + t.age!, 0) / withBhd.filter(t => t.age != null).length)
-      : null);
-
-  if (dominantSpecies && age && meanHeight) {
-    // Oberhöhe estimate: use top-20% BHD trees' mean height
-    const sorted = [...withH].sort((a, b) => b.diameter! - a.diameter!);
-    const topK = Math.max(1, Math.round(sorted.length * 0.2));
-    const hTop = sorted.slice(0, topK).reduce((s, t) => s + t.height!, 0) / topK;
-
-    siteClass = estimateSiteClass(dominantSpecies, age, hTop);
-    const ref = getYieldTableValues(dominantSpecies, age, siteClass);
-    if (ref) {
-      refGHa  = ref.gHa;
-      refVHa  = ref.vHa;
-      refIvHa = ref.ivHa;
-      bestockungsgrad = calcStockingDegree(gHa, dominantSpecies, age, siteClass);
-    }
-  }
-
-  return {
-    n, plotAreaHa, nHa: n / plotAreaHa, gHa, vHa, dg, meanHeight,
-    dominantSpecies, siteClass, refGHa, refVHa, refIvHa, bestockungsgrad,
-  };
-}
-
 function PlotStatsBlock({ plot, compartmentAge }: { plot: InventoryPlotData; compartmentAge: number | null }) {
   const stats = useMemo(() => computePlotStats(plot, compartmentAge), [plot, compartmentAge]);
   const dateStr = new Date(plot.measuredAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
   return (
     <div className="border border-violet-100 rounded-xl bg-violet-50/40 overflow-hidden mb-3">
-      {/* Plot header */}
       <div className="flex items-center gap-2 px-3 py-2 bg-violet-50 border-b border-violet-100">
         <CircleDot size={12} className="text-violet-600 shrink-0" />
         <span className="text-xs font-semibold text-violet-700">{plot.name || 'Probekreis'}</span>
         <span className="text-[10px] text-violet-400 ml-1">r = {plot.radiusM} m · {(Math.PI * plot.radiusM ** 2).toFixed(0)} m² · {dateStr}</span>
         <span className="ml-auto text-[10px] text-violet-400">{plot.trees.length} Bäume</span>
       </div>
-
       {stats ? (
         <div className="p-3 space-y-3">
-          {/* Kernkennzahlen */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100">
-              <div className="text-sm font-bold text-slate-800">{Math.round(stats.nHa)}</div>
-              <div className="text-[10px] text-slate-500">N/ha</div>
-            </div>
-            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100">
-              <div className="text-sm font-bold text-slate-800">{stats.gHa.toFixed(1)}</div>
-              <div className="text-[10px] text-slate-500">G/ha (m²)</div>
-            </div>
-            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100">
-              <div className="text-sm font-bold text-slate-800">{stats.vHa != null ? Math.round(stats.vHa) : '–'}</div>
-              <div className="text-[10px] text-slate-500">V/ha (m³)</div>
-            </div>
+            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{Math.round(stats.nHa)}</div><div className="text-[10px] text-slate-500">N/ha</div></div>
+            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{stats.gHa.toFixed(1)}</div><div className="text-[10px] text-slate-500">G/ha (m²)</div></div>
+            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{stats.vHa != null ? Math.round(stats.vHa) : '–'}</div><div className="text-[10px] text-slate-500">V/ha (m³)</div></div>
           </div>
-
-          {/* Weitere Kennzahlen */}
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="text-slate-500">Dg (BHD quadr.) <span className="font-medium text-slate-700">{stats.dg.toFixed(1)} cm</span></div>
+            <div className="text-slate-500">Dg <span className="font-medium text-slate-700">{stats.dg.toFixed(1)} cm</span></div>
             <div className="text-slate-500">Mittl. Höhe <span className="font-medium text-slate-700">{stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'}</span></div>
           </div>
-
-          {/* Ertragstafel-Vergleich */}
           {stats.siteClass && stats.dominantSpecies && (
             <div className="bg-white border border-emerald-100 rounded-lg p-2 text-xs space-y-1.5">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">
-                Ertragstafel · {getSpeciesLabel(stats.dominantSpecies)}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Bonität</span>
-                <span className="font-medium text-slate-700">{SITE_CLASS_LABELS[stats.siteClass]}</span>
-              </div>
-              {stats.bestockungsgrad != null && (
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Bestockungsgrad</span>
-                  <span className={`font-bold ${
-                    stats.bestockungsgrad >= 1.0 ? 'text-emerald-700' :
-                    stats.bestockungsgrad >= 0.7 ? 'text-amber-600' : 'text-red-500'
-                  }`}>{stats.bestockungsgrad.toFixed(2)}</span>
-                </div>
-              )}
-              {stats.refGHa != null && (
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Tafel G/ha</span>
-                  <span className="font-medium text-slate-700">{stats.refGHa.toFixed(0)} m²/ha</span>
-                </div>
-              )}
-              {stats.refVHa != null && (
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Tafel V/ha</span>
-                  <span className="font-medium text-slate-700">{stats.refVHa.toFixed(0)} m³/ha</span>
-                </div>
-              )}
-              {stats.refIvHa != null && (
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Zuwachs (iV)</span>
-                  <span className="font-medium text-slate-700">{stats.refIvHa.toFixed(1)} m³/ha/a</span>
-                </div>
-              )}
+              <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">Ertragstafel · {getSpeciesLabel(stats.dominantSpecies)}</div>
+              <div className="flex items-center justify-between"><span className="text-slate-500">Bonität</span><span className="font-medium text-slate-700">{SITE_CLASS_LABELS[stats.siteClass]}</span></div>
+              {stats.bestockungsgrad != null && <div className="flex items-center justify-between"><span className="text-slate-500">Bestockungsgrad</span><span className={`font-bold ${stats.bestockungsgrad >= 1.0 ? 'text-emerald-700' : stats.bestockungsgrad >= 0.7 ? 'text-amber-600' : 'text-red-500'}`}>{stats.bestockungsgrad.toFixed(2)}</span></div>}
+              {stats.refGHa  != null && <div className="flex items-center justify-between"><span className="text-slate-500">Tafel G/ha</span><span className="font-medium text-slate-700">{stats.refGHa.toFixed(0)} m²/ha</span></div>}
+              {stats.refVHa  != null && <div className="flex items-center justify-between"><span className="text-slate-500">Tafel V/ha</span><span className="font-medium text-slate-700">{stats.refVHa.toFixed(0)} m³/ha</span></div>}
+              {stats.refIvHa != null && <div className="flex items-center justify-between"><span className="text-slate-500">Zuwachs (iV)</span><span className="font-medium text-slate-700">{stats.refIvHa.toFixed(1)} m³/ha/a</span></div>}
             </div>
           )}
         </div>
@@ -449,53 +469,13 @@ function PlotStatsBlock({ plot, compartmentAge }: { plot: InventoryPlotData; com
   );
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmt(n: number | null | undefined, unit?: string) {
-  if (n == null) return '–';
-  return `${n}${unit ? ' ' + unit : ''}`;
-}
-
-const HEALTH_LABEL: Record<string, string> = {
-  HEALTHY: 'Vital', STRESSED: 'Gestresst', DAMAGED: 'Geschädigt', DEAD: 'Abgestorben',
-};
-
-// ── Small badge ───────────────────────────────────────────────────────────────
-
-function Badge({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-      {label}
-    </span>
-  );
-}
-
-// ── SpeciesBar (view-only) ────────────────────────────────────────────────────
-
-function SpeciesBar({ entries }: { entries: SpeciesEntry[] }) {
-  if (!entries?.length) return <span className="text-slate-400 text-xs">–</span>;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {entries.map((e, i) => (
-        <span key={i} className="flex items-center gap-1 text-xs text-slate-700">
-          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getSpeciesColor(e.species) }} />
-          {getSpeciesLabel(e.species)}{e.percent ? ` (${e.percent}%)` : ''}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 // ── Tree Row ──────────────────────────────────────────────────────────────────
-
 function TreeRow({ poi }: { poi: TreePoi }) {
   const t = poi.tree!;
   return (
-    <div className="flex items-center gap-3 py-1.5 px-3 rounded-md hover:bg-slate-50 transition-colors">
+    <div className="flex items-center gap-3 py-1.5 px-3 rounded-md hover:bg-slate-50">
       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.species ? getSpeciesColor(t.species) : '#94a3b8' }} />
-      <span className="text-sm font-medium text-slate-700 flex-1 truncate">
-        {poi.name || (t.species ? getSpeciesLabel(t.species) : 'Baum')}
-      </span>
+      <span className="text-sm font-medium text-slate-700 flex-1 truncate">{poi.name || (t.species ? getSpeciesLabel(t.species) : 'Baum')}</span>
       <div className="flex gap-3 text-xs text-slate-500 shrink-0">
         {t.diameter != null && <span>Ø {t.diameter} cm</span>}
         {t.height   != null && <span>{t.height} m</span>}
@@ -506,216 +486,245 @@ function TreeRow({ poi }: { poi: TreePoi }) {
   );
 }
 
-// ── Compartment Card ──────────────────────────────────────────────────────────
-
-function CompartmentCard({
-  compartment, orgSlug, trees,
-}: {
-  compartment: Compartment; orgSlug: string; trees: TreePoi[];
+// ── Compartment Editor (right panel) ─────────────────────────────────────────
+function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
+  compartment: Compartment; orgSlug: string; trees: TreePoi[]; onSaved: (updated: Compartment) => void;
 }) {
-  const plots = compartment.inventoryPlots ?? [];
-  const [expanded,  setExpanded]  = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [liveData,  setLiveData]  = useState<Compartment>(compartment);
+  const [saving, setSaving] = useState(false);
 
-  const title = `${liveData.number ? `[${liveData.number}] ` : ''}${liveData.name || 'Abteilung'}`;
+  const [name,             setName]             = useState(compartment.name ?? '');
+  const [number,           setNumber]           = useState(compartment.number ?? '');
+  const [note,             setNote]             = useState(compartment.note ?? '');
+  const [soilType,         setSoilType]         = useState(compartment.soilType ?? '');
+  const [waterBalance,     setWaterBalance]     = useState(compartment.waterBalance ?? '');
+  const [nutrientLevel,    setNutrientLevel]    = useState(compartment.nutrientLevel ?? '');
+  const [exposition,       setExposition]       = useState(compartment.exposition ?? '');
+  const [slopeClass,       setSlopeClass]       = useState(compartment.slopeClass ?? '');
+  const [protectionStatus, setProtectionStatus] = useState(compartment.protectionStatus ?? '');
+  const [restrictions,     setRestrictions]     = useState(compartment.restrictions ?? '');
+  const [standAge,         setStandAge]         = useState(compartment.standAge?.toString() ?? '');
+  const [developmentStage, setDevelopmentStage] = useState(compartment.developmentStage ?? '');
+  const [mainSpecies,      setMainSpecies]      = useState<SpeciesEntry[]>(compartment.mainSpecies ?? []);
+  const [sideSpecies,      setSideSpecies]      = useState<SpeciesEntry[]>(compartment.sideSpecies ?? []);
+  const [mixingForm,       setMixingForm]       = useState(compartment.mixingForm ?? '');
+  const [structure,        setStructure]        = useState(compartment.structure ?? '');
+  const [volumePerHa,      setVolumePerHa]      = useState(compartment.volumePerHa?.toString() ?? '');
+  const [incrementPerHa,   setIncrementPerHa]   = useState(compartment.incrementPerHa?.toString() ?? '');
+  const [stockingDegree,   setStockingDegree]   = useState(compartment.stockingDegree?.toString() ?? '');
+  const [deadwoodPerHa,    setDeadwoodPerHa]    = useState(compartment.deadwoodPerHa?.toString() ?? '');
+  const [yieldClass,       setYieldClass]       = useState(compartment.yieldClass?.toString() ?? '');
+  const [siteProductivity, setSiteProductivity] = useState(compartment.siteProductivity ?? '');
+  const [rejuvenation,     setRejuvenation]     = useState<RejuvEntry[]>(compartment.rejuvenation ?? []);
+  const [vitalityNote,     setVitalityNote]     = useState(compartment.vitalityNote ?? '');
+  const [damageNote,       setDamageNote]       = useState(compartment.damageNote ?? '');
+  const [stabilityNote,    setStabilityNote]    = useState(compartment.stabilityNote ?? '');
+  const [lastMeasureDate,  setLastMeasureDate]  = useState(compartment.lastMeasureDate ?? '');
+  const [lastMeasureType,  setLastMeasureType]  = useState(compartment.lastMeasureType ?? '');
+  const [maintenanceStatus,setMaintenanceStatus]= useState(compartment.maintenanceStatus ?? '');
+  const [accessibility,    setAccessibility]    = useState(compartment.accessibility ?? '');
+
+  const plots = compartment.inventoryPlots ?? [];
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const data = {
+        name, number, note,
+        soilType, waterBalance, nutrientLevel, exposition, slopeClass, protectionStatus, restrictions,
+        standAge: standAge ? parseInt(standAge) : null,
+        developmentStage, mainSpecies, sideSpecies, mixingForm, structure,
+        volumePerHa:    volumePerHa    ? parseFloat(volumePerHa)    : null,
+        incrementPerHa: incrementPerHa ? parseFloat(incrementPerHa) : null,
+        stockingDegree: stockingDegree ? parseFloat(stockingDegree) : null,
+        deadwoodPerHa:  deadwoodPerHa  ? parseFloat(deadwoodPerHa)  : null,
+        yieldClass:     yieldClass     ? parseFloat(yieldClass)     : null,
+        siteProductivity, rejuvenation,
+        vitalityNote, damageNote, stabilityNote,
+        lastMeasureDate, lastMeasureType, maintenanceStatus, accessibility,
+      };
+      const res = await updateCompartment(compartment.id, data, orgSlug);
+      if (!res.success) throw new Error((res as any).error);
+      toast.success('Abteilung gespeichert');
+      onSaved({ ...compartment, ...data, standAge: data.standAge });
+    } catch (e: any) {
+      toast.error(`Fehler: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const displayName = `${number ? `[${number}] ` : ''}${name || 'Abteilung'}`;
 
   return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-
-      {/* Card Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-white">
-        <span className="w-3 h-3 rounded-full shrink-0 border border-white/40"
-          style={{ backgroundColor: liveData.color ?? '#3b82f6' }} />
-        <button onClick={() => setExpanded(e => !e)}
-          className="flex items-center gap-1.5 flex-1 text-left">
-          <span className="font-semibold text-slate-800 text-sm">{title}</span>
-          {liveData.areaHa != null && (
-            <span className="text-xs text-slate-400 ml-1">{liveData.areaHa.toFixed(2)} ha</span>
+    <div className="flex flex-col h-full">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3 shrink-0">
+        <span className="w-3.5 h-3.5 rounded-full shrink-0 border border-white/30 shadow-sm"
+          style={{ backgroundColor: compartment.color ?? '#3b82f6' }} />
+        <div className="flex-1 min-w-0">
+          <h2 className="font-bold text-slate-900 text-base leading-tight truncate">{displayName}</h2>
+          {compartment.areaHa != null && (
+            <span className="text-xs text-slate-400">{compartment.areaHa.toFixed(2)} ha</span>
           )}
-          {trees.length > 0 && (
-            <span className="ml-1 flex items-center gap-0.5 text-xs text-emerald-600 font-medium">
-              <TreePine size={11} /> {trees.length}
-            </span>
-          )}
-          {plots.length > 0 && (
-            <span className="ml-1 flex items-center gap-0.5 text-xs text-violet-600 font-medium">
-              <CircleDot size={11} /> {plots.length}
-            </span>
-          )}
-          <span className="ml-auto text-slate-400">
-            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          </span>
-        </button>
-        <Button size="sm" variant="ghost" onClick={() => setSheetOpen(true)}
-          className="h-7 px-2 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 shrink-0">
-          <Pencil size={13} />
+        </div>
+        <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Speichern
         </Button>
       </div>
 
-      {/* Quick summary pills */}
-      {(liveData.developmentStage || liveData.standAge != null || (liveData.mainSpecies?.length ?? 0) > 0) && (
-        <div className="flex flex-wrap gap-1.5 px-4 pb-2">
-          {liveData.developmentStage && <Badge label={liveData.developmentStage} />}
-          {liveData.standAge != null  && <Badge label={`${liveData.standAge} J`} />}
-          {liveData.maintenanceStatus && <Badge label={liveData.maintenanceStatus} />}
-        </div>
-      )}
+      {/* Scrollable form + stats */}
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-slate-50">
 
-      {/* Expanded Details */}
-      {expanded && (
-        <div className="border-t border-slate-100 divide-y divide-slate-50">
+        {/* Allgemein */}
+        <Section title="Allgemein" cols={2}>
+          <TField label="Abteilungsnummer" value={number} onChange={setNumber} placeholder="z. B. 101a" />
+          <TField label="Name" value={name} onChange={setName} placeholder="z. B. Nordabhang" />
+        </Section>
 
-          {/* Forsteinrichtungsblatt */}
-          <div className="px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
-
-            {/* Standort */}
-            <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-1">Standort</div>
-            <Row label="Bodentyp"       value={liveData.soilType} />
-            <Row label="Wasserhaushalt" value={liveData.waterBalance} />
-            <Row label="Nährstoffstufe" value={liveData.nutrientLevel} />
-            <Row label="Exposition"     value={liveData.exposition} />
-            <Row label="Hangneigung"    value={liveData.slopeClass} />
-            <Row label="Schutzstatus"   value={liveData.protectionStatus} />
-            {liveData.restrictions && (
-              <div className="col-span-2">
-                <span className="text-slate-400">Restriktionen </span>
-                <span className="text-slate-700">{liveData.restrictions}</span>
-              </div>
-            )}
-
-            {/* Bestand */}
-            <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Bestand</div>
-            <Row label="Entwicklungsstufe" value={liveData.developmentStage} />
-            <Row label="Alter"             value={liveData.standAge != null ? `${liveData.standAge} J` : null} />
-            <Row label="Mischungsform"     value={liveData.mixingForm} />
-            <Row label="Struktur"          value={liveData.structure} />
-            {(liveData.mainSpecies?.length ?? 0) > 0 && (
-              <div className="col-span-2">
-                <span className="text-slate-400 mr-1">Hauptbaumarten</span>
-                <SpeciesBar entries={liveData.mainSpecies!} />
-              </div>
-            )}
-            {(liveData.sideSpecies?.length ?? 0) > 0 && (
-              <div className="col-span-2">
-                <span className="text-slate-400 mr-1">Nebenbaumarten</span>
-                <SpeciesBar entries={liveData.sideSpecies!} />
-              </div>
-            )}
-
-            {/* Kennzahlen (manuell) */}
-            <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Kennzahlen (manuell)</div>
-            <Row label="Vorrat"          value={fmt(liveData.volumePerHa, 'm³/ha')} />
-            <Row label="Zuwachs"         value={fmt(liveData.incrementPerHa, 'm³/ha/a')} />
-            <Row label="Bestockungsgrad" value={liveData.stockingDegree?.toFixed(2) ?? null} />
-            <Row label="Totholz"         value={fmt(liveData.deadwoodPerHa, 'm³/ha')} />
-            <Row label="Bonität (EKL)"   value={liveData.yieldClass?.toString() ?? null} />
-            <Row label="Wuchsleistung"   value={liveData.siteProductivity} />
-
-            {/* Verjüngung */}
-            {(liveData.rejuvenation?.length ?? 0) > 0 && (
-              <>
-                <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Verjüngung</div>
-                <div className="col-span-2 flex flex-wrap gap-2">
-                  {liveData.rejuvenation!.map((r, i) => (
-                    <span key={i} className="flex items-center gap-1 text-xs text-slate-700 bg-slate-50 border border-slate-100 rounded px-2 py-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getSpeciesColor(r.species) }} />
-                      {getSpeciesLabel(r.species)}
-                      {r.heightCm ? ` ${r.heightCm} cm` : ''}
-                      {r.density ? ` · ${r.density}` : ''}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Zustand */}
-            {(liveData.vitalityNote || liveData.damageNote || liveData.stabilityNote) && (
-              <>
-                <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Zustand</div>
-                {liveData.vitalityNote  && <NoteRow label="Vitalität"  value={liveData.vitalityNote} />}
-                {liveData.damageNote    && <NoteRow label="Schäden"    value={liveData.damageNote} />}
-                {liveData.stabilityNote && <NoteRow label="Stabilität" value={liveData.stabilityNote} />}
-              </>
-            )}
-
-            {/* Bewirtschaftung */}
-            <div className="col-span-2 text-[10px] font-bold uppercase tracking-wide text-slate-400 pt-2">Bewirtschaftung</div>
-            <Row label="Letzte Maßnahme" value={liveData.lastMeasureDate ? `${liveData.lastMeasureDate}${liveData.lastMeasureType ? ' – ' + liveData.lastMeasureType : ''}` : null} />
-            <Row label="Pflegezustand"   value={liveData.maintenanceStatus} />
-            <Row label="Befahrbarkeit"   value={liveData.accessibility} />
+        {/* Standort */}
+        <Section title="Standort" cols={2}>
+          <TField label="Bodentyp" value={soilType} onChange={setSoilType} placeholder="z. B. Braunerde" />
+          <SField label="Wasserhaushalt" value={waterBalance} onChange={setWaterBalance} options={WATER_OPTIONS} />
+          <SField label="Nährstoffstufe" value={nutrientLevel} onChange={setNutrientLevel} options={NUTRIENT_OPTIONS} />
+          <SField label="Exposition" value={exposition} onChange={setExposition} options={EXPOSITION_OPTIONS} />
+          <SField label="Hangneigung" value={slopeClass} onChange={setSlopeClass} options={SLOPE_OPTIONS} />
+          <TField label="Schutzstatus" value={protectionStatus} onChange={setProtectionStatus} placeholder="z. B. FFH, NSG" />
+          <div className="col-span-2">
+            <TField label="Restriktionen / Auflagen" value={restrictions} onChange={setRestrictions} placeholder="z. B. kein Kahlschlag" />
           </div>
+        </Section>
 
-          {/* Probekreise (Plots) */}
-          {plots.length > 0 && (
-            <div className="px-4 py-3 border-t border-slate-100">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-violet-600 mb-3 flex items-center gap-1.5">
+        {/* Bestand */}
+        <Section title="Bestand" cols={2}>
+          <NField label="Bestandesalter" value={standAge} onChange={setStandAge} unit="Jahre" step="1" />
+          <SField label="Entwicklungsstufe" value={developmentStage} onChange={setDevelopmentStage} options={DEVELOP_OPTIONS} />
+          <SField label="Mischungsform" value={mixingForm} onChange={setMixingForm} options={MIXING_OPTIONS} />
+          <SField label="Struktur" value={structure} onChange={setStructure} options={STRUCTURE_OPTIONS} />
+          <div className="col-span-2">
+            <SpeciesEditor label="Hauptbaumarten" entries={mainSpecies} onChange={setMainSpecies} />
+          </div>
+          <div className="col-span-2">
+            <SpeciesEditor label="Nebenbaumarten" entries={sideSpecies} onChange={setSideSpecies} />
+          </div>
+        </Section>
+
+        {/* Kennzahlen */}
+        <Section title="Kennzahlen" cols={3}>
+          <NField label="Vorrat" value={volumePerHa} onChange={setVolumePerHa} unit="m³/ha" />
+          <NField label="Zuwachs" value={incrementPerHa} onChange={setIncrementPerHa} unit="m³/ha/a" />
+          <NField label="Bestockungsgrad" value={stockingDegree} onChange={setStockingDegree} step="0.05" />
+          <NField label="Totholz" value={deadwoodPerHa} onChange={setDeadwoodPerHa} unit="m³/ha" />
+          <NField label="Bonität (EKL)" value={yieldClass} onChange={setYieldClass} step="0.5" />
+          <SField label="Wuchsleistung" value={siteProductivity} onChange={setSiteProductivity} options={PRODUCTIVITY_OPTIONS} />
+        </Section>
+
+        {/* Verjüngung */}
+        <SectionFull title="Verjüngung">
+          <RejuvEditor entries={rejuvenation} onChange={setRejuvenation} />
+        </SectionFull>
+
+        {/* Zustand */}
+        <SectionFull title="Zustand">
+          <div>
+            <Label>Vitalität / Kronenzustand</Label>
+            <Textarea value={vitalityNote} onChange={e => setVitalityNote(e.target.value)}
+              placeholder="Beschreibung Kronenzustand, Vitalitätsstufe..." className="text-sm min-h-[72px]" />
+          </div>
+          <div>
+            <Label>Schäden (biotisch / abiotisch)</Label>
+            <Textarea value={damageNote} onChange={e => setDamageNote(e.target.value)}
+              placeholder="Art und Ausmaß der Schäden..." className="text-sm min-h-[72px]" />
+          </div>
+          <div>
+            <Label>Stabilität / Risiko</Label>
+            <Textarea value={stabilityNote} onChange={e => setStabilityNote(e.target.value)}
+              placeholder="Standfestigkeit, Sturm- und Schneebruchrisiko..." className="text-sm min-h-[72px]" />
+          </div>
+        </SectionFull>
+
+        {/* Bewirtschaftung */}
+        <Section title="Bewirtschaftung" cols={2}>
+          <TField label="Letzte Maßnahme (Datum)" value={lastMeasureDate} onChange={setLastMeasureDate} placeholder="z. B. 03/2024" />
+          <TField label="Art der Maßnahme" value={lastMeasureType} onChange={setLastMeasureType} placeholder="z. B. Durchforstung" />
+          <SField label="Pflegezustand" value={maintenanceStatus} onChange={setMaintenanceStatus} options={MAINTENANCE_OPTIONS} />
+          <SField label="Befahrbarkeit" value={accessibility} onChange={setAccessibility} options={ACCESSIBILITY_OPTIONS} />
+        </Section>
+
+        {/* Notiz */}
+        <SectionFull title="Notiz">
+          <Textarea value={note} onChange={e => setNote(e.target.value)}
+            placeholder="Allgemeine Notizen..." className="text-sm min-h-[80px]" />
+        </SectionFull>
+
+        {/* Probekreise */}
+        {plots.length > 0 && (
+          <div className="border border-slate-100 rounded-lg overflow-hidden">
+            <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wide text-violet-600 flex items-center gap-1.5">
                 <CircleDot size={11} /> Probekreise ({plots.length})
-              </div>
+              </span>
+            </div>
+            <div className="p-4 space-y-0">
               {plots.map(plot => (
-                <PlotStatsBlock key={plot.id} plot={plot} compartmentAge={liveData.standAge} />
+                <PlotStatsBlock key={plot.id} plot={plot} compartmentAge={compartment.standAge} />
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Inventur-Auswertung (automatisch aus Tree-POIs berechnet) */}
-          {trees.length > 0 && <InventoryStatsBlock trees={trees} />}
+        {/* Inventur-Auswertung */}
+        {trees.length > 0 && <InventoryStatsBlock trees={trees} />}
 
-          {/* Tree POI list */}
-          {trees.length > 0 && (
-            <div className="px-4 py-3">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2 flex items-center gap-1.5">
+        {/* Erfasste Bäume */}
+        {trees.length > 0 && (
+          <div className="border border-slate-100 rounded-lg overflow-hidden">
+            <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500 flex items-center gap-1.5">
                 <TreePine size={11} /> Erfasste Bäume ({trees.length})
-              </div>
-              <div className="space-y-0.5">
-                {trees.map(poi => <TreeRow key={poi.id} poi={poi} />)}
-              </div>
+              </span>
             </div>
-          )}
+            <div className="p-2 space-y-0.5">
+              {trees.map(poi => <TreeRow key={poi.id} poi={poi} />)}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-          {/* Note */}
-          {liveData.note && (
-            <div className="px-4 py-3">
-              <p className="text-xs text-slate-500 italic">{liveData.note}</p>
-            </div>
-          )}
+// ── Left panel: compartment list ──────────────────────────────────────────────
+
+function CompartmentListItem({ compartment, selected, onClick }: {
+  compartment: Compartment; selected: boolean; onClick: () => void;
+}) {
+  const title = `${compartment.number ? `[${compartment.number}] ` : ''}${compartment.name || 'Abteilung'}`;
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-center gap-2.5 ${
+        selected
+          ? 'bg-emerald-50 border border-emerald-200 text-emerald-900'
+          : 'hover:bg-slate-50 border border-transparent text-slate-700'
+      }`}
+    >
+      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: compartment.color ?? '#3b82f6' }} />
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium truncate">{title}</div>
+        <div className="flex gap-1.5 mt-0.5 flex-wrap">
+          {compartment.areaHa != null && <span className="text-[10px] text-slate-400">{compartment.areaHa.toFixed(1)} ha</span>}
+          {compartment.developmentStage && <span className="text-[10px] text-slate-400">{compartment.developmentStage}</span>}
         </div>
-      )}
-
-      {/* Edit Sheet */}
-      <CompartmentEditSheet
-        compartment={liveData}
-        orgSlug={orgSlug}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        onSaved={() => {/* live data updated via optimistic state below */}}
-      />
-    </div>
+      </div>
+    </button>
   );
 }
 
-function Row({ label, value }: { label: string; value: string | null | undefined }) {
-  if (!value) return null;
-  return (
-    <div>
-      <span className="text-slate-400">{label} </span>
-      <span className="text-slate-700 font-medium">{value}</span>
-    </div>
-  );
-}
-
-function NoteRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="col-span-2">
-      <span className="text-slate-400">{label}: </span>
-      <span className="text-slate-700">{value}</span>
-    </div>
-  );
-}
-
-// ── Forest Group ──────────────────────────────────────────────────────────────
-
-function ForestGroup({ forest, orgSlug, query }: { forest: Forest; orgSlug: string; query: string }) {
+function ForestGroup({ forest, selectedId, onSelect, query }: {
+  forest: Forest; selectedId: string | null; onSelect: (c: Compartment) => void; query: string;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
   const filtered = useMemo(() => {
     if (!query) return forest.compartments;
     const q = query.toLowerCase();
@@ -729,26 +738,29 @@ function ForestGroup({ forest, orgSlug, query }: { forest: Forest; orgSlug: stri
 
   if (!filtered.length) return null;
 
-  const totalHa    = filtered.reduce((s, c) => s + (c.areaHa ?? 0), 0);
-  const totalTrees = forest.pois.filter(p => p.tree).length;
-
   return (
-    <div className="space-y-3">
-      {/* Forest header */}
-      <div className="flex items-center gap-3 px-1">
-        <Layers size={15} className="text-emerald-600 shrink-0" />
-        <span className="font-bold text-slate-800 text-sm">{forest.name}</span>
-        <span className="text-xs text-slate-400 ml-auto">
-          {filtered.length} Abt. · {totalHa.toFixed(1)} ha
-          {totalTrees > 0 && ` · ${totalTrees} Bäume`}
-        </span>
-      </div>
-      {filtered.map(c => {
-        const trees = forest.pois.filter(p => p.tree?.compartmentId === c.id);
-        return (
-          <CompartmentCard key={c.id} compartment={c} orgSlug={orgSlug} trees={trees} />
-        );
-      })}
+    <div>
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-slate-50 rounded-md"
+      >
+        {collapsed ? <ChevronRight size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
+        <Layers size={13} className="text-emerald-600 shrink-0" />
+        <span className="text-xs font-bold text-slate-700 flex-1 truncate">{forest.name}</span>
+        <span className="text-[10px] text-slate-400 shrink-0">{filtered.length}</span>
+      </button>
+      {!collapsed && (
+        <div className="mt-1 space-y-0.5 pl-1">
+          {filtered.map(c => (
+            <CompartmentListItem
+              key={c.id}
+              compartment={c}
+              selected={selectedId === c.id}
+              onClick={() => onSelect(c)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -756,62 +768,90 @@ function ForestGroup({ forest, orgSlug, query }: { forest: Forest; orgSlug: stri
 // ── Main Client ───────────────────────────────────────────────────────────────
 
 export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]; orgSlug: string }) {
-  const [query,        setQuery]        = useState('');
-  const [forestFilter, setForestFilter] = useState('');
+  const [query, setQuery] = useState('');
+  const [selectedCompartmentId, setSelectedCompartmentId] = useState<string | null>(() => {
+    // Default: select first compartment if exists
+    return forests[0]?.compartments[0]?.id ?? null;
+  });
+  // Track live compartment data after saves
+  const [liveCompartments, setLiveCompartments] = useState<Record<string, Compartment>>({});
+
+  // Build a flat lookup of all compartments + their forest
+  const allCompartments = useMemo(() => {
+    const map = new Map<string, { compartment: Compartment; forest: Forest }>();
+    forests.forEach(f => f.compartments.forEach(c => map.set(c.id, { compartment: c, forest: f })));
+    return map;
+  }, [forests]);
+
+  const selectedEntry = selectedCompartmentId ? allCompartments.get(selectedCompartmentId) : null;
+  const selectedCompartment = selectedEntry
+    ? (liveCompartments[selectedCompartmentId!] ?? selectedEntry.compartment)
+    : null;
+  const selectedForest = selectedEntry?.forest ?? null;
+  const selectedTrees = selectedForest && selectedCompartmentId
+    ? selectedForest.pois.filter(p => p.tree?.compartmentId === selectedCompartmentId)
+    : [];
+
+  const handleSelect = (c: Compartment) => setSelectedCompartmentId(c.id);
+  const handleSaved = (updated: Compartment) => {
+    setLiveCompartments(prev => ({ ...prev, [updated.id]: updated }));
+  };
 
   const totalCompartments = forests.reduce((s, f) => s + f.compartments.length, 0);
-  const totalHa           = forests.reduce((s, f) => s + f.compartments.reduce((a, c) => a + (c.areaHa ?? 0), 0), 0);
-  const totalTrees        = forests.reduce((s, f) => s + f.pois.filter(p => p.tree).length, 0);
-
-  const visibleForests = forestFilter ? forests.filter(f => f.id === forestFilter) : forests;
+  const totalHa = forests.reduce((s, f) => s + f.compartments.reduce((a, c) => a + (c.areaHa ?? 0), 0), 0);
+  const totalTrees = forests.reduce((s, f) => s + f.pois.filter(p => p.tree).length, 0);
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50 h-full">
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+    <div className="flex h-full overflow-hidden bg-white">
 
-        {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Abteilungen',   value: totalCompartments },
-            { label: 'Gesamtfläche',  value: `${totalHa.toFixed(1)} ha` },
-            { label: 'Erfasste Bäume', value: totalTrees },
-          ].map(s => (
-            <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-4 text-center shadow-sm">
-              <div className="text-2xl font-bold text-slate-900">{s.value}</div>
-              <div className="text-xs text-slate-500 mt-0.5">{s.label}</div>
-            </div>
-          ))}
+      {/* ── Left panel: compartment list ── */}
+      <div className="w-72 shrink-0 border-r border-slate-200 flex flex-col bg-white overflow-hidden">
+
+        {/* Stats summary */}
+        <div className="px-3 py-3 border-b border-slate-100 grid grid-cols-3 gap-1 text-center">
+          <div><div className="text-base font-bold text-slate-900">{totalCompartments}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Abtlg.</div></div>
+          <div><div className="text-base font-bold text-slate-900">{totalHa.toFixed(0)}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">ha</div></div>
+          <div><div className="text-base font-bold text-slate-900">{totalTrees}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Bäume</div></div>
         </div>
 
-        {/* Filter bar */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input
+        {/* Search */}
+        <div className="px-3 py-2 border-b border-slate-100">
+          <div className="relative">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Abteilung suchen …"
-              className="pl-9 bg-white border-slate-200 text-sm"
+              placeholder="Suchen …"
+              className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
-          <select
-            value={forestFilter}
-            onChange={e => setForestFilter(e.target.value)}
-            className="border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="">Alle Wälder</option>
-            {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-          </select>
         </div>
 
         {/* Forest groups */}
-        {visibleForests.length === 0 ? (
-          <div className="text-center text-slate-400 py-16 text-sm">Keine Wälder gefunden.</div>
+        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
+          {forests.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-8">Keine Wälder gefunden.</p>
+          ) : (
+            forests.map(f => (
+              <ForestGroup key={f.id} forest={f} selectedId={selectedCompartmentId} onSelect={handleSelect} query={query} />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── Right panel: editor ── */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {selectedCompartment ? (
+          <CompartmentEditor
+            key={selectedCompartmentId!}
+            compartment={selectedCompartment}
+            orgSlug={orgSlug}
+            trees={selectedTrees}
+            onSaved={handleSaved}
+          />
         ) : (
-          <div className="space-y-8">
-            {visibleForests.map(f => (
-              <ForestGroup key={f.id} forest={f} orgSlug={orgSlug} query={query} />
-            ))}
+          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+            Abteilung aus der Liste auswählen
           </div>
         )}
       </div>

@@ -423,3 +423,73 @@ export function validateStandMetrics(opts: {
 
   return warnings;
 }
+
+// ─── Mischbestandslogik ───────────────────────────────────────────────────────
+
+export interface SpeciesEntry { species: string; percent: number; }
+
+export interface MixedStandResult {
+  /** Gewichteter Bestockungsgrad über alle Baumarten */
+  weightedStockingDegree: number | null;
+  /** Gewichteter Zuwachs m³/ha/a */
+  weightedIncrement: number | null;
+  /** Gewichteter Vorrat m³/ha */
+  weightedVolume: number | null;
+  /** Pro-Baumart-Aufschlüsselung */
+  bySpecies: {
+    species: string;
+    percent: number;
+    refGHa: number | null;
+    refVHa: number | null;
+    refIvHa: number | null;
+    stockingDegree: number | null;
+  }[];
+}
+
+/**
+ * Berechnet gewichtete Bestandeskennzahlen für Mischbestände.
+ *
+ * @param speciesEntries  Baumarten mit Prozentanteil (Haupt + Neben)
+ * @param age             Bestandesalter in Jahren
+ * @param measuredGHa     Gemessene Grundfläche m²/ha (aus Probekreis oder manuell)
+ * @param yieldTableLookup Funktion zum Nachschlagen von Ertragstafelwerten
+ */
+export function calcMixedStandMetrics(
+  speciesEntries: SpeciesEntry[],
+  age: number,
+  measuredGHa: number | null,
+  getYieldTableValues: (species: string, age: number, siteClass: number) => { gHa: number; vHa: number; ivHa: number } | null,
+  estimateSiteClass: (species: string, age: number, hTop: number) => number,
+  defaultSiteClass: number,
+): MixedStandResult {
+  const total = speciesEntries.reduce((s, e) => s + e.percent, 0) || 100;
+
+  const bySpecies = speciesEntries.map(entry => {
+    const ref = getYieldTableValues(entry.species, age, defaultSiteClass);
+    if (!ref) return { species: entry.species, percent: entry.percent, refGHa: null, refVHa: null, refIvHa: null, stockingDegree: null };
+    const share = entry.percent / total;
+    const partialGHa = measuredGHa != null ? measuredGHa * share : null;
+    const stockingDegree = partialGHa != null && ref.gHa > 0
+      ? Math.round((partialGHa / (ref.gHa * share)) * 100) / 100
+      : null;
+    return {
+      species:       entry.species,
+      percent:       entry.percent,
+      refGHa:        Math.round(ref.gHa  * share * 10) / 10,
+      refVHa:        Math.round(ref.vHa  * share),
+      refIvHa:       Math.round(ref.ivHa * share * 10) / 10,
+      stockingDegree,
+    };
+  });
+
+  const validRows = bySpecies.filter(r => r.refVHa != null);
+  const weightedVolume   = validRows.length > 0 ? validRows.reduce((s, r) => s + (r.refVHa ?? 0), 0) : null;
+  const weightedIncrement = validRows.length > 0 ? validRows.reduce((s, r) => s + (r.refIvHa ?? 0), 0) : null;
+
+  const stockingRows = bySpecies.filter(r => r.stockingDegree != null);
+  const weightedStockingDegree = stockingRows.length > 0
+    ? Math.round(stockingRows.reduce((s, r) => s + (r.stockingDegree ?? 0) * (r.percent / total), 0) * 100) / 100
+    : null;
+
+  return { weightedStockingDegree, weightedIncrement, weightedVolume, bySpecies };
+}

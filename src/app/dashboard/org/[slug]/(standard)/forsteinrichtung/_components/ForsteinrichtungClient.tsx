@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
-  Search, TreePine, Layers, BarChart2, CircleDot, PlusCircle, X, Loader2, ChevronDown, ChevronRight,
+  Search, TreePine, Layers, BarChart2, CircleDot, PlusCircle, X, Loader2, ChevronDown, ChevronRight, FileDown,
+  Upload, CheckCircle2, AlertTriangle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import {
   type Species, type SiteClass,
 } from '@/lib/yield-tables';
 import { calcPlotMetrics, averagePlotResults, validateStandMetrics, type PlotTree as MensPlotTree } from '@/lib/forest-mensuration';
+import { importCompartmentsFromAI } from '@/actions/polygons';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -492,6 +494,26 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
   compartment: Compartment; orgSlug: string; trees: TreePoi[]; onSaved: (updated: Compartment) => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const res = await fetch(`/api/forsteinrichtung/pdf?orgSlug=${orgSlug}&compartmentId=${compartment.id}`);
+      if (!res.ok) throw new Error('PDF-Fehler');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Abteilungsblatt_${compartment.number ?? compartment.name}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('PDF konnte nicht erstellt werden.');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const [name,             setName]             = useState(compartment.name ?? '');
   const [number,           setNumber]           = useState(compartment.number ?? '');
@@ -527,6 +549,22 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
   const plots = compartment.inventoryPlots ?? [];
 
   const handleSave = async () => {
+    // Plausibilitätsprüfung vor dem Speichern
+    const standWarns = validateStandMetrics({
+      stockingDegree: stockingDegree ? parseFloat(stockingDegree) : null,
+      volumePerHa:    volumePerHa    ? parseFloat(volumePerHa)    : null,
+      incrementPerHa: incrementPerHa ? parseFloat(incrementPerHa) : null,
+    });
+    for (const w of standWarns) {
+      if (w.severity === 'error') {
+        toast.error(w.message);
+        return;
+      }
+      if (w.severity === 'warning') {
+        toast.warning(w.message, { duration: 5000 });
+      }
+    }
+
     setSaving(true);
     try {
       const data = {
@@ -568,6 +606,9 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
             <span className="text-xs text-slate-400">{compartment.areaHa.toFixed(2)} ha</span>
           )}
         </div>
+        <Button variant="outline" onClick={handleDownloadPdf} disabled={pdfLoading} className="shrink-0 border-slate-200 text-slate-600 hover:text-slate-900">
+          {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+        </Button>
         <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
           Speichern
@@ -609,6 +650,76 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
             <SpeciesEditor label="Nebenbaumarten" entries={sideSpecies} onChange={setSideSpecies} />
           </div>
         </Section>
+
+        {/* Altersfeldführung: Ertragstafel-Vorschau aus Alter + Baumart */}
+        {(() => {
+          const age = standAge ? parseInt(standAge) : null;
+          const sp = mainSpecies[0]?.species ?? null;
+          if (!age || !sp || !isYieldTableSpecies(sp)) return null;
+          const dominant = sp as Species;
+          // Alle 5 Ertragsklassen anzeigen
+          const rows = ([1, 2, 3, 4, 5] as SiteClass[]).map(ekl => {
+            const r = getYieldTableValues(dominant, age, ekl);
+            return r ? { ekl, ...r } : null;
+          }).filter(Boolean) as (ReturnType<typeof getYieldTableValues> & { ekl: SiteClass })[];
+          if (rows.length === 0) return null;
+          // Aktuell hinterlegte EKL hervorheben
+          const currentEkl = yieldClass ? Math.round(parseFloat(yieldClass)) as SiteClass : null;
+          return (
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                  Ertragstafel · {getSpeciesLabel(dominant)} · {age} Jahre
+                </span>
+                <span className="text-[10px] text-slate-400">Quelle: Wiedemann/Schober/Bergel</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/50">
+                      <th className="px-3 py-1.5 text-left font-semibold text-slate-500">EKL</th>
+                      <th className="px-3 py-1.5 text-right font-semibold text-slate-500">Oberhöhe</th>
+                      <th className="px-3 py-1.5 text-right font-semibold text-slate-500">G/ha</th>
+                      <th className="px-3 py-1.5 text-right font-semibold text-slate-500">V/ha</th>
+                      <th className="px-3 py-1.5 text-right font-semibold text-slate-500">iV/ha/a</th>
+                      <th className="px-2 py-1.5"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(row => {
+                      const isActive = currentEkl === row!.ekl;
+                      return (
+                        <tr key={row!.ekl} className={`border-b border-slate-50 ${isActive ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}>
+                          <td className={`px-3 py-1.5 font-semibold ${isActive ? 'text-emerald-700' : 'text-slate-600'}`}>
+                            {SITE_CLASS_LABELS[row!.ekl]}
+                          </td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{row!.hTop.toFixed(1)} m</td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{row!.gHa.toFixed(0)} m²</td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{row!.vHa.toFixed(0)} m³</td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{row!.ivHa.toFixed(1)}</td>
+                          <td className="px-2 py-1.5">
+                            <button
+                              onClick={() => {
+                                setYieldClass(row!.ekl.toString());
+                                setVolumePerHa(row!.vHa.toFixed(0));
+                                setIncrementPerHa(row!.ivHa.toFixed(1));
+                                toast.success(`EKL ${row!.ekl} übernommen`);
+                              }}
+                              className="text-[10px] text-emerald-600 hover:text-emerald-800 font-medium px-1.5 py-0.5 rounded hover:bg-emerald-50"
+                            >
+                              ↑
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[10px] text-slate-400 px-4 py-1.5">Klick auf ↑ übernimmt EKL, V/ha und Zuwachs in die Kennzahlen.</p>
+            </div>
+          );
+        })()}
 
         {/* Kennzahlen */}
         {/* Auto-Berechnung aus Probekreisen */}
@@ -764,7 +875,245 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
   );
 }
 
+// ── Import Wizard ─────────────────────────────────────────────────────────────
+
+interface ExtractedCompartment {
+  number?: string; name?: string; areaHa?: number; standAge?: number;
+  developmentStage?: string;
+  mainSpecies: { species: string; percent: number }[];
+  sideSpecies:  { species: string; percent: number }[];
+  yieldClass?: number; volumePerHa?: number; incrementPerHa?: number;
+  stockingDegree?: number; soilType?: string; waterBalance?: string;
+  exposition?: string; slopeClass?: string; protectionStatus?: string;
+  maintenanceStatus?: string; note?: string;
+}
+
+function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
+  forests: Forest[]; orgSlug: string; onClose: () => void; onImported: () => void;
+}) {
+  const [step, setStep]               = useState<'upload' | 'review' | 'done'>('upload');
+  const [uploading, setUploading]     = useState(false);
+  const [tokensUsed, setTokensUsed]   = useState(0);
+  const [rows, setRows]               = useState<ExtractedCompartment[]>([]);
+  const [selected, setSelected]       = useState<Set<number>>(new Set());
+  const [targetForestId, setTargetForestId] = useState(forests[0]?.id ?? '');
+  const [importing, setImporting]     = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('orgSlug', orgSlug);
+      const res = await fetch('/api/forsteinrichtung/import', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Fehler');
+      const extracted: ExtractedCompartment[] = json.compartments ?? [];
+      setRows(extracted);
+      setSelected(new Set(extracted.map((_, i) => i)));
+      setTokensUsed(json.tokensUsed ?? 0);
+      setStep('review');
+    } catch (e: any) {
+      toast.error('KI-Analyse fehlgeschlagen: ' + e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const toggleRow = (i: number) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(i) ? next.delete(i) : next.add(i);
+    return next;
+  });
+
+  const handleImport = async () => {
+    if (!targetForestId) { toast.error('Bitte Wald auswählen'); return; }
+    const toImport = rows.filter((_, i) => selected.has(i));
+    if (toImport.length === 0) { toast.error('Keine Abteilungen ausgewählt'); return; }
+    setImporting(true);
+    try {
+      const res = await importCompartmentsFromAI(targetForestId, orgSlug, toImport);
+      if (!res.success) throw new Error((res as any).error);
+      toast.success(`${toImport.length} Abteilung${toImport.length > 1 ? 'en' : ''} importiert`);
+      setStep('done');
+      onImported();
+    } catch (e: any) {
+      toast.error('Import fehlgeschlagen: ' + e.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-200 shrink-0">
+          <Upload size={16} className="text-emerald-600" />
+          <h3 className="font-bold text-slate-900">Forsteinrichtung importieren (KI)</h3>
+          <button onClick={onClose} className="ml-auto text-slate-400 hover:text-slate-600"><X size={16} /></button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          {step === 'upload' && (
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                Lade ein Foto oder einen Scan einer bestehenden Forsteinrichtungstafel hoch.
+                GPT-4o analysiert das Bild und extrahiert alle Abteilungsdaten automatisch.
+              </p>
+              <div
+                onClick={() => fileRef.current?.click()}
+                className="border-2 border-dashed border-slate-300 rounded-xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
+              >
+                {uploading
+                  ? <><Loader2 size={28} className="animate-spin text-emerald-600" /><span className="text-sm text-slate-500">Analysiere Bild …</span></>
+                  : <><Upload size={28} className="text-slate-400" /><span className="text-sm text-slate-500">Bild auswählen (JPEG, PNG, WebP)</span></>
+                }
+              </div>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); }} />
+            </div>
+          )}
+
+          {step === 'review' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                <span>KI hat <strong>{rows.length}</strong> Abteilung{rows.length !== 1 ? 'en' : ''} erkannt
+                  {tokensUsed > 0 && <span className="text-slate-400 ml-1">({tokensUsed} Tokens)</span>}
+                  . Wähle die zu importierenden aus:
+                </span>
+              </div>
+
+              {rows.length === 0 ? (
+                <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-lg px-4 py-3">
+                  <AlertTriangle size={14} /> Keine Abteilungen erkannt. Bitte ein deutlicheres Bild hochladen.
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="px-2 py-2 w-8">
+                          <input type="checkbox" checked={selected.size === rows.length}
+                            onChange={e => setSelected(e.target.checked ? new Set(rows.map((_, i) => i)) : new Set())} />
+                        </th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-500">Nr.</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-500">Name</th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-500">Fläche</th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-500">Alter</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-500">Hauptart</th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-500">V/ha</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-500">Stufe</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, i) => (
+                        <tr key={i} onClick={() => toggleRow(i)}
+                          className={`border-b border-slate-100 cursor-pointer ${selected.has(i) ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}>
+                          <td className="px-2 py-1.5 text-center">
+                            <input type="checkbox" checked={selected.has(i)} onChange={() => toggleRow(i)}
+                              onClick={e => e.stopPropagation()} />
+                          </td>
+                          <td className="px-3 py-1.5 font-medium text-slate-700">{row.number ?? '–'}</td>
+                          <td className="px-3 py-1.5 text-slate-600">{row.name ?? '–'}</td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{row.areaHa != null ? `${row.areaHa} ha` : '–'}</td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{row.standAge != null ? `${row.standAge} J` : '–'}</td>
+                          <td className="px-3 py-1.5 text-slate-600">
+                            {row.mainSpecies?.[0] ? (
+                              <span className="flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: getSpeciesColor(row.mainSpecies[0].species) }} />
+                                {getSpeciesLabel(row.mainSpecies[0].species)} {row.mainSpecies[0].percent}%
+                              </span>
+                            ) : '–'}
+                          </td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{row.volumePerHa != null ? row.volumePerHa : '–'}</td>
+                          <td className="px-3 py-1.5 text-slate-600 truncate max-w-[90px]">{row.developmentStage ?? '–'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide shrink-0">Importieren in:</label>
+                <select value={targetForestId} onChange={e => setTargetForestId(e.target.value)}
+                  className="flex-1 border border-slate-200 rounded-md text-sm px-3 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {step === 'done' && (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <CheckCircle2 size={40} className="text-emerald-600" />
+              <p className="text-sm text-slate-700 font-medium">Import abgeschlossen!</p>
+              <p className="text-xs text-slate-500">Die Abteilungen wurden angelegt. Du kannst sie jetzt in der Liste bearbeiten.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-200 shrink-0">
+          {step === 'review' && rows.length > 0 && (
+            <Button size="sm" variant="outline" onClick={() => setStep('upload')}
+              className="border-slate-200 text-slate-600">
+              Neues Bild
+            </Button>
+          )}
+          {step === 'review' && rows.length > 0 && (
+            <Button size="sm" onClick={handleImport} disabled={importing || selected.size === 0}
+              className="bg-emerald-700 hover:bg-emerald-800 text-white">
+              {importing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              {selected.size} Abteilung{selected.size !== 1 ? 'en' : ''} importieren
+            </Button>
+          )}
+          {(step === 'done' || (step === 'review' && rows.length === 0)) && (
+            <Button size="sm" onClick={onClose} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+              Schließen
+            </Button>
+          )}
+          {step === 'upload' && (
+            <Button size="sm" variant="outline" onClick={onClose} className="border-slate-200 text-slate-600">
+              Abbrechen
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Left panel: compartment list ──────────────────────────────────────────────
+
+function AllPdfButton({ orgSlug }: { orgSlug: string }) {
+  const [loading, setLoading] = useState(false);
+  const download = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/forsteinrichtung/pdf?orgSlug=${orgSlug}`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `Forsteinrichtung_${orgSlug}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent
+    } finally { setLoading(false); }
+  };
+  return (
+    <button onClick={download} disabled={loading}
+      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200">
+      {loading ? <Loader2 size={11} className="animate-spin" /> : <FileDown size={11} />}
+      Forsteinrichtung exportieren
+    </button>
+  );
+}
 
 function CompartmentListItem({ compartment, selected, onClick }: {
   compartment: Compartment; selected: boolean; onClick: () => void;
@@ -845,6 +1194,7 @@ export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]
   });
   // Track live compartment data after saves
   const [liveCompartments, setLiveCompartments] = useState<Record<string, Compartment>>({});
+  const [showImport, setShowImport] = useState(false);
 
   // Build a flat lookup of all compartments + their forest
   const allCompartments = useMemo(() => {
@@ -873,15 +1223,35 @@ export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]
 
   return (
     <div className="flex h-full overflow-hidden bg-white">
+      {showImport && (
+        <ImportWizardDialog
+          forests={forests}
+          orgSlug={orgSlug}
+          onClose={() => setShowImport(false)}
+          onImported={() => { setShowImport(false); window.location.reload(); }}
+        />
+      )}
 
       {/* ── Left panel: compartment list ── */}
       <div className="w-72 shrink-0 border-r border-slate-200 flex flex-col bg-white overflow-hidden">
 
         {/* Stats summary */}
-        <div className="px-3 py-3 border-b border-slate-100 grid grid-cols-3 gap-1 text-center">
-          <div><div className="text-base font-bold text-slate-900">{totalCompartments}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Abtlg.</div></div>
-          <div><div className="text-base font-bold text-slate-900">{totalHa.toFixed(0)}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">ha</div></div>
-          <div><div className="text-base font-bold text-slate-900">{totalTrees}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Bäume</div></div>
+        <div className="px-3 pt-3 pb-2 border-b border-slate-100">
+          <div className="grid grid-cols-3 gap-1 text-center mb-2">
+            <div><div className="text-base font-bold text-slate-900">{totalCompartments}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Abtlg.</div></div>
+            <div><div className="text-base font-bold text-slate-900">{totalHa.toFixed(0)}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">ha</div></div>
+            <div><div className="text-base font-bold text-slate-900">{totalTrees}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Bäume</div></div>
+          </div>
+          <div className="flex gap-1.5">
+            <div className="flex-1"><AllPdfButton orgSlug={orgSlug} /></div>
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200"
+              title="Forsteinrichtung per KI importieren"
+            >
+              <Upload size={11} />
+            </button>
+          </div>
         </div>
 
         {/* Search */}

@@ -321,3 +321,65 @@ export async function deleteCompartment(id: string, orgSlug: string) {
     return { success: false, error: e.message };
   }
 }
+
+export async function importCompartmentsFromAI(
+  forestId: string,
+  orgSlug: string,
+  compartments: {
+    number?: string;
+    name?: string;
+    areaHa?: number;
+    standAge?: number;
+    developmentStage?: string;
+    mainSpecies?: { species: string; percent: number }[];
+    sideSpecies?: { species: string; percent: number }[];
+    yieldClass?: number;
+    volumePerHa?: number;
+    incrementPerHa?: number;
+    stockingDegree?: number;
+    soilType?: string;
+    waterBalance?: string;
+    exposition?: string;
+    slopeClass?: string;
+    protectionStatus?: string;
+    maintenanceStatus?: string;
+    note?: string;
+  }[]
+) {
+  try {
+    const EMPTY_GEOJSON = { type: 'Feature', geometry: null, properties: {} };
+    const records = await Promise.all(
+      compartments.map(c => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = {
+          forestId,
+          geoJson:          EMPTY_GEOJSON,
+          number:           c.number           ?? null,
+          name:             c.name             ?? null,
+          areaHa:           c.areaHa           ?? null,
+          standAge:         c.standAge          ? Math.round(c.standAge) : null,
+          developmentStage: c.developmentStage  ?? null,
+          mainSpecies:      c.mainSpecies       ?? [],
+          sideSpecies:      c.sideSpecies       ?? [],
+          yieldClass:       c.yieldClass        ?? null,
+          volumePerHa:      c.volumePerHa       ?? null,
+          incrementPerHa:   c.incrementPerHa    ?? null,
+          stockingDegree:   c.stockingDegree    ?? null,
+          soilType:         c.soilType          ?? null,
+          waterBalance:     c.waterBalance      ?? null,
+          exposition:       c.exposition        ?? null,
+          slopeClass:       c.slopeClass        ?? null,
+          protectionStatus:  c.protectionStatus  ?? null,
+          maintenanceStatus: c.maintenanceStatus ?? null,
+          note:              c.note             ?? null,
+        };
+        return prisma.forestCompartment.create({ data });
+      })
+    );
+    revalidatePath(`/dashboard/org/${orgSlug}/forsteinrichtung`);
+    revalidatePath(`/dashboard/org/${orgSlug}/map`);
+    return { success: true, ids: records.map(r => r.id) };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}

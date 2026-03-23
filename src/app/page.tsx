@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import {
   Map, Leaf, ShieldCheck, PackageOpen,
   ClipboardList, Trees, Radio, Zap,
@@ -9,7 +10,20 @@ import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
 import { SignInButton } from '@/components/marketing/SignInButton';
 import { EnterpriseContactButton } from '@/components/marketing/EnterpriseContactButton';
+import { StructuredData } from '@/components/marketing/StructuredData';
 import { prisma } from '@/lib/prisma';
+
+export const metadata: Metadata = {
+  title: 'Forest Manager – Digitales Forstmanagement für Deutschland',
+  description: 'Die führende SaaS-Plattform für Waldbesitzer und Forstbetriebe: GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse. 30 Tage kostenlos testen.',
+  alternates: { canonical: 'https://forest-manager.eu' },
+  openGraph: {
+    title: 'Forest Manager – Digitales Forstmanagement',
+    description: 'GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse für Waldbesitzer und Forstbetriebe in Deutschland.',
+    url: 'https://forest-manager.eu',
+    type: 'website',
+  },
+};
 
 export default async function Home() {
   const dbPlans = await prisma.plan.findMany({
@@ -18,6 +32,7 @@ export default async function Home() {
   });
   return (
     <div className="bg-white text-slate-800 min-h-screen">
+      <StructuredData />
       <Header />
 
       {/* ── HERO ─────────────────────────────────────────────────────────────── */}

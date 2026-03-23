@@ -1,0 +1,59 @@
+# Forest Manager
+
+> Digitale SaaS-Plattform für Forstmanagement, Waldinventur und EU-Entwaldungsverordnung (EUDR) – entwickelt in Deutschland.
+
+## Was ist Forest Manager?
+
+Forest Manager (forest-manager.eu) ist eine webbasierte Software-as-a-Service-Plattform der natureport UG (haftungsbeschränkt), Hamburg. Sie richtet sich an Waldbesitzer, Forstbetriebe und Waldbesitzervereinigungen in Deutschland und der EU.
+
+## Kernfunktionen
+
+- **Interaktive GIS-Karte**: Erfassung und Verwaltung von Waldpolygonen mit Leaflet/OpenStreetMap
+- **Waldinventur (Mobile App)**: Offline-fähige PWA für Baumerfassung im Feld (Baumart, BHD, Höhe, Alter, Gesundheitszustand, CO₂-Speicherung)
+- **Satellitenüberwachung**: Sentinel-2 (NDVI, Biomasseindex) und Sentinel-1 (SAR, Sturmschäden) via Copernicus Data Space Ecosystem
+- **EUDR-Konformität**: Due-Diligence-Statement-Erstellung für die EU-Entwaldungsverordnung (Verordnung EU 2023/1115)
+- **KI-Analyse**: GPT-4o-gestützte Handlungsempfehlungen für Waldbewirtschaftung
+- **Holzernte & Logistik**: Poltererfassung, Lieferscheinerstellung, Transportnachverfolgung
+- **Aufgabenmanagement**: Forstliche Maßnahmen planen und dokumentieren
+- **Wetterdaten**: Automatische Auswertung via Open-Meteo für Sturmschaden- und Dürreanalyse
+- **Mehrmandantenfähigkeit**: Für Forstbetriebsgemeinschaften (FBG) und Waldbesitzervereinigungen (WBV)
+
+## Zielgruppen
+
+- Private Waldbesitzer (ab 1 ha)
+- Forstbetriebe und Förster
+- Waldbesitzervereinigungen (WBV)
+- Forstbetriebsgemeinschaften (FBG)
+- Kommunale Forstbetriebe
+
+## Tarife
+
+- **Basis**: 4,90 €/Monat – bis 50 ha, 1 Nutzer
+- **Pro**: 19,90 €/Monat – bis 500 ha, 5 Nutzer
+- **Expert**: 39,90 €/Monat – unbegrenzte Fläche, 20 Nutzer
+- **Enterprise**: individuell – für große Forstorganisationen
+- 30 Tage kostenlos testen, keine Kreditkarte erforderlich
+
+## Technologie & Datenschutz
+
+- Serverstandort: Deutschland (OHV Cloud)
+- DSGVO-konform
+- Authentifizierung via Keycloak (OpenID Connect)
+- Zahlung via Stripe
+- Keine Datenweitergabe an Dritte außer für Vertragserfüllung
+
+## Rechtliches
+
+- Betreiber: natureport UG (haftungsbeschränkt), Willy-Brandt-Str. 23, 20457 Hamburg
+- Kontakt: info@natureport.eu
+- USt-IdNr.: auf Anfrage
+
+## Links
+
+- Startseite: https://forest-manager.eu
+- Login: https://forest-manager.eu/signin
+- Preise: https://forest-manager.eu/#preise
+- EUDR: https://forest-manager.eu/#eudr
+- Datenschutz: https://forest-manager.eu/datenschutz
+- Impressum: https://forest-manager.eu/impressum
+- AGB: https://forest-manager.eu/agb

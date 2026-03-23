@@ -14,7 +14,9 @@ export function SignInButton({ label = 'Jetzt kostenlos starten', className }: P
       onClick={() => signIn('keycloak')}
       className={className}
     >
-      {label} <ArrowRight size={16} />
+      <span className="inline-flex items-center justify-center gap-1.5">
+        {label} <ArrowRight size={15} />
+      </span>
     </button>
   );
 }

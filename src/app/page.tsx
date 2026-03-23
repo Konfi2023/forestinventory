@@ -440,7 +440,7 @@ export default async function Home() {
                   {/* CTA */}
                   <div className="mt-auto">
                     <SignInButton
-                      label="Kostenlos testen"
+                      label="Jetzt 30 Tage kostenlos testen"
                       className={`w-full py-2.5 rounded-xl text-sm font-bold text-center transition-colors ${
                         plan.highlight
                           ? 'bg-green-700 text-white hover:bg-green-800'

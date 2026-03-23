@@ -365,17 +365,80 @@ export default function Home() {
 
       {/* ── PREISE ───────────────────────────────────────────────────────────── */}
       <section id="preise" className="py-24 px-6 bg-stone-50 border-t border-stone-200">
-        <div className="max-w-3xl mx-auto text-center space-y-5">
-          <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Preise</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Einfach und transparent.</h2>
-          <p className="text-slate-500">
-            Starten Sie kostenlos — skalieren Sie mit Ihrem Betrieb.
-            Preise auf Anfrage für größere Forstbetriebe und Forstbetriebsgemeinschaften.
-          </p>
-          <SignInButton
-            label="Kostenlos loslegen"
-            className="inline-flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white font-semibold px-8 py-3.5 rounded-xl transition-colors mt-2"
-          />
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-14 space-y-3">
+            <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Preise</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Einfach und transparent.</h2>
+            <p className="text-slate-500 max-w-xl mx-auto">
+              Starten Sie kostenlos — skalieren Sie mit Ihrem Betrieb.
+              Alle Pläne beinhalten den vollen Funktionsumfang.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
+            {PLANS.map(plan => (
+              <div
+                key={plan.name}
+                className={`relative rounded-2xl p-6 flex flex-col gap-5 ${
+                  plan.highlight
+                    ? 'bg-green-800 text-white ring-2 ring-green-600 shadow-xl'
+                    : 'bg-white border border-stone-200 shadow-sm'
+                }`}
+              >
+                {plan.badge && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
+                    {plan.badge}
+                  </span>
+                )}
+
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${plan.highlight ? 'text-green-300' : 'text-green-700'}`}>
+                    {plan.name}
+                  </p>
+                  <p className={`text-sm mb-3 ${plan.highlight ? 'text-green-200' : 'text-slate-500'}`}>
+                    {plan.desc}
+                  </p>
+                  {plan.price ? (
+                    <div className="flex items-end gap-1">
+                      <span className={`text-3xl font-bold ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                        {plan.price}
+                      </span>
+                      <span className={`text-sm mb-1 ${plan.highlight ? 'text-green-300' : 'text-slate-400'}`}>/Monat</span>
+                    </div>
+                  ) : (
+                    <p className={`text-2xl font-bold ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                      Auf Anfrage
+                    </p>
+                  )}
+                  {plan.price && (
+                    <p className={`text-xs mt-0.5 ${plan.highlight ? 'text-green-300' : 'text-slate-400'}`}>
+                      zzgl. 19 % MwSt.
+                    </p>
+                  )}
+                </div>
+
+                <ul className="space-y-2 flex-1">
+                  {plan.features.map(f => (
+                    <li key={f} className={`flex items-start gap-2 text-sm ${plan.highlight ? 'text-green-100' : 'text-slate-600'}`}>
+                      <CheckCircle2 size={14} className={`shrink-0 mt-0.5 ${plan.highlight ? 'text-green-400' : 'text-green-600'}`} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                <SignInButton
+                  label={plan.cta}
+                  className={`w-full py-2.5 rounded-xl text-sm font-semibold text-center transition-colors ${
+                    plan.highlight
+                      ? 'bg-white text-green-800 hover:bg-green-50'
+                      : plan.enterprise
+                      ? 'bg-stone-100 text-slate-700 hover:bg-stone-200'
+                      : 'bg-green-700 text-white hover:bg-green-600'
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -415,6 +478,79 @@ export default function Home() {
     </div>
   );
 }
+
+// ─── Plan data ────────────────────────────────────────────────────────────────
+
+const PLANS = [
+  {
+    name:      'Starter',
+    desc:      'Bis 25 Hektar',
+    price:     '9 €',
+    badge:     null,
+    highlight: false,
+    enterprise: false,
+    cta:       'Kostenlos testen',
+    features: [
+      'Interaktive GIS-Karte',
+      'Waldpolygone & Layer',
+      'Holzernte & Poltererfassung',
+      'Aufgaben & Maßnahmen',
+      'Mobile App (Offline)',
+      'E-Mail Support',
+    ],
+  },
+  {
+    name:      'Standard',
+    desc:      'Bis 100 Hektar',
+    price:     '19 €',
+    badge:     'Bestseller',
+    highlight: true,
+    enterprise: false,
+    cta:       'Kostenlos testen',
+    features: [
+      'Alles aus Starter',
+      'Satellitenüberwachung (NDVI)',
+      'Wetterdaten-Analyse',
+      'Dokumenten-Upload (Cloud)',
+      'Lieferscheine & PDF-Export',
+      'EUDR-Vorbereitung',
+    ],
+  },
+  {
+    name:      'Premium',
+    desc:      'Bis 250 Hektar',
+    price:     '29 €',
+    badge:     null,
+    highlight: false,
+    enterprise: false,
+    cta:       'Kostenlos testen',
+    features: [
+      'Alles aus Standard',
+      'KI-Analyse (GPT-4o)',
+      'SAR-Radar-Auswertung',
+      'EUDR Sorgfaltserklärungen',
+      'Waldinventur-App',
+      'Prioritäts-Support',
+    ],
+  },
+  {
+    name:      'Enterprise',
+    desc:      'Ab 250 Hektar',
+    price:     null,
+    badge:     null,
+    highlight: false,
+    enterprise: true,
+    cta:       'Kontakt aufnehmen',
+    features: [
+      'Alles aus Premium',
+      'Mehrere Organisationen',
+      'Forstbetriebsgemeinschaften',
+      'Individuelles Onboarding',
+      'SLA & dedizierter Support',
+      'Preise auf Anfrage',
+    ],
+  },
+];
 
 // ─── Feature data ─────────────────────────────────────────────────────────────
 

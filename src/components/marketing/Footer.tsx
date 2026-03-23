@@ -6,19 +6,12 @@ const LEGAL_LINKS = [
   { label: 'AGB',         href: '/agb'         },
 ];
 
-const PRICING = [
-  { name: 'Starter',    desc: 'bis 25 ha',   price: '9 €/Monat'   },
-  { name: 'Standard',   desc: 'bis 100 ha',  price: '19 €/Monat'  },
-  { name: 'Premium',    desc: 'bis 250 ha',  price: '29 €/Monat'  },
-  { name: 'Enterprise', desc: 'ab 250 ha',   price: 'Auf Anfrage'  },
-];
-
 export function Footer() {
   return (
     <footer className="bg-slate-900 text-slate-400">
       <div className="max-w-7xl mx-auto px-6 py-14">
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-10 mb-12">
 
           {/* Brand */}
           <div className="col-span-2 md:col-span-1 space-y-4">
@@ -55,24 +48,6 @@ export function Footer() {
                   <Link href={item.href} className="text-sm hover:text-white transition-colors">
                     {item.label}
                   </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Preise */}
-          <div>
-            <p className="text-xs font-semibold text-white uppercase tracking-widest mb-4">
-              <a href="/#preise" className="hover:text-green-400 transition-colors">Preise</a>
-            </p>
-            <ul className="space-y-3">
-              {PRICING.map(tier => (
-                <li key={tier.name} className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-sm text-slate-300 font-medium">{tier.name}</span>
-                    <span className="text-xs text-slate-500 ml-1.5">{tier.desc}</span>
-                  </div>
-                  <span className="text-xs text-slate-400 shrink-0 tabular-nums">{tier.price}</span>
                 </li>
               ))}
             </ul>

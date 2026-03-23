@@ -86,53 +86,122 @@ export default function Home() {
         </div>
 
         {/* Device mockups */}
-        <div className="max-w-5xl mx-auto relative flex items-end justify-center gap-0">
+        <div className="max-w-6xl mx-auto relative flex items-center justify-center gap-0">
 
           {/* ── Desktop-Browser-Frame ───────────────────────── */}
           <div
-            className="relative hidden md:flex flex-col shadow-2xl"
-            style={{ transform: 'rotate(-3deg) translateY(24px)', zIndex: 1 }}
+            className="relative hidden md:flex flex-col"
+            style={{
+              transform: 'rotate(-4deg) translateY(32px)',
+              zIndex: 1,
+              filter: 'drop-shadow(0 40px 60px rgba(0,0,0,0.28))',
+            }}
           >
-            {/* Browser chrome */}
-            <div className="bg-slate-200 rounded-t-xl px-4 pt-3 pb-0 border border-b-0 border-slate-300">
-              <div className="flex items-center gap-1.5 mb-2.5">
-                <div className="w-3 h-3 rounded-full bg-red-400" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <div className="ml-3 flex-1 bg-white rounded-md h-5 border border-slate-300" />
+            {/* macOS-style title bar */}
+            <div style={{
+              background: 'linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%)',
+              borderRadius: '14px 14px 0 0',
+              padding: '10px 14px 0',
+              borderTop: '1px solid #c0c0c0',
+              borderLeft: '1px solid #c0c0c0',
+              borderRight: '1px solid #c0c0c0',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                <div style={{ width: 13, height: 13, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, #ff8080, #ff5f57)', boxShadow: '0 0 0 0.5px rgba(0,0,0,0.15)' }} />
+                <div style={{ width: 13, height: 13, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, #ffd080, #ffbd2e)', boxShadow: '0 0 0 0.5px rgba(0,0,0,0.15)' }} />
+                <div style={{ width: 13, height: 13, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, #7dde6d, #28c840)', boxShadow: '0 0 0 0.5px rgba(0,0,0,0.15)' }} />
+                <div style={{ flex: 1, background: 'white', borderRadius: 6, height: 22, border: '1px solid #c8c8c8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 10, color: '#888', fontFamily: 'system-ui, sans-serif' }}>forestinventory.de/dashboard</span>
+                </div>
               </div>
             </div>
             {/* Screen */}
-            <div className="border border-t-0 border-slate-300 overflow-hidden rounded-b-xl">
+            <div style={{
+              border: '1px solid #c0c0c0',
+              borderTop: 'none',
+              borderRadius: '0 0 12px 12px',
+              overflow: 'hidden',
+              lineHeight: 0,
+            }}>
               <img
-                src="https://placehold.co/680x420/1a3d2b/4ade80?text=Desktop+Screenshot"
+                src="https://placehold.co/900x560/1a3d2b/4ade80?text=Desktop+Screenshot"
                 alt="ForestInventory Desktop"
-                className="w-[480px] block"
+                style={{ width: 640, display: 'block' }}
               />
             </div>
+            {/* Laptop base */}
+            <div style={{
+              height: 12,
+              background: 'linear-gradient(180deg, #c8c8c8 0%, #b8b8b8 100%)',
+              borderRadius: '0 0 4px 4px',
+              margin: '0 -6px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+            }} />
           </div>
 
-          {/* ── Phone-Frame ─────────────────────────────────── */}
+          {/* ── iPhone-Frame (fotorealistisch) ──────────────── */}
           <div
             className="relative flex-shrink-0"
-            style={{ transform: 'rotate(5deg)', zIndex: 2 }}
+            style={{ transform: 'rotate(6deg)', zIndex: 2 }}
           >
-            {/* Phone shell */}
-            <div className="relative bg-slate-900 rounded-[2.8rem] p-[10px] shadow-[0_30px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/10">
-              {/* Dynamic Island */}
-              <div className="absolute top-[18px] left-1/2 -translate-x-1/2 w-[80px] h-[22px] bg-slate-950 rounded-full z-10" />
-              {/* Screen */}
-              <div className="overflow-hidden rounded-[2.2rem] bg-black">
+            {/* Outer phone body */}
+            <div style={{
+              position: 'relative',
+              background: 'linear-gradient(145deg, #3a3a3c 0%, #1c1c1e 35%, #2c2c2e 65%, #1c1c1e 100%)',
+              borderRadius: 54,
+              padding: 14,
+              boxShadow: `
+                0 0 0 1px rgba(255,255,255,0.18),
+                inset 0 0 0 1px rgba(255,255,255,0.06),
+                0 50px 120px rgba(0,0,0,0.55),
+                0 15px 40px rgba(0,0,0,0.3)`,
+            }}>
+              {/* Mute button (left) */}
+              <div style={{ position: 'absolute', left: -4, top: 88, width: 4, height: 28, background: 'linear-gradient(90deg, #111, #2c2c2e)', borderRadius: '3px 0 0 3px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }} />
+              {/* Volume up (left) */}
+              <div style={{ position: 'absolute', left: -4, top: 130, width: 4, height: 44, background: 'linear-gradient(90deg, #111, #2c2c2e)', borderRadius: '3px 0 0 3px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }} />
+              {/* Volume down (left) */}
+              <div style={{ position: 'absolute', left: -4, top: 186, width: 4, height: 44, background: 'linear-gradient(90deg, #111, #2c2c2e)', borderRadius: '3px 0 0 3px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }} />
+              {/* Power button (right) */}
+              <div style={{ position: 'absolute', right: -4, top: 150, width: 4, height: 70, background: 'linear-gradient(270deg, #111, #2c2c2e)', borderRadius: '0 3px 3px 0', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }} />
+
+              {/* Screen bezel */}
+              <div style={{
+                background: '#000',
+                borderRadius: 40,
+                overflow: 'hidden',
+                position: 'relative',
+                lineHeight: 0,
+              }}>
+                {/* Dynamic Island */}
+                <div style={{
+                  position: 'absolute', top: 14, left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 110, height: 30,
+                  background: '#000',
+                  borderRadius: 20,
+                  zIndex: 10,
+                  boxShadow: '0 0 0 2px #000',
+                }} />
                 <img
-                  src="https://placehold.co/240x520/1a3d2b/4ade80?text=Mobile+App"
+                  src="https://placehold.co/260x560/1a3d2b/4ade80?text=Mobile+App"
                   alt="ForestInventory Mobile"
-                  className="w-[200px] block"
+                  style={{ width: 234, display: 'block' }}
                 />
               </div>
+
               {/* Home indicator */}
-              <div className="flex items-center justify-center h-6">
-                <div className="w-20 h-1 bg-slate-700 rounded-full" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28 }}>
+                <div style={{ width: 96, height: 4, background: 'rgba(255,255,255,0.22)', borderRadius: 2 }} />
               </div>
+
+              {/* Subtle glare on frame */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                borderRadius: 54,
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 50%)',
+                pointerEvents: 'none',
+              }} />
             </div>
           </div>
 

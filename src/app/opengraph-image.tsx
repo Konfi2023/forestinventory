@@ -36,9 +36,8 @@ export default function OgImage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '28px',
           }}>🌲</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
             <span style={{ fontSize: '32px', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.5px' }}>Forest</span>
-            <div style={{ width: '10px', height: '5px', borderRadius: '2px', background: '#4ade80', margin: '0 4px 4px' }} />
             <span style={{ fontSize: '32px', fontWeight: 800, color: '#4ade80', letterSpacing: '-0.5px' }}>Manager</span>
           </div>
         </div>

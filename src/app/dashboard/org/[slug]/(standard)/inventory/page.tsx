@@ -34,5 +34,5 @@ export default async function InventoryPage({
 
   const members = memberships.map(m => m.user);
 
-  return <InventoryClient forests={forests} orgSlug={slug} members={members} />;
+  return <InventoryClient forests={forests} orgSlug={slug} members={members} userId={session.user.id} />;
 }

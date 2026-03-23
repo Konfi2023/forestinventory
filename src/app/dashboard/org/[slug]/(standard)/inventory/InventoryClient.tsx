@@ -7,9 +7,10 @@ import { validateTreeMeasurement, estimateHeight, getTargetSampleSize } from '@/
 import {
   Camera, MapPin, Trees, ChevronRight, ChevronLeft,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
-  ClipboardList, User, Loader2, CircleDot,
+  ClipboardList, User, Loader2, CircleDot, Upload,
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
+import { ImportInventoryDialog } from './ImportInventoryDialog';
 
 const SOIL_CONDITIONS = [
   { id: 'SANDY', label: 'Sandig' },
@@ -94,6 +95,7 @@ interface InventoryClientProps {
   forests: Forest[];
   orgSlug: string;
   members?: Member[];
+  userId?: string;
 }
 
 interface TreeForm {
@@ -127,8 +129,9 @@ const EMPTY_FORM: TreeForm = {
   notes: '',
 };
 
-export function InventoryClient({ forests, orgSlug, members = [] }: InventoryClientProps) {
+export function InventoryClient({ forests, orgSlug, members = [], userId = '' }: InventoryClientProps) {
   const [step, setStep] = useState<Step>('mode');
+  const [showImport, setShowImport] = useState(false);
   const [mode, setMode] = useState<'single' | 'plot' | null>(null);
   const [form, setForm] = useState<TreeForm>(EMPTY_FORM);
   const [speciesSearch, setSpeciesSearch] = useState('');
@@ -569,6 +572,15 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      {showImport && (
+        <ImportInventoryDialog
+          forests={forests}
+          orgSlug={orgSlug}
+          userId={userId}
+          onClose={() => setShowImport(false)}
+          onImported={() => setShowImport(false)}
+        />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0">
         <div className="flex items-center gap-2">
@@ -682,6 +694,18 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
               </div>
               <p className="text-sm text-slate-400 leading-relaxed">
                 Probekreis-Inventur: Plot anlegen → alle Bäume im Radius erfassen → Plot abschließen → nächsten Plot starten. Ergibt N/ha, G/ha, V/ha und Ertragstafel-Vergleich.
+              </p>
+            </button>
+            <button
+              onClick={() => setShowImport(true)}
+              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-400 rounded-2xl transition-colors text-left shadow-sm"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Upload size={22} className="text-amber-600" />
+                <span className="text-lg font-bold">Daten importieren</span>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Bestehende Inventur einlesen — CSV-Datei oder Foto von Feldbuch / Notizen. Probekreise und Einzelbäume werden automatisch erkannt.
               </p>
             </button>
             {(pendingCount > 0 || sessionTrees.length > 0) && (

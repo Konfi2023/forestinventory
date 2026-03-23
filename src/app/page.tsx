@@ -44,32 +44,33 @@ export default async function Home() {
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1.5 rounded-full">
                 <Zap size={12} />
-                Für Waldbesitzer und WBVen in Deutschland
+                Forstmanagement Software – entwickelt in Deutschland
               </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight text-slate-900">
-                Ihr digitaler<br />
-                <span className="text-green-700">Forstbetrieb.</span>
+                Forstmanagement Software<br />
+                <span className="text-green-700">für Waldbesitzer.</span>
               </h1>
               <p className="text-lg text-slate-600 leading-relaxed">
-                Karte, Erntedaten, EU-Nachweispflichten, Waldüberwachung und
-                Holzverkauf — alles in einer Plattform für moderne Forstwirtschaft.
+                Digitale Waldinventur, GIS-Karte, Satellitenüberwachung und
+                EUDR-Konformität — alles in einer Forstbetrieb-Software für
+                Waldbesitzer, WBVen und Forstbetriebsgemeinschaften.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                 <SignInButton
-                  label="Jetzt kostenlos starten"
+                  label="30 Tage kostenlos testen"
                   className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
                 />
                 <a
                   href="#features"
                   className="flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm px-6 py-3 rounded-xl border border-stone-300 hover:border-stone-400 transition-colors"
                 >
-                  Funktionen ansehen
+                  Alle Funktionen ansehen
                 </a>
               </div>
               <div className="flex flex-wrap items-center gap-6 pt-2 text-xs text-slate-500">
                 {[
                   'DSGVO-konform',
-                  'EU-Entwaldungsverordnung',
+                  'EUDR-ready (EU 2023/1115)',
                   'Serverstandort Deutschland',
                 ].map(badge => (
                   <span key={badge} className="flex items-center gap-1.5">
@@ -84,7 +85,7 @@ export default async function Home() {
             <div className="relative mt-8 md:mt-0">
               <img
                 src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&auto=format&fit=crop&q=80"
-                alt="Waldlandschaft"
+                alt="Forstmanagement Software – Waldlandschaft in Deutschland"
                 className="w-full aspect-[4/3] object-cover rounded-2xl shadow-md"
               />
             </div>
@@ -95,11 +96,11 @@ export default async function Home() {
       {/* ── APP SHOWCASE ──────────────────────────────────────────────────────── */}
       <section className="bg-stone-50 py-20 px-6 border-y border-stone-200 overflow-hidden">
         <div className="max-w-5xl mx-auto text-center space-y-4 mb-16">
-          <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Die Anwendung</p>
-          <h2 className="text-3xl font-bold text-slate-900">Desktop & Mobil — alles dabei.</h2>
+          <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Waldinventur App & Dashboard</p>
+          <h2 className="text-3xl font-bold text-slate-900">Forstbetrieb-Software für Desktop & Mobil.</h2>
           <p className="text-slate-500 max-w-xl mx-auto">
-            Ob am Schreibtisch oder draußen im Revier — Forest Manager läuft auf
-            jedem Gerät, auch offline.
+            Waldinventur im Revier per Smartphone — Auswertung und EUDR-Einreichung
+            am Schreibtisch. Läuft auch offline ohne Netzempfang.
           </p>
         </div>
 
@@ -230,11 +231,11 @@ export default async function Home() {
       <section id="features" className="py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14 space-y-3">
-            <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Funktionen</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Alles was Ihr Forstbetrieb braucht</h2>
+            <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Funktionen der Forstmanagement Software</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Digitale Forstwirtschaft – alle Werkzeuge in einer Software</h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              Von der GIS-Karte bis zur EU-Einreichung — Forest Manager deckt den
-              gesamten digitalen Betriebsablauf ab.
+              Von der GIS-gestützten Waldkarte über die digitale Waldinventur bis zur
+              EU-Entwaldungsverordnung — Forest Manager digitalisiert Ihren gesamten Forstbetrieb.
             </p>
           </div>
 
@@ -275,13 +276,14 @@ export default async function Home() {
                   Verordnung (EU) 2023/1115
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-                  EU-Compliance<br />
+                  EUDR-Konformität<br />
                   <span className="text-green-300">ohne Mehraufwand.</span>
                 </h2>
                 <p className="text-green-100 leading-relaxed">
-                  Ab 1. Januar 2027 müssen Holzproduzenten Sorgfaltserklärungen
-                  bei der EU einreichen. Forest Manager bereitet Sie jetzt darauf vor —
-                  mit direkter Anbindung an die EU-Meldebehörde.
+                  Die EU-Entwaldungsverordnung (EUDR, EU 2023/1115) verpflichtet
+                  Holzproduzenten ab 2025 zur Sorgfaltserklärung. Forest Manager
+                  erstellt Ihre Due-Diligence-Statements automatisch aus Waldpolygonen
+                  und Einschlagsdaten — mit direkter Einreichung an die EU-Behörde.
                 </p>
                 <ul className="space-y-2.5 text-sm">
                   {[
@@ -325,14 +327,14 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-5">
-              <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Waldüberwachung</p>
+              <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Satellitengestützte Waldüberwachung</p>
               <h2 className="text-3xl md:text-4xl font-bold leading-tight text-slate-900">
-                Satellitendaten für<br />Ihren Wald.
+                Borkenkäfer, Sturm & Dürre<br />automatisch erkennen.
               </h2>
               <p className="text-slate-500 leading-relaxed">
-                Automatische Überwachung per Satellit — wöchentlich und monatlich.
-                Sturmschäden, Borkenkäferbefall und ungewöhnliche Veränderungen werden
-                sofort erkannt — ohne dass Sie etwas tun müssen.
+                Forest Manager überwacht Ihren Wald per Sentinel-2 und Sentinel-1
+                Satellit — wöchentlich und automatisch. Borkenkäferbefall, Sturmwürfe
+                und Trockenstress werden erkannt, bevor Sie im Revier waren.
               </p>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {[
@@ -385,11 +387,12 @@ export default async function Home() {
       <section id="preise" className="py-24 px-6 bg-stone-50 border-t border-stone-200">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 space-y-3">
-            <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Preise</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Einfach und transparent.</h2>
+            <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Preise der Forstmanagement Software</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Für jeden Forstbetrieb der passende Tarif.</h2>
             <p className="text-slate-500 max-w-xl mx-auto">
               30 Tage kostenlos testen — keine Kreditkarte erforderlich.
-              Alle Pakete beinhalten den vollen Funktionsumfang.
+              Alle Tarife beinhalten den vollen Funktionsumfang: GIS-Karte,
+              Waldinventur, Satellitenmonitoring und EUDR.
             </p>
           </div>
 

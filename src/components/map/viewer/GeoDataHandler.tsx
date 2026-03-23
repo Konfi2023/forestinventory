@@ -751,7 +751,7 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
             })}
 
             {/* INFRASTRUKTUR: POIs */}
-            {showInfrastructure && poisVisible && forest.pois?.map((poi: any) => {
+            {showInfrastructure && poisVisible && forest.pois?.filter((poi: any) => !(poi.lat === 0 && poi.lng === 0)).map((poi: any) => {
                 const isSelected = selectedId === poi.id;
                 const isMoving = interactionMode === 'MOVE_POI' && isSelected;
                 const displayLat = (isMoving && editingData && editingData.id === poi.id) ? editingData.lat : poi.lat;

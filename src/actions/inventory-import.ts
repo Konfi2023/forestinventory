@@ -63,7 +63,7 @@ export async function importInventoryPlots(
         radiusM:     plot.radiusM,
         name:        plot.name || null,
         measuredById: userId,
-        notes:       lat === 0 ? 'GPS-Koordinaten nicht bekannt – bitte auf Karte platzieren.' : null,
+        notes:       lat === 0 ? 'GPS-Koordinaten nicht erfasst – Probekreis nicht auf Karte sichtbar.' : null,
         ...(compartmentId ? { compartmentId } : {}),
       },
     });
@@ -151,7 +151,7 @@ export async function importInventoryTrees(
             height:    tree.height   ?? null,
             age:       tree.age      ?? null,
             co2Storage: co2,
-            notes:     lat === 0 ? 'GPS-Koordinaten nicht bekannt – bitte auf Karte platzieren.' : null,
+            notes:     lat === 0 ? 'GPS-Koordinaten nicht erfasst – Baum nicht auf Karte sichtbar.' : null,
             ...(compartmentId ? { compartmentId } : {}),
           },
         },

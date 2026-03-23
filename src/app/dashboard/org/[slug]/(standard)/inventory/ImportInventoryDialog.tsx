@@ -291,14 +291,17 @@ export function ImportInventoryDialog({ forests, orgSlug, userId, onClose, onImp
                 </select>
               </div>
 
-              {result.mode === 'plot' && selected.size > 0 && (
-                <p className="text-xs text-slate-400">
-                  {totalSelected} Probekreis{totalSelected !== 1 ? 'e' : ''} mit {totalTrees} Bäumen werden importiert.
-                  {result.plots.some((p, i) => selected.has(i) && p.lat == null) && ' Probekreise ohne GPS werden bei Koordinate 0/0 platziert — bitte danach auf der Karte verschieben.'}
+              {result.mode === 'plot' && selected.size > 0 && result.plots.some((p, i) => selected.has(i) && p.lat == null) && (
+                <p className="text-xs text-amber-600 flex items-start gap-1.5">
+                  <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                  Probekreise ohne GPS erscheinen nicht auf der Karte, fließen aber in die Forsteinrichtungs-Auswertung ein.
                 </p>
               )}
               {result.mode === 'tree' && result.trees.some((t, i) => selected.has(i) && t.lat == null) && (
-                <p className="text-xs text-slate-400">Bäume ohne GPS-Koordinaten werden bei 0/0 angelegt — bitte danach auf der Karte platzieren.</p>
+                <p className="text-xs text-amber-600 flex items-start gap-1.5">
+                  <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                  Bäume ohne GPS erscheinen nicht auf der Karte, fließen aber in die Forsteinrichtungs-Auswertung ein.
+                </p>
               )}
 
               {error && (

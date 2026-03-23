@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>${msg("loginTitle",(realm.displayName!'ForestInventory'))}</title>
+    <title>${msg("loginTitle",(realm.displayName!'Forest Manager'))}</title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
     <link href="${url.resourcesPath}/css/styles.css?v=${.now?long}" rel="stylesheet" />
 </head>

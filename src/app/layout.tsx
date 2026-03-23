@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     default: 'Forest Manager – Digitales Forstmanagement',
     template: '%s | Forest Manager',
   },
-  description: 'Forest Manager ist die digitale Plattform für Waldbesitzer, Forstbetriebe und Waldbesitzervereinigungen – mit GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse. Entwickelt in Deutschland.',
+  description: 'Forest Manager ist die digitale Plattform für Waldbesitzer, Forstbetriebe und Waldbesitzervereinigungen – mit GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse.',
   keywords: [
     'Forstmanagement Software', 'Waldinventur digital', 'EUDR Software', 'Waldverwaltung',
     'Forstbetrieb Software', 'Waldinventur App', 'Forstwirtschaft digitalisieren',
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     url: APP_URL,
     siteName: 'Forest Manager',
     title: 'Forest Manager – Digitales Forstmanagement',
-    description: 'GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse für Waldbesitzer und Forstbetriebe. Entwickelt in Deutschland.',
+    description: 'GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse für Waldbesitzer und Forstbetriebe in Europa.',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Forest Manager – Digitales Forstmanagement' }],
   },
   twitter: {
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
   },
   other: {
     'geo.region': 'DE',
-    'geo.placename': 'Hamburg, Deutschland',
+    'geo.placename': 'Hamburg',
     'geo.position': '53.5753;10.0153',
     'ICBM': '53.5753, 10.0153',
   },

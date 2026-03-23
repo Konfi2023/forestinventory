@@ -15,7 +15,7 @@ const organizationSchema = {
     postalCode: '20457',
     addressCountry: 'DE',
   },
-  foundingLocation: { '@type': 'Place', name: 'Hamburg, Deutschland' },
+  foundingLocation: { '@type': 'Place', name: 'Hamburg' },
   areaServed: ['DE', 'AT', 'CH', 'EU'],
 };
 
@@ -24,7 +24,7 @@ const softwareSchema = {
   '@type': 'SoftwareApplication',
   name: 'Forest Manager',
   url: APP_URL,
-  description: 'Digitale SaaS-Plattform für Forstmanagement, Waldinventur und EUDR-Konformität für Waldbesitzer und Forstbetriebe in Deutschland.',
+  description: 'Digitale SaaS-Plattform für Forstmanagement, Waldinventur und EUDR-Konformität für Waldbesitzer und Forstbetriebe in Europa.',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web, iOS, Android (PWA)',
   offers: [

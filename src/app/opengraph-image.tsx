@@ -49,7 +49,7 @@ export default function OgImage() {
           lineHeight: 1.1, letterSpacing: '-1px', marginBottom: '20px',
         }}>
           Digitales Forstmanagement<br />
-          <span style={{ color: '#4ade80' }}>für Deutschland.</span>
+          <span style={{ color: '#4ade80' }}>für Europa.</span>
         </div>
 
         {/* Subline */}

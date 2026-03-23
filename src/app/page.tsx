@@ -14,12 +14,12 @@ import { StructuredData } from '@/components/marketing/StructuredData';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = {
-  title: 'Forest Manager – Digitales Forstmanagement für Deutschland',
+  title: 'Forest Manager – Digitales Forstmanagement für Europa',
   description: 'Die führende SaaS-Plattform für Waldbesitzer und Forstbetriebe: GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse. 30 Tage kostenlos testen.',
   alternates: { canonical: 'https://forest-manager.eu' },
   openGraph: {
     title: 'Forest Manager – Digitales Forstmanagement',
-    description: 'GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse für Waldbesitzer und Forstbetriebe in Deutschland.',
+    description: 'GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse für Waldbesitzer und Forstbetriebe in Europa.',
     url: 'https://forest-manager.eu',
     type: 'website',
   },
@@ -44,7 +44,7 @@ export default async function Home() {
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1.5 rounded-full">
                 <Zap size={12} />
-                Forstmanagement Software – entwickelt in Deutschland
+                Forstmanagement Software für Waldbesitzer und Forstbetriebe
               </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight text-slate-900">
                 Forstmanagement Software<br />
@@ -71,7 +71,7 @@ export default async function Home() {
                 {[
                   'DSGVO-konform',
                   'EUDR-ready (EU 2023/1115)',
-                  'Serverstandort Deutschland',
+                  'Serverstandort Europa',
                 ].map(badge => (
                   <span key={badge} className="flex items-center gap-1.5">
                     <CheckCircle2 size={12} className="text-green-600" />
@@ -85,7 +85,7 @@ export default async function Home() {
             <div className="relative mt-8 md:mt-0">
               <img
                 src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&auto=format&fit=crop&q=80"
-                alt="Forstmanagement Software – Waldlandschaft in Deutschland"
+                alt="Forstmanagement Software – europäische Waldlandschaft"
                 className="w-full aspect-[4/3] object-cover rounded-2xl shadow-md"
               />
             </div>
@@ -515,7 +515,7 @@ export default async function Home() {
           </div>
           <div className="flex items-center justify-center gap-5 pt-2 text-xs text-green-300">
             <span className="flex items-center gap-1.5"><Lock size={11} /> DSGVO-konform</span>
-            <span className="flex items-center gap-1.5"><Globe size={11} /> Serverstandort Deutschland</span>
+            <span className="flex items-center gap-1.5"><Globe size={11} /> Serverstandort Europa</span>
             <span className="flex items-center gap-1.5"><ShieldCheck size={11} /> EU-Entwaldungsverordnung</span>
           </div>
         </div>

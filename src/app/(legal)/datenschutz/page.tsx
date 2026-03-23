@@ -21,7 +21,7 @@ export default function PrivacyPage() {
 
       <Section title="2. Hosting & Server-Logfiles">
         <p>
-          Unsere Server befinden sich in Deutschland (Hetzner Online GmbH, Gunzenhausen).
+          Unsere Server befinden sich in Europa (OHV Cloud, EU-Rechenzentrum).
           Bei jedem Seitenaufruf werden automatisch Server-Logfiles erfasst, darunter
           IP-Adresse, aufgerufene URL, Uhrzeit, HTTP-Statuscode und übertragene Datenmenge.
           Diese Daten dienen ausschließlich der technischen Sicherheit und Fehlerbehebung
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
       <Section title="3. Registrierung & Authentifizierung (Keycloak)">
         <p>
           Für die Anmeldung nutzen wir <strong>Keycloak</strong>, einen Open-Source-Identity-Provider,
-          der auf unseren eigenen Servern in Deutschland betrieben wird. Dabei werden
+          der auf unseren eigenen Servern in Europa betrieben wird. Dabei werden
           Ihr Name, Ihre E-Mail-Adresse und Ihr Passwort (verschlüsselt, bcrypt) gespeichert.
           Es findet keine Übermittlung an Dritte statt.
         </p>
@@ -164,7 +164,7 @@ export default function PrivacyPage() {
           eine selbst gehostete, DSGVO-freundliche Alternative zu Sentry. Bei einem Fehler werden
           technische Informationen (Fehlertyp, Stacktrace, Browser-Informationen) erfasst.
           Es werden keine persönlichen Nutzerdaten in Fehlermeldungen gespeichert.
-          Die Daten verbleiben auf unseren eigenen Servern in Deutschland.
+          Die Daten verbleiben auf unseren eigenen Servern in Europa.
         </p>
         <p className="mt-2">Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.</p>
       </Section>

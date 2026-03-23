@@ -31,7 +31,7 @@
 
             <!-- FOOTER -->
             <div class="footer">
-                <p>&copy; ${.now?string('yyyy')} ForestInventory. ${msg("copyright")}</p>
+                <p>&copy; ${.now?string('yyyy')} Forest Manager. ${msg("copyright")}</p>
                 <p>${msg("emailReason")}</p>
             </div>
         </div>

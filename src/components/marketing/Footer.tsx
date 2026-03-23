@@ -30,7 +30,7 @@ export function Footer() {
             </Link>
             <p className="text-sm leading-relaxed text-slate-500 max-w-xs">
               Digitales Forstmanagement für Waldbesitzer, Forstbetriebe und
-              Waldbesitzervereinigungen – entwickelt in Deutschland.
+              Waldbesitzervereinigungen in Europa.
             </p>
           </div>
 
@@ -72,7 +72,7 @@ export function Footer() {
         {/* Bottom row */}
         <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-600">
           <p>© {new Date().getFullYear()} Forest Manager. Alle Rechte vorbehalten.</p>
-          <p>DSGVO-konform · Serverstandort Deutschland · EU-Entwaldungsverordnung</p>
+          <p>DSGVO-konform · Serverstandort Europa · EU-Entwaldungsverordnung</p>
         </div>
       </div>
     </footer>

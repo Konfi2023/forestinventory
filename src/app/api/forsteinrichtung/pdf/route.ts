@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   // Load forests + compartments
-  const forests = await prisma.forest.findMany({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const forests: any[] = await (prisma.forest.findMany as any)({
     where: {
       organizationId: org.id,
       ...(forestId ? { id: forestId } : {}),
@@ -49,11 +50,11 @@ export async function GET(req: NextRequest) {
               },
             },
           },
-          pois: {
-            where: { type: 'TREE' },
-            include: { tree: { select: { compartmentId: true } } },
-          },
         },
+      },
+      pois: {
+        where: { type: 'TREE' },
+        include: { tree: { select: { compartmentId: true } } },
       },
     },
   });
@@ -63,10 +64,10 @@ export async function GET(req: NextRequest) {
   for (const forest of forests) {
     for (const comp of forest.compartments) {
       // Plot metrics
-      const plots: ReportInventoryPlot[] = comp.inventoryPlots.map(plot => {
+      const plots: ReportInventoryPlot[] = comp.inventoryPlots.map((plot: any) => {
         const plotTrees = plot.trees
-          .filter(t => t.diameter != null && t.diameter > 0)
-          .map(t => ({ species: t.species, diameterCm: t.diameter!, heightM: t.height ?? null }));
+          .filter((t: any) => t.diameter != null && t.diameter > 0)
+          .map((t: any) => ({ species: t.species, diameterCm: t.diameter, heightM: t.height ?? null }));
         const result = calcPlotMetrics(plotTrees, plot.radiusM, true);
 
         let siteClassLabel: string | null = null;
@@ -75,7 +76,7 @@ export async function GET(req: NextRequest) {
         if (result && comp.standAge && result.meanHeight) {
           const dominantSp = (comp.mainSpecies as any[])?.[0]?.species ?? null;
           if (dominantSp && isYieldTableSpecies(dominantSp)) {
-            const sorted = [...plotTrees.filter(t => t.heightM != null)].sort((a, b) => b.diameterCm - a.diameterCm);
+            const sorted = [...plotTrees.filter((t: any) => t.heightM != null)].sort((a, b) => b.diameterCm - a.diameterCm);
             const topK = Math.max(1, Math.round(sorted.length * 0.2));
             const hTop = sorted.slice(0, topK).reduce((s, t) => s + (t.heightM ?? 0), 0) / topK;
             const sc = estimateSiteClass(dominantSp as Species, comp.standAge!, hTop || result.meanHeight!);
@@ -97,7 +98,7 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      const treeCount = comp.pois.filter(p => p.tree?.compartmentId === comp.id).length;
+      const treeCount = forest.pois.filter((p: any) => p.tree?.compartmentId === comp.id).length;
 
       const mapSpecies = (arr: any[]) =>
         (arr ?? []).map((e: any) => ({ species: e.species, percent: e.percent ?? 0, label: getSpeciesLabel(e.species) }));
@@ -155,13 +156,14 @@ export async function GET(req: NextRequest) {
     compartments,
   };
 
-  const buffer = await renderToBuffer(React.createElement(ForsteinrichtungPdf, { data }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const buffer = await renderToBuffer(React.createElement(ForsteinrichtungPdf, { data }) as any);
 
   const filename = compartmentId
     ? `Abteilungsblatt_${compartments[0]?.number ?? compartments[0]?.name ?? 'export'}.pdf`
     : `Forsteinrichtung_${orgSlug}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-  return new NextResponse(buffer, {
+  return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}"`,

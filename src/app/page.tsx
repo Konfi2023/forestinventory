@@ -83,7 +83,7 @@ export default async function Home() {
           <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Die Anwendung</p>
           <h2 className="text-3xl font-bold text-slate-900">Desktop & Mobil — alles dabei.</h2>
           <p className="text-slate-500 max-w-xl mx-auto">
-            Ob am Schreibtisch oder draußen im Revier — ForestInventory läuft auf
+            Ob am Schreibtisch oder draußen im Revier — Forest Manager läuft auf
             jedem Gerät, auch offline.
           </p>
         </div>
@@ -114,7 +114,7 @@ export default async function Home() {
                 <div style={{ width: 13, height: 13, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, #ffd080, #ffbd2e)', boxShadow: '0 0 0 0.5px rgba(0,0,0,0.15)' }} />
                 <div style={{ width: 13, height: 13, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, #7dde6d, #28c840)', boxShadow: '0 0 0 0.5px rgba(0,0,0,0.15)' }} />
                 <div style={{ flex: 1, background: 'white', borderRadius: 6, height: 22, border: '1px solid #c8c8c8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 10, color: '#888', fontFamily: 'system-ui, sans-serif' }}>forestinventory.de/dashboard</span>
+                  <span style={{ fontSize: 10, color: '#888', fontFamily: 'system-ui, sans-serif' }}>forest-manager.eu/dashboard</span>
                 </div>
               </div>
             </div>
@@ -128,7 +128,7 @@ export default async function Home() {
             }}>
               <img
                 src="https://placehold.co/900x560/1a3d2b/4ade80?text=Desktop+Screenshot"
-                alt="ForestInventory Desktop"
+                alt="Forest Manager Desktop"
                 style={{ width: 640, display: 'block' }}
               />
             </div>
@@ -188,7 +188,7 @@ export default async function Home() {
                 }} />
                 <img
                   src="https://placehold.co/260x560/1a3d2b/4ade80?text=Mobile+App"
-                  alt="ForestInventory Mobile"
+                  alt="Forest Manager Mobile"
                   style={{ width: 234, display: 'block' }}
                 />
               </div>
@@ -218,7 +218,7 @@ export default async function Home() {
             <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Funktionen</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Alles was Ihr Forstbetrieb braucht</h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              Von der GIS-Karte bis zur EU-Einreichung — ForestInventory deckt den
+              Von der GIS-Karte bis zur EU-Einreichung — Forest Manager deckt den
               gesamten digitalen Betriebsablauf ab.
             </p>
           </div>
@@ -265,7 +265,7 @@ export default async function Home() {
                 </h2>
                 <p className="text-green-100 leading-relaxed">
                   Ab 1. Januar 2027 müssen Holzproduzenten Sorgfaltserklärungen
-                  bei der EU einreichen. ForestInventory bereitet Sie jetzt darauf vor —
+                  bei der EU einreichen. Forest Manager bereitet Sie jetzt darauf vor —
                   mit direkter Anbindung an die EU-Meldebehörde.
                 </p>
                 <ul className="space-y-2.5 text-sm">
@@ -489,7 +489,7 @@ export default async function Home() {
               className="flex items-center justify-center gap-2 bg-white text-green-800 hover:bg-green-50 font-semibold px-8 py-3.5 rounded-xl transition-colors"
             />
             <a
-              href="mailto:kontakt@forestinventory.de"
+              href="mailto:kontakt@forest-manager.eu"
               className="flex items-center justify-center gap-2 text-green-100 hover:text-white px-8 py-3.5 rounded-xl border border-white/30 hover:border-white/60 transition-colors text-sm"
             >
               Kontakt aufnehmen

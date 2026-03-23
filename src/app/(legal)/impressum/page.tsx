@@ -1,4 +1,4 @@
-export const metadata = { title: 'Impressum – ForestInventory' };
+export const metadata = { title: 'Impressum – Forest Manager' };
 
 export default function ImprintPage() {
   return (
@@ -22,7 +22,7 @@ export default function ImprintPage() {
       <Section title="Kontakt">
         <p>
           E-Mail: <a href="mailto:info@natureport.eu" className="text-green-700 hover:underline">info@natureport.eu</a><br />
-          Web: <a href="https://forestinventory.de" className="text-green-700 hover:underline">forestinventory.de</a>
+          Web: <a href="https://forest-manager.eu" className="text-green-700 hover:underline">forest-manager.eu</a>
         </p>
       </Section>
 

@@ -12,7 +12,7 @@
 <body>
     <!-- TOP NAV -->
     <div class="np-top-nav">
-        <a href="https://forest-inventory.eu" title="${msg('backToHome')}" style="text-decoration: none; display: flex; align-items: center;">
+        <a href="https://forest-manager.eu" title="${msg('backToHome')}" style="text-decoration: none; display: flex; align-items: center;">
             <svg height="30" viewBox="0 0 285 47" fill="none" xmlns="http://www.w3.org/2000/svg" style="height: 30px; width: auto;">
                 <g>
                     <mask id="mask0_kc_err" style="mask-type: alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="47" height="47">
@@ -55,7 +55,7 @@
                             Vorgang neu starten
                         </a>
                     </#if>
-                    <a href="https://forest-inventory.eu" style="color: #64748b; font-size: 14px; text-decoration: none; margin-top: 4px;">
+                    <a href="https://forest-manager.eu" style="color: #64748b; font-size: 14px; text-decoration: none; margin-top: 4px;">
                         Zur Startseite
                     </a>
                 </div>

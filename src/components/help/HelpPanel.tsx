@@ -124,10 +124,10 @@ export function HelpPanel() {
           <p className="text-xs text-slate-400">
             Weitere Fragen?{" "}
             <a
-              href="mailto:info@forest-inventory.eu"
+              href="mailto:info@forest-manager.eu"
               className="text-emerald-700 hover:underline"
             >
-              info@forest-inventory.eu
+              info@forest-manager.eu
             </a>
           </p>
         </div>

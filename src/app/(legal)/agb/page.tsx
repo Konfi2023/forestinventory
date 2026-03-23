@@ -1,4 +1,4 @@
-export const metadata = { title: 'AGB – ForestInventory' };
+export const metadata = { title: 'AGB – Forest Manager' };
 
 export default function TermsPage() {
   return (
@@ -11,7 +11,7 @@ export default function TermsPage() {
       <Section title="1. Geltungsbereich">
         <p>
           Diese Allgemeinen Geschäftsbedingungen gelten für die Nutzung der Software-as-a-Service-Lösung
-          „ForestInventory" (erreichbar unter forestinventory.de) der natureport UG (haftungsbeschränkt),
+          „Forest Manager" (erreichbar unter forest-manager.eu) der natureport UG (haftungsbeschränkt),
           Willy-Brandt-Str. 23, 20457 Hamburg (nachfolgend „Anbieter"), durch Verbraucher
           und Unternehmer (nachfolgend „Nutzer"). Abweichende Bedingungen des Nutzers werden nicht
           anerkannt, es sei denn, der Anbieter stimmt ihrer Geltung ausdrücklich schriftlich zu.
@@ -115,7 +115,7 @@ export default function TermsPage() {
 
       <Section title="6. Preise, Zahlung & Abrechnung">
         <p>
-          Die aktuellen Preise sind auf forestinventory.de einsehbar. Alle Preise verstehen sich
+          Die aktuellen Preise sind auf forest-manager.eu einsehbar. Alle Preise verstehen sich
           zuzüglich der gesetzlichen Mehrwertsteuer (19&nbsp;%). Die Zahlung erfolgt über
           <strong> Stripe Payments Europe, Ltd.</strong> Kostenpflichtige Abonnements beginnen
           nach Ablauf der Testphase. Bei monatlicher Abrechnung wird der Betrag monatlich im
@@ -178,7 +178,7 @@ export default function TermsPage() {
           Die Erhebung und Verarbeitung personenbezogener Daten richtet sich nach unserer
           Datenschutzerklärung, abrufbar unter{' '}
           <a href="/datenschutz" className="text-green-700 hover:underline">
-            forestinventory.de/datenschutz
+            forest-manager.eu/datenschutz
           </a>.
         </p>
       </Section>

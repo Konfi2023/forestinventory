@@ -222,7 +222,7 @@ async function TrialExpiredGate({
           <CreditCard size={16} /> Paket wählen &amp; weitermachen
         </Link>
         <p className="text-xs text-slate-400">
-          Fragen? <a href="mailto:info@forest-inventory.eu" className="text-green-700 hover:underline">info@forest-inventory.eu</a>
+          Fragen? <a href="mailto:info@forest-manager.eu" className="text-green-700 hover:underline">info@forest-manager.eu</a>
         </p>
       </div>
     </div>

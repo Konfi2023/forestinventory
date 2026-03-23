@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const token = await getToken({ req });
   const rawCallback = req.nextUrl.searchParams.get("callbackUrl") ?? "/";
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://forest-inventory.eu";
+  const baseUrl = process.env.NEXTAUTH_URL ?? "https://forest-manager.eu";
   const postLogoutUri = encodeURIComponent(
     rawCallback.startsWith("http") ? rawCallback : `${baseUrl}${rawCallback}`
   );

@@ -1,4 +1,4 @@
-export const metadata = { title: 'Datenschutzerklärung – ForestInventory' };
+export const metadata = { title: 'Datenschutzerklärung – Forest Manager' };
 
 export default function PrivacyPage() {
   return (
@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <p className="text-slate-600 leading-relaxed mb-10">
         Der Schutz Ihrer personenbezogenen Daten ist uns ein wichtiges Anliegen. Diese
         Datenschutzerklärung informiert Sie darüber, welche Daten wir im Rahmen der Nutzung von
-        ForestInventory (forestinventory.de) erheben, verarbeiten und an Dritte übermitteln.
+        Forest Manager (forest-manager.eu) erheben, verarbeiten und an Dritte übermitteln.
       </p>
 
       <Section title="1. Verantwortlicher">

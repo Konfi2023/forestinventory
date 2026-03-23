@@ -71,7 +71,7 @@ export class InventoryDB extends Dexie {
   pendingPlots!: Table<PendingPlot, number>;
 
   constructor() {
-    super('ForestInventoryDB');
+    super('Forest ManagerDB');
     this.version(1).stores({
       pendingTrees: '++id, synced, createdAt, forestId',
     });

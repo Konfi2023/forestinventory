@@ -71,7 +71,7 @@ export function Footer() {
 
         {/* Bottom row */}
         <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-          <p>© {new Date().getFullYear()} ForestInventory. Alle Rechte vorbehalten.</p>
+          <p>© {new Date().getFullYear()} Forest Manager. Alle Rechte vorbehalten.</p>
           <p>DSGVO-konform · Serverstandort Deutschland · EU-Entwaldungsverordnung</p>
         </div>
       </div>

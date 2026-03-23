@@ -209,7 +209,7 @@ export async function GET(
 
   <div class="footer">
     <span>Erstellt: ${fmtDate(ticket.createdAt)}</span>
-    <span>ForestInventory &middot; Lieferschein ${ticket.ticketNumber}</span>
+    <span>Forest Manager &middot; Lieferschein ${ticket.ticketNumber}</span>
   </div>
 
   <button class="print-btn no-print" onclick="window.print()">&#128438; Drucken / PDF</button>

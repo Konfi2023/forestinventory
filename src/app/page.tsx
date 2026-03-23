@@ -395,8 +395,11 @@ export default function Home() {
                   <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${plan.highlight ? 'text-green-300' : 'text-green-700'}`}>
                     {plan.name}
                   </p>
-                  <p className={`text-sm mb-3 ${plan.highlight ? 'text-green-200' : 'text-slate-500'}`}>
+                  <p className={`text-sm mb-1 ${plan.highlight ? 'text-green-200' : 'text-slate-500'}`}>
                     {plan.desc}
+                  </p>
+                  <p className={`text-xs font-medium mb-3 ${plan.highlight ? 'text-green-300' : 'text-green-700'}`}>
+                    {plan.limit}
                   </p>
                   {plan.price ? (
                     <div className="flex items-end gap-1">
@@ -418,7 +421,7 @@ export default function Home() {
                 </div>
 
                 <ul className="space-y-2 flex-1">
-                  {plan.features.map(f => (
+                  {PLAN_FEATURES.map(f => (
                     <li key={f} className={`flex items-start gap-2 text-sm ${plan.highlight ? 'text-green-100' : 'text-slate-600'}`}>
                       <CheckCircle2 size={14} className={`shrink-0 mt-0.5 ${plan.highlight ? 'text-green-400' : 'text-green-600'}`} />
                       {f}
@@ -481,74 +484,56 @@ export default function Home() {
 
 // ─── Plan data ────────────────────────────────────────────────────────────────
 
+const PLAN_FEATURES = [
+  'Alle Karten-Funktionen',
+  'Holzernte & Poltererfassung',
+  'Aufgaben & Maßnahmen',
+  'Mobile App (Offline)',
+  'Dokumenten-Upload',
+  'E-Mail Support',
+  'Regelmäßige Updates',
+];
+
 const PLANS = [
   {
-    name:      'Starter',
-    desc:      'Bis 25 Hektar',
-    price:     '9 €',
-    badge:     null,
-    highlight: false,
+    name:       'Starter',
+    desc:       'Für kleine Privatwälder',
+    limit:      'Bis 25 Hektar',
+    price:      '9 €',
+    badge:      null,
+    highlight:  false,
     enterprise: false,
-    cta:       'Kostenlos testen',
-    features: [
-      'Interaktive GIS-Karte',
-      'Waldpolygone & Layer',
-      'Holzernte & Poltererfassung',
-      'Aufgaben & Maßnahmen',
-      'Mobile App (Offline)',
-      'E-Mail Support',
-    ],
+    cta:        'Kostenlos testen',
   },
   {
-    name:      'Standard',
-    desc:      'Bis 100 Hektar',
-    price:     '19 €',
-    badge:     'Bestseller',
-    highlight: true,
+    name:       'Standard',
+    desc:       'Unser Bestseller',
+    limit:      'Bis 100 Hektar',
+    price:      '19 €',
+    badge:      'Bestseller',
+    highlight:  true,
     enterprise: false,
-    cta:       'Kostenlos testen',
-    features: [
-      'Alles aus Starter',
-      'Satellitenüberwachung (NDVI)',
-      'Wetterdaten-Analyse',
-      'Dokumenten-Upload (Cloud)',
-      'Lieferscheine & PDF-Export',
-      'EUDR-Vorbereitung',
-    ],
+    cta:        'Kostenlos testen',
   },
   {
-    name:      'Premium',
-    desc:      'Bis 250 Hektar',
-    price:     '29 €',
-    badge:     null,
-    highlight: false,
+    name:       'Premium',
+    desc:       'Für große Betriebe',
+    limit:      'Bis 250 Hektar',
+    price:      '29 €',
+    badge:      null,
+    highlight:  false,
     enterprise: false,
-    cta:       'Kostenlos testen',
-    features: [
-      'Alles aus Standard',
-      'KI-Analyse (GPT-4o)',
-      'SAR-Radar-Auswertung',
-      'EUDR Sorgfaltserklärungen',
-      'Waldinventur-App',
-      'Prioritäts-Support',
-    ],
+    cta:        'Kostenlos testen',
   },
   {
-    name:      'Enterprise',
-    desc:      'Ab 250 Hektar',
-    price:     null,
-    badge:     null,
-    highlight: false,
+    name:       'Enterprise',
+    desc:       'Kommunen & Verbände',
+    limit:      'Ab 250 Hektar',
+    price:      null,
+    badge:      null,
+    highlight:  false,
     enterprise: true,
-    cta:       'Kontakt aufnehmen',
-    features: [
-      'Alles aus Premium',
-      'Mehrere Organisationen',
-      'Forstbetriebsgemeinschaften',
-      'Individuelles Onboarding',
-      'SLA & dedizierter Support',
-      'Preise auf Anfrage',
-    ],
+    cta:        'Kontakt aufnehmen',
   },
 ];
 

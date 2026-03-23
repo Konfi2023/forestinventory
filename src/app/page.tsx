@@ -74,22 +74,68 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── APP SCREENSHOT ────────────────────────────────────────────────────── */}
-      <section className="bg-stone-50 py-16 px-6 border-y border-stone-200">
-        <div className="max-w-5xl mx-auto text-center space-y-4 mb-10">
+      {/* ── APP SHOWCASE ──────────────────────────────────────────────────────── */}
+      <section className="bg-stone-50 py-20 px-6 border-y border-stone-200 overflow-hidden">
+        <div className="max-w-5xl mx-auto text-center space-y-4 mb-16">
           <p className="text-green-700 text-sm font-semibold uppercase tracking-widest">Die Anwendung</p>
-          <h2 className="text-3xl font-bold text-slate-900">Alles auf einen Blick</h2>
+          <h2 className="text-3xl font-bold text-slate-900">Desktop & Mobil — alles dabei.</h2>
           <p className="text-slate-500 max-w-xl mx-auto">
-            Eine Oberfläche für Ihre gesamte Waldbewirtschaftung – übersichtlich,
-            auch vom Smartphone aus nutzbar.
+            Ob am Schreibtisch oder draußen im Revier — ForestInventory läuft auf
+            jedem Gerät, auch offline.
           </p>
         </div>
-        <div className="max-w-5xl mx-auto">
-          <img
-            src="https://placehold.co/1280x720/1a3d2b/4ade80?text=App-Screenshot+einfügen"
-            alt="ForestInventory App – Kartenansicht"
-            className="w-full aspect-video object-cover rounded-2xl border border-stone-300 shadow-sm"
-          />
+
+        {/* Device mockups */}
+        <div className="max-w-5xl mx-auto relative flex items-end justify-center gap-0">
+
+          {/* ── Desktop-Browser-Frame ───────────────────────── */}
+          <div
+            className="relative hidden md:flex flex-col shadow-2xl"
+            style={{ transform: 'rotate(-3deg) translateY(24px)', zIndex: 1 }}
+          >
+            {/* Browser chrome */}
+            <div className="bg-slate-200 rounded-t-xl px-4 pt-3 pb-0 border border-b-0 border-slate-300">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <div className="ml-3 flex-1 bg-white rounded-md h-5 border border-slate-300" />
+              </div>
+            </div>
+            {/* Screen */}
+            <div className="border border-t-0 border-slate-300 overflow-hidden rounded-b-xl">
+              <img
+                src="https://placehold.co/680x420/1a3d2b/4ade80?text=Desktop+Screenshot"
+                alt="ForestInventory Desktop"
+                className="w-[480px] block"
+              />
+            </div>
+          </div>
+
+          {/* ── Phone-Frame ─────────────────────────────────── */}
+          <div
+            className="relative flex-shrink-0"
+            style={{ transform: 'rotate(5deg)', zIndex: 2 }}
+          >
+            {/* Phone shell */}
+            <div className="relative bg-slate-900 rounded-[2.8rem] p-[10px] shadow-[0_30px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/10">
+              {/* Dynamic Island */}
+              <div className="absolute top-[18px] left-1/2 -translate-x-1/2 w-[80px] h-[22px] bg-slate-950 rounded-full z-10" />
+              {/* Screen */}
+              <div className="overflow-hidden rounded-[2.2rem] bg-black">
+                <img
+                  src="https://placehold.co/240x520/1a3d2b/4ade80?text=Mobile+App"
+                  alt="ForestInventory Mobile"
+                  className="w-[200px] block"
+                />
+              </div>
+              {/* Home indicator */}
+              <div className="flex items-center justify-center h-6">
+                <div className="w-20 h-1 bg-slate-700 rounded-full" />
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 

@@ -1,20 +1,21 @@
-import Link from 'next/link';
-
-// Seite ist vollständig statisch – kein Session-Check im SSR.
-// Eingeloggte Nutzer werden via Middleware (cookie-basiert) zum Dashboard geleitet.
-export const dynamic = 'force-static';
 import {
   Map, Leaf, ShieldCheck, PackageOpen,
   ClipboardList, Trees, Radio, Zap,
-  ArrowRight, CheckCircle2, Globe, Lock,
-  TreePine, Mountain, Building2, Mail,
+  CheckCircle2, Globe, Lock,
+  TreePine, Mountain, Building2,
   Crosshair, BarChart3, Satellite, Users,
 } from 'lucide-react';
 import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
 import { SignInButton } from '@/components/marketing/SignInButton';
+import { EnterpriseContactButton } from '@/components/marketing/EnterpriseContactButton';
+import { prisma } from '@/lib/prisma';
 
-export default function Home() {
+export default async function Home() {
+  const dbPlans = await prisma.plan.findMany({
+    where: { isActive: true },
+    orderBy: { displayOrder: 'asc' },
+  });
   return (
     <div className="bg-white text-slate-800 min-h-screen">
       <Header />
@@ -392,58 +393,64 @@ export default function Home() {
 
           {/* Plan-Karten wie in PlanCards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch mb-5">
-            {PLANS.filter(p => !p.enterprise).map(plan => (
-              <div
-                key={plan.name}
-                className={`relative bg-white rounded-2xl p-6 flex flex-col shadow-sm transition-all duration-200 border-2 ${
-                  plan.highlight
-                    ? 'border-green-700 shadow-lg md:-translate-y-2'
-                    : 'border-slate-200'
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-700 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow">
-                    {plan.badge}
+            {PLANS.filter(p => !p.enterprise).map(plan => {
+              const db = dbPlans.find(d => d.name === plan.name);
+              const monthlyPrice = db?.monthlyPrice?.toFixed(2).replace('.', ',') ?? plan.price;
+              const maxHa  = db?.maxHectares ?? null;
+              const maxU   = db?.maxUsers    ?? null;
+              return (
+                <div
+                  key={plan.name}
+                  className={`relative bg-white rounded-2xl p-6 flex flex-col shadow-sm transition-all duration-200 border-2 ${
+                    plan.highlight
+                      ? 'border-green-700 shadow-lg md:-translate-y-2'
+                      : 'border-slate-200'
+                  }`}
+                >
+                  {plan.badge && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-700 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow">
+                      {plan.badge}
+                    </div>
+                  )}
+
+                  {/* Icon */}
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${plan.iconBg}`}>
+                    <plan.icon className={`w-5 h-5 ${plan.iconColor}`} />
                   </div>
-                )}
 
-                {/* Icon */}
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${plan.iconBg}`}>
-                  <plan.icon className={`w-5 h-5 ${plan.iconColor}`} />
+                  {/* Name + tagline */}
+                  <h3 className="text-lg font-bold text-slate-900 mb-0.5">{plan.name}</h3>
+                  <p className="text-xs text-slate-400 mb-5">{plan.desc}</p>
+
+                  {/* Preis */}
+                  <div className="mb-0.5 flex items-baseline gap-1">
+                    <span className={`text-4xl font-bold ${plan.highlight ? 'text-green-700' : 'text-slate-900'}`}>
+                      {monthlyPrice} €
+                    </span>
+                    <span className="text-slate-400 text-sm">/ Monat</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mb-5">zzgl. MwSt.</p>
+
+                  {/* Limit-Badge */}
+                  <div className={`text-sm font-bold px-4 py-3 rounded-xl border text-center mb-4 ${plan.accentBg} ${plan.accentBorder} ${plan.accentText}`}>
+                    {maxHa ? `bis ${maxHa} ha` : 'Unbegrenzte Fläche'}
+                    {maxU && <span className="font-normal text-xs ml-2 opacity-75">· {maxU} {maxU === 1 ? 'Nutzer' : 'Nutzer'}</span>}
+                  </div>
+
+                  {/* CTA */}
+                  <div className="mt-auto">
+                    <SignInButton
+                      label="Kostenlos testen"
+                      className={`w-full py-2.5 rounded-xl text-sm font-bold text-center transition-colors ${
+                        plan.highlight
+                          ? 'bg-green-700 text-white hover:bg-green-800'
+                          : 'border-2 border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                      }`}
+                    />
+                  </div>
                 </div>
-
-                {/* Name + tagline */}
-                <h3 className="text-lg font-bold text-slate-900 mb-0.5">{plan.name}</h3>
-                <p className="text-xs text-slate-400 mb-5">{plan.desc}</p>
-
-                {/* Preis */}
-                <div className="mb-0.5 flex items-baseline gap-1">
-                  <span className={`text-4xl font-bold ${plan.highlight ? 'text-green-700' : 'text-slate-900'}`}>
-                    {plan.price}
-                  </span>
-                  <span className="text-slate-400 text-sm">/ Monat</span>
-                </div>
-                <p className="text-xs text-slate-400 mb-5">zzgl. MwSt.</p>
-
-                {/* Limit-Badge */}
-                <div className={`text-sm font-bold px-4 py-3 rounded-xl border text-center mb-4 ${plan.accentBg} ${plan.accentBorder} ${plan.accentText}`}>
-                  {plan.limit}
-                  <span className="font-normal text-xs ml-2 opacity-75">· {plan.users}</span>
-                </div>
-
-                {/* CTA */}
-                <div className="mt-auto">
-                  <SignInButton
-                    label="Kostenlos testen"
-                    className={`w-full py-2.5 rounded-xl text-sm font-bold text-center transition-colors ${
-                      plan.highlight
-                        ? 'bg-green-700 text-white hover:bg-green-800'
-                        : 'border-2 border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
-                    }`}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Enterprise-Banner wie in PlanCards */}
@@ -459,12 +466,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <a
-              href="mailto:info@natureport.eu"
-              className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition"
-            >
-              <Mail size={14} /> Kontakt aufnehmen
-            </a>
+            <EnterpriseContactButton />
           </div>
         </div>
       </section>

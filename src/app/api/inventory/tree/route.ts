@@ -4,18 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
-
-function calculateCo2(species: string, diameter: number, height: number): number {
-  const radius = diameter / 200;
-  const volume = Math.PI * radius * radius * height * 0.5;
-  const density: Record<string, number> = {
-    SPRUCE: 470, PINE: 520, FIR: 450, DOUGLAS: 510, LARCH: 590,
-    OAK: 690, BEECH: 720, ASH: 690, MAPLE: 630, BIRCH: 650,
-    ALDER: 530, POPLAR: 420,
-  };
-  const d = density[species] ?? 550;
-  return Math.round(volume * d * 0.5 * 3.67 * 10) / 10;
-}
+import { calcCo2Storage } from '@/lib/forest-mensuration';
 
 /** Detect compartment from GPS coordinates via point-in-polygon */
 async function detectCompartment(forestId: string, lat: number, lng: number): Promise<string | null> {
@@ -71,7 +60,7 @@ export async function POST(req: Request) {
     }
 
     const co2 = species && diameter && height
-      ? calculateCo2(species, diameter, height)
+      ? calcCo2Storage(species, diameter, height)
       : null;
 
     const poi = await prisma.forestPoi.create({

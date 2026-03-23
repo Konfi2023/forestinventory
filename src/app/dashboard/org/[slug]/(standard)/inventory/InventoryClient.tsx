@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TREE_SPECIES } from '@/lib/tree-species';
 import { db, type PendingTree, type PendingPlot } from '@/lib/inventory-db';
+import { validateTreeMeasurement, estimateHeight, getTargetSampleSize } from '@/lib/forest-mensuration';
 import {
   Camera, MapPin, Trees, ChevronRight, ChevronLeft,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
@@ -1070,6 +1071,21 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 onChange={e => setForm(f => ({ ...f, diameter: e.target.value }))}
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
               />
+              {/* Plausibilitätswarnungen BHD */}
+              {form.diameter && (() => {
+                const d = parseFloat(form.diameter);
+                const warns = validateTreeMeasurement({ diameterCm: isNaN(d) ? null : d });
+                const dWarns = warns.filter(w => w.field === 'diameter');
+                return dWarns.length > 0 ? (
+                  <div className="mt-2 space-y-1">
+                    {dWarns.map((w, i) => (
+                      <p key={i} className={`text-xs px-3 py-1.5 rounded-lg ${w.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
+                        ⚠ {w.message}
+                      </p>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             {/* Baumartensuche */}
@@ -1125,7 +1141,11 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
             {/* Höhe */}
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Geschätzte Baumhöhe in m
+                Baumhöhe in m
+                {form.species && form.diameter && !isNaN(parseFloat(form.diameter)) && (() => {
+                  const h = estimateHeight(form.species, parseFloat(form.diameter));
+                  return h ? <span className="ml-2 text-xs text-emerald-600 font-normal">Richtwert: ~{h} m</span> : null;
+                })()}
               </label>
               <input
                 type="number"
@@ -1135,6 +1155,26 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 onChange={e => setForm(f => ({ ...f, height: e.target.value }))}
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
               />
+              {/* Plausibilitätswarnungen Höhe */}
+              {form.height && (() => {
+                const d = form.diameter ? parseFloat(form.diameter) : null;
+                const h = parseFloat(form.height);
+                const warns = validateTreeMeasurement({
+                  diameterCm: d && !isNaN(d) ? d : null,
+                  heightM: isNaN(h) ? null : h,
+                  species: form.species || null,
+                });
+                const hWarns = warns.filter(w => w.field === 'height');
+                return hWarns.length > 0 ? (
+                  <div className="mt-2 space-y-1">
+                    {hWarns.map((w, i) => (
+                      <p key={i} className={`text-xs px-3 py-1.5 rounded-lg ${w.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
+                        ⚠ {w.message}
+                      </p>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             {/* Geschätztes Alter */}
@@ -1326,6 +1366,26 @@ export function InventoryClient({ forests, orgSlug, members = [] }: InventoryCli
                 ⚠ Foto konnte nicht hochgeladen werden – Baum ist trotzdem gespeichert
               </p>
             )}
+
+            {/* Stichproben-Fortschritt im Plot-Modus */}
+            {mode === 'plot' && plotSession && (() => {
+              const target = getTargetSampleSize(1, 'rein'); // Basiswert — ohne Flächeninfo
+              const pct = Math.min(100, Math.round(savedCount / target * 100));
+              const done = savedCount >= target;
+              return (
+                <div className={`mt-4 w-full rounded-xl px-4 py-3 ${done ? 'bg-emerald-900/30 border border-emerald-700/40' : 'bg-slate-800 border border-slate-700'}`}>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className={done ? 'text-emerald-400' : 'text-slate-300'}>
+                      {done ? '✓ Stichprobe vollständig' : `Stichprobe: ${savedCount} / ${target} Bäume`}
+                    </span>
+                    <span className={done ? 'text-emerald-400' : 'text-slate-500'}>{pct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-500' : 'bg-emerald-600'}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="mt-4 w-full space-y-3">
               {savedPoiId && (

@@ -15,6 +15,7 @@ import {
   isYieldTableSpecies, SITE_CLASS_LABELS,
   type Species, type SiteClass,
 } from '@/lib/yield-tables';
+import { calcPlotMetrics, averagePlotResults, validateStandMetrics, type PlotTree as MensPlotTree } from '@/lib/forest-mensuration';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -610,6 +611,75 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
         </Section>
 
         {/* Kennzahlen */}
+        {/* Auto-Berechnung aus Probekreisen */}
+        {(() => {
+          const allPlots = compartment.inventoryPlots ?? [];
+          if (allPlots.length === 0) return null;
+          const plotResults = allPlots.map(plot => {
+            const plotTrees: MensPlotTree[] = plot.trees.map(t => ({
+              species: t.species,
+              diameterCm: t.diameter ?? 0,
+              heightM: t.height ?? null,
+            })).filter(t => t.diameterCm > 0);
+            return calcPlotMetrics(plotTrees, plot.radiusM, true);
+          }).filter(Boolean) as NonNullable<ReturnType<typeof calcPlotMetrics>>[];
+          if (plotResults.length === 0) return null;
+          const avg = averagePlotResults(plotResults);
+          if (!avg) return null;
+
+          // Ertragstafel-Abgleich
+          const dominantSpeciesId = (() => {
+            const sp = compartment.mainSpecies?.[0]?.species ?? null;
+            return sp && isYieldTableSpecies(sp) ? sp as Species : null;
+          })();
+          const age = compartment.standAge;
+          let refIncrement: number | null = null;
+          let refStocking: number | null = null;
+          if (dominantSpeciesId && age && avg.meanHeight) {
+            const sorted = [...allPlots.flatMap(p => p.trees.filter(t => t.height != null))].sort((a, b) => (b.diameter ?? 0) - (a.diameter ?? 0));
+            const topK = Math.max(1, Math.round(sorted.length * 0.2));
+            const hTop = sorted.slice(0, topK).reduce((s, t) => s + (t.height ?? 0), 0) / topK;
+            const sc = estimateSiteClass(dominantSpeciesId, age, hTop || avg.meanHeight);
+            const ref = getYieldTableValues(dominantSpeciesId, age, sc);
+            if (ref) {
+              refIncrement = ref.ivHa;
+              refStocking = avg.gHa / ref.gHa;
+            }
+          }
+
+          return (
+            <div className="border border-emerald-200 rounded-lg bg-emerald-50 px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wide text-emerald-700 flex items-center gap-1.5">
+                  <BarChart2 size={11} /> Berechnete Werte aus {allPlots.length} Probekreis{allPlots.length > 1 ? 'en' : ''}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs border-emerald-400 text-emerald-700 hover:bg-emerald-100"
+                  onClick={() => {
+                    if (avg.gHa != null)      setStockingDegree(refStocking?.toFixed(2) ?? '');
+                    if (avg.vHa != null)      setVolumePerHa(avg.vHa.toString());
+                    if (refIncrement != null) setIncrementPerHa(refIncrement.toFixed(1));
+                    toast.success('Kennzahlen aus Inventur übernommen');
+                  }}
+                >
+                  Übernehmen
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs text-emerald-800">
+                <div><span className="text-emerald-600">G/ha</span> <span className="font-semibold">{avg.gHa.toFixed(1)} m²</span></div>
+                <div><span className="text-emerald-600">V/ha</span> <span className="font-semibold">{avg.vHa != null ? `${avg.vHa} m³` : '–'}</span></div>
+                <div><span className="text-emerald-600">N/ha</span> <span className="font-semibold">{avg.nHa}</span></div>
+                <div><span className="text-emerald-600">Dg</span> <span className="font-semibold">{avg.dg} cm</span></div>
+                {refStocking != null && <div><span className="text-emerald-600">Bstg.</span> <span className="font-semibold">{refStocking.toFixed(2)}</span></div>}
+                {refIncrement != null && <div><span className="text-emerald-600">Zuwachs</span> <span className="font-semibold">{refIncrement.toFixed(1)} m³/ha/a</span></div>}
+              </div>
+              {avg.heightEstimated && <p className="text-[10px] text-emerald-600 mt-1.5">* fehlende Höhen mit Michailoff-Kurve geschätzt</p>}
+            </div>
+          );
+        })()}
+
         <Section title="Kennzahlen" cols={3}>
           <NField label="Vorrat" value={volumePerHa} onChange={setVolumePerHa} unit="m³/ha" />
           <NField label="Zuwachs" value={incrementPerHa} onChange={setIncrementPerHa} unit="m³/ha/a" />

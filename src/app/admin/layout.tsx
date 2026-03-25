@@ -1,6 +1,6 @@
 import { requireSystemAdmin } from "@/lib/admin-auth";
 import Link from "next/link";
-import { LayoutDashboard, Building2, Users, ShieldAlert, LogOut, Activity, CreditCard, Wifi } from "lucide-react";
+import { LayoutDashboard, Building2, Users, ShieldAlert, LogOut, Activity, CreditCard, Wifi, Ticket } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -27,6 +27,7 @@ export default async function AdminLayout({
           <NavLink href="/admin/users" icon={<Users />} label="Alle Benutzer" />
           <NavLink href="/admin/health" icon={<Activity />} label="Health Monitor" />
           <NavLink href="/admin/plans" icon={<CreditCard />} label="Pakete" />
+          <NavLink href="/admin/coupons" icon={<Ticket />} label="Gutscheine" />
           <NavLink href="/admin/traces" icon={<Wifi />} label="TRACES NT API" />
         </nav>
 

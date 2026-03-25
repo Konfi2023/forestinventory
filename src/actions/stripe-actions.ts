@@ -52,6 +52,9 @@ export async function createCheckoutSession(
   // Add first-year annual discount coupon for yearly plans
   if (interval === "yearly") {
     checkoutParams.discounts = [{ coupon: ANNUAL_DISCOUNT_COUPON_ID }];
+  } else {
+    // Allow manual coupon codes for monthly plans
+    checkoutParams.allow_promotion_codes = true;
   }
 
   const checkoutSession = await stripe.checkout.sessions.create(checkoutParams);

@@ -1371,6 +1371,26 @@ enum SubscriptionStatus {
   CANCELED
 }
 
+// --- GUTSCHEINE / COUPONS ---
+
+model Coupon {
+  id                    String    @id @default(uuid())
+  code                  String    @unique
+  description           String?
+  stripeCouponId        String
+  stripePromotionCodeId String    @unique
+  percentOff            Float?
+  amountOff             Int?      // in Cent
+  currency              String?   @default("eur")
+  maxRedemptions        Int?
+  timesRedeemed         Int       @default(0)
+  expiresAt             DateTime?
+  active                Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+
+  @@index([active])
+}
+
 // --- ALARM-QUITTIERUNGEN ---
 
 model AlertAcknowledgement {

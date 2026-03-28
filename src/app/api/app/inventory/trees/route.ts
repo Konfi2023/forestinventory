@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       ? await prisma.forestPoi.findMany({
           where,
           include: { tree: true, forest: { select: { id: true, name: true } } },
-          orderBy: { tree: { createdAt: 'desc' } },
+          orderBy: { createdAt: 'desc' },
           take: limit + 1,
           cursor: { id: cursor },
           skip: 1,
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       : await prisma.forestPoi.findMany({
           where,
           include: { tree: true, forest: { select: { id: true, name: true } } },
-          orderBy: { tree: { createdAt: 'desc' } },
+          orderBy: { createdAt: 'desc' },
           take: limit + 1,
         });
 
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
       lng:            p.lng,
       forestId:       p.forest.id,
       forestName:     p.forest.name,
-      createdAt:      p.tree?.createdAt ?? new Date().toISOString(),
+      createdAt:      p.createdAt,
       species:        p.tree?.species        ?? null,
       diameter:       p.tree?.diameter       ?? null,
       height:         p.tree?.height         ?? null,

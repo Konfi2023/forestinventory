@@ -390,15 +390,17 @@ model ForestPath {
 }
 
 model ForestPoi {
-  id       String             @id @default(uuid())
-  type     String
-  name     String?
-  lat      Float
-  lng      Float
-  tasks    Task[]
-  note     String?
-  forestId String
-  forest   Forest             @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  id        String             @id @default(uuid())
+  type      String
+  name      String?
+  lat       Float
+  lng       Float
+  tasks     Task[]
+  note      String?
+  forestId  String
+  forest    Forest             @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
   vehicle           ForestPoiVehicle?
   tree              ForestPoiTree?
   logPile           ForestPoiLogPile?

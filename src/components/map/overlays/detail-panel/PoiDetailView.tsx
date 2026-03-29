@@ -175,10 +175,17 @@ export function PoiDetailView({
   // Polter-Felder
   const [logVolumeFm,    setLogVolumeFm]    = useState<string>(poi.logPile?.volumeFm?.toString() ?? '');
   const [logLength,      setLogLength]      = useState<string>(poi.logPile?.logLength?.toString() ?? '');
+  const [logLayerCount,  setLogLayerCount]  = useState<string>(poi.logPile?.layerCount?.toString() ?? '');
   const [logSpecies,     setLogSpecies]     = useState<string>(poi.logPile?.treeSpecies ?? '');
   const [logWoodType,    setLogWoodType]    = useState<string>(poi.logPile?.woodType ?? 'LOG');
   const [logQuality,     setLogQuality]     = useState<string>(poi.logPile?.qualityClass ?? '');
   const [logNotes,       setLogNotes]       = useState<string>(poi.logPile?.notes ?? '');
+  const [logImageKey,        setLogImageKey]        = useState<string | null>(poi.logPile?.imageKey ?? null);
+  const [logImagePreview,    setLogImagePreview]    = useState<string | null>(
+    poi.logPile?.imageKey ? `/api/images/poi?key=${encodeURIComponent(poi.logPile.imageKey)}` : null
+  );
+  const [logImageUploading,  setLogImageUploading]  = useState(false);
+  const logFileInputRef = useRef<HTMLInputElement>(null);
 
   const config = POI_CONFIG[poi.type] ?? { icon: MapPin, color: 'text-gray-400', label: 'Objekt' };
   const Icon   = config.icon;
@@ -353,6 +360,48 @@ export function PoiDetailView({
     }
   };
 
+  const handleLogPileImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
+      toast.error('Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Datei zu groß. Maximum: 10 MB');
+      return;
+    }
+
+    setLogImageUploading(true);
+    try {
+      const res = await fetch('/api/upload/poi-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poiId: poi.id, contentType: file.type, contentLength: file.size }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? 'Upload-URL konnte nicht erstellt werden');
+      }
+      const { uploadUrl, key } = await res.json();
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
+      setLogImageKey(key);
+      setLogImagePreview(URL.createObjectURL(file));
+      toast.success('Bild hochgeladen');
+    } catch (err: any) {
+      toast.error(err.message ?? 'Fehler beim Upload');
+    } finally {
+      setLogImageUploading(false);
+      if (logFileInputRef.current) logFileInputRef.current.value = '';
+    }
+  };
+
   // ---------------------------------------------------------------------------
   // Speichern
   // ---------------------------------------------------------------------------
@@ -403,12 +452,14 @@ export function PoiDetailView({
 
         poi.type === 'LOG_PILE'
           ? upsertPoiLogPile(poi.id, {
-              volumeFm:    logVolumeFm  ? parseFloat(logVolumeFm)  : null,
-              logLength:   logLength    ? parseFloat(logLength)    : null,
-              treeSpecies: logSpecies   || null,
-              woodType:    logWoodType  || null,
-              qualityClass:logQuality   || null,
-              notes:       logNotes     || undefined,
+              volumeFm:    logVolumeFm    ? parseFloat(logVolumeFm)    : null,
+              logLength:   logLength      ? parseFloat(logLength)      : null,
+              layerCount:  logLayerCount  ? parseInt(logLayerCount, 10): null,
+              treeSpecies: logSpecies     || null,
+              woodType:    logWoodType    || null,
+              qualityClass:logQuality     || null,
+              imageKey:    logImageKey,
+              notes:       logNotes       || undefined,
             }, orgSlug)
           : null,
       ]);
@@ -565,10 +616,15 @@ export function PoiDetailView({
           orgSlug={orgSlug}
           volumeFm={logVolumeFm}     setVolumeFm={setLogVolumeFm}
           logLength={logLength}      setLogLength={setLogLength}
+          layerCount={logLayerCount} setLayerCount={setLogLayerCount}
           treeSpecies={logSpecies}   setTreeSpecies={setLogSpecies}
           woodType={logWoodType}     setWoodType={setLogWoodType}
           qualityClass={logQuality}  setQualityClass={setLogQuality}
           notes={logNotes}           setNotes={setLogNotes}
+          imagePreview={logImagePreview}   imageUploading={logImageUploading}
+          fileInputRef={logFileInputRef}
+          onFileSelect={handleLogPileImageSelect}
+          onImageRemove={() => { setLogImageKey(null); setLogImagePreview(null); }}
         />
       )}
 
@@ -1004,14 +1060,46 @@ function AssignOperationWidget({ poi, orgSlug }: { poi: any; orgSlug: string }) 
 function LogPileSection({
   isEditing, poi, orgSlug,
   volumeFm, setVolumeFm, logLength, setLogLength,
+  layerCount, setLayerCount,
   treeSpecies, setTreeSpecies, woodType, setWoodType,
   qualityClass, setQualityClass, notes, setNotes,
+  imagePreview, imageUploading, fileInputRef, onFileSelect, onImageRemove,
 }: any) {
   return (
     <div className="mt-4 space-y-4">
       <h4 className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-1.5">
         <Boxes className="w-3 h-3" /> Polterdaten
       </h4>
+
+      {/* Bild */}
+      <div className="relative">
+        {imagePreview ? (
+          <div className="relative rounded-lg overflow-hidden border border-white/10 aspect-video bg-black/30">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imagePreview} alt="Polterfoto" className="w-full h-full object-cover" />
+            {isEditing && (
+              <button
+                onClick={onImageRemove}
+                className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        ) : isEditing ? (
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={imageUploading}
+            className="w-full aspect-video border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-white/40 hover:bg-white/5 transition text-gray-500 hover:text-gray-300"
+          >
+            {imageUploading
+              ? <Loader2 className="w-5 h-5 animate-spin" />
+              : <><Camera className="w-5 h-5" /><span className="text-xs">Foto hochladen</span><span className="text-[10px] opacity-60">JPEG, PNG, WebP · max. 10 MB</span></>
+            }
+          </button>
+        ) : null}
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="hidden" onChange={onFileSelect} />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         {/* Festmeter */}
@@ -1038,6 +1126,32 @@ function LogPileSection({
           )}
         </div>
 
+        {/* Anzahl Lagen */}
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Anzahl Lagen</label>
+          {isEditing ? (
+            <input type="number" value={layerCount} onChange={e => setLayerCount(e.target.value)}
+              min="0" step="1" placeholder="z.B. 3"
+              className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
+          ) : (
+            <p className="text-sm text-gray-300">{layerCount || '—'}</p>
+          )}
+        </div>
+
+        {/* Qualitätsklasse */}
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Qualität</label>
+          {isEditing ? (
+            <select value={qualityClass} onChange={e => setQualityClass(e.target.value)}
+              className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500">
+              <option value="">—</option>
+              {['A','B','C','D','IL','E'].map(q => <option key={q} value={q}>{q}</option>)}
+            </select>
+          ) : (
+            <p className="text-sm text-gray-300">{qualityClass || '—'}</p>
+          )}
+        </div>
+
         {/* Baumart */}
         <div className="col-span-2">
           <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Baumart</label>
@@ -1053,7 +1167,7 @@ function LogPileSection({
         </div>
 
         {/* Holzart */}
-        <div>
+        <div className="col-span-2">
           <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Holzart</label>
           {isEditing ? (
             <select value={woodType} onChange={e => setWoodType(e.target.value)}
@@ -1064,20 +1178,6 @@ function LogPileSection({
             </select>
           ) : (
             <p className="text-sm text-gray-300">{(WOOD_TYPE_LABELS_POI[woodType] ?? woodType) || '—'}</p>
-          )}
-        </div>
-
-        {/* Qualitätsklasse */}
-        <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Qualität</label>
-          {isEditing ? (
-            <select value={qualityClass} onChange={e => setQualityClass(e.target.value)}
-              className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500">
-              <option value="">—</option>
-              {['A','B','C','D','IL','E'].map(q => <option key={q} value={q}>{q}</option>)}
-            </select>
-          ) : (
-            <p className="text-sm text-gray-300">{qualityClass || '—'}</p>
           )}
         </div>
       </div>

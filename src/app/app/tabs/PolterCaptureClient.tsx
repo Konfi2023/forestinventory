@@ -73,14 +73,6 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
     s.label.toLowerCase().includes(speciesSearch.toLowerCase())
   );
 
-  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => setForm(f => ({ ...f, imageFile: file, imageDataUrl: ev.target?.result as string }));
-    reader.readAsDataURL(file);
-  };
-
   const getGPS = useCallback(() => {
     if (!navigator.geolocation) { setGpsError('unavailable'); return; }
     if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
@@ -102,6 +94,16 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, []);
+
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setForm(f => ({ ...f, imageFile: file, imageDataUrl: ev.target?.result as string }));
+    reader.readAsDataURL(file);
+    // GPS automatisch beim Foto erfassen
+    if (form.lat == null) getGPS();
+  };
 
   const handleSave = async () => {
     if (!form.forestId || form.lat == null || form.lng == null) return;

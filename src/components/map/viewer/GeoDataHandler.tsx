@@ -51,12 +51,13 @@ const COLORS = {
 
 interface GeoDataProps {
   data: {
-    forests: any[]; 
+    forests: any[];
     tasks: any[];
     currentUserId: string;
     orgSlug: string;
   };
   onRefresh: () => void;
+  onLongPress?: (latlng: { lat: number; lng: number }) => void;
 }
 
 // ... (createTaskIcon bleibt unverändert) ...
@@ -209,7 +210,7 @@ function ForestAssignDialog({ forests, onConfirm, onCancel }: {
   );
 }
 
-export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
+export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
   const [pendingPoi, setPendingPoi] = useState<{ lat: number; lng: number; type: string } | null>(null);
@@ -499,6 +500,12 @@ export function GeoDataHandler({ data, onRefresh }: GeoDataProps) {
 
   useMapEvents({
     zoomend: () => setCurrentZoom(map.getZoom()),
+    contextmenu(e) {
+      if (interactionMode === 'VIEW' && onLongPress) {
+        e.originalEvent.preventDefault();
+        onLongPress({ lat: e.latlng.lat, lng: e.latlng.lng });
+      }
+    },
     click(e) {
       if (interactionMode === 'DRAW_POI' && activePoiType) {
         if (pendingPoi) return; // Modal offen → Karten-Klicks ignorieren

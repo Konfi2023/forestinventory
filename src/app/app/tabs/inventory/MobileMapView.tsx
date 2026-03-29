@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2, ChevronDown, TreePine, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useMapStore } from '@/components/map/stores/useMapStores';
 import { getBoundsFromGeoJson } from '@/lib/map-helpers';
+import { MapStyleToggle } from './MapStyleToggle';
+import { OfflineMapButton } from './OfflineMapButton';
+import { MobileDetailSheet } from './MobileDetailSheet';
+import { MobilePoiCreator } from './MobilePoiCreator';
 
 interface MapData {
   forests: unknown[];
@@ -32,6 +36,11 @@ const GeoDataHandler = dynamic(
   { ssr: false }
 );
 
+const UserLocationMarker = dynamic(
+  () => import('@/components/map/layers/UserLocationMarker').then(m => m.UserLocationMarker),
+  { ssr: false }
+);
+
 interface Forest { id: string; name: string; }
 
 interface Props {
@@ -45,6 +54,7 @@ export function MobileMapView({ orgSlug, forests }: Props) {
   const [loadError, setLoadError] = useState(false);
   const [forestId, setForestId] = useState<string>(forests[0]?.id ?? '');
   const pendingForestId = useRef<string>(forestId);
+  const [pendingNewPoi, setPendingNewPoi] = useState<{ lat: number; lng: number } | null>(null);
 
   const isReady = useMapStore(s => s.isReady);
 
@@ -76,7 +86,6 @@ export function MobileMapView({ orgSlug, forests }: Props) {
     if (!forest?.geoJson) return;
     const bounds = getBoundsFromGeoJson(forest.geoJson);
     if (!bounds) return;
-    // fitBounds ist erst nach Map-Init im Store, kurzer Delay sichert das ab
     setTimeout(() => {
       useMapStore.getState().fitBounds?.(bounds);
     }, 200);
@@ -95,6 +104,16 @@ export function MobileMapView({ orgSlug, forests }: Props) {
     pendingForestId.current = fId;
     if (isReady && data) zoomToForest(fId, data);
   }
+
+  // Bounding box des aktuellen Waldes für Offline-Caching
+  const forestBounds = useMemo(() => {
+    if (!data) return null;
+    const forest = (data.forests as any[])?.find((f: any) => f.id === forestId);
+    if (!forest?.geoJson) return null;
+    const b = getBoundsFromGeoJson(forest.geoJson);
+    if (!b) return null;
+    return { south: b[0][0], west: b[0][1], north: b[1][0], east: b[1][1] };
+  }, [data, forestId]);
 
   if (loading) {
     return (
@@ -143,9 +162,40 @@ export function MobileMapView({ orgSlug, forests }: Props) {
       {/* Karte */}
       <div className="relative flex-1 overflow-hidden">
         <MapViewer forestData={data} minimal>
-          <GeoDataHandler data={data!} onRefresh={loadData} />
+          <GeoDataHandler
+            data={data!}
+            onRefresh={loadData}
+            onLongPress={(latlng) => setPendingNewPoi(latlng)}
+          />
+          <UserLocationMarker />
         </MapViewer>
+
+        {/* Floating controls – unten links */}
+        <div className="absolute bottom-4 left-3 z-[1000] flex flex-col gap-2">
+          <MapStyleToggle />
+          <OfflineMapButton bounds={forestBounds} />
+        </div>
       </div>
+
+      {/* Bottom-Sheet für POI/Task Details */}
+      {data && (
+        <MobileDetailSheet
+          data={{ forests: data.forests as any[], tasks: data.tasks as any[], orgSlug }}
+          onRefresh={loadData}
+        />
+      )}
+
+      {/* POI-Creator-Sheet (Long-Press) */}
+      {data && (
+        <MobilePoiCreator
+          latlng={pendingNewPoi}
+          forests={data.forests as any[]}
+          orgSlug={orgSlug}
+          currentUserId={(data as any).currentUserId}
+          onClose={() => setPendingNewPoi(null)}
+          onRefresh={loadData}
+        />
+      )}
     </div>
   );
 }

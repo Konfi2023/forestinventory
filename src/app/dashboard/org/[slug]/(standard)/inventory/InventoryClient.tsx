@@ -1260,45 +1260,6 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               </div>
             </div>
 
-            {/* Exposition */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Exposition (Hangrichtung)</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {EXPOSITIONS.map(s => (
-                  <button key={s.id} onClick={() => setForm(f => ({ ...f, exposition: f.exposition === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.exposition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Hangneigung */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Hangneigung</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {SLOPE_CLASSES.map(s => (
-                  <button key={s.id} onClick={() => setForm(f => ({ ...f, slopeClass: f.slopeClass === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Hangposition */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Hangposition</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {SLOPE_POSITIONS.map(s => (
-                  <button key={s.id} onClick={() => setForm(f => ({ ...f, slopePosition: f.slopePosition === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Bestandstyp */}
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2">Bestandstyp</label>
@@ -1324,6 +1285,52 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 ))}
               </div>
             </div>
+
+            {/* Exposition (Hangrichtung) */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Exposition (Hangrichtung)</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {EXPOSITIONS.map(s => (
+                  <button key={s.id} onClick={() => setForm(f => ({
+                    ...f,
+                    exposition: f.exposition === s.id ? '' : s.id,
+                    ...(s.id === 'FLAT' || f.exposition === s.id ? { slopeClass: '', slopePosition: '' } : {}),
+                  }))}
+                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.exposition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Hangneigung + Hangposition – nur bei Hanglage */}
+            {form.exposition && form.exposition !== 'FLAT' && (
+              <>
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Hangneigung</label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {SLOPE_CLASSES.map(s => (
+                      <button key={s.id} onClick={() => setForm(f => ({ ...f, slopeClass: f.slopeClass === s.id ? '' : s.id }))}
+                        className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Hangposition</label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {SLOPE_POSITIONS.map(s => (
+                      <button key={s.id} onClick={() => setForm(f => ({ ...f, slopePosition: f.slopePosition === s.id ? '' : s.id }))}
+                        className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Notizen */}
             <div className="mb-6">

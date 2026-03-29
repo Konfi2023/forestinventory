@@ -9,6 +9,7 @@ import {
 import { DetailPanelShell } from './DetailPanelShell';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { updatePoi, deletePoi, upsertPoiVehicle, upsertPoiTree, upsertPoiLogPile, getOperationsForOrg, linkPoiToOperation } from '@/actions/poi';
 import { toast } from 'sonner';
@@ -88,6 +89,7 @@ export function PoiDetailView({
   const [isSaving, setIsSaving]             = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [deleteTasksToo, setDeleteTasksToo] = useState(false);
+  const [pendingImageRemove, setPendingImageRemove] = useState<(() => void) | null>(null);
 
   // Basis-Felder
   const [name, setName] = useState<string>(poi.name ?? '');
@@ -504,6 +506,7 @@ export function PoiDetailView({
   // ---------------------------------------------------------------------------
 
   return (
+    <>
     <DetailPanelShell
       isVisible
       onClose={() => { onClose(); setInteractionMode('VIEW'); setEditingFeature(null); }}
@@ -561,7 +564,7 @@ export function PoiDetailView({
           imagePreview={imagePreview}     imageUploading={imageUploading}
           fileInputRef={fileInputRef}
           onFileSelect={handleImageSelect}
-          onImageRemove={() => { setImageKey(null); setImagePreview(null); }}
+          onImageRemove={() => setPendingImageRemove(() => () => { setImageKey(null); setImagePreview(null); })}
           onCreateInspectionTask={() => setShowCreateTask(true)}
           poiName={name}
         />
@@ -591,12 +594,12 @@ export function PoiDetailView({
           imageUploading={treeImageUploading}
           fileInputRef={treeFileInputRef}
           onFileSelect={handleTreeImageSelect}
-          onImageRemove={() => { setTreeImageKey(null); setTreeImagePreview(null); }}
+          onImageRemove={() => setPendingImageRemove(() => () => { setTreeImageKey(null); setTreeImagePreview(null); })}
           crownImagePreview={treeCrownImagePreview}
           crownImageUploading={treeCrownImageUploading}
           crownFileInputRef={treeCrownFileInputRef}
           onCrownFileSelect={handleTreeCrownImageSelect}
-          onCrownImageRemove={() => { setTreeCrownImageKey(null); setTreeCrownImagePreview(null); }}
+          onCrownImageRemove={() => setPendingImageRemove(() => () => { setTreeCrownImageKey(null); setTreeCrownImagePreview(null); })}
           forests={forests}
           compartmentId={compartmentId}           setCompartmentId={setCompartmentId}
           selectedForestId={selectedForestId}     setSelectedForestId={setSelectedForestId}
@@ -619,7 +622,7 @@ export function PoiDetailView({
           imagePreview={logImagePreview}   imageUploading={logImageUploading}
           fileInputRef={logFileInputRef}
           onFileSelect={handleLogPileImageSelect}
-          onImageRemove={() => { setLogImageKey(null); setLogImagePreview(null); }}
+          onImageRemove={() => setPendingImageRemove(() => () => { setLogImageKey(null); setLogImagePreview(null); })}
         />
       )}
 
@@ -798,6 +801,27 @@ export function PoiDetailView({
         trigger={<span className="hidden" />}
       />
     </DetailPanelShell>
+
+    {/* Bild-Lösch-Bestätigung */}
+    <Dialog open={pendingImageRemove !== null} onOpenChange={open => { if (!open) setPendingImageRemove(null); }}>
+      <DialogContent className="bg-[#1a1a1a] border-white/10 text-white sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-red-400">Bild löschen?</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Das Bild wird beim Speichern unwiderruflich aus dem Speicher entfernt.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="ghost" className="text-gray-400 hover:text-white" onClick={() => setPendingImageRemove(null)}>
+            Abbrechen
+          </Button>
+          <Button variant="destructive" onClick={() => { pendingImageRemove?.(); setPendingImageRemove(null); }}>
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Löschen
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
@@ -832,7 +856,7 @@ function VehicleSection({
             <img src={imagePreview} alt="Fahrzeugfoto" className="w-full h-full object-cover" />
             {isEditing && (
               <button
-                onClick={() => { if (window.confirm('Bild wirklich löschen? Das Bild wird beim Speichern unwiderruflich entfernt.')) onImageRemove(); }}
+                onClick={onImageRemove}
                 className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition"
               >
                 <X className="w-3 h-3" />
@@ -1074,7 +1098,7 @@ function LogPileSection({
             <img src={imagePreview} alt="Polterfoto" className="w-full h-full object-cover" />
             {isEditing && (
               <button
-                onClick={() => { if (window.confirm('Bild wirklich löschen? Das Bild wird beim Speichern unwiderruflich entfernt.')) onImageRemove(); }}
+                onClick={onImageRemove}
                 className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition"
               >
                 <X className="w-3 h-3" />
@@ -1389,7 +1413,7 @@ function TreeSection({
                 <img src={imagePreview} alt="Stammfoto" className="w-full h-full object-cover" />
                 {isEditing && (
                   <button
-                    onClick={() => { if (window.confirm('Bild wirklich löschen? Das Bild wird beim Speichern unwiderruflich entfernt.')) onImageRemove(); }}
+                    onClick={onImageRemove}
                     className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition"
                   >
                     <X className="w-3 h-3" />
@@ -1422,7 +1446,7 @@ function TreeSection({
                 <img src={crownImagePreview} alt="Kronenfoto" className="w-full h-full object-cover" />
                 {isEditing && (
                   <button
-                    onClick={() => { if (window.confirm('Bild wirklich löschen? Das Bild wird beim Speichern unwiderruflich entfernt.')) onCrownImageRemove(); }}
+                    onClick={onCrownImageRemove}
                     className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition"
                   >
                     <X className="w-3 h-3" />

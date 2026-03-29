@@ -52,8 +52,12 @@ export async function GET(req: NextRequest) {
             logPile: {
               select: {
                 volumeFm: true,
+                logLength: true,
+                layerCount: true,
                 treeSpecies: true,
+                woodType: true,
                 qualityClass: true,
+                imageKey: true,
                 notes: true,
               },
             },
@@ -76,6 +80,7 @@ export async function GET(req: NextRequest) {
                 crownCondition: true,
                 notes: true,
                 imageKey: true,
+                crownImageKey: true,
                 createdAt: true,
                 updatedAt: true,
               },

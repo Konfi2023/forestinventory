@@ -837,7 +837,7 @@ function VehicleSection({
             <img src={imagePreview} alt="Fahrzeugfoto" className="w-full h-full object-cover" />
             {isEditing && (
               <button
-                onClick={onImageRemove}
+                onClick={() => { if (window.confirm('Bild wirklich löschen? Das Bild wird beim Speichern unwiderruflich entfernt.')) onImageRemove(); }}
                 className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition"
               >
                 <X className="w-3 h-3" />
@@ -1079,7 +1079,7 @@ function LogPileSection({
             <img src={imagePreview} alt="Polterfoto" className="w-full h-full object-cover" />
             {isEditing && (
               <button
-                onClick={onImageRemove}
+                onClick={() => { if (window.confirm('Bild wirklich löschen? Das Bild wird beim Speichern unwiderruflich entfernt.')) onImageRemove(); }}
                 className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition"
               >
                 <X className="w-3 h-3" />
@@ -1394,7 +1394,7 @@ function TreeSection({
                 <img src={imagePreview} alt="Stammfoto" className="w-full h-full object-cover" />
                 {isEditing && (
                   <button
-                    onClick={onImageRemove}
+                    onClick={() => { if (window.confirm('Bild wirklich löschen? Das Bild wird beim Speichern unwiderruflich entfernt.')) onImageRemove(); }}
                     className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition"
                   >
                     <X className="w-3 h-3" />
@@ -1427,7 +1427,7 @@ function TreeSection({
                 <img src={crownImagePreview} alt="Kronenfoto" className="w-full h-full object-cover" />
                 {isEditing && (
                   <button
-                    onClick={onCrownImageRemove}
+                    onClick={() => { if (window.confirm('Bild wirklich löschen? Das Bild wird beim Speichern unwiderruflich entfernt.')) onCrownImageRemove(); }}
                     className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition"
                   >
                     <X className="w-3 h-3" />

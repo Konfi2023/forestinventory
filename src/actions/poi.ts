@@ -313,6 +313,17 @@ export async function upsertPoiLogPile(
     if (!session?.user) throw new Error("Unauthorized");
     await requireAuthContext(session.user.id!, PERMISSIONS.FOREST_EDIT, orgSlug ?? '');
 
+    // Wenn imageKey geändert wird, altes Bild aus S3 löschen
+    if (data.imageKey !== undefined) {
+      const existing = await prisma.forestPoiLogPile.findUnique({
+        where: { poiId },
+        select: { imageKey: true },
+      });
+      if (existing?.imageKey && existing.imageKey !== data.imageKey) {
+        await deleteFile(existing.imageKey).catch(() => null);
+      }
+    }
+
     await prisma.forestPoiLogPile.upsert({
       where: { poiId },
       create: {

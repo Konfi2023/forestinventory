@@ -94,8 +94,20 @@ export function AppShell({
               notes: pile.notes,
             }),
           });
-          if (res.ok && pile.id != null) {
-            await db.pendingLogPiles.delete(pile.id);
+          if (res.ok) {
+            // Bild nachträglich hochladen falls vorhanden
+            if (pile.imageDataUrl) {
+              try {
+                const data = await res.json();
+                const blob = await fetch(pile.imageDataUrl).then(r => r.blob());
+                const fd = new FormData();
+                fd.append('file', blob, 'polter.jpg');
+                await fetch(`/api/app/inventory/logpiles/${data.poiId}/image`, { method: 'POST', body: fd });
+              } catch { /* Bild-Upload fehlgeschlagen – Metadaten sind gespeichert */ }
+            }
+            if (pile.id != null) {
+              await db.pendingLogPiles.delete(pile.id);
+            }
           }
         } catch { /* immer noch offline – beim nächsten Mal */ }
       }

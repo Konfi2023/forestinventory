@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     }
 
     const key = req.nextUrl.searchParams.get("key");
-    const ALLOWED_PREFIXES = ["poi-images/", "tree-images/", "task-images/"];
+    const ALLOWED_PREFIXES = ["poi-images/", "tree-images/", "task-images/", "logpile-images/"];
     if (!key || !ALLOWED_PREFIXES.some(p => key.startsWith(p))) {
       return NextResponse.json({ error: "Ungültiger Key" }, { status: 400 });
     }

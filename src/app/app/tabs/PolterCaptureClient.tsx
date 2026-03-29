@@ -160,8 +160,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
         try {
           const fd = new FormData();
           fd.append('file', form.imageFile);
-          fd.append('poiId', poiId);
-          await fetch(`/api/app/inventory/trees/${poiId}/image`, { method: 'POST', body: fd });
+          await fetch(`/api/app/inventory/logpiles/${poiId}/image`, { method: 'POST', body: fd });
         } catch { /* Foto-Upload-Fehler nicht blockierend */ }
       }
 

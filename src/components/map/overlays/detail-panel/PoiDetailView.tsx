@@ -375,22 +375,17 @@ export function PoiDetailView({
 
     setLogImageUploading(true);
     try {
-      const res = await fetch('/api/upload/poi-image', {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`/api/app/inventory/logpiles/${poi.id}/image`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ poiId: poi.id, contentType: file.type, contentLength: file.size }),
+        body: fd,
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? 'Upload-URL konnte nicht erstellt werden');
+        throw new Error(err.error ?? 'Upload fehlgeschlagen');
       }
-      const { uploadUrl, key } = await res.json();
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-      if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
+      const { imageKey: key } = await res.json();
       setLogImageKey(key);
       setLogImagePreview(URL.createObjectURL(file));
       toast.success('Bild hochgeladen');

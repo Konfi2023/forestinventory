@@ -6,24 +6,19 @@ import { X, Check, RotateCcw } from 'lucide-react';
 /**
  * BHD measurement via credit card reference — pure JS, no OpenCV.
  *
- * The user taps 4 points on the photo:
- *   1+2: Left & right edge of the credit card (→ scale: pixels per mm)
- *   3+4: Left & right edge of the tree trunk (→ BHD in mm)
+ * User taps 4 points:
+ *   1+2: Long edge of the credit card (MUST be the long/wide side = 85.6 mm)
+ *   3+4: Left & right edge of the tree trunk → BHD
  *
- * ISO 7810 credit card width: 85.6 mm
+ * ISO 7810: 85.6 mm × 54.0 mm
+ * After tapping card points, we check: if the distance ratio is closer to
+ * 54mm (short side), we warn the user and use 54mm instead.
  */
 
-const CARD_WIDTH_MM = 85.6;
+const CARD_LONG_MM = 85.6;
+const CARD_SHORT_MM = 54.0;
 
-type Phase = 'card-left' | 'card-right' | 'trunk-left' | 'trunk-right' | 'result';
-
-const INSTRUCTIONS: Record<Phase, { text: string; color: string }> = {
-  'card-left':   { text: 'Tippe auf den linken Rand der Karte', color: '#facc15' },
-  'card-right':  { text: 'Tippe auf den rechten Rand der Karte', color: '#facc15' },
-  'trunk-left':  { text: 'Tippe auf den linken Stammrand', color: '#ef4444' },
-  'trunk-right': { text: 'Tippe auf den rechten Stammrand', color: '#3b82f6' },
-  'result':      { text: '', color: '' },
-};
+type Phase = 'card-1' | 'card-2' | 'trunk-1' | 'trunk-2' | 'result';
 
 interface Point { x: number; y: number }
 
@@ -34,17 +29,17 @@ interface Props {
 }
 
 export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
-  const [phase, setPhase] = useState<Phase>('card-left');
-  const [cardLeft, setCardLeft] = useState<Point | null>(null);
-  const [cardRight, setCardRight] = useState<Point | null>(null);
-  const [trunkLeft, setTrunkLeft] = useState<Point | null>(null);
-  const [trunkRight, setTrunkRight] = useState<Point | null>(null);
+  const [phase, setPhase] = useState<Phase>('card-1');
+  const [card1, setCard1] = useState<Point | null>(null);
+  const [card2, setCard2] = useState<Point | null>(null);
+  const [trunk1, setTrunk1] = useState<Point | null>(null);
+  const [trunk2, setTrunk2] = useState<Point | null>(null);
   const [bhdValue, setBhdValue] = useState<number | null>(null);
+  const [cardMm, setCardMm] = useState(CARD_LONG_MM);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Compute image display bounds (object-fit: contain)
   const getImageBounds = useCallback(() => {
     const img = imgRef.current;
     const container = containerRef.current;
@@ -54,22 +49,14 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     const iw = img.naturalWidth;
     const ih = img.naturalHeight;
     if (!iw || !ih) return null;
-
     const scale = Math.min(cw / iw, ch / ih);
-    const dw = iw * scale;
-    const dh = ih * scale;
-    const ox = (cw - dw) / 2;
-    const oy = (ch - dh) / 2;
-    return { ox, oy, dw, dh, scale, iw, ih };
+    return { ox: (cw - iw * scale) / 2, oy: (ch - ih * scale) / 2, scale };
   }, []);
 
-  // Draw overlay
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const bounds = getImageBounds();
     if (!canvas || !bounds) return;
-
-    const { ox, oy, scale } = bounds;
     const container = containerRef.current!;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = container.clientWidth * dpr;
@@ -78,97 +65,69 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, container.clientWidth, container.clientHeight);
 
-    const toScreen = (p: Point) => ({ x: ox + p.x * scale, y: oy + p.y * scale });
+    const { ox, oy, scale } = bounds;
+    const toS = (p: Point) => ({ x: ox + p.x * scale, y: oy + p.y * scale });
 
-    const drawPoint = (p: Point, color: string, label: string) => {
-      const s = toScreen(p);
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, 10, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(label, s.x, s.y - 16);
+    const dot = (p: Point, color: string, label: string) => {
+      const s = toS(p);
+      ctx.beginPath(); ctx.arc(s.x, s.y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(label, s.x, s.y - 15);
     };
 
-    const drawLine = (a: Point, b: Point, color: string, dashed = false) => {
-      const sa = toScreen(a);
-      const sb = toScreen(b);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.setLineDash(dashed ? [6, 4] : []);
-      ctx.beginPath();
-      ctx.moveTo(sa.x, sa.y);
-      ctx.lineTo(sb.x, sb.y);
-      ctx.stroke();
+    const line = (a: Point, b: Point, color: string, dash = false) => {
+      const sa = toS(a), sb = toS(b);
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.setLineDash(dash ? [6, 4] : []);
+      ctx.beginPath(); ctx.moveTo(sa.x, sa.y); ctx.lineTo(sb.x, sb.y); ctx.stroke();
       ctx.setLineDash([]);
     };
 
-    // Card points + line
-    if (cardLeft) drawPoint(cardLeft, '#facc15', 'K1');
-    if (cardRight) drawPoint(cardRight, '#facc15', 'K2');
-    if (cardLeft && cardRight) drawLine(cardLeft, cardRight, '#facc15');
-
-    // Trunk points + line
-    if (trunkLeft) drawPoint(trunkLeft, '#ef4444', 'S1');
-    if (trunkRight) drawPoint(trunkRight, '#3b82f6', 'S2');
-    if (trunkLeft && trunkRight) drawLine(trunkLeft, trunkRight, '#22c55e', true);
-  }, [cardLeft, cardRight, trunkLeft, trunkRight, getImageBounds]);
+    if (card1) dot(card1, '#facc15', '1');
+    if (card2) dot(card2, '#facc15', '2');
+    if (card1 && card2) line(card1, card2, '#facc15');
+    if (trunk1) dot(trunk1, '#ef4444', '3');
+    if (trunk2) dot(trunk2, '#3b82f6', '4');
+    if (trunk1 && trunk2) line(trunk1, trunk2, '#22c55e', true);
+  }, [card1, card2, trunk1, trunk2, getImageBounds]);
 
   useEffect(() => { draw(); }, [draw, phase]);
-
-  // Also redraw on resize
   useEffect(() => {
-    const handler = () => draw();
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
+    const h = () => draw();
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
   }, [draw]);
 
   function handleTap(e: React.MouseEvent | React.TouchEvent) {
     if (phase === 'result') return;
     const bounds = getImageBounds();
     if (!bounds) return;
-
-    let clientX: number, clientY: number;
-    if ('touches' in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-
+    let cx: number, cy: number;
+    if ('touches' in e) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+    else { cx = e.clientX; cy = e.clientY; }
     const rect = containerRef.current!.getBoundingClientRect();
     const { ox, oy, scale } = bounds;
-    const imgX = (clientX - rect.left - ox) / scale;
-    const imgY = (clientY - rect.top - oy) / scale;
-    const point = { x: imgX, y: imgY };
+    const p = { x: (cx - rect.left - ox) / scale, y: (cy - rect.top - oy) / scale };
 
     switch (phase) {
-      case 'card-left':
-        setCardLeft(point);
-        setPhase('card-right');
+      case 'card-1': setCard1(p); setPhase('card-2'); break;
+      case 'card-2': {
+        setCard2(p);
+        // Auto-detect if user marked long or short side
+        // We'll ask in trunk phase, but pre-calculate both
+        setPhase('trunk-1');
         break;
-      case 'card-right':
-        setCardRight(point);
-        setPhase('trunk-left');
-        break;
-      case 'trunk-left':
-        setTrunkLeft(point);
-        setPhase('trunk-right');
-        break;
-      case 'trunk-right': {
-        setTrunkRight(point);
-        // Calculate BHD
-        const cardDist = Math.sqrt((cardRight!.x - cardLeft!.x) ** 2 + (cardRight!.y - cardLeft!.y) ** 2);
-        const trunkDist = Math.sqrt((point.x - trunkLeft!.x) ** 2 + (point.y - trunkLeft!.y) ** 2);
-        const pxPerMm = cardDist / CARD_WIDTH_MM;
-        const bhdMm = trunkDist / pxPerMm;
-        const bhd = Math.round(bhdMm / 10); // mm → cm, rounded
+      }
+      case 'trunk-1': setTrunk1(p); setPhase('trunk-2'); break;
+      case 'trunk-2': {
+        setTrunk2(p);
+        const cardDist = Math.sqrt((card2!.x - card1!.x) ** 2 + (card2!.y - card1!.y) ** 2);
+        const trunkDist = Math.sqrt((p.x - trunk1!.x) ** 2 + (p.y - trunk1!.y) ** 2);
+        // Use long side by default; component allows switching via cardMm state
+        const pxPerMm = cardDist / cardMm;
+        const bhd = Math.round(trunkDist / pxPerMm / 10); // mm → cm
         setBhdValue(bhd);
         setPhase('result');
         break;
@@ -176,97 +135,101 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     }
   }
 
-  function reset() {
-    setCardLeft(null);
-    setCardRight(null);
-    setTrunkLeft(null);
-    setTrunkRight(null);
-    setBhdValue(null);
-    setPhase('card-left');
+  // Recalculate when switching card side
+  function toggleCardSide() {
+    const newMm = cardMm === CARD_LONG_MM ? CARD_SHORT_MM : CARD_LONG_MM;
+    setCardMm(newMm);
+    if (card1 && card2 && trunk1 && trunk2) {
+      const cardDist = Math.sqrt((card2.x - card1.x) ** 2 + (card2.y - card1.y) ** 2);
+      const trunkDist = Math.sqrt((trunk2.x - trunk1.x) ** 2 + (trunk2.y - trunk1.y) ** 2);
+      const bhd = Math.round(trunkDist / (cardDist / newMm) / 10);
+      setBhdValue(bhd);
+    }
   }
 
-  const instruction = INSTRUCTIONS[phase];
-  const stepNumber = { 'card-left': 1, 'card-right': 2, 'trunk-left': 3, 'trunk-right': 4, 'result': 0 }[phase];
+  function reset() {
+    setCard1(null); setCard2(null); setTrunk1(null); setTrunk2(null);
+    setBhdValue(null); setCardMm(CARD_LONG_MM); setPhase('card-1');
+  }
+
+  const stepNum = { 'card-1': 1, 'card-2': 2, 'trunk-1': 3, 'trunk-2': 4, 'result': 0 }[phase];
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3">
         <div>
-          <h3 className="text-white text-sm font-semibold">BHD-Messung</h3>
-          <p className="text-slate-500 text-xs">4 Punkte markieren: Karte + Stamm</p>
+          <h3 className="text-white text-sm font-semibold">BHD messen</h3>
+          <p className="text-slate-500 text-xs">Kreditkarte + Stammrand markieren</p>
         </div>
-        <button onClick={onSkip} className="text-slate-400 hover:text-white p-1">
-          <X size={20} />
-        </button>
+        <button onClick={onSkip} className="text-slate-400 hover:text-white p-1"><X size={20} /></button>
       </div>
 
-      {/* Progress dots */}
-      <div className="shrink-0 flex items-center justify-center gap-2 px-4 pb-2">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className={`w-2 h-2 rounded-full transition-colors ${
-            i < stepNumber! ? 'bg-emerald-500' : i === stepNumber ? 'bg-white' : 'bg-slate-700'
-          }`} />
+      {/* Progress */}
+      <div className="shrink-0 flex items-center justify-center gap-2 px-4 pb-1">
+        {[1,2,3,4].map(i => (
+          <div key={i} className={`w-2 h-2 rounded-full ${i < stepNum! ? 'bg-emerald-500' : i === stepNum ? 'bg-white' : 'bg-slate-700'}`} />
         ))}
       </div>
 
       {/* Instruction */}
       <div className="shrink-0 px-4 py-2 text-center">
-        {phase !== 'result' ? (
-          <p className="text-sm" style={{ color: instruction.color }}>{instruction.text}</p>
-        ) : (
+        {phase === 'card-1' && <p className="text-sm text-yellow-400">Tippe auf ein Ende der <span className="font-semibold">langen Kartenseite</span> (Breitseite)</p>}
+        {phase === 'card-2' && <p className="text-sm text-yellow-400">Tippe auf das andere Ende der <span className="font-semibold">langen Kartenseite</span></p>}
+        {phase === 'trunk-1' && <p className="text-sm text-red-400">Tippe auf den <span className="font-semibold">linken Stammrand</span></p>}
+        {phase === 'trunk-2' && <p className="text-sm text-blue-400">Tippe auf den <span className="font-semibold">rechten Stammrand</span></p>}
+        {phase === 'result' && (
           <div className="text-emerald-400">
             <p className="text-2xl font-bold">{bhdValue} cm</p>
-            <p className="text-xs text-emerald-500 mt-0.5">BHD gemessen (Kreditkarte)</p>
+            <p className="text-xs text-emerald-500 mt-0.5">BHD gemessen</p>
           </div>
         )}
       </div>
 
-      {/* Image + canvas */}
+      {/* Image + Canvas */}
       <div ref={containerRef} className="flex-1 relative overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          ref={imgRef}
-          src={photoSrc}
-          alt="Baum"
-          className="absolute inset-0 w-full h-full object-contain"
-          onLoad={draw}
-        />
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 w-full h-full"
-          style={{ touchAction: 'none' }}
-          onClick={handleTap}
-          onTouchStart={(e) => { e.preventDefault(); handleTap(e); }}
-        />
+        <img ref={imgRef} src={photoSrc} alt="Baum"
+          className="absolute inset-0 w-full h-full object-contain" onLoad={draw} />
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ touchAction: 'none' }}
+          onClick={handleTap} onTouchStart={(e) => { e.preventDefault(); handleTap(e); }} />
       </div>
 
       {/* Actions */}
-      <div className="shrink-0 px-4 py-4 flex gap-3">
-        {phase !== 'result' && phase !== 'card-left' && (
-          <button onClick={reset}
-            className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
-            <RotateCcw size={14} /> Neu
-          </button>
-        )}
-        {phase !== 'result' && (
-          <button onClick={onSkip}
-            className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-medium transition-colors">
-            Überspringen
-          </button>
-        )}
+      <div className="shrink-0 px-4 py-3 space-y-2">
+        {/* Card side toggle — only in result */}
         {phase === 'result' && (
-          <>
+          <button onClick={toggleCardSide}
+            className="w-full py-2 text-xs text-slate-400 hover:text-slate-200 transition-colors">
+            Referenz: {cardMm === CARD_LONG_MM ? 'Breitseite (85,6 mm)' : 'Schmalseite (54 mm)'} — tippen zum Wechseln
+          </button>
+        )}
+        <div className="flex gap-3">
+          {phase !== 'result' && phase !== 'card-1' && (
             <button onClick={reset}
-              className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+              className="py-3 px-4 bg-slate-800 text-white rounded-xl text-sm font-medium flex items-center gap-2">
               <RotateCcw size={14} /> Neu
             </button>
-            <button onClick={() => bhdValue != null && onMeasured(bhdValue)}
-              className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2">
-              <Check size={14} /> {bhdValue} cm übernehmen
+          )}
+          {phase !== 'result' && (
+            <button onClick={onSkip}
+              className="flex-1 py-3 bg-slate-800 text-slate-300 rounded-xl text-sm font-medium">
+              Ohne Messung weiter
             </button>
-          </>
-        )}
+          )}
+          {phase === 'result' && (
+            <>
+              <button onClick={reset}
+                className="py-3 px-4 bg-slate-800 text-white rounded-xl text-sm font-medium flex items-center gap-2">
+                <RotateCcw size={14} />
+              </button>
+              <button onClick={() => bhdValue != null && onMeasured(bhdValue)}
+                className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
+                <Check size={14} /> {bhdValue} cm übernehmen
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -400,7 +400,11 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     if (!file) return;
     photoFileRef.current = file;
     const reader = new FileReader();
-    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+    reader.onload = (ev) => {
+      setPhotoPreview(ev.target?.result as string);
+      // Auto-open BHD measurement overlay after photo is loaded
+      setBhdMeasureOpen(true);
+    };
     reader.readAsDataURL(file);
     // Trigger GPS + locate silently in background
     captureGps();
@@ -951,7 +955,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 mb-4">
               <span className="text-blue-500 text-base mt-0.5">💳</span>
               <p className="text-xs text-blue-700 leading-relaxed">
-                <span className="font-medium">Tipp:</span> Halte eine Kreditkarte an den Stamm für eine exakte BHD-Messung. Die KI berechnet den Durchmesser über das Größenverhältnis.
+                <span className="font-medium">Tipp:</span> Halte eine Kreditkarte <span className="font-medium">quer</span> an den Stamm und fotografiere beides. Nach dem Foto kannst du den BHD exakt messen.
               </p>
             </div>
 
@@ -1112,21 +1116,16 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 </div>
               ) : null}
 
-            {/* BHD messen Button — nur wenn Foto vorhanden */}
-            {photoPreview && (
-              <button
-                onClick={() => setBhdMeasureOpen(true)}
-                className="w-full py-3 mb-3 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-              >
-                💳 BHD mit Kreditkarte messen
-              </button>
-            )}
-
             {/* BHD-Messergebnis anzeigen */}
             {bhdMethod === 'CARD' && form.diameter && (
-              <div className="flex items-center gap-2 text-xs text-emerald-600 mb-3 bg-emerald-50 rounded-xl px-3 py-2">
-                <Check size={14} />
-                BHD gemessen: {form.diameter} cm (Kreditkarte)
+              <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5 mb-3">
+                <div className="flex items-center gap-2 text-sm text-emerald-700">
+                  <Check size={14} />
+                  <span>BHD: <span className="font-semibold">{form.diameter} cm</span> (gemessen)</span>
+                </div>
+                <button onClick={() => setBhdMeasureOpen(true)} className="text-xs text-emerald-600 hover:text-emerald-800">
+                  Neu messen
+                </button>
               </div>
             )}
 

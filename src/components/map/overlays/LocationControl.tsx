@@ -27,7 +27,7 @@ export function LocationControl() {
             setLoading(false);
             toast.error("Standort konnte nicht ermittelt werden.");
         },
-        { enableHighAccuracy: true, timeout: 5000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
     );
   };
 

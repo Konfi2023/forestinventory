@@ -67,7 +67,10 @@ const STOCKING_DEGREES = [
   { id: 'VERY_DENSE', label: 'Sehr dicht' },
 ];
 
-type Step = 'mode' | 'plot-setup' | 'camera' | 'location' | 'species' | 'details' | 'saved' | 'task' | 'plot-done' | 'summary';
+type Step = 'mode' | 'plot-setup' | 'camera' | 'location' | 'species' | 'height-age' | 'stand' | 'soil' | 'exposition' | 'notes' | 'review' | 'saved' | 'task' | 'plot-done' | 'summary';
+
+const SINGLE_STEPS: Step[] = ['camera', 'location', 'species', 'height-age', 'stand', 'soil', 'exposition', 'notes', 'review'];
+const PLOT_STEPS: Step[] = ['camera', 'species', 'height-age', 'stand', 'soil', 'exposition', 'notes', 'review'];
 
 interface SessionTree {
   species: string;
@@ -690,25 +693,18 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       )}
 
       {/* Steps Indicator */}
-      {step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'saved' && step !== 'summary' && (
-        <div className="flex px-4 pt-3 gap-1.5 shrink-0">
-          {(mode === 'plot'
-            ? (['camera', 'species', 'details'] as const)
-            : (['camera', 'location', 'species', 'details'] as const)
-          ).map((s, i) => (
-            <div
-              key={s}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                (mode === 'plot'
-                  ? ['camera', 'species', 'details']
-                  : ['camera', 'location', 'species', 'details']
-                ).indexOf(step) >= i
-                  ? 'bg-emerald-500' : 'bg-slate-200'
-              }`}
-            />
-          ))}
-        </div>
-      )}
+      {step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'saved' && step !== 'summary' && step !== 'task' && (() => {
+        const steps = mode === 'plot' ? PLOT_STEPS : SINGLE_STEPS;
+        const idx = steps.indexOf(step);
+        if (idx < 0) return null;
+        return (
+          <div className="flex px-4 pt-3 gap-1 shrink-0">
+            {steps.map((s, i) => (
+              <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${i <= idx ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
@@ -1059,7 +1055,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 1b: Standort (nur im Einzelbaum-Modus) */}
+        {/* SCHRITT 2: Standort (nur im Einzelbaum-Modus) */}
         {step === 'location' && (
           <div className="p-4">
             <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
@@ -1235,7 +1231,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             </div>
 
             <button
-              onClick={() => setStep('details')}
+              onClick={() => setStep('height-age')}
               disabled={!form.species}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors mt-4"
             >
@@ -1244,16 +1240,15 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 3: Höhe + Boden */}
-        {step === 'details' && (
+        {/* SCHRITT 4: Höhe & Alter */}
+        {step === 'height-age' && (
           <div className="p-4">
             <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> Zurück
             </button>
-            <h2 className="text-xl font-bold mb-1">Eigenschaften</h2>
-            <p className="text-slate-400 text-sm mb-5">Höhe und Bodenverhältnisse erfassen.</p>
+            <h2 className="text-xl font-bold mb-1">Höhe & Alter</h2>
+            <p className="text-slate-400 text-sm mb-5">Baumhöhe messen oder schätzen und Alter angeben.</p>
 
-            {/* Höhe */}
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Baumhöhe in m
@@ -1262,159 +1257,167 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   return h ? <span className="ml-2 text-xs text-emerald-600 font-normal">Richtwert: ~{h} m</span> : null;
                 })()}
               </label>
-              <input
-                type="number"
-                inputMode="decimal"
-                placeholder="z.B. 28"
-                value={form.height}
+              <input type="number" inputMode="decimal" placeholder="z.B. 28" value={form.height}
                 onChange={e => setForm(f => ({ ...f, height: e.target.value }))}
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
               />
-              {/* Plausibilitätswarnungen Höhe */}
               {form.height && (() => {
                 const d = form.diameter ? parseFloat(form.diameter) : null;
                 const h = parseFloat(form.height);
-                const warns = validateTreeMeasurement({
-                  diameterCm: d && !isNaN(d) ? d : null,
-                  heightM: isNaN(h) ? null : h,
-                  species: form.species || null,
-                });
+                const warns = validateTreeMeasurement({ diameterCm: d && !isNaN(d) ? d : null, heightM: isNaN(h) ? null : h, species: form.species || null });
                 const hWarns = warns.filter(w => w.field === 'height');
                 return hWarns.length > 0 ? (
                   <div className="mt-2 space-y-1">
                     {hWarns.map((w, i) => (
-                      <p key={i} className={`text-xs px-3 py-1.5 rounded-lg ${w.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
-                        ⚠ {w.message}
-                      </p>
+                      <p key={i} className={`text-xs px-3 py-1.5 rounded-lg ${w.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>⚠ {w.message}</p>
                     ))}
                   </div>
                 ) : null;
               })()}
             </div>
 
-            {/* Geschätztes Alter */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Geschätztes Alter (Jahre)
-              </label>
-              <input
-                type="number"
-                inputMode="numeric"
-                placeholder="z.B. 80"
-                value={form.age}
+              <label className="block text-sm font-medium text-slate-700 mb-2">Geschätztes Alter (Jahre)</label>
+              <input type="number" inputMode="numeric" placeholder="z.B. 80" value={form.age}
                 onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            {/* Bodenbeschaffenheit */}
+            <button onClick={() => setStep('stand')}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
+              Weiter <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 5: Bestandstyp & Bestockungsgrad */}
+        {step === 'stand' && (
+          <div className="p-4">
+            <button onClick={() => setStep('height-age')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Bestand</h2>
+            <p className="text-slate-400 text-sm mb-5">Bestandstyp und Bestockungsgrad einschätzen.</p>
+
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Bestandstyp</label>
+              <div className="grid grid-cols-2 gap-2">
+                {STAND_TYPES.map(s => (
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, standType: f.standType === s.id ? '' : s.id }))}
+                    className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${form.standType === s.id ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Bestockungsgrad</label>
+              <div className="grid grid-cols-3 gap-2">
+                {STOCKING_DEGREES.map(s => (
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, stockingDegree: f.stockingDegree === s.id ? '' : s.id }))}
+                    className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${form.stockingDegree === s.id ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={() => setStep('soil')}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
+              Weiter <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 6: Boden */}
+        {step === 'soil' && (
+          <div className="p-4">
+            <button onClick={() => setStep('stand')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Boden</h2>
+            <p className="text-slate-400 text-sm mb-5">Bodenbeschaffenheit und Feuchtigkeit angeben.</p>
+
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
                 <Leaf size={14} className="text-emerald-600" /> Bodenbeschaffenheit
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {SOIL_CONDITIONS.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setForm(f => ({ ...f, soilCondition: f.soilCondition === s.id ? '' : s.id }))}
-                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      form.soilCondition === s.id
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
-                  >
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, soilCondition: f.soilCondition === s.id ? '' : s.id }))}
+                    className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${form.soilCondition === s.id ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
                     {s.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Bodenfeuchtigkeit */}
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
                 <Droplets size={14} className="text-blue-400" /> Bodenfeuchtigkeit
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {SOIL_MOISTURE.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setForm(f => ({ ...f, soilMoisture: f.soilMoisture === s.id ? '' : s.id }))}
-                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      form.soilMoisture === s.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
-                  >
+                  <button key={s.id} onClick={() => setForm(f => ({ ...f, soilMoisture: f.soilMoisture === s.id ? '' : s.id }))}
+                    className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${form.soilMoisture === s.id ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
                     {s.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Bestandstyp */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Bestandstyp</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {STAND_TYPES.map(s => (
-                  <button key={s.id} onClick={() => setForm(f => ({ ...f, standType: f.standType === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.standType === s.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <button onClick={() => setStep('exposition')}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
+              Weiter <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
 
-            {/* Bestockungsgrad */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Bestockungsgrad</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {STOCKING_DEGREES.map(s => (
-                  <button key={s.id} onClick={() => setForm(f => ({ ...f, stockingDegree: f.stockingDegree === s.id ? '' : s.id }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.stockingDegree === s.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* SCHRITT 7: Exposition */}
+        {step === 'exposition' && (
+          <div className="p-4">
+            <button onClick={() => setStep('soil')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Exposition</h2>
+            <p className="text-slate-400 text-sm mb-5">Hangrichtung und bei Hanglage: Neigung und Position.</p>
 
-            {/* Exposition (Hangrichtung) */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Exposition (Hangrichtung)</label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Hangrichtung</label>
+              <div className="grid grid-cols-3 gap-2">
                 {EXPOSITIONS.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({
-                    ...f,
-                    exposition: f.exposition === s.id ? '' : s.id,
+                    ...f, exposition: f.exposition === s.id ? '' : s.id,
                     ...(s.id === 'FLAT' || f.exposition === s.id ? { slopeClass: '', slopePosition: '' } : {}),
                   }))}
-                    className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.exposition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    className={`py-3 rounded-xl text-sm font-medium transition-colors ${form.exposition === s.id ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
                     {s.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Hangneigung + Hangposition – nur bei Hanglage */}
             {form.exposition && form.exposition !== 'FLAT' && (
               <>
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-slate-700 mb-2">Hangneigung</label>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 gap-2">
                     {SLOPE_CLASSES.map(s => (
                       <button key={s.id} onClick={() => setForm(f => ({ ...f, slopeClass: f.slopeClass === s.id ? '' : s.id }))}
-                        className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                        className={`py-3 rounded-xl text-sm font-medium transition-colors ${form.slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
                         {s.label}
                       </button>
                     ))}
                   </div>
                 </div>
-
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-slate-700 mb-2">Hangposition</label>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 gap-2">
                     {SLOPE_POSITIONS.map(s => (
                       <button key={s.id} onClick={() => setForm(f => ({ ...f, slopePosition: f.slopePosition === s.id ? '' : s.id }))}
-                        className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                        className={`py-3 rounded-xl text-sm font-medium transition-colors ${form.slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
                         {s.label}
                       </button>
                     ))}
@@ -1423,16 +1426,136 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               </>
             )}
 
-            {/* Notizen */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Notizen (optional)</label>
-              <textarea
-                rows={2}
-                placeholder="Besonderheiten, Schäden, …"
-                value={form.notes}
-                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 resize-none"
-              />
+            <button onClick={() => setStep('notes')}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
+              Weiter <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 8: Notizen */}
+        {step === 'notes' && (
+          <div className="p-4">
+            <button onClick={() => setStep('exposition')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Notizen</h2>
+            <p className="text-slate-400 text-sm mb-5">Besonderheiten, Schäden oder sonstige Anmerkungen.</p>
+
+            <textarea
+              rows={4}
+              placeholder="z.B. Zwiesel, Borkenkäferbefall, Stammriss…"
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 resize-none mb-5"
+            />
+
+            <button onClick={() => setStep('review')}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
+              Zusammenfassung <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 9: Zusammenfassung & Speichern */}
+        {step === 'review' && (
+          <div className="p-4">
+            <button onClick={() => setStep('notes')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Zusammenfassung</h2>
+            <p className="text-slate-400 text-sm mb-5">Daten prüfen und Baum speichern.</p>
+
+            {/* Foto-Vorschau */}
+            {photoPreview && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoPreview} alt="Baum" className="w-full aspect-video object-cover rounded-xl mb-4" />
+            )}
+
+            <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100 mb-5">
+              {/* Standort */}
+              <div className="px-4 py-3 flex justify-between">
+                <span className="text-sm text-slate-500">Standort</span>
+                <span className="text-sm font-medium text-slate-900 text-right">
+                  {form.forestName || '–'}
+                  {form.compartmentName && <span className="text-slate-500"> · {form.compartmentName}</span>}
+                </span>
+              </div>
+              {form.lat && (
+                <div className="px-4 py-3 flex justify-between">
+                  <span className="text-sm text-slate-500">GPS</span>
+                  <span className="text-sm font-mono text-slate-700">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</span>
+                </div>
+              )}
+              {/* Baumart */}
+              <div className="px-4 py-3 flex justify-between items-center">
+                <span className="text-sm text-slate-500">Baumart</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: TREE_SPECIES.find(s => s.id === form.species)?.color ?? '#64748b' }} />
+                  <span className="text-sm font-medium text-slate-900">{TREE_SPECIES.find(s => s.id === form.species)?.label ?? form.species}</span>
+                </div>
+              </div>
+              {/* BHD */}
+              {form.diameter && (
+                <div className="px-4 py-3 flex justify-between">
+                  <span className="text-sm text-slate-500">BHD</span>
+                  <span className="text-sm font-medium text-slate-900">{form.diameter} cm</span>
+                </div>
+              )}
+              {/* Höhe */}
+              {form.height && (
+                <div className="px-4 py-3 flex justify-between">
+                  <span className="text-sm text-slate-500">Höhe</span>
+                  <span className="text-sm font-medium text-slate-900">{form.height} m</span>
+                </div>
+              )}
+              {/* Alter */}
+              {form.age && (
+                <div className="px-4 py-3 flex justify-between">
+                  <span className="text-sm text-slate-500">Alter</span>
+                  <span className="text-sm font-medium text-slate-900">~{form.age} Jahre</span>
+                </div>
+              )}
+              {/* Bestand */}
+              {(form.standType || form.stockingDegree) && (
+                <div className="px-4 py-3 flex justify-between">
+                  <span className="text-sm text-slate-500">Bestand</span>
+                  <span className="text-sm text-slate-700">
+                    {STAND_TYPES.find(s => s.id === form.standType)?.label ?? ''}
+                    {form.standType && form.stockingDegree && ' · '}
+                    {STOCKING_DEGREES.find(s => s.id === form.stockingDegree)?.label ?? ''}
+                  </span>
+                </div>
+              )}
+              {/* Boden */}
+              {(form.soilCondition || form.soilMoisture) && (
+                <div className="px-4 py-3 flex justify-between">
+                  <span className="text-sm text-slate-500">Boden</span>
+                  <span className="text-sm text-slate-700">
+                    {SOIL_CONDITIONS.find(s => s.id === form.soilCondition)?.label ?? ''}
+                    {form.soilCondition && form.soilMoisture && ' · '}
+                    {SOIL_MOISTURE.find(s => s.id === form.soilMoisture)?.label ?? ''}
+                  </span>
+                </div>
+              )}
+              {/* Exposition */}
+              {form.exposition && (
+                <div className="px-4 py-3 flex justify-between">
+                  <span className="text-sm text-slate-500">Exposition</span>
+                  <span className="text-sm text-slate-700">
+                    {EXPOSITIONS.find(s => s.id === form.exposition)?.label ?? ''}
+                    {form.slopeClass && ` · ${SLOPE_CLASSES.find(s => s.id === form.slopeClass)?.label ?? ''}`}
+                    {form.slopePosition && ` · ${SLOPE_POSITIONS.find(s => s.id === form.slopePosition)?.label ?? ''}`}
+                  </span>
+                </div>
+              )}
+              {/* Notizen */}
+              {form.notes && (
+                <div className="px-4 py-3">
+                  <span className="text-sm text-slate-500 block mb-1">Notizen</span>
+                  <span className="text-sm text-slate-700">{form.notes}</span>
+                </div>
+              )}
             </div>
 
             <button

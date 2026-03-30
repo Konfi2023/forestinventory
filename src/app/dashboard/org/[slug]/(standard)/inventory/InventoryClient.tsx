@@ -68,10 +68,10 @@ const STOCKING_DEGREES = [
   { id: 'VERY_DENSE', label: 'Sehr dicht' },
 ];
 
-type Step = 'mode' | 'plot-setup' | 'camera' | 'location' | 'species' | 'height-age' | 'stand' | 'soil' | 'exposition' | 'notes' | 'review' | 'saved' | 'task' | 'plot-done' | 'summary';
+type Step = 'mode' | 'plot-setup' | 'camera' | 'location' | 'crown' | 'species' | 'height-age' | 'crown-health' | 'stand' | 'soil' | 'exposition' | 'notes' | 'review' | 'saved' | 'task' | 'plot-done' | 'summary';
 
-const SINGLE_STEPS: Step[] = ['camera', 'location', 'species', 'height-age', 'stand', 'soil', 'exposition', 'notes', 'review'];
-const PLOT_STEPS: Step[] = ['camera', 'species', 'height-age', 'stand', 'soil', 'exposition', 'notes', 'review'];
+const SINGLE_STEPS: Step[] = ['camera', 'location', 'crown', 'species', 'height-age', 'crown-health', 'stand', 'soil', 'exposition', 'notes', 'review'];
+const PLOT_STEPS: Step[] = ['camera', 'crown', 'species', 'height-age', 'crown-health', 'stand', 'soil', 'exposition', 'notes', 'review'];
 
 interface SessionTree {
   species: string;
@@ -176,9 +176,20 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const [speciesSearchLoading, setSpeciesSearchLoading] = useState(false);
   const speciesSearchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [selectedSpeciesLabel, setSelectedSpeciesLabel] = useState('');
-  // BHD OpenCV measurement
+  // BHD measurement
   const [bhdMeasureOpen, setBhdMeasureOpen] = useState(false);
   const [bhdMethod, setBhdMethod] = useState<'CARD' | 'ESTIMATE' | null>(null);
+  // Crown AI analysis
+  const [crownAiStatus, setCrownAiStatus] = useState<'idle' | 'analyzing' | 'done' | 'error'>('idle');
+  const [crownAiResult, setCrownAiResult] = useState<{
+    crownCondition?: number; crownDefoliation?: number; health?: string;
+    damageType?: string | null; damageSeverity?: number | null;
+    speciesConfirmation?: string | null; crownForm?: string; reasoning?: string;
+  } | null>(null);
+  const [formCrownCondition, setFormCrownCondition] = useState('');
+  const [formDamageSeverity, setFormDamageSeverity] = useState('');
+  const [formDamageType, setFormDamageType] = useState('');
+  const [formHealth, setFormHealth] = useState('HEALTHY');
   const savingTreeRef = useRef(false);
   // Plot-Session (Probekreis)
   const [plotSession, setPlotSession] = useState<{ id: string; radiusM: number; name: string } | null>(null);
@@ -235,6 +246,19 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     }));
     if (aiResult.speciesLabel) setSelectedSpeciesLabel(aiResult.speciesLabel);
   }, [aiResult]);
+
+  // Crown AI result → fill crown health fields
+  useEffect(() => {
+    if (!crownAiResult) return;
+    if (crownAiResult.crownCondition != null) setFormCrownCondition(String(crownAiResult.crownCondition));
+    if (crownAiResult.damageSeverity != null) setFormDamageSeverity(String(crownAiResult.damageSeverity));
+    if (crownAiResult.damageType) setFormDamageType(crownAiResult.damageType);
+    if (crownAiResult.health) setFormHealth(crownAiResult.health);
+    // If crown confirms/changes species with higher confidence
+    if (crownAiResult.speciesConfirmation && aiResult?.speciesConfidence && aiResult.speciesConfidence < 0.7) {
+      // Crown photo may give better species ID — but don't override user selection
+    }
+  }, [crownAiResult]);
 
   // Online-Status und Pending-Count
   useEffect(() => {
@@ -412,6 +436,30 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     if (navigator.onLine) analyzeTreePhoto(file);
   }
 
+  async function analyzeCrownPhoto(file: File) {
+    setCrownAiStatus('analyzing');
+    setCrownAiResult(null);
+    try {
+      const compressed = await compressImage(file);
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.readAsDataURL(compressed);
+      });
+      const res = await fetch('/api/ai/crown-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg' }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+      setCrownAiResult(result);
+      setCrownAiStatus('done');
+    } catch {
+      setCrownAiStatus('error');
+    }
+  }
+
   function handleCrownPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -419,6 +467,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     const reader = new FileReader();
     reader.onload = (ev) => setCrownPhotoPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
+    if (navigator.onLine) analyzeCrownPhoto(file);
   }
 
   // Komprimiert ein Bild auf max. 1200px und JPEG-Qualität 0.75
@@ -467,9 +516,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       slopePosition:     form.slopePosition  || null,
       standType:         form.standType      || null,
       stockingDegree:    form.stockingDegree || null,
-      damageType:        null,
-      damageSeverity:    null,
-      crownCondition:    null,
+      damageType:        formDamageType || null,
+      damageSeverity:    formDamageSeverity ? parseInt(formDamageSeverity) : null,
+      crownCondition:    formCrownCondition ? parseInt(formCrownCondition) : null,
       imageDataUrl:      photoPreview,
       crownImageDataUrl: crownPhotoPreview,
       notes:             form.notes || null,
@@ -555,6 +604,12 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     setSelectedSpeciesLabel('');
     setBhdMethod(null);
     setBhdMeasureOpen(false);
+    setCrownAiStatus('idle');
+    setCrownAiResult(null);
+    setFormCrownCondition('');
+    setFormDamageSeverity('');
+    setFormDamageType('');
+    setFormHealth('HEALTHY');
     photoFileRef.current = null;
     setCrownPhotoPreview(null);
     crownPhotoFileRef.current = null;
@@ -990,29 +1045,6 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               onChange={handlePhoto}
             />
 
-            {/* Kronenfoto */}
-            <p className="text-xs text-slate-500 mb-1.5 mt-1 font-medium uppercase tracking-wide">Kronenfoto <span className="text-slate-600 normal-case">(optional)</span></p>
-            <div
-              onClick={() => crownFileInputRef.current?.click()}
-              className={`relative w-full aspect-video rounded-xl flex items-center justify-center cursor-pointer transition-colors mb-4 overflow-hidden ${
-                crownPhotoPreview ? '' : 'bg-slate-100 hover:bg-slate-200 border-2 border-dashed border-slate-300'
-              }`}
-            >
-              {crownPhotoPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={crownPhotoPreview} alt="Krone" className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-slate-400">
-                  <Camera size={40} />
-                  <span className="text-sm">Kronenfoto aufnehmen</span>
-                </div>
-              )}
-              {crownPhotoPreview && (
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <Camera size={32} className="text-white" />
-                </div>
-              )}
-            </div>
             <input
               ref={crownFileInputRef}
               type="file"
@@ -1130,7 +1162,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             )}
 
             <button
-              onClick={() => setStep(mode === 'plot' ? 'species' : 'location')}
+              onClick={() => setStep(mode === 'plot' ? 'crown' : 'location')}
               disabled={!photoPreview}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
@@ -1235,7 +1267,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             )}
 
             <button
-              onClick={() => setStep('species')}
+              onClick={() => setStep('crown')}
               disabled={!form.forestId}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
@@ -1244,10 +1276,81 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 3: Baumart + Durchmesser */}
-        {step === 'species' && (
+        {/* SCHRITT 3: Kronenfoto */}
+        {step === 'crown' && (
           <div className="p-4">
             <button onClick={() => setStep(mode === 'plot' ? 'camera' : 'location')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Krone fotografieren</h2>
+            <p className="text-slate-400 text-sm mb-5">Foto der Baumkrone von unten aufnehmen. Die KI analysiert Vitalität, Verlichtung und Schäden.</p>
+
+            <div
+              onClick={() => crownFileInputRef.current?.click()}
+              className={`relative w-full aspect-square rounded-xl flex items-center justify-center cursor-pointer transition-colors mb-4 overflow-hidden ${
+                crownPhotoPreview ? '' : 'bg-slate-100 hover:bg-slate-200 border-2 border-dashed border-slate-300'
+              }`}
+            >
+              {crownPhotoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={crownPhotoPreview} alt="Krone" className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-slate-400">
+                  <Camera size={40} />
+                  <span className="text-sm">Kronenfoto aufnehmen</span>
+                </div>
+              )}
+              {crownPhotoPreview && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                  <Camera size={32} className="text-white" />
+                </div>
+              )}
+            </div>
+
+            {/* Crown AI status */}
+            {crownAiStatus === 'analyzing' && (
+              <div className="flex items-center gap-2 text-xs text-violet-600 mb-4 bg-violet-50 rounded-xl px-3 py-2.5">
+                <Loader2 size={14} className="animate-spin" />
+                KI analysiert Kronengesundheit…
+              </div>
+            )}
+            {crownAiStatus === 'done' && crownAiResult && (
+              <div className="mb-4 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2.5 space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700">
+                  <Sparkles size={12} /> Kronenanalyse
+                </div>
+                <p className="text-sm text-slate-700">
+                  Vitalität: <span className="font-semibold">{crownAiResult.crownCondition}%</span>
+                  <span className="text-slate-400 mx-1">·</span>
+                  Verlichtung: <span className="font-semibold">{crownAiResult.crownDefoliation}%</span>
+                  {crownAiResult.health && crownAiResult.health !== 'HEALTHY' && (
+                    <span className="text-amber-600 ml-1">
+                      · {crownAiResult.health === 'DAMAGED' ? 'Geschädigt' : 'Abgestorben'}
+                    </span>
+                  )}
+                </p>
+                {crownAiResult.damageType && (
+                  <p className="text-[11px] text-amber-600">Schadursache: {crownAiResult.damageType}</p>
+                )}
+                {crownAiResult.reasoning && (
+                  <p className="text-[11px] text-slate-400 leading-relaxed">{crownAiResult.reasoning}</p>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={() => setStep('species')}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+            >
+              {crownPhotoPreview ? 'Weiter' : 'Ohne Kronenfoto weiter'} <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 4: Baumart + Durchmesser */}
+        {step === 'species' && (
+          <div className="p-4">
+            <button onClick={() => setStep('crown')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Baumart & Maße</h2>
@@ -1412,6 +1515,86 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               />
             </div>
 
+            <button onClick={() => setStep('crown-health')}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
+              Weiter <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* SCHRITT 6: Kronengesundheit */}
+        {step === 'crown-health' && (
+          <div className="p-4">
+            <button onClick={() => setStep('height-age')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> Zurück
+            </button>
+            <h2 className="text-xl font-bold mb-1">Kronengesundheit</h2>
+            <p className="text-slate-400 text-sm mb-5">
+              {crownAiResult ? 'KI-Vorschlag prüfen und bei Bedarf anpassen.' : 'Kronenvitalität und Schadmerkmale erfassen.'}
+            </p>
+
+            {/* Crown Condition (Vitalität) */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Kronenvitalität (% vitale Krone)
+              </label>
+              <input type="number" inputMode="numeric" placeholder="z.B. 85" min="0" max="100"
+                value={formCrownCondition}
+                onChange={e => setFormCrownCondition(e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
+              />
+              {formCrownCondition && (
+                <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${
+                    Number(formCrownCondition) >= 75 ? 'bg-emerald-500' :
+                    Number(formCrownCondition) >= 40 ? 'bg-amber-500' : 'bg-red-500'
+                  }`} style={{ width: `${Math.min(100, Number(formCrownCondition))}%` }} />
+                </div>
+              )}
+            </div>
+
+            {/* Health status */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Gesundheitsstufe</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'HEALTHY', label: 'Gesund', color: 'bg-emerald-600' },
+                  { id: 'DAMAGED', label: 'Geschädigt', color: 'bg-amber-600' },
+                  { id: 'DEAD', label: 'Abgestorben', color: 'bg-red-600' },
+                  { id: 'MARKED_FOR_FELLING', label: 'Zum Fällen markiert', color: 'bg-slate-600' },
+                ].map(h => (
+                  <button key={h.id} onClick={() => setFormHealth(h.id)}
+                    className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
+                      formHealth === h.id ? `${h.color} text-white` : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}>
+                    {h.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Damage type */}
+            {formHealth !== 'HEALTHY' && (
+              <>
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Schadursache</label>
+                  <input type="text" placeholder="z.B. Borkenkäfer, Trockenheit, Pilzbefall"
+                    value={formDamageType}
+                    onChange={e => setFormDamageType(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Schadausmaß (%)</label>
+                  <input type="number" inputMode="numeric" placeholder="z.B. 30" min="0" max="100"
+                    value={formDamageSeverity}
+                    onChange={e => setFormDamageSeverity(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </>
+            )}
+
             <button onClick={() => setStep('stand')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
               Weiter <ChevronRight size={18} />
@@ -1419,10 +1602,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 5: Bestandstyp & Bestockungsgrad */}
+        {/* SCHRITT 7: Bestandstyp & Bestockungsgrad */}
         {step === 'stand' && (
           <div className="p-4">
-            <button onClick={() => setStep('height-age')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+            <button onClick={() => setStep('crown-health')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Bestand</h2>
@@ -1683,6 +1866,17 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 </div>
               )}
               {/* Notizen */}
+              {/* Kronengesundheit */}
+              {(formCrownCondition || formHealth !== 'HEALTHY') && (
+                <div className="px-4 py-3 flex justify-between">
+                  <span className="text-sm text-slate-500">Krone</span>
+                  <span className="text-sm text-slate-700">
+                    {formCrownCondition && `${formCrownCondition}% vital`}
+                    {formHealth !== 'HEALTHY' && ` · ${formHealth === 'DAMAGED' ? 'Geschädigt' : formHealth === 'DEAD' ? 'Abgestorben' : 'Fällung markiert'}`}
+                    {formDamageType && ` (${formDamageType})`}
+                  </span>
+                </div>
+              )}
               {form.notes && (
                 <div className="px-4 py-3">
                   <span className="text-sm text-slate-500 block mb-1">Notizen</span>

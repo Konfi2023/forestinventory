@@ -333,12 +333,12 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       setAiResult(result);
       setAiStatus('done');
 
-      // Auto-fill form fields with AI suggestions
+      // Auto-fill form fields with AI suggestions (always overwrite if AI has a value)
       setForm(f => ({
         ...f,
-        species:  result.species  && !f.species  ? result.species : f.species,
-        diameter: result.diameterCm != null && !f.diameter ? String(result.diameterCm) : f.diameter,
-        height:   result.heightM   != null && !f.height   ? String(result.heightM)   : f.height,
+        species:  result.species  ? result.species : f.species,
+        diameter: result.diameterCm != null ? String(result.diameterCm) : f.diameter,
+        height:   result.heightM   != null ? String(result.heightM)   : f.height,
       }));
     } catch {
       setAiStatus('error');

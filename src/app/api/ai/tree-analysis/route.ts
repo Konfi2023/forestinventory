@@ -4,18 +4,27 @@ import { TREE_SPECIES } from '@/lib/tree-species';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const VALID_IDS = TREE_SPECIES.map(s => s.id).join(', ');
+// Build explicit mapping for the prompt: "BEECH = Rotbuche"
+const SPECIES_MAP = TREE_SPECIES
+  .filter(s => s.id !== 'MIXED' && s.id !== 'OTHER')
+  .map(s => `${s.id} = ${s.label}`)
+  .join('\n');
 
 const SYSTEM_PROMPT = `Du bist ein Experte für mitteleuropäische Dendrologie und Forstinventur.
 Analysiere das Foto eines Baumes und bestimme:
 
-1. **Baumart** (species): Anhand von Rinde, Blattform, Wuchsform, Habitus.
-   Gib die ID aus dieser Liste zurück: ${VALID_IDS}
-   Wenn du dir unsicher bist, gib die wahrscheinlichste Art und eine Konfidenz an.
+1. **Baumart** (species): Anhand von Rinde, Blattform, Wuchsform, Habitus, Nadeln/Blätter.
+   Du MUSST eine der folgenden IDs zurückgeben (NICHT den deutschen Namen):
 
-2. **BHD** (diameterCm): Brusthöhendurchmesser in cm, geschätzt anhand der Stammdicke im Foto.
-   Nutze Proportionen (z.B. Handbreite ~10 cm, Stammfoto-Kontext) für eine grobe Schätzung.
-   Wenn keine Einschätzung möglich ist, gib null zurück.
+${SPECIES_MAP}
+
+   Bei Mischbestand: MIXED
+   Bei unbekannt: OTHER
+
+2. **BHD** (diameterCm): Brusthöhendurchmesser in cm (Durchmesser in 1,3 m Höhe).
+   Schätze den Stammdurchmesser anhand der sichtbaren Stammdicke.
+   Typische Werte: Jungbaum 10-20 cm, mittelalter Baum 25-45 cm, Altbaum 50-80+ cm.
+   Gib IMMER eine Schätzung als Zahl ab, auch wenn unsicher. Lieber eine grobe Schätzung als null.
 
 3. **Höhe** (heightM): Geschätzte Baumhöhe in Metern, falls im Foto erkennbar. Sonst null.
 
@@ -24,15 +33,18 @@ Analysiere das Foto eines Baumes und bestimme:
 
 Antworte ausschließlich als JSON:
 {
-  "species": "SPECIES_ID",
+  "species": "SPECIES_ID_AUS_OBIGER_LISTE",
   "speciesConfidence": 0.0-1.0,
   "speciesLabel": "Deutscher Name",
-  "diameterCm": number | null,
+  "diameterCm": number,
   "heightM": number | null,
   "health": "HEALTHY" | "DAMAGED" | "DEAD",
   "damageType": string | null,
-  "reasoning": "Kurze Begründung (1-2 Sätze) für die Artbestimmung"
-}`;
+  "reasoning": "Kurze Begründung (1-2 Sätze)"
+}
+
+WICHTIG: "species" muss EXAKT eine der oben gelisteten IDs sein (z.B. "BEECH", nicht "Rotbuche").
+WICHTIG: "diameterCm" muss IMMER eine Zahl sein, niemals null. Schätze im Zweifelsfall.`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,7 +71,7 @@ export async function POST(req: NextRequest) {
                 detail: 'high',
               },
             },
-            { type: 'text', text: 'Analysiere diesen Baum. Bestimme Baumart, BHD und Gesundheitszustand.' },
+            { type: 'text', text: 'Analysiere diesen Baum. Bestimme Baumart (als ID), BHD in cm und Gesundheitszustand.' },
           ],
         },
       ],
@@ -72,10 +84,51 @@ export async function POST(req: NextRequest) {
 
     const result = JSON.parse(content);
 
-    // Validate species ID
+    // Validate & fix species ID — try fuzzy match if exact match fails
     if (result.species && !TREE_SPECIES.some(s => s.id === result.species)) {
-      result.species = 'OTHER';
-      result.speciesConfidence = 0;
+      // Try case-insensitive match
+      const upper = result.species.toUpperCase().replace(/[^A-Z_]/g, '');
+      const byId = TREE_SPECIES.find(s => s.id === upper);
+      if (byId) {
+        result.species = byId.id;
+      } else {
+        // Try matching by German label
+        const label = (result.species || result.speciesLabel || '').toLowerCase();
+        const byLabel = TREE_SPECIES.find(s => s.label.toLowerCase() === label);
+        if (byLabel) {
+          result.species = byLabel.id;
+          result.speciesLabel = byLabel.label;
+        } else {
+          // Partial label match
+          const byPartial = TREE_SPECIES.find(s =>
+            label.includes(s.label.toLowerCase()) || s.label.toLowerCase().includes(label)
+          );
+          if (byPartial) {
+            result.species = byPartial.id;
+            result.speciesLabel = byPartial.label;
+          } else {
+            result.species = 'OTHER';
+            result.speciesConfidence = 0;
+          }
+        }
+      }
+    }
+
+    // Ensure diameterCm is a number
+    if (result.diameterCm != null) {
+      result.diameterCm = Math.round(Number(result.diameterCm));
+      if (isNaN(result.diameterCm)) result.diameterCm = null;
+    }
+
+    // Ensure heightM is a number
+    if (result.heightM != null) {
+      result.heightM = Math.round(Number(result.heightM));
+      if (isNaN(result.heightM)) result.heightM = null;
+    }
+
+    // Fill speciesLabel if missing
+    if (!result.speciesLabel && result.species) {
+      result.speciesLabel = TREE_SPECIES.find(s => s.id === result.species)?.label ?? result.species;
     }
 
     return NextResponse.json(result);

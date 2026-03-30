@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? '';
   const orgSlug = req.nextUrl.searchParams.get('orgSlug');
   const lang = req.nextUrl.searchParams.get('lang') ?? 'de';
-  const limit = Math.min(Number(req.nextUrl.searchParams.get('limit')) || 30, 100);
+  const limit = Math.min(Number(req.nextUrl.searchParams.get('limit')) || 50, 100);
 
   // Resolve orgId for favorites
   let orgId: string | null = null;
@@ -14,49 +14,44 @@ export async function GET(req: NextRequest) {
     orgId = org?.id ?? null;
   }
 
-  // If no search query: return favorites + all species
-  if (q.length < 1) {
-    const favorites = orgId
-      ? await prisma.orgSpeciesFavorite.findMany({
-          where: { organizationId: orgId },
-          include: { species: true },
-          orderBy: { usageCount: 'desc' },
-          take: 20,
-        })
-      : [];
+  // Get favorites for org
+  const favorites = orgId
+    ? await prisma.orgSpeciesFavorite.findMany({
+        where: { organizationId: orgId },
+        include: { species: true },
+        orderBy: { usageCount: 'desc' },
+        take: 20,
+      })
+    : [];
 
-    const all = await prisma.treeSpecies.findMany({
+  // Search or list all
+  let species;
+  if (q.length >= 1) {
+    species = await prisma.treeSpecies.findMany({
+      where: {
+        OR: [
+          { scientificName: { contains: q, mode: 'insensitive' } },
+          { genus: { contains: q, mode: 'insensitive' } },
+          { family: { contains: q, mode: 'insensitive' } },
+          // Search in JSON commonNames — Prisma string_contains on Json field
+          { commonNames: { string_contains: q } },
+        ],
+      },
       orderBy: { scientificName: 'asc' },
       take: limit,
     });
-
-    return NextResponse.json({
-      favorites: favorites.map(f => formatSpecies(f.species, lang, true, f.usageCount)),
-      results: all.map(s => formatSpecies(s, lang, false, 0)),
+  } else {
+    species = await prisma.treeSpecies.findMany({
+      orderBy: { scientificName: 'asc' },
+      take: limit,
     });
   }
 
-  // Search across scientificName and commonNames JSON
-  const qLower = `%${q.toLowerCase()}%`;
-  const species = await prisma.$queryRaw<any[]>`
-    SELECT ts.*,
-           osf."usageCount" as "favCount"
-    FROM "TreeSpecies" ts
-    LEFT JOIN "OrgSpeciesFavorite" osf
-      ON osf."speciesId" = ts.id AND osf."organizationId" = ${orgId}
-    WHERE ts."scientificName" ILIKE ${qLower}
-       OR ts."commonNames"::text ILIKE ${qLower}
-       OR ts.genus ILIKE ${qLower}
-    ORDER BY
-      osf."usageCount" DESC NULLS LAST,
-      CASE WHEN ts."scientificName" ILIKE ${q + '%'} THEN 0 ELSE 1 END,
-      ts."scientificName"
-    LIMIT ${limit}
-  `;
+  const favIds = new Set(favorites.map(f => f.speciesId));
 
   return NextResponse.json({
-    favorites: [],
-    results: species.map((s: any) => formatSpecies(s, lang, (s.favCount ?? 0) > 0, s.favCount ?? 0)),
+    favorites: favorites.map(f => formatSpecies(f.species, lang, true, f.usageCount)),
+    results: species.map(s => formatSpecies(s, lang, favIds.has(s.id), 0)),
   });
 }
 

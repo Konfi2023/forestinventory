@@ -18,12 +18,26 @@ async function getSpeciesList() {
   return cachedSpecies;
 }
 
-const SYSTEM_PROMPT = `Du bist ein Experte für Dendrologie und Forstinventur, weltweit.
-Analysiere das Foto eines Baumes und bestimme:
+function buildSystemPrompt(speciesList: string) {
+  return `Du bist ein Experte für Dendrologie und Forstinventur, weltweit.
+Analysiere das Foto eines Baumes SEHR SORGFÄLTIG und bestimme:
 
-1. **Baumart**: Anhand von Rinde, Blattform, Nadeln, Wuchsform, Habitus.
-   Gib den WISSENSCHAFTLICHEN NAMEN zurück (z.B. "Fagus sylvatica", "Picea abies", "Quercus robur").
-   Gib auch den deutschen und englischen Volksnamen an.
+1. **Baumart**: Bestimme anhand folgender Merkmale:
+   - RINDE: Struktur (glatt, rissig, schuppig, gefurcht, streifig), Farbe, Muster
+   - BLÄTTER/NADELN: Falls sichtbar — Form, Anordnung, Farbe
+   - WUCHSFORM: Stammform, Verzweigung, Kronenform
+   - HABITAT: Standort-Kontext (Wald, Park, Klima-Hinweise)
+
+   Wichtige Rinden-Unterscheidungen:
+   - Douglasie (Pseudotsuga menziesii): Sehr dicke, tief LÄNGSGEFURCHTE Korkrindenschuppen, rotbraun
+   - Eiche (Quercus): Tief LÄNGSRISSIG, dunkelgrau-braun, aber KEINE Korkschuppen
+   - Buche (Fagus sylvatica): Glatte silbergraue Rinde, auch bei alten Bäumen relativ glatt
+   - Fichte (Picea abies): Dünn schuppig, rötlich-braun, bei Altbäumen plattig
+   - Kiefer (Pinus sylvestris): Oberer Stamm orange-rötlich, unterer grob borkig
+
+   Gib den WISSENSCHAFTLICHEN NAMEN zurück.
+   Bevorzugt aus dieser Referenzliste (aber nicht darauf beschränkt):
+${speciesList}
 
 2. **BHD** (diameterCm): Brusthöhendurchmesser in cm (Stammdurchmesser in 1,3 m Höhe).
    Typische Werte: Jungbaum 10-20 cm, mittelalter Baum 25-45 cm, Altbaum 50-80+ cm.
@@ -32,7 +46,6 @@ Analysiere das Foto eines Baumes und bestimme:
 3. **Höhe** (heightM): Geschätzte Baumhöhe in Metern, falls erkennbar. Sonst null.
 
 4. **Gesundheit** (health): HEALTHY, DAMAGED oder DEAD.
-   Bei Schäden: damageType angeben (z.B. "Borkenkäfer", "Trockenheit", "Pilzbefall").
 
 Antworte als JSON:
 {
@@ -44,11 +57,12 @@ Antworte als JSON:
   "heightM": number | null,
   "health": "HEALTHY" | "DAMAGED" | "DEAD",
   "damageType": string | null,
-  "reasoning": "Kurze Begründung (1-2 Sätze)"
+  "reasoning": "Begründung mit konkreten Merkmalen (Rinde, Blätter, Habitus)"
 }
 
-WICHTIG: scientificName muss ein gültiger wissenschaftlicher Artname sein (Binomialnomenklatur).
-WICHTIG: diameterCm muss IMMER eine Zahl sein, niemals null.`;
+WICHTIG: Nenne in "reasoning" die konkreten visuellen Merkmale die zur Bestimmung geführt haben.
+WICHTIG: diameterCm muss IMMER eine Zahl sein.`;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,18 +72,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'imageBase64 und mimeType erforderlich' }, { status: 400 });
     }
 
+    const allSpecies = await getSpeciesList();
+    const speciesList = allSpecies
+      .filter(s => s.scientificName !== 'Mixed Stand' && s.scientificName !== 'Other Species')
+      .map(s => `   - ${s.scientificName} (${(s.commonNames as any)?.de ?? ''})`)
+      .join('\n');
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       temperature: 0.1,
       max_tokens: 500,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: buildSystemPrompt(speciesList) },
         {
           role: 'user',
           content: [
             { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } },
-            { type: 'text', text: 'Analysiere diesen Baum. Bestimme Art (wissenschaftlicher Name), BHD und Gesundheit.' },
+            { type: 'text', text: 'Analysiere diesen Baum SORGFÄLTIG. Achte besonders auf die Rindenstruktur. Bestimme Art (wissenschaftlicher Name), BHD und Gesundheit.' },
           ],
         },
       ],
@@ -79,7 +99,6 @@ export async function POST(req: NextRequest) {
     if (!content) return NextResponse.json({ error: 'Keine Antwort von KI' }, { status: 500 });
 
     const aiResult = JSON.parse(content);
-    const allSpecies = await getSpeciesList();
 
     // Match scientific name against database
     const sciName = (aiResult.scientificName ?? '').toLowerCase().trim();

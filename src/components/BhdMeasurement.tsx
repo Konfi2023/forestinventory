@@ -100,13 +100,12 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     return () => window.removeEventListener('resize', h);
   }, [draw]);
 
-  function handleTap(e: React.MouseEvent | React.TouchEvent) {
+  function handleTap(e: React.PointerEvent) {
     if (phase === 'result') return;
     const bounds = getImageBounds();
     if (!bounds) return;
-    let cx: number, cy: number;
-    if ('touches' in e) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
-    else { cx = e.clientX; cy = e.clientY; }
+    const cx = e.clientX;
+    const cy = e.clientY;
     const rect = containerRef.current!.getBoundingClientRect();
     const { ox, oy, scale } = bounds;
     const p = { x: (cx - rect.left - ox) / scale, y: (cy - rect.top - oy) / scale };
@@ -192,7 +191,7 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
         <img ref={imgRef} src={photoSrc} alt="Baum"
           className="absolute inset-0 w-full h-full object-contain" onLoad={draw} />
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ touchAction: 'none' }}
-          onClick={handleTap} onTouchStart={(e) => { e.preventDefault(); handleTap(e); }} />
+          onPointerUp={(e) => { e.preventDefault(); handleTap(e); }} />
       </div>
 
       {/* Actions */}

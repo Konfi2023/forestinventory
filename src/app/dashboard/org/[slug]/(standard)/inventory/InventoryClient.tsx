@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 import { ImportInventoryDialog } from './ImportInventoryDialog';
+import { BhdMeasurement } from '@/components/BhdMeasurement';
 
 const SOIL_CONDITIONS = [
   { id: 'SANDY', label: 'Sandig' },
@@ -175,6 +176,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const [speciesSearchLoading, setSpeciesSearchLoading] = useState(false);
   const speciesSearchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [selectedSpeciesLabel, setSelectedSpeciesLabel] = useState('');
+  // BHD OpenCV measurement
+  const [bhdMeasureOpen, setBhdMeasureOpen] = useState(false);
+  const [bhdMethod, setBhdMethod] = useState<'CARD' | 'ESTIMATE' | null>(null);
   const savingTreeRef = useRef(false);
   // Plot-Session (Probekreis)
   const [plotSession, setPlotSession] = useState<{ id: string; radiusM: number; name: string } | null>(null);
@@ -225,7 +229,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     setForm(f => ({
       ...f,
       species:  newSpecies ?? f.species,
-      diameter: aiResult.diameterCm != null ? String(aiResult.diameterCm) : f.diameter,
+      // Don't overwrite diameter if already measured by OpenCV
+      diameter: bhdMethod === 'CARD' ? f.diameter : (aiResult.diameterCm != null ? String(aiResult.diameterCm) : f.diameter),
       height:   aiResult.heightM != null ? String(aiResult.heightM) : f.height,
     }));
     if (aiResult.speciesLabel) setSelectedSpeciesLabel(aiResult.speciesLabel);
@@ -544,6 +549,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     setAiStatus('idle');
     setAiResult(null);
     setSelectedSpeciesLabel('');
+    setBhdMethod(null);
+    setBhdMeasureOpen(false);
     photoFileRef.current = null;
     setCrownPhotoPreview(null);
     crownPhotoFileRef.current = null;
@@ -669,6 +676,17 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      {bhdMeasureOpen && photoPreview && (
+        <BhdMeasurement
+          photoSrc={photoPreview}
+          onMeasured={(bhdCm) => {
+            setForm(f => ({ ...f, diameter: String(bhdCm) }));
+            setBhdMethod('CARD');
+            setBhdMeasureOpen(false);
+          }}
+          onSkip={() => setBhdMeasureOpen(false)}
+        />
+      )}
       {showImport && (
         <ImportInventoryDialog
           forests={forests}
@@ -1026,8 +1044,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   {aiResult.speciesConfidence != null && (
                     <span className="text-slate-400 ml-1">({Math.round(aiResult.speciesConfidence * 100)} %)</span>
                   )}
-                  {aiResult.diameterCm != null && (
-                    <span className="text-slate-500"> · BHD {aiResult.diameterCm} cm {(aiResult as any).bhdMethod === 'CARD' ? '(gemessen)' : '(geschätzt)'}</span>
+                  {aiResult.diameterCm != null && bhdMethod !== 'CARD' && (
+                    <span className="text-slate-500"> · BHD ~{aiResult.diameterCm} cm (geschätzt)</span>
                   )}
                   {aiResult.heightM != null && (
                     <span className="text-slate-500"> · Höhe {aiResult.heightM} m</span>
@@ -1096,6 +1114,24 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   <p className="text-sm text-amber-600">GPS nicht verfügbar auf diesem Gerät.</p>
                 </div>
               ) : null}
+
+            {/* BHD messen Button — nur wenn Foto vorhanden */}
+            {photoPreview && (
+              <button
+                onClick={() => setBhdMeasureOpen(true)}
+                className="w-full py-3 mb-3 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                💳 BHD mit Kreditkarte messen
+              </button>
+            )}
+
+            {/* BHD-Messergebnis anzeigen */}
+            {bhdMethod === 'CARD' && form.diameter && (
+              <div className="flex items-center gap-2 text-xs text-emerald-600 mb-3 bg-emerald-50 rounded-xl px-3 py-2">
+                <Check size={14} />
+                BHD gemessen: {form.diameter} cm (Kreditkarte)
+              </div>
+            )}
 
             <button
               onClick={() => setStep(mode === 'plot' ? 'species' : 'location')}

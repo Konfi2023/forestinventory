@@ -40,13 +40,9 @@ Analysiere das Foto eines Baumes SEHR SORGFÄLTIG und bestimme:
 ${speciesList}
 
 2. **BHD** (diameterCm): Brusthöhendurchmesser in cm (Stammdurchmesser in 1,3 m Höhe).
-   WICHTIG: Wenn im Foto eine Kreditkarte/Bankkarte am Stamm sichtbar ist, nutze sie als
-   Referenz zur EXAKTEN Berechnung. Eine Standard-Kreditkarte (ISO 7810) ist 85,6 mm breit
-   und 54,0 mm hoch. Miss die Kartenbreite in Pixeln, miss den Stammdurchmesser in Pixeln,
-   und berechne: BHD = (Stamm-Pixel / Karten-Pixel) × 85,6 mm → in cm umrechnen.
-   Falls KEINE Karte sichtbar ist: Schätze anhand der Stammdicke.
+   Schätze anhand der Stammdicke im Foto.
    Typische Werte: Jungbaum 10-20 cm, mittelalter Baum 25-45 cm, Altbaum 50-80+ cm.
-   Gib IMMER eine Zahl ab. Setze "bhdMethod" auf "CARD" wenn Karte erkannt, sonst "ESTIMATE".
+   Gib IMMER eine Schätzung als Zahl ab.
 
 3. **Höhe** (heightM): Geschätzte Baumhöhe in Metern, falls erkennbar. Sonst null.
 
@@ -59,7 +55,6 @@ Antworte als JSON:
   "commonNameEn": "English Name",
   "speciesConfidence": 0.0-1.0,
   "diameterCm": number,
-  "bhdMethod": "CARD" | "ESTIMATE",
   "heightM": number | null,
   "health": "HEALTHY" | "DAMAGED" | "DEAD",
   "damageType": string | null,
@@ -68,7 +63,7 @@ Antworte als JSON:
 
 WICHTIG: Nenne in "reasoning" die konkreten visuellen Merkmale die zur Bestimmung geführt haben.
 WICHTIG: diameterCm muss IMMER eine Zahl sein.
-WICHTIG: Wenn eine Karte sichtbar ist, BERECHNE den BHD exakt über das Pixel-Verhältnis.`;
+WICHTIG: diameterCm ist nur eine grobe Schätzung — die exakte Messung erfolgt separat.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -140,7 +135,6 @@ export async function POST(req: NextRequest) {
       speciesLabel,
       speciesConfidence: aiResult.speciesConfidence ?? null,
       diameterCm: aiResult.diameterCm != null ? Math.round(Number(aiResult.diameterCm)) : null,
-      bhdMethod: aiResult.bhdMethod === 'CARD' ? 'CARD' : 'ESTIMATE',
       heightM: aiResult.heightM != null ? Math.round(Number(aiResult.heightM)) : null,
       health: aiResult.health ?? 'HEALTHY',
       damageType: aiResult.damageType ?? null,

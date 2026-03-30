@@ -11,6 +11,16 @@ const withPWA = withPWAInit({
   aggressiveFrontEndNavCaching: true,
   workboxOptions: {
     runtimeCaching: [
+      // OpenCV.js WASM (CacheFirst – large file, rarely changes)
+      {
+        urlPattern: /^\/opencv\/.*/,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'opencv-wasm',
+          expiration: { maxEntries: 5, maxAgeSeconds: 90 * 24 * 60 * 60 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
       // App-Shell: /app Route (NetworkFirst – immer fresh wenn online, Fallback offline)
       {
         urlPattern: /^\/app(\/.*)?$/,

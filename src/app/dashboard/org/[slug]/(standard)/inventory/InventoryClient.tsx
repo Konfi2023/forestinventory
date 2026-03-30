@@ -229,8 +229,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     setForm(f => ({
       ...f,
       species:  newSpecies ?? f.species,
-      // Don't overwrite diameter if already measured by OpenCV
-      diameter: bhdMethod === 'CARD' ? f.diameter : (aiResult.diameterCm != null ? String(aiResult.diameterCm) : f.diameter),
+      // AI never overwrites BHD — measurement comes from card or manual input only
+      diameter: f.diameter,
       height:   aiResult.heightM != null ? String(aiResult.heightM) : f.height,
     }));
     if (aiResult.speciesLabel) setSelectedSpeciesLabel(aiResult.speciesLabel);
@@ -1043,9 +1043,6 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   <span className="font-medium">{aiResult.speciesLabel || aiResult.species}</span>
                   {aiResult.speciesConfidence != null && (
                     <span className="text-slate-400 ml-1">({Math.round(aiResult.speciesConfidence * 100)} %)</span>
-                  )}
-                  {aiResult.diameterCm != null && bhdMethod !== 'CARD' && (
-                    <span className="text-slate-500"> · BHD ~{aiResult.diameterCm} cm (geschätzt)</span>
                   )}
                   {aiResult.heightM != null && (
                     <span className="text-slate-500"> · Höhe {aiResult.heightM} m</span>

@@ -1,136 +1,138 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Loader2, Check, RotateCcw, AlertTriangle } from 'lucide-react';
-import { loadOpenCv } from '@/lib/opencv-loader';
-import { detectCreditCard, calculateBhd, type CardDetectionResult } from '@/lib/bhd-measurement';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { X, Check, RotateCcw } from 'lucide-react';
 
-type Phase = 'loading' | 'detecting' | 'card-found' | 'card-not-found' | 'tap-1' | 'tap-2' | 'result';
+/**
+ * BHD measurement via credit card reference — pure JS, no OpenCV.
+ *
+ * The user taps 4 points on the photo:
+ *   1+2: Left & right edge of the credit card (→ scale: pixels per mm)
+ *   3+4: Left & right edge of the tree trunk (→ BHD in mm)
+ *
+ * ISO 7810 credit card width: 85.6 mm
+ */
+
+const CARD_WIDTH_MM = 85.6;
+
+type Phase = 'card-left' | 'card-right' | 'trunk-left' | 'trunk-right' | 'result';
+
+const INSTRUCTIONS: Record<Phase, { text: string; color: string }> = {
+  'card-left':   { text: 'Tippe auf den linken Rand der Karte', color: '#facc15' },
+  'card-right':  { text: 'Tippe auf den rechten Rand der Karte', color: '#facc15' },
+  'trunk-left':  { text: 'Tippe auf den linken Stammrand', color: '#ef4444' },
+  'trunk-right': { text: 'Tippe auf den rechten Stammrand', color: '#3b82f6' },
+  'result':      { text: '', color: '' },
+};
+
+interface Point { x: number; y: number }
 
 interface Props {
-  photoSrc: string; // DataURL or object URL of the photo
+  photoSrc: string;
   onMeasured: (bhdCm: number) => void;
   onSkip: () => void;
 }
 
 export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
-  const [phase, setPhase] = useState<Phase>('loading');
-  const [cardResult, setCardResult] = useState<CardDetectionResult | null>(null);
-  const [tap1, setTap1] = useState<{ x: number; y: number } | null>(null);
-  const [tap2, setTap2] = useState<{ x: number; y: number } | null>(null);
+  const [phase, setPhase] = useState<Phase>('card-left');
+  const [cardLeft, setCardLeft] = useState<Point | null>(null);
+  const [cardRight, setCardRight] = useState<Point | null>(null);
+  const [trunkLeft, setTrunkLeft] = useState<Point | null>(null);
+  const [trunkRight, setTrunkRight] = useState<Point | null>(null);
   const [bhdValue, setBhdValue] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load OpenCV and detect card
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      try {
-        setPhase('loading');
-        const cv = await loadOpenCv();
-        if (cancelled) return;
-
-        // Wait for image to load
-        const img = imgRef.current;
-        if (!img) return;
-        await new Promise<void>((resolve) => {
-          if (img.complete && img.naturalWidth > 0) return resolve();
-          img.onload = () => resolve();
-        });
-        if (cancelled) return;
-
-        setPhase('detecting');
-        const result = detectCreditCard(cv, img);
-        if (cancelled) return;
-
-        setCardResult(result);
-        setPhase(result.found ? 'card-found' : 'card-not-found');
-
-        if (result.found) {
-          // Auto-advance to tap mode after showing card detection briefly
-          setTimeout(() => { if (!cancelled) setPhase('tap-1'); }, 800);
-        }
-      } catch {
-        if (!cancelled) setPhase('card-not-found');
-      }
-    }
-
-    run();
-    return () => { cancelled = true; };
-  }, [photoSrc]);
-
-  // Draw overlay on canvas
-  const drawOverlay = useCallback(() => {
-    const canvas = canvasRef.current;
+  // Compute image display bounds (object-fit: contain)
+  const getImageBounds = useCallback(() => {
     const img = imgRef.current;
-    if (!canvas || !img || !img.naturalWidth) return;
+    const container = containerRef.current;
+    if (!img || !container) return null;
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    if (!iw || !ih) return null;
 
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * window.devicePixelRatio;
-    canvas.height = rect.height * window.devicePixelRatio;
+    const scale = Math.min(cw / iw, ch / ih);
+    const dw = iw * scale;
+    const dh = ih * scale;
+    const ox = (cw - dw) / 2;
+    const oy = (ch - dh) / 2;
+    return { ox, oy, dw, dh, scale, iw, ih };
+  }, []);
+
+  // Draw overlay
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    const bounds = getImageBounds();
+    if (!canvas || !bounds) return;
+
+    const { ox, oy, scale } = bounds;
+    const container = containerRef.current!;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = container.clientWidth * dpr;
+    canvas.height = container.clientHeight * dpr;
     const ctx = canvas.getContext('2d')!;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, container.clientWidth, container.clientHeight);
 
-    const scaleX = rect.width / img.naturalWidth;
-    const scaleY = rect.height / img.naturalHeight;
+    const toScreen = (p: Point) => ({ x: ox + p.x * scale, y: oy + p.y * scale });
 
-    ctx.clearRect(0, 0, rect.width, rect.height);
-
-    // Draw card outline
-    if (cardResult?.found && cardResult.corners.length === 4) {
-      ctx.strokeStyle = '#22c55e';
-      ctx.lineWidth = 2;
+    const drawPoint = (p: Point, color: string, label: string) => {
+      const s = toScreen(p);
       ctx.beginPath();
-      const c = cardResult.corners;
-      ctx.moveTo(c[0].x * scaleX, c[0].y * scaleY);
-      for (let i = 1; i < 4; i++) ctx.lineTo(c[i].x * scaleX, c[i].y * scaleY);
-      ctx.closePath();
-      ctx.stroke();
-    }
-
-    // Draw tap points
-    const drawPoint = (p: { x: number; y: number }, color: string, label: string) => {
-      const px = p.x * scaleX;
-      const py = p.y * scaleY;
+      ctx.arc(s.x, s.y, 10, 0, Math.PI * 2);
       ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(px, py, 8, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = 'white';
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.fillStyle = 'white';
-      ctx.font = '10px sans-serif';
+      ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(label, px, py - 14);
+      ctx.fillText(label, s.x, s.y - 16);
     };
 
-    if (tap1) drawPoint(tap1, '#ef4444', 'L');
-    if (tap2) drawPoint(tap2, '#3b82f6', 'R');
-
-    // Draw line between taps
-    if (tap1 && tap2) {
-      ctx.strokeStyle = '#facc15';
+    const drawLine = (a: Point, b: Point, color: string, dashed = false) => {
+      const sa = toScreen(a);
+      const sb = toScreen(b);
+      ctx.strokeStyle = color;
       ctx.lineWidth = 2;
-      ctx.setLineDash([6, 4]);
+      ctx.setLineDash(dashed ? [6, 4] : []);
       ctx.beginPath();
-      ctx.moveTo(tap1.x * scaleX, tap1.y * scaleY);
-      ctx.lineTo(tap2.x * scaleX, tap2.y * scaleY);
+      ctx.moveTo(sa.x, sa.y);
+      ctx.lineTo(sb.x, sb.y);
       ctx.stroke();
       ctx.setLineDash([]);
-    }
-  }, [cardResult, tap1, tap2]);
+    };
 
-  useEffect(() => { drawOverlay(); }, [drawOverlay, phase]);
+    // Card points + line
+    if (cardLeft) drawPoint(cardLeft, '#facc15', 'K1');
+    if (cardRight) drawPoint(cardRight, '#facc15', 'K2');
+    if (cardLeft && cardRight) drawLine(cardLeft, cardRight, '#facc15');
 
-  // Handle tap on image
-  function handleTap(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
-    if (phase !== 'tap-1' && phase !== 'tap-2') return;
-    if (!canvasRef.current || !imgRef.current) return;
+    // Trunk points + line
+    if (trunkLeft) drawPoint(trunkLeft, '#ef4444', 'S1');
+    if (trunkRight) drawPoint(trunkRight, '#3b82f6', 'S2');
+    if (trunkLeft && trunkRight) drawLine(trunkLeft, trunkRight, '#22c55e', true);
+  }, [cardLeft, cardRight, trunkLeft, trunkRight, getImageBounds]);
 
-    const rect = canvasRef.current.getBoundingClientRect();
+  useEffect(() => { draw(); }, [draw, phase]);
+
+  // Also redraw on resize
+  useEffect(() => {
+    const handler = () => draw();
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, [draw]);
+
+  function handleTap(e: React.MouseEvent | React.TouchEvent) {
+    if (phase === 'result') return;
+    const bounds = getImageBounds();
+    if (!bounds) return;
+
     let clientX: number, clientY: number;
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
@@ -140,85 +142,95 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
       clientY = e.clientY;
     }
 
-    // Convert screen coords to image coords
-    const scaleX = imgRef.current.naturalWidth / rect.width;
-    const scaleY = imgRef.current.naturalHeight / rect.height;
-    const imgX = (clientX - rect.left) * scaleX;
-    const imgY = (clientY - rect.top) * scaleY;
+    const rect = containerRef.current!.getBoundingClientRect();
+    const { ox, oy, scale } = bounds;
+    const imgX = (clientX - rect.left - ox) / scale;
+    const imgY = (clientY - rect.top - oy) / scale;
     const point = { x: imgX, y: imgY };
 
-    if (phase === 'tap-1') {
-      setTap1(point);
-      setPhase('tap-2');
-    } else if (phase === 'tap-2' && cardResult?.pixelsPerMm) {
-      setTap2(point);
-      const result = calculateBhd(tap1!, point, cardResult.pixelsPerMm);
-      setBhdValue(result.bhdCm);
-      setPhase('result');
+    switch (phase) {
+      case 'card-left':
+        setCardLeft(point);
+        setPhase('card-right');
+        break;
+      case 'card-right':
+        setCardRight(point);
+        setPhase('trunk-left');
+        break;
+      case 'trunk-left':
+        setTrunkLeft(point);
+        setPhase('trunk-right');
+        break;
+      case 'trunk-right': {
+        setTrunkRight(point);
+        // Calculate BHD
+        const cardDist = Math.sqrt((cardRight!.x - cardLeft!.x) ** 2 + (cardRight!.y - cardLeft!.y) ** 2);
+        const trunkDist = Math.sqrt((point.x - trunkLeft!.x) ** 2 + (point.y - trunkLeft!.y) ** 2);
+        const pxPerMm = cardDist / CARD_WIDTH_MM;
+        const bhdMm = trunkDist / pxPerMm;
+        const bhd = Math.round(bhdMm / 10); // mm → cm, rounded
+        setBhdValue(bhd);
+        setPhase('result');
+        break;
+      }
     }
   }
 
   function reset() {
-    setTap1(null);
-    setTap2(null);
+    setCardLeft(null);
+    setCardRight(null);
+    setTrunkLeft(null);
+    setTrunkRight(null);
     setBhdValue(null);
-    setPhase(cardResult?.found ? 'tap-1' : 'card-not-found');
+    setPhase('card-left');
   }
 
+  const instruction = INSTRUCTIONS[phase];
+  const stepNumber = { 'card-left': 1, 'card-right': 2, 'trunk-left': 3, 'trunk-right': 4, 'result': 0 }[phase];
+
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col">
+    <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-black/50">
-        <h3 className="text-white text-sm font-semibold">BHD-Messung</h3>
+      <div className="shrink-0 flex items-center justify-between px-4 py-3">
+        <div>
+          <h3 className="text-white text-sm font-semibold">BHD-Messung</h3>
+          <p className="text-slate-500 text-xs">4 Punkte markieren: Karte + Stamm</p>
+        </div>
         <button onClick={onSkip} className="text-slate-400 hover:text-white p-1">
           <X size={20} />
         </button>
       </div>
 
-      {/* Status bar */}
+      {/* Progress dots */}
+      <div className="shrink-0 flex items-center justify-center gap-2 px-4 pb-2">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className={`w-2 h-2 rounded-full transition-colors ${
+            i < stepNumber! ? 'bg-emerald-500' : i === stepNumber ? 'bg-white' : 'bg-slate-700'
+          }`} />
+        ))}
+      </div>
+
+      {/* Instruction */}
       <div className="shrink-0 px-4 py-2 text-center">
-        {phase === 'loading' && (
-          <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
-            <Loader2 size={14} className="animate-spin" /> OpenCV wird geladen…
-          </div>
-        )}
-        {phase === 'detecting' && (
-          <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
-            <Loader2 size={14} className="animate-spin" /> Kreditkarte wird gesucht…
-          </div>
-        )}
-        {phase === 'card-found' && (
-          <div className="flex items-center justify-center gap-2 text-emerald-400 text-sm">
-            <Check size={14} /> Karte erkannt
-          </div>
-        )}
-        {phase === 'card-not-found' && (
-          <div className="flex items-center justify-center gap-2 text-amber-400 text-sm">
-            <AlertTriangle size={14} /> Keine Karte erkannt
-          </div>
-        )}
-        {phase === 'tap-1' && (
-          <p className="text-white text-sm">Tippe auf den <span className="text-red-400 font-semibold">linken Stammrand</span></p>
-        )}
-        {phase === 'tap-2' && (
-          <p className="text-white text-sm">Tippe auf den <span className="text-blue-400 font-semibold">rechten Stammrand</span></p>
-        )}
-        {phase === 'result' && bhdValue != null && (
-          <div className="text-emerald-400 text-lg font-bold">
-            BHD: {bhdValue} cm
+        {phase !== 'result' ? (
+          <p className="text-sm" style={{ color: instruction.color }}>{instruction.text}</p>
+        ) : (
+          <div className="text-emerald-400">
+            <p className="text-2xl font-bold">{bhdValue} cm</p>
+            <p className="text-xs text-emerald-500 mt-0.5">BHD gemessen (Kreditkarte)</p>
           </div>
         )}
       </div>
 
-      {/* Image + canvas overlay */}
-      <div className="flex-1 relative overflow-hidden flex items-center justify-center px-2">
+      {/* Image + canvas */}
+      <div ref={containerRef} className="flex-1 relative overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           ref={imgRef}
           src={photoSrc}
           alt="Baum"
-          className="max-w-full max-h-full object-contain"
-          style={{ position: 'absolute', inset: 0, margin: 'auto', width: '100%', height: '100%', objectFit: 'contain' }}
+          className="absolute inset-0 w-full h-full object-contain"
+          onLoad={draw}
         />
         <canvas
           ref={canvasRef}
@@ -231,16 +243,22 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
 
       {/* Actions */}
       <div className="shrink-0 px-4 py-4 flex gap-3">
-        {phase === 'card-not-found' && (
+        {phase !== 'result' && phase !== 'card-left' && (
+          <button onClick={reset}
+            className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+            <RotateCcw size={14} /> Neu
+          </button>
+        )}
+        {phase !== 'result' && (
           <button onClick={onSkip}
-            className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors">
-            Ohne Messung weiter
+            className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-medium transition-colors">
+            Überspringen
           </button>
         )}
         {phase === 'result' && (
           <>
             <button onClick={reset}
-              className="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
+              className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
               <RotateCcw size={14} /> Neu
             </button>
             <button onClick={() => bhdValue != null && onMeasured(bhdValue)}
@@ -248,12 +266,6 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
               <Check size={14} /> {bhdValue} cm übernehmen
             </button>
           </>
-        )}
-        {(phase === 'tap-1' || phase === 'tap-2') && (
-          <button onClick={reset}
-            className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2">
-            <RotateCcw size={14} /> Zurücksetzen
-          </button>
         )}
       </div>
     </div>

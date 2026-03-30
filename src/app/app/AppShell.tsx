@@ -128,19 +128,26 @@ export function AppShell({
     const cap = (window as any).Capacitor;
     if (!cap?.isNativePlatform?.()) return;
 
-    let cleanup: (() => void) | undefined;
-    import('@capacitor/app').then(({ App }) => {
-      const listener = App.addListener('backButton', ({ canGoBack }) => {
-        if (canGoBack) {
-          window.history.back();
-        } else {
-          App.minimizeApp();
-        }
-      });
-      cleanup = () => { listener.then(h => h.remove()); };
-    }).catch(() => {});
+    // Use Capacitor's plugin bridge directly to avoid build-time module resolution
+    const plugins = (window as any).Capacitor?.Plugins;
+    if (!plugins?.App) return;
 
-    return () => { cleanup?.(); };
+    let removed = false;
+    const handler = (data: { canGoBack: boolean }) => {
+      if (data.canGoBack) {
+        window.history.back();
+      } else {
+        plugins.App.minimizeApp();
+      }
+    };
+    plugins.App.addListener('backButton', handler);
+
+    return () => {
+      if (!removed) {
+        removed = true;
+        plugins.App.removeAllListeners('backButton').catch(() => {});
+      }
+    };
   }, []);
 
   return (

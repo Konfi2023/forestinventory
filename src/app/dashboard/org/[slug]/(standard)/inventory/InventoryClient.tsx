@@ -333,13 +333,15 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       setAiResult(result);
       setAiStatus('done');
 
-      // Auto-fill form fields with AI suggestions (always overwrite if AI has a value)
-      setForm(f => ({
-        ...f,
-        species:  result.species  ? result.species : f.species,
-        diameter: result.diameterCm != null ? String(result.diameterCm) : f.diameter,
-        height:   result.heightM   != null ? String(result.heightM)   : f.height,
-      }));
+      // Auto-fill: use setTimeout(0) to ensure this runs after any pending GPS setForm calls
+      setTimeout(() => {
+        setForm(f => ({
+          ...f,
+          species:  result.species && result.species !== 'OTHER' ? result.species : f.species,
+          diameter: result.diameterCm != null ? String(result.diameterCm) : f.diameter,
+          height:   result.heightM   != null ? String(result.heightM)   : f.height,
+        }));
+      }, 0);
     } catch {
       setAiStatus('error');
     }
@@ -1160,7 +1162,17 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 2: Baumart + Durchmesser */}
+        {/* SCHRITT 3: Baumart + Durchmesser */}
+        {step === 'species' && (() => {
+          // Safety fallback: apply AI result if form fields are still empty when entering this step
+          if (aiResult?.species && aiResult.species !== 'OTHER' && !form.species) {
+            requestAnimationFrame(() => setForm(f => f.species ? f : { ...f, species: aiResult.species! }));
+          }
+          if (aiResult?.diameterCm != null && !form.diameter) {
+            requestAnimationFrame(() => setForm(f => f.diameter ? f : { ...f, diameter: String(aiResult.diameterCm) }));
+          }
+          return null;
+        })()}
         {step === 'species' && (
           <div className="p-4">
             <button onClick={() => setStep(mode === 'plot' ? 'camera' : 'location')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">

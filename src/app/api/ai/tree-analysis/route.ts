@@ -131,6 +131,7 @@ export async function POST(req: NextRequest) {
       result.speciesLabel = TREE_SPECIES.find(s => s.id === result.species)?.label ?? result.species;
     }
 
+    console.log('[ai/tree-analysis] Result:', JSON.stringify(result));
     return NextResponse.json(result);
   } catch (err: any) {
     console.error('[ai/tree-analysis]', err);

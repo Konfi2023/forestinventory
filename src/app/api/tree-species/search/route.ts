@@ -27,19 +27,18 @@ export async function GET(req: NextRequest) {
   // Search or list all
   let species;
   if (q.length >= 1) {
-    species = await prisma.treeSpecies.findMany({
-      where: {
-        OR: [
-          { scientificName: { contains: q, mode: 'insensitive' } },
-          { genus: { contains: q, mode: 'insensitive' } },
-          { family: { contains: q, mode: 'insensitive' } },
-          // Search in JSON commonNames — Prisma string_contains on Json field
-          { commonNames: { string_contains: q } },
-        ],
-      },
-      orderBy: { scientificName: 'asc' },
-      take: limit,
-    });
+    // Fetch all species and filter in JS — with ~100 species this is fast
+    // and avoids JSON search limitations in Prisma
+    const all = await prisma.treeSpecies.findMany({ orderBy: { scientificName: 'asc' } });
+    const qLower = q.toLowerCase();
+    species = all.filter(s => {
+      if (s.scientificName.toLowerCase().includes(qLower)) return true;
+      if (s.genus && s.genus.toLowerCase().includes(qLower)) return true;
+      if (s.family && s.family.toLowerCase().includes(qLower)) return true;
+      if (s.legacyId && s.legacyId.toLowerCase().includes(qLower)) return true;
+      const names = (s.commonNames ?? {}) as Record<string, string>;
+      return Object.values(names).some(n => n.toLowerCase().includes(qLower));
+    }).slice(0, limit);
   } else {
     species = await prisma.treeSpecies.findMany({
       orderBy: { scientificName: 'asc' },

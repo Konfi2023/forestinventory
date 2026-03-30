@@ -929,7 +929,13 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'camera' && (
           <div className="p-4">
             <h2 className="text-xl font-bold mb-1">Baum fotografieren</h2>
-            <p className="text-slate-400 text-sm mb-5">Stammfoto aufnehmen — GPS und Standort werden automatisch ermittelt.</p>
+            <p className="text-slate-400 text-sm mb-3">Stammfoto aufnehmen — GPS und Standort werden automatisch ermittelt.</p>
+            <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 mb-4">
+              <span className="text-blue-500 text-base mt-0.5">💳</span>
+              <p className="text-xs text-blue-700 leading-relaxed">
+                <span className="font-medium">Tipp:</span> Halte eine Kreditkarte an den Stamm für eine exakte BHD-Messung. Die KI berechnet den Durchmesser über das Größenverhältnis.
+              </p>
+            </div>
 
             {/* Foto */}
             <div
@@ -1021,7 +1027,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     <span className="text-slate-400 ml-1">({Math.round(aiResult.speciesConfidence * 100)} %)</span>
                   )}
                   {aiResult.diameterCm != null && (
-                    <span className="text-slate-500"> · BHD {aiResult.diameterCm} cm</span>
+                    <span className="text-slate-500"> · BHD {aiResult.diameterCm} cm {(aiResult as any).bhdMethod === 'CARD' ? '(gemessen)' : '(geschätzt)'}</span>
                   )}
                   {aiResult.heightM != null && (
                     <span className="text-slate-500"> · Höhe {aiResult.heightM} m</span>

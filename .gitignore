@@ -55,3 +55,10 @@ repomix-output*.xml
 
 # Deploy script (server-only)
 deploy.sh
+
+# Capacitor native build artifacts
+ios/App/Pods/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties

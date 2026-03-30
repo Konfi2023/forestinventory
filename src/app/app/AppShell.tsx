@@ -122,6 +122,27 @@ export function AppShell({
     return () => window.removeEventListener('online', handleOnline);
   }, [syncPending]);
 
+  // Android: Hardware-Zurück-Button abfangen (Capacitor native)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const cap = (window as any).Capacitor;
+    if (!cap?.isNativePlatform?.()) return;
+
+    let cleanup: (() => void) | undefined;
+    import('@capacitor/app').then(({ App }) => {
+      const listener = App.addListener('backButton', ({ canGoBack }) => {
+        if (canGoBack) {
+          window.history.back();
+        } else {
+          App.minimizeApp();
+        }
+      });
+      cleanup = () => { listener.then(h => h.remove()); };
+    }).catch(() => {});
+
+    return () => { cleanup?.(); };
+  }, []);
+
   return (
     <div className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden">
       {/* Header */}

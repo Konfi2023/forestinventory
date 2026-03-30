@@ -7,6 +7,11 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://forest-manager.eu/app',
     cleartext: false,
+    allowNavigation: [
+      'forest-manager.eu',
+      '*.forest-manager.eu',
+      'auth.forest-manager.eu',
+    ],
   },
   ios: {
     scheme: 'ForestManager',

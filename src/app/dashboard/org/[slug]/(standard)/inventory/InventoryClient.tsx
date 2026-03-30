@@ -7,7 +7,7 @@ import { validateTreeMeasurement, estimateHeight, getTargetSampleSize } from '@/
 import {
   Camera, MapPin, Trees, ChevronRight, ChevronLeft,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
-  ClipboardList, User, Loader2, CircleDot, Upload,
+  ClipboardList, User, Loader2, CircleDot, Upload, Sparkles,
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 import { ImportInventoryDialog } from './ImportInventoryDialog';
@@ -157,6 +157,13 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [locating, setLocating] = useState(false);
   const [isSavingTree, setIsSavingTree] = useState(false);
+  // KI-Baumanalyse
+  const [aiStatus, setAiStatus] = useState<'idle' | 'analyzing' | 'done' | 'error'>('idle');
+  const [aiResult, setAiResult] = useState<{
+    species?: string; speciesLabel?: string; speciesConfidence?: number;
+    diameterCm?: number | null; heightM?: number | null;
+    health?: string; damageType?: string | null; reasoning?: string;
+  } | null>(null);
   const savingTreeRef = useRef(false);
   // Plot-Session (Probekreis)
   const [plotSession, setPlotSession] = useState<{ id: string; radiusM: number; name: string } | null>(null);
@@ -298,6 +305,43 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       .finally(() => setLocating(false));
   }
 
+  async function analyzeTreePhoto(file: File) {
+    setAiStatus('analyzing');
+    setAiResult(null);
+    try {
+      // Compress before sending to AI (smaller payload)
+      const compressed = await compressImage(file);
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          resolve(dataUrl.split(',')[1]); // strip data:...;base64, prefix
+        };
+        reader.readAsDataURL(compressed);
+      });
+
+      const res = await fetch('/api/ai/tree-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg' }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+      setAiResult(result);
+      setAiStatus('done');
+
+      // Auto-fill form fields with AI suggestions
+      setForm(f => ({
+        ...f,
+        species:  result.species  && !f.species  ? result.species : f.species,
+        diameter: result.diameterCm != null && !f.diameter ? String(result.diameterCm) : f.diameter,
+        height:   result.heightM   != null && !f.height   ? String(result.heightM)   : f.height,
+      }));
+    } catch {
+      setAiStatus('error');
+    }
+  }
+
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -307,6 +351,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     reader.readAsDataURL(file);
     // Trigger GPS + locate silently in background
     captureGps();
+    // Trigger AI analysis in background
+    if (navigator.onLine) analyzeTreePhoto(file);
   }
 
   function handleCrownPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -447,6 +493,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     const compartmentName = form.compartmentName;
     setForm({ ...EMPTY_FORM, forestId, forestName, compartmentId, compartmentName });
     setPhotoPreview(null);
+    setAiStatus('idle');
+    setAiResult(null);
     photoFileRef.current = null;
     setCrownPhotoPreview(null);
     crownPhotoFileRef.current = null;
@@ -909,6 +957,49 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
                 <MapPin size={12} className={gpsLoading ? 'animate-pulse text-emerald-500' : 'text-emerald-600'} />
                 {gpsLoading ? 'GPS wird ermittelt…' : `${form.lat?.toFixed(5)}, ${form.lng?.toFixed(5)}`}
+              </div>
+            )}
+
+            {/* KI-Analyse-Ergebnis */}
+            {aiStatus === 'analyzing' && (
+              <div className="flex items-center gap-2 text-xs text-violet-600 mb-4 bg-violet-50 rounded-xl px-3 py-2.5">
+                <Loader2 size={14} className="animate-spin" />
+                KI analysiert Baumart und BHD…
+              </div>
+            )}
+            {aiStatus === 'done' && aiResult && (
+              <div className="mb-4 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2.5 space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700">
+                  <Sparkles size={12} />
+                  KI-Vorschlag
+                </div>
+                <p className="text-sm text-slate-700">
+                  <span className="font-medium">{aiResult.speciesLabel || aiResult.species}</span>
+                  {aiResult.speciesConfidence != null && (
+                    <span className="text-slate-400 ml-1">({Math.round(aiResult.speciesConfidence * 100)} %)</span>
+                  )}
+                  {aiResult.diameterCm != null && (
+                    <span className="text-slate-500"> · BHD {aiResult.diameterCm} cm</span>
+                  )}
+                  {aiResult.heightM != null && (
+                    <span className="text-slate-500"> · Höhe {aiResult.heightM} m</span>
+                  )}
+                </p>
+                {aiResult.reasoning && (
+                  <p className="text-[11px] text-slate-400 leading-relaxed">{aiResult.reasoning}</p>
+                )}
+                {aiResult.health && aiResult.health !== 'HEALTHY' && (
+                  <p className="text-[11px] text-amber-600">
+                    Zustand: {aiResult.health === 'DAMAGED' ? 'Geschädigt' : 'Abgestorben'}
+                    {aiResult.damageType && ` (${aiResult.damageType})`}
+                  </p>
+                )}
+              </div>
+            )}
+            {aiStatus === 'error' && (
+              <div className="flex items-center gap-2 text-xs text-slate-400 mb-4">
+                <Sparkles size={12} />
+                KI-Analyse nicht verfügbar
               </div>
             )}
 

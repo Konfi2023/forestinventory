@@ -955,7 +955,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 mb-4">
               <span className="text-blue-500 text-base mt-0.5">💳</span>
               <p className="text-xs text-blue-700 leading-relaxed">
-                <span className="font-medium">Tipp:</span> Halte eine Kreditkarte <span className="font-medium">quer</span> an den Stamm und fotografiere beides. Nach dem Foto kannst du den BHD exakt messen.
+                <span className="font-medium">BHD messen:</span> Halte die Forest Manager Messkarte oder eine Kreditkarte <span className="font-medium">quer</span> an den Stamm. Nach dem Foto wird der Durchmesser gemessen.
               </p>
             </div>
 

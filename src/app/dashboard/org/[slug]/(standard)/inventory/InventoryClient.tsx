@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { TREE_SPECIES } from '@/lib/tree-species';
+import { TREE_SPECIES, getSpeciesLabel, getSpeciesColor } from '@/lib/tree-species';
 import { db, type PendingTree, type PendingPlot } from '@/lib/inventory-db';
 import { validateTreeMeasurement, estimateHeight, getTargetSampleSize } from '@/lib/forest-mensuration';
 import {
@@ -163,10 +163,18 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   // KI-Baumanalyse
   const [aiStatus, setAiStatus] = useState<'idle' | 'analyzing' | 'done' | 'error'>('idle');
   const [aiResult, setAiResult] = useState<{
-    species?: string; speciesLabel?: string; speciesConfidence?: number;
+    species?: string; speciesId?: string | null; speciesLabel?: string; speciesConfidence?: number;
+    scientificName?: string;
     diameterCm?: number | null; heightM?: number | null;
     health?: string; damageType?: string | null; reasoning?: string;
   } | null>(null);
+  // Species DB
+  type SpeciesDTO = { id: string; scientificName: string; label: string; color: string; legacyId: string | null; isFavorite: boolean; usageCount: number; };
+  const [speciesFavorites, setSpeciesFavorites] = useState<SpeciesDTO[]>([]);
+  const [speciesResults, setSpeciesResults] = useState<SpeciesDTO[]>([]);
+  const [speciesSearchLoading, setSpeciesSearchLoading] = useState(false);
+  const speciesSearchTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [selectedSpeciesLabel, setSelectedSpeciesLabel] = useState('');
   const savingTreeRef = useRef(false);
   // Plot-Session (Probekreis)
   const [plotSession, setPlotSession] = useState<{ id: string; radiusM: number; name: string } | null>(null);
@@ -178,15 +186,49 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const crownFileInputRef = useRef<HTMLInputElement>(null);
   const crownPhotoFileRef = useRef<File | null>(null);
 
+  // Load species favorites on mount
+  useEffect(() => {
+    fetch(`/api/tree-species/search?orgSlug=${orgSlug}`)
+      .then(r => r.json())
+      .then(data => {
+        setSpeciesFavorites(data.favorites ?? []);
+        setSpeciesResults(data.results ?? []);
+      })
+      .catch(() => {});
+  }, [orgSlug]);
+
+  // Search species from DB
+  function searchSpeciesDb(query: string) {
+    clearTimeout(speciesSearchTimeout.current);
+    if (query.length < 1) {
+      // Reset to initial list
+      fetch(`/api/tree-species/search?orgSlug=${orgSlug}`)
+        .then(r => r.json())
+        .then(data => { setSpeciesResults(data.results ?? []); setSpeciesSearchLoading(false); })
+        .catch(() => setSpeciesSearchLoading(false));
+      return;
+    }
+    setSpeciesSearchLoading(true);
+    speciesSearchTimeout.current = setTimeout(() => {
+      fetch(`/api/tree-species/search?q=${encodeURIComponent(query)}&orgSlug=${orgSlug}`)
+        .then(r => r.json())
+        .then(data => { setSpeciesResults(data.results ?? []); setSpeciesSearchLoading(false); })
+        .catch(() => setSpeciesSearchLoading(false));
+    }, 250);
+  }
+
   // KI-Ergebnis in Formularfelder übernehmen (eigener Effect, nach GPS-Updates)
   useEffect(() => {
     if (!aiResult) return;
+    // Use speciesId from AI (DB-matched), fallback to legacy species
+    const newSpecies = aiResult.speciesId ?? (aiResult.species && aiResult.species !== 'OTHER' ? aiResult.species : null);
     setForm(f => ({
       ...f,
-      species:  aiResult.species && aiResult.species !== 'OTHER' ? aiResult.species : f.species,
+      species:  newSpecies ?? f.species,
       diameter: aiResult.diameterCm != null ? String(aiResult.diameterCm) : f.diameter,
       height:   aiResult.heightM != null ? String(aiResult.heightM) : f.height,
     }));
+    if (aiResult.speciesLabel) setSelectedSpeciesLabel(aiResult.speciesLabel);
   }, [aiResult]);
 
   // Online-Status und Pending-Count
@@ -431,7 +473,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         const res = await fetch('/api/inventory/tree', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(treeData),
+          body: JSON.stringify({ ...treeData, speciesId: form.species, orgSlug }),
         });
         if (res.ok) {
           treeData.synced = true;
@@ -501,6 +543,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     setPhotoPreview(null);
     setAiStatus('idle');
     setAiResult(null);
+    setSelectedSpeciesLabel('');
     photoFileRef.current = null;
     setCrownPhotoPreview(null);
     crownPhotoFileRef.current = null;
@@ -1202,35 +1245,79 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               })()}
             </div>
 
-            {/* Baumartensuche */}
+            {/* Baumartensuche — DB-basiert mit Favoriten */}
             <div className="mb-3">
               <label className="block text-sm font-medium text-slate-700 mb-2">Baumart</label>
-              <input
-                type="text"
-                placeholder="Suchen…"
-                value={speciesSearch}
-                onChange={e => setSpeciesSearch(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-2"
-              />
-              <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto">
-                {filteredSpecies.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setForm(f => ({ ...f, species: s.id }))}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
-                      form.species === s.id
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: s.color }}
-                    />
-                    {s.label}
-                  </button>
-                ))}
-              </div>
+
+              {/* Ausgewählte Baumart */}
+              {form.species && (
+                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: (() => {
+                      const fav = speciesFavorites.find(s => s.id === form.species);
+                      const res = speciesResults.find(s => s.id === form.species);
+                      const legacy = TREE_SPECIES.find(s => s.id === form.species);
+                      return fav?.color ?? res?.color ?? legacy?.color ?? '#22c55e';
+                    })() }} />
+                    <span className="text-sm font-medium text-emerald-800">{selectedSpeciesLabel || getSpeciesLabel(form.species)}</span>
+                  </div>
+                  <button onClick={() => { setForm(f => ({ ...f, species: '' })); setSelectedSpeciesLabel(''); }}
+                    className="text-xs text-emerald-600 hover:text-emerald-800">Ändern</button>
+                </div>
+              )}
+
+              {/* Suchfeld */}
+              {!form.species && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Baumart suchen (deutsch, englisch oder lateinisch)…"
+                    value={speciesSearch}
+                    onChange={e => { setSpeciesSearch(e.target.value); searchSpeciesDb(e.target.value); }}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-3"
+                  />
+
+                  {/* Favoriten (häufig verwendet) */}
+                  {!speciesSearch && speciesFavorites.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Häufig verwendet</p>
+                      <div className="flex flex-wrap gap-2">
+                        {speciesFavorites.map(s => (
+                          <button key={s.id}
+                            onClick={() => { setForm(f => ({ ...f, species: s.id })); setSelectedSpeciesLabel(s.label); }}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-colors">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suchergebnisse */}
+                  {speciesSearchLoading && (
+                    <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+                      <Loader2 size={12} className="animate-spin" /> Suche…
+                    </div>
+                  )}
+                  <div className="max-h-64 overflow-y-auto space-y-1">
+                    {speciesResults.map(s => (
+                      <button key={s.id}
+                        onClick={() => { setForm(f => ({ ...f, species: s.id })); setSelectedSpeciesLabel(s.label); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 transition-colors">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-slate-800 truncate">{s.label}</p>
+                          <p className="text-[11px] text-slate-400 italic truncate">{s.scientificName}</p>
+                        </div>
+                      </button>
+                    ))}
+                    {!speciesSearchLoading && speciesSearch && speciesResults.length === 0 && (
+                      <p className="text-xs text-slate-400 py-3 text-center">Keine Baumart gefunden</p>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <button
@@ -1494,8 +1581,13 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               <div className="px-4 py-3 flex justify-between items-center">
                 <span className="text-sm text-slate-500">Baumart</span>
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: TREE_SPECIES.find(s => s.id === form.species)?.color ?? '#64748b' }} />
-                  <span className="text-sm font-medium text-slate-900">{TREE_SPECIES.find(s => s.id === form.species)?.label ?? form.species}</span>
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: (() => {
+                    const f = speciesFavorites.find(s => s.id === form.species);
+                    const r = speciesResults.find(s => s.id === form.species);
+                    const l = TREE_SPECIES.find(s => s.id === form.species);
+                    return f?.color ?? r?.color ?? l?.color ?? '#64748b';
+                  })() }} />
+                  <span className="text-sm font-medium text-slate-900">{selectedSpeciesLabel || getSpeciesLabel(form.species)}</span>
                 </div>
               </div>
               {/* BHD */}

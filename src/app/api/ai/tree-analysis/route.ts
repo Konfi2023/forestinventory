@@ -1,41 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { TREE_SPECIES } from '@/lib/tree-species';
+import { prisma } from '@/lib/prisma';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Build explicit mapping for the prompt: "BEECH = Rotbuche"
-const SPECIES_MAP = TREE_SPECIES
-  .filter(s => s.id !== 'MIXED' && s.id !== 'OTHER')
-  .map(s => `${s.id} = ${s.label}`)
-  .join('\n');
+// Cache species list for 1 hour
+let cachedSpecies: { id: string; scientificName: string; legacyId: string | null; commonNames: any }[] = [];
+let cacheTime = 0;
 
-const SYSTEM_PROMPT = `Du bist ein Experte für mitteleuropäische Dendrologie und Forstinventur.
+async function getSpeciesList() {
+  if (Date.now() - cacheTime < 3600_000 && cachedSpecies.length > 0) return cachedSpecies;
+  cachedSpecies = await prisma.treeSpecies.findMany({
+    select: { id: true, scientificName: true, legacyId: true, commonNames: true },
+    orderBy: { scientificName: 'asc' },
+  });
+  cacheTime = Date.now();
+  return cachedSpecies;
+}
+
+const SYSTEM_PROMPT = `Du bist ein Experte für Dendrologie und Forstinventur, weltweit.
 Analysiere das Foto eines Baumes und bestimme:
 
-1. **Baumart** (species): Anhand von Rinde, Blattform, Wuchsform, Habitus, Nadeln/Blätter.
-   Du MUSST eine der folgenden IDs zurückgeben (NICHT den deutschen Namen):
+1. **Baumart**: Anhand von Rinde, Blattform, Nadeln, Wuchsform, Habitus.
+   Gib den WISSENSCHAFTLICHEN NAMEN zurück (z.B. "Fagus sylvatica", "Picea abies", "Quercus robur").
+   Gib auch den deutschen und englischen Volksnamen an.
 
-${SPECIES_MAP}
-
-   Bei Mischbestand: MIXED
-   Bei unbekannt: OTHER
-
-2. **BHD** (diameterCm): Brusthöhendurchmesser in cm (Durchmesser in 1,3 m Höhe).
-   Schätze den Stammdurchmesser anhand der sichtbaren Stammdicke.
+2. **BHD** (diameterCm): Brusthöhendurchmesser in cm (Stammdurchmesser in 1,3 m Höhe).
    Typische Werte: Jungbaum 10-20 cm, mittelalter Baum 25-45 cm, Altbaum 50-80+ cm.
-   Gib IMMER eine Schätzung als Zahl ab, auch wenn unsicher. Lieber eine grobe Schätzung als null.
+   Gib IMMER eine Schätzung als Zahl ab.
 
-3. **Höhe** (heightM): Geschätzte Baumhöhe in Metern, falls im Foto erkennbar. Sonst null.
+3. **Höhe** (heightM): Geschätzte Baumhöhe in Metern, falls erkennbar. Sonst null.
 
-4. **Gesundheitszustand** (health): HEALTHY, DAMAGED oder DEAD.
-   Bei Schäden: damageType angeben (z.B. "Borkenkäfer", "Trockenheit", "Sturm", "Pilzbefall").
+4. **Gesundheit** (health): HEALTHY, DAMAGED oder DEAD.
+   Bei Schäden: damageType angeben (z.B. "Borkenkäfer", "Trockenheit", "Pilzbefall").
 
-Antworte ausschließlich als JSON:
+Antworte als JSON:
 {
-  "species": "SPECIES_ID_AUS_OBIGER_LISTE",
+  "scientificName": "Genus species",
+  "commonNameDe": "Deutscher Name",
+  "commonNameEn": "English Name",
   "speciesConfidence": 0.0-1.0,
-  "speciesLabel": "Deutscher Name",
   "diameterCm": number,
   "heightM": number | null,
   "health": "HEALTHY" | "DAMAGED" | "DEAD",
@@ -43,8 +47,8 @@ Antworte ausschließlich als JSON:
   "reasoning": "Kurze Begründung (1-2 Sätze)"
 }
 
-WICHTIG: "species" muss EXAKT eine der oben gelisteten IDs sein (z.B. "BEECH", nicht "Rotbuche").
-WICHTIG: "diameterCm" muss IMMER eine Zahl sein, niemals null. Schätze im Zweifelsfall.`;
+WICHTIG: scientificName muss ein gültiger wissenschaftlicher Artname sein (Binomialnomenklatur).
+WICHTIG: diameterCm muss IMMER eine Zahl sein, niemals null.`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,80 +68,65 @@ export async function POST(req: NextRequest) {
         {
           role: 'user',
           content: [
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:${mimeType};base64,${imageBase64}`,
-                detail: 'high',
-              },
-            },
-            { type: 'text', text: 'Analysiere diesen Baum. Bestimme Baumart (als ID), BHD in cm und Gesundheitszustand.' },
+            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } },
+            { type: 'text', text: 'Analysiere diesen Baum. Bestimme Art (wissenschaftlicher Name), BHD und Gesundheit.' },
           ],
         },
       ],
     });
 
     const content = response.choices[0].message.content;
-    if (!content) {
-      return NextResponse.json({ error: 'Keine Antwort von KI' }, { status: 500 });
+    if (!content) return NextResponse.json({ error: 'Keine Antwort von KI' }, { status: 500 });
+
+    const aiResult = JSON.parse(content);
+    const allSpecies = await getSpeciesList();
+
+    // Match scientific name against database
+    const sciName = (aiResult.scientificName ?? '').toLowerCase().trim();
+    let match = allSpecies.find(s => s.scientificName.toLowerCase() === sciName);
+
+    // Fuzzy: genus-only match
+    if (!match && sciName) {
+      const genus = sciName.split(' ')[0];
+      match = allSpecies.find(s => s.scientificName.toLowerCase().startsWith(genus));
     }
 
-    const result = JSON.parse(content);
-
-    // Validate & fix species ID — try fuzzy match if exact match fails
-    if (result.species && !TREE_SPECIES.some(s => s.id === result.species)) {
-      // Try case-insensitive match
-      const upper = result.species.toUpperCase().replace(/[^A-Z_]/g, '');
-      const byId = TREE_SPECIES.find(s => s.id === upper);
-      if (byId) {
-        result.species = byId.id;
-      } else {
-        // Try matching by German label
-        const label = (result.species || result.speciesLabel || '').toLowerCase();
-        const byLabel = TREE_SPECIES.find(s => s.label.toLowerCase() === label);
-        if (byLabel) {
-          result.species = byLabel.id;
-          result.speciesLabel = byLabel.label;
-        } else {
-          // Partial label match
-          const byPartial = TREE_SPECIES.find(s =>
-            label.includes(s.label.toLowerCase()) || s.label.toLowerCase().includes(label)
-          );
-          if (byPartial) {
-            result.species = byPartial.id;
-            result.speciesLabel = byPartial.label;
-          } else {
-            result.species = 'OTHER';
-            result.speciesConfidence = 0;
-          }
-        }
-      }
+    // Fuzzy: common name match (de/en)
+    if (!match) {
+      const deName = (aiResult.commonNameDe ?? '').toLowerCase();
+      const enName = (aiResult.commonNameEn ?? '').toLowerCase();
+      match = allSpecies.find(s => {
+        const cn = s.commonNames as Record<string, string>;
+        return (cn.de && cn.de.toLowerCase() === deName) || (cn.en && cn.en.toLowerCase() === enName);
+      });
     }
 
-    // Ensure diameterCm is a number
-    if (result.diameterCm != null) {
-      result.diameterCm = Math.round(Number(result.diameterCm));
-      if (isNaN(result.diameterCm)) result.diameterCm = null;
-    }
+    // Build response
+    const speciesId = match?.id ?? null;
+    const speciesLabel = match
+      ? (match.commonNames as Record<string, string>).de ?? match.scientificName
+      : aiResult.commonNameDe ?? aiResult.scientificName;
 
-    // Ensure heightM is a number
-    if (result.heightM != null) {
-      result.heightM = Math.round(Number(result.heightM));
-      if (isNaN(result.heightM)) result.heightM = null;
-    }
+    const result = {
+      speciesId,
+      species: match?.legacyId ?? null, // legacy compatibility
+      scientificName: aiResult.scientificName,
+      speciesLabel,
+      speciesConfidence: aiResult.speciesConfidence ?? null,
+      diameterCm: aiResult.diameterCm != null ? Math.round(Number(aiResult.diameterCm)) : null,
+      heightM: aiResult.heightM != null ? Math.round(Number(aiResult.heightM)) : null,
+      health: aiResult.health ?? 'HEALTHY',
+      damageType: aiResult.damageType ?? null,
+      reasoning: aiResult.reasoning ?? null,
+    };
 
-    // Fill speciesLabel if missing
-    if (!result.speciesLabel && result.species) {
-      result.speciesLabel = TREE_SPECIES.find(s => s.id === result.species)?.label ?? result.species;
-    }
+    if (result.diameterCm != null && isNaN(result.diameterCm)) result.diameterCm = null;
+    if (result.heightM != null && isNaN(result.heightM)) result.heightM = null;
 
     console.log('[ai/tree-analysis] Result:', JSON.stringify(result));
     return NextResponse.json(result);
   } catch (err: any) {
     console.error('[ai/tree-analysis]', err);
-    return NextResponse.json(
-      { error: err?.message || 'KI-Analyse fehlgeschlagen' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: err?.message || 'KI-Analyse fehlgeschlagen' }, { status: 500 });
   }
 }

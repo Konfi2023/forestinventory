@@ -88,6 +88,7 @@ model Organization {
   isKleinunternehmer   Boolean              @default(false)
   defaultPaymentDays   Int                  @default(30)
   vatRates             VatRate[]
+  speciesFavorites     OrgSpeciesFavorite[]
 }
 
 model ForestOwner {
@@ -441,11 +442,44 @@ model ForestPoiVehicle {
   @@index([nextInspection])
 }
 
+// ─── Globale Baumarten-Datenbank ────────────────────────────────────────────
+model TreeSpecies {
+  id             String  @id                // Stable slug, e.g. "picea_abies"
+  scientificName String  @unique            // "Picea abies"
+  family         String?                    // "Pinaceae"
+  genus          String?                    // "Picea"
+  category       String  @default("DECIDUOUS") // "CONIFER" | "DECIDUOUS"
+  color          String  @default("#22c55e")
+  legacyId       String? @unique            // Old ID: "SPRUCE", "BEECH", etc.
+  commonNames    Json    @db.JsonB          // { "de": "Fichte", "en": "Norway Spruce", ... }
+
+  trees          ForestPoiTree[]
+  favorites      OrgSpeciesFavorite[]
+  createdAt      DateTime @default(now())
+
+  @@index([genus])
+}
+
+model OrgSpeciesFavorite {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  speciesId      String
+  species        TreeSpecies  @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  usageCount     Int          @default(1)
+  lastUsedAt     DateTime     @default(now())
+
+  @@unique([organizationId, speciesId])
+  @@index([organizationId, usageCount])
+}
+
 model ForestPoiTree {
   id         String     @id @default(uuid())
   poiId      String     @unique
   poi        ForestPoi  @relation(fields: [poiId], references: [id], onDelete: Cascade)
-  species    String?
+  species    String?                        // Legacy — wird schrittweise durch speciesId ersetzt
+  speciesId  String?
+  speciesRef TreeSpecies? @relation(fields: [speciesId], references: [id], onDelete: SetNull)
   age        Int?
   diameter   Float?
   height     Float?
@@ -480,6 +514,7 @@ model ForestPoiTree {
   updatedAt DateTime @updatedAt
 
   @@index([species])
+  @@index([speciesId])
   @@index([plotId])
 }
 

@@ -31,11 +31,11 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const {
-      forestId, lat, lng, species, diameter, height, age, notes,
+      forestId, lat, lng, species, speciesId, diameter, height, age, notes,
       soilCondition, soilMoisture,
       exposition, slopeClass, slopePosition, standType, stockingDegree,
       damageType, damageSeverity, crownCondition,
-      plotId,
+      plotId, orgSlug,
     } = body;
 
     let { compartmentId } = body;
@@ -59,8 +59,20 @@ export async function POST(req: Request) {
       compartmentId = await detectCompartment(forestId, lat, lng);
     }
 
-    const co2 = species && diameter && height
-      ? calcCo2Storage(species, diameter, height)
+    // Resolve legacy species from speciesId for CO2 calculation
+    let legacySpecies = species;
+    let resolvedSpeciesId = speciesId ?? null;
+    if (speciesId && !species) {
+      const sp = await prisma.treeSpecies.findUnique({ where: { id: speciesId }, select: { legacyId: true } });
+      legacySpecies = sp?.legacyId ?? species;
+    }
+    if (!resolvedSpeciesId && species) {
+      const sp = await prisma.treeSpecies.findUnique({ where: { legacyId: species }, select: { id: true } });
+      resolvedSpeciesId = sp?.id ?? null;
+    }
+
+    const co2 = (legacySpecies || species) && diameter && height
+      ? calcCo2Storage(legacySpecies || species, diameter, height)
       : null;
 
     const poi = await prisma.forestPoi.create({
@@ -72,7 +84,8 @@ export async function POST(req: Request) {
         forestId,
         tree: {
           create: {
-            species:        species        ?? null,
+            species:        legacySpecies  ?? species ?? null,
+            speciesId:      resolvedSpeciesId,
             diameter:       diameter       ?? null,
             height:         height         ?? null,
             age:            age            ?? null,
@@ -107,6 +120,20 @@ export async function POST(req: Request) {
         },
       },
     });
+
+    // Increment species favorite counter for the org (fire-and-forget)
+    if (resolvedSpeciesId && orgSlug) {
+      prisma.organization.findUnique({ where: { slug: orgSlug }, select: { id: true } })
+        .then(org => {
+          if (!org) return;
+          return prisma.orgSpeciesFavorite.upsert({
+            where: { organizationId_speciesId: { organizationId: org.id, speciesId: resolvedSpeciesId! } },
+            create: { organizationId: org.id, speciesId: resolvedSpeciesId!, usageCount: 1 },
+            update: { usageCount: { increment: 1 }, lastUsedAt: new Date() },
+          });
+        })
+        .catch(() => {});
+    }
 
     return NextResponse.json({ success: true, poiId: poi.id, compartmentId: compartmentId ?? null });
   } catch (err) {

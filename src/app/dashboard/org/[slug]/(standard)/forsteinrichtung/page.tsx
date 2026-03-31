@@ -21,6 +21,19 @@ export default async function ForsteinrichtungPage({
   const accessible = await getAccessibleForests(org.id, session.user.id);
   const accessibleIds = accessible.map((f) => f.id);
 
+  // Load species lookup for i18n-ready display names
+  const dbSpecies = await prisma.treeSpecies.findMany({
+    select: { id: true, scientificName: true, legacyId: true, commonNames: true, color: true },
+  });
+  const speciesLookup: Record<string, { label: string; color: string; scientificName: string }> = {};
+  const lang = org.defaultLanguage ?? 'de';
+  dbSpecies.forEach(s => {
+    const names = (s.commonNames ?? {}) as Record<string, string>;
+    const label = names[lang] ?? names['de'] ?? names['en'] ?? s.scientificName;
+    speciesLookup[s.id] = { label, color: s.color, scientificName: s.scientificName };
+    if (s.legacyId) speciesLookup[s.legacyId] = { label, color: s.color, scientificName: s.scientificName };
+  });
+
   const forests = await prisma.forest.findMany({
     where: { id: { in: accessibleIds } },
     include: {
@@ -60,7 +73,7 @@ export default async function ForsteinrichtungPage({
         </div>
       </div>
 
-      <ForsteinrichtungClient forests={forests} orgSlug={slug} />
+      <ForsteinrichtungClient forests={forests} orgSlug={slug} speciesLookup={speciesLookup} />
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { getSpeciesLabel, getSpeciesColor, TREE_SPECIES } from '@/lib/tree-species';
+import { getSpeciesLabel as _getSpeciesLabel, getSpeciesColor as _getSpeciesColor, TREE_SPECIES } from '@/lib/tree-species';
 import { updateCompartment } from '@/actions/polygons';
 import { toast } from 'sonner';
 import {
@@ -1327,7 +1327,25 @@ function HabitatTreeEditor({ poi, orgSlug, forests }: { poi: TreePoi & { forestN
   );
 }
 
-export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]; orgSlug: string }) {
+type SpeciesLookup = Record<string, { label: string; color: string; scientificName: string }>;
+
+// Module-level species lookup — set by ForsteinrichtungClient on mount
+let _speciesLookup: SpeciesLookup | undefined;
+
+function getSpeciesLabel(id: string): string {
+  if (_speciesLookup?.[id]) return _speciesLookup[id].label;
+  return _getSpeciesLabel(id);
+}
+
+function getSpeciesColor(id: string): string {
+  if (_speciesLookup?.[id]) return _speciesLookup[id].color;
+  return _getSpeciesColor(id);
+}
+
+export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { forests: Forest[]; orgSlug: string; speciesLookup?: SpeciesLookup }) {
+  // Set module-level lookup so all helper functions can use it
+  _speciesLookup = speciesLookup;
+
   const [query, setQuery] = useState('');
   const [sidebarTab, setSidebarTab] = useState<'compartments' | 'trees'>('compartments');
   const [selectedCompartmentId, setSelectedCompartmentId] = useState<string | null>(() => {

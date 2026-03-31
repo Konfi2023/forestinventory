@@ -452,7 +452,7 @@ function InventoryStatsBlock({ trees }: { trees: TreePoi[] }) {
   );
 }
 
-function PlotStatsBlock({ plot, compartmentAge }: { plot: InventoryPlotData; compartmentAge: number | null }) {
+function PlotStatsBlock({ plot, compartmentAge, areaHa }: { plot: InventoryPlotData; compartmentAge: number | null; areaHa?: number | null }) {
   const stats = useMemo(() => computePlotStats(plot, compartmentAge), [plot, compartmentAge]);
   const dateStr = new Date(plot.measuredAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   return (
@@ -465,8 +465,9 @@ function PlotStatsBlock({ plot, compartmentAge }: { plot: InventoryPlotData; com
       </div>
       {stats ? (
         <div className="p-3 space-y-3">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{Math.round(stats.nHa)}</div><div className="text-[10px] text-slate-500">N/ha</div></div>
+            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{areaHa ? `~${Math.round(stats.nHa * areaHa)}` : '–'}</div><div className="text-[10px] text-slate-500">Gesamt (Abt.)</div></div>
             <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{stats.gHa.toFixed(1)}</div><div className="text-[10px] text-slate-500">G/ha (m²)</div></div>
             <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{stats.vHa != null ? Math.round(stats.vHa) : '–'}</div><div className="text-[10px] text-slate-500">V/ha (m³)</div></div>
           </div>
@@ -637,6 +638,33 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
 
       {/* Scrollable form + stats */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-slate-50">
+
+        {/* Probekreise — ganz oben */}
+        {plots.length > 0 && (
+          <div className="border border-violet-200 rounded-lg overflow-hidden bg-violet-50/30">
+            <div className="bg-violet-50 px-4 py-2.5 border-b border-violet-100 flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wide text-violet-600 flex items-center gap-1.5">
+                <CircleDot size={11} /> Berechnete Werte aus {plots.length} {plots.length === 1 ? 'Probekreis' : 'Probekreisen'}
+              </span>
+              {compartment.areaHa != null && (() => {
+                // Calculate total estimated stem count from all plots
+                const allPlotTrees = plots.flatMap(p => p.trees.filter((t: any) => t.diameter != null));
+                const totalPlotArea = plots.reduce((s, p) => s + Math.PI * p.radiusM ** 2, 0); // m²
+                if (totalPlotArea > 0 && allPlotTrees.length > 0) {
+                  const nHa = allPlotTrees.length / totalPlotArea * 10000;
+                  const totalStems = Math.round(nHa * compartment.areaHa!);
+                  return <span className="text-xs text-violet-500">~{totalStems} Bäume geschätzt ({compartment.areaHa!.toFixed(2)} ha)</span>;
+                }
+                return null;
+              })()}
+            </div>
+            <div className="p-4 space-y-0">
+              {plots.map(plot => (
+                <PlotStatsBlock key={plot.id} plot={plot} compartmentAge={compartment.standAge} areaHa={compartment.areaHa} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Allgemein */}
         <Section title="Allgemein" cols={2}>
@@ -858,21 +886,7 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
             placeholder="Allgemeine Notizen..." className="text-sm min-h-[80px]" />
         </SectionFull>
 
-        {/* Probekreise */}
-        {plots.length > 0 && (
-          <div className="border border-slate-100 rounded-lg overflow-hidden">
-            <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
-              <span className="text-xs font-bold uppercase tracking-wide text-violet-600 flex items-center gap-1.5">
-                <CircleDot size={11} /> Probekreise ({plots.length})
-              </span>
-            </div>
-            <div className="p-4 space-y-0">
-              {plots.map(plot => (
-                <PlotStatsBlock key={plot.id} plot={plot} compartmentAge={compartment.standAge} />
-              ))}
-            </div>
-          </div>
-        )}
+        {/* (Probekreise sind jetzt oben) */}
 
         {/* Inventur-Auswertung */}
         {trees.length > 0 && <InventoryStatsBlock trees={trees} />}

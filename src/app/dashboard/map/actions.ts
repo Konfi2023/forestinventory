@@ -65,7 +65,18 @@ export async function getMapDataBySlug(slug: string) {
         },
         habitats: true,
         hunting: true,
-        compartments: true,
+        compartments: {
+          include: {
+            inventoryPlots: {
+              include: {
+                trees: {
+                  include: { poi: { select: { lat: true, lng: true } } },
+                },
+              },
+              orderBy: { measuredAt: 'desc' },
+            },
+          },
+        },
         grantedUsers: { select: { id: true } },
         biomassSnapshots: { orderBy: { date: 'desc' }, take: 10 },
         owner: { select: { id: true, name: true } },

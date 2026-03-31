@@ -57,7 +57,24 @@ interface InventoryPlotData {
 interface TreePoi {
   id: string;
   name: string | null;
-  tree: Tree | null;
+  lat: number;
+  lng: number;
+  tree: (Tree & {
+    damageType?: string | null;
+    damageSeverity?: number | null;
+    crownCondition?: number | null;
+    soilCondition?: string | null;
+    soilMoisture?: string | null;
+    exposition?: string | null;
+    slopeClass?: string | null;
+    slopePosition?: string | null;
+    standType?: string | null;
+    stockingDegree?: string | null;
+    notes?: string | null;
+    plotId?: string | null;
+    imageKey?: string | null;
+    crownImageKey?: string | null;
+  }) | null;
 }
 
 interface Compartment {
@@ -1186,12 +1203,138 @@ function ForestGroup({ forest, selectedId, onSelect, query }: {
 
 // ── Main Client ───────────────────────────────────────────────────────────────
 
+const HEALTH_LABEL: Record<string, string> = { HEALTHY: 'Gesund', DAMAGED: 'Geschädigt', DEAD: 'Abgestorben', MARKED_FOR_FELLING: 'Fällung' };
+const HEALTH_OPTIONS = [
+  { id: 'HEALTHY', label: 'Gesund', color: 'bg-emerald-600' },
+  { id: 'DAMAGED', label: 'Geschädigt', color: 'bg-amber-600' },
+  { id: 'DEAD', label: 'Abgestorben', color: 'bg-red-600' },
+  { id: 'MARKED_FOR_FELLING', label: 'Fällung markiert', color: 'bg-slate-600' },
+];
+
+// ── Habitat Tree Editor ─────────────────────────────────────────────────────
+function HabitatTreeEditor({ poi, orgSlug, forests }: { poi: TreePoi & { forestName: string }; orgSlug: string; forests: Forest[] }) {
+  const t = poi.tree!;
+  const [saving, setSaving] = useState(false);
+  const [species, setSpecies] = useState(t.species ?? '');
+  const [diameter, setDiameter] = useState(t.diameter?.toString() ?? '');
+  const [height, setHeight] = useState(t.height?.toString() ?? '');
+  const [age, setAge] = useState(t.age?.toString() ?? '');
+  const [health, setHealth] = useState(t.health ?? 'HEALTHY');
+  const [damageType, setDamageType] = useState(t.damageType ?? '');
+  const [damageSeverity, setDamageSeverity] = useState(t.damageSeverity?.toString() ?? '');
+  const [crownCondition, setCrownCondition] = useState(t.crownCondition?.toString() ?? '');
+  const [notes, setNotes] = useState(t.notes ?? '');
+
+  const speciesLabel = species ? getSpeciesLabel(species) : 'Unbekannt';
+  const speciesColor = species ? getSpeciesColor(species) : '#94a3b8';
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/app/inventory/trees/${poi.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          species: species || undefined,
+          diameter: diameter ? parseFloat(diameter) : undefined,
+          height: height ? parseFloat(height) : undefined,
+          notes: notes || undefined,
+          damageType: damageType || undefined,
+          damageSeverity: damageSeverity ? parseInt(damageSeverity) : undefined,
+          crownCondition: crownCondition ? parseInt(crownCondition) : undefined,
+        }),
+      });
+      if (!res.ok) throw new Error('Fehler');
+      toast.success('Baum gespeichert');
+    } catch {
+      toast.error('Speichern fehlgeschlagen');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3 shrink-0">
+        <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: speciesColor }} />
+        <div className="flex-1 min-w-0">
+          <h2 className="font-bold text-slate-900 text-base leading-tight truncate">{poi.name || speciesLabel}</h2>
+          <span className="text-xs text-slate-400">
+            {poi.forestName}
+            {poi.lat && <span className="font-mono ml-2">{poi.lat.toFixed(5)}, {poi.lng.toFixed(5)}</span>}
+          </span>
+        </div>
+        <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Speichern
+        </Button>
+      </div>
+
+      {/* Form */}
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-slate-50">
+        {/* Dendro */}
+        <Section title="Dendrometrie" cols={2}>
+          <div>
+            <label className="block text-[11px] font-medium text-slate-500 mb-1">Baumart</label>
+            <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-800">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: speciesColor }} />
+              {speciesLabel}
+            </div>
+          </div>
+          <TField label="BHD (cm)" value={diameter} onChange={setDiameter} placeholder="z.B. 42" type="number" />
+          <TField label="Höhe (m)" value={height} onChange={setHeight} placeholder="z.B. 28" type="number" />
+          <TField label="Alter (Jahre)" value={age} onChange={setAge} placeholder="z.B. 80" type="number" />
+        </Section>
+
+        {/* Gesundheit */}
+        <Section title="Gesundheit" cols={2}>
+          <div className="col-span-2">
+            <label className="block text-[11px] font-medium text-slate-500 mb-1">Zustand</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {HEALTH_OPTIONS.map(h => (
+                <button key={h.id} onClick={() => setHealth(h.id)}
+                  className={`py-2 rounded-md text-xs font-medium transition-colors ${
+                    health === h.id ? `${h.color} text-white` : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}>
+                  {h.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {health !== 'HEALTHY' && (
+            <>
+              <TField label="Schadursache" value={damageType} onChange={setDamageType} placeholder="z.B. Borkenkäfer" />
+              <TField label="Schadausmaß (%)" value={damageSeverity} onChange={setDamageSeverity} placeholder="0-100" type="number" />
+            </>
+          )}
+          <TField label="Kronenvitalität (%)" value={crownCondition} onChange={setCrownCondition} placeholder="0-100" type="number" />
+        </Section>
+
+        {/* Notizen */}
+        <Section title="Notizen" cols={1}>
+          <div>
+            <Textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Besonderheiten, Markierungen, Habitat-Merkmale …"
+              rows={4}
+              className="text-sm"
+            />
+          </div>
+        </Section>
+      </div>
+    </div>
+  );
+}
+
 export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]; orgSlug: string }) {
   const [query, setQuery] = useState('');
+  const [sidebarTab, setSidebarTab] = useState<'compartments' | 'trees'>('compartments');
   const [selectedCompartmentId, setSelectedCompartmentId] = useState<string | null>(() => {
-    // Default: select first compartment if exists
     return forests[0]?.compartments[0]?.id ?? null;
   });
+  const [selectedTreePoiId, setSelectedTreePoiId] = useState<string | null>(null);
   // Track live compartment data after saves
   const [liveCompartments, setLiveCompartments] = useState<Record<string, Compartment>>({});
   const [showImport, setShowImport] = useState(false);
@@ -1212,7 +1355,31 @@ export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]
     ? selectedForest.pois.filter(p => p.tree?.compartmentId === selectedCompartmentId)
     : [];
 
-  const handleSelect = (c: Compartment) => setSelectedCompartmentId(c.id);
+  // Habitat trees: individual trees not assigned to a plot
+  const habitatTrees = useMemo(() => {
+    const trees: (TreePoi & { forestName: string })[] = [];
+    forests.forEach(f => {
+      f.pois.forEach(p => {
+        if (p.tree && !p.tree.plotId) {
+          trees.push({ ...p, forestName: f.name });
+        }
+      });
+    });
+    return trees;
+  }, [forests]);
+
+  const filteredHabitatTrees = useMemo(() => {
+    if (!query) return habitatTrees;
+    const q = query.toLowerCase();
+    return habitatTrees.filter(t => {
+      const label = t.tree?.species ? getSpeciesLabel(t.tree.species) : '';
+      return label.toLowerCase().includes(q) || t.name?.toLowerCase().includes(q) || t.forestName.toLowerCase().includes(q);
+    });
+  }, [habitatTrees, query]);
+
+  const selectedTreePoi = selectedTreePoiId ? habitatTrees.find(t => t.id === selectedTreePoiId) : null;
+
+  const handleSelect = (c: Compartment) => { setSelectedCompartmentId(c.id); setSidebarTab('compartments'); };
   const handleSaved = (updated: Compartment) => {
     setLiveCompartments(prev => ({ ...prev, [updated.id]: updated }));
   };
@@ -1232,27 +1399,50 @@ export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]
         />
       )}
 
-      {/* ── Left panel: compartment list ── */}
+      {/* ── Left panel ── */}
       <div className="w-72 shrink-0 border-r border-slate-200 flex flex-col bg-white overflow-hidden">
 
-        {/* Stats summary */}
-        <div className="px-3 pt-3 pb-2 border-b border-slate-100">
-          <div className="grid grid-cols-3 gap-1 text-center mb-2">
-            <div><div className="text-base font-bold text-slate-900">{totalCompartments}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Abtlg.</div></div>
-            <div><div className="text-base font-bold text-slate-900">{totalHa.toFixed(0)}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">ha</div></div>
-            <div><div className="text-base font-bold text-slate-900">{totalTrees}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Bäume</div></div>
-          </div>
-          <div className="flex gap-1.5">
-            <div className="flex-1"><AllPdfButton orgSlug={orgSlug} /></div>
-            <button
-              onClick={() => setShowImport(true)}
-              className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200"
-              title="Forsteinrichtung per KI importieren"
-            >
-              <Upload size={11} />
-            </button>
-          </div>
+        {/* Tab switcher */}
+        <div className="flex border-b border-slate-200 shrink-0">
+          <button
+            onClick={() => setSidebarTab('compartments')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
+              sidebarTab === 'compartments' ? 'text-emerald-700 border-b-2 border-emerald-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <Layers size={13} /> Abteilungen
+          </button>
+          <button
+            onClick={() => setSidebarTab('trees')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
+              sidebarTab === 'trees' ? 'text-emerald-700 border-b-2 border-emerald-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <TreePine size={13} /> Habitatbäume
+            {habitatTrees.length > 0 && <span className="text-[10px] bg-slate-100 text-slate-500 rounded-full px-1.5">{habitatTrees.length}</span>}
+          </button>
         </div>
+
+        {/* Stats summary — only for compartments tab */}
+        {sidebarTab === 'compartments' && (
+          <div className="px-3 pt-3 pb-2 border-b border-slate-100">
+            <div className="grid grid-cols-3 gap-1 text-center mb-2">
+              <div><div className="text-base font-bold text-slate-900">{totalCompartments}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Abtlg.</div></div>
+              <div><div className="text-base font-bold text-slate-900">{totalHa.toFixed(0)}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">ha</div></div>
+              <div><div className="text-base font-bold text-slate-900">{totalTrees}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Bäume</div></div>
+            </div>
+            <div className="flex gap-1.5">
+              <div className="flex-1"><AllPdfButton orgSlug={orgSlug} /></div>
+              <button
+                onClick={() => setShowImport(true)}
+                className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200"
+                title="Forsteinrichtung per KI importieren"
+              >
+                <Upload size={11} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Search */}
         <div className="px-3 py-2 border-b border-slate-100">
@@ -1261,27 +1451,69 @@ export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Suchen …"
+              placeholder={sidebarTab === 'compartments' ? 'Abteilung suchen …' : 'Baum suchen …'}
               className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
         </div>
 
-        {/* Forest groups */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
-          {forests.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-8">Keine Wälder gefunden.</p>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
+          {sidebarTab === 'compartments' ? (
+            /* Forest groups with compartments */
+            forests.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-8">Keine Wälder gefunden.</p>
+            ) : (
+              forests.map(f => (
+                <ForestGroup key={f.id} forest={f} selectedId={selectedCompartmentId} onSelect={handleSelect} query={query} />
+              ))
+            )
           ) : (
-            forests.map(f => (
-              <ForestGroup key={f.id} forest={f} selectedId={selectedCompartmentId} onSelect={handleSelect} query={query} />
-            ))
+            /* Habitat trees list */
+            filteredHabitatTrees.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-8">
+                {habitatTrees.length === 0 ? 'Keine Einzelbäume erfasst.' : 'Keine Bäume gefunden.'}
+              </p>
+            ) : (
+              filteredHabitatTrees.map(t => {
+                const tree = t.tree!;
+                const speciesLabel = tree.species ? getSpeciesLabel(tree.species) : 'Unbekannt';
+                const speciesColor = tree.species ? getSpeciesColor(tree.species) : '#94a3b8';
+                const isSelected = selectedTreePoiId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => { setSelectedTreePoiId(t.id); setSidebarTab('trees'); }}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
+                      isSelected ? 'bg-emerald-50 border border-emerald-200' : 'hover:bg-slate-50 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: speciesColor }} />
+                      <span className="text-sm font-medium text-slate-800 flex-1 truncate">{t.name || speciesLabel}</span>
+                      {tree.health && tree.health !== 'HEALTHY' && (
+                        <span className={`text-[10px] font-medium ${tree.health === 'DEAD' ? 'text-red-500' : 'text-amber-500'}`}>
+                          {HEALTH_LABEL[tree.health] ?? tree.health}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2 mt-0.5 text-[11px] text-slate-400">
+                      {tree.diameter != null && <span>Ø {tree.diameter} cm</span>}
+                      {tree.height != null && <span>{tree.height} m</span>}
+                      {tree.age != null && <span>{tree.age} J.</span>}
+                      <span className="ml-auto">{t.forestName}</span>
+                    </div>
+                  </button>
+                );
+              })
+            )
           )}
         </div>
       </div>
 
       {/* ── Right panel: editor ── */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {selectedCompartment ? (
+        {sidebarTab === 'compartments' && selectedCompartment ? (
           <CompartmentEditor
             key={selectedCompartmentId!}
             compartment={selectedCompartment}
@@ -1289,9 +1521,16 @@ export function ForsteinrichtungClient({ forests, orgSlug }: { forests: Forest[]
             trees={selectedTrees}
             onSaved={handleSaved}
           />
+        ) : sidebarTab === 'trees' && selectedTreePoi ? (
+          <HabitatTreeEditor
+            key={selectedTreePoi.id}
+            poi={selectedTreePoi}
+            orgSlug={orgSlug}
+            forests={forests}
+          />
         ) : (
           <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-            Abteilung aus der Liste auswählen
+            {sidebarTab === 'compartments' ? 'Abteilung aus der Liste auswählen' : 'Baum aus der Liste auswählen'}
           </div>
         )}
       </div>

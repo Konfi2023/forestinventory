@@ -135,6 +135,34 @@ export async function POST(req: Request) {
         .catch(() => {});
     }
 
+    // Propagate plot tree site data to compartment (fire-and-forget)
+    // Only for plot-based captures — fills empty compartment fields from tree data
+    if (plotId && compartmentId) {
+      prisma.forestCompartment.findUnique({ where: { id: compartmentId } })
+        .then(comp => {
+          if (!comp) return;
+          const updates: Record<string, any> = {};
+          // Only fill fields that are currently empty on the compartment
+          if (!comp.soilType && soilCondition) updates.soilType = soilCondition;
+          if (!comp.waterBalance && soilMoisture) updates.waterBalance = soilMoisture;
+          if (!comp.exposition && exposition) updates.exposition = exposition;
+          if (!comp.slopeClass && slopeClass) updates.slopeClass = slopeClass;
+          if (!comp.standAge && age) updates.standAge = age;
+          if (standType && !comp.developmentStage) {
+            // Map app stand types to forsteinrichtung development stages
+            const stageMap: Record<string, string> = {
+              'YOUNG_GROWTH': 'Verjüngung', 'PURE_CONIFER': 'Stangenholz',
+              'PURE_DECIDUOUS': 'Stangenholz', 'MIXED': 'Baumholz I', 'EDGE': 'Baumholz I',
+            };
+            if (stageMap[standType]) updates.developmentStage = stageMap[standType];
+          }
+          if (Object.keys(updates).length > 0) {
+            return prisma.forestCompartment.update({ where: { id: compartmentId }, data: updates });
+          }
+        })
+        .catch(() => {});
+    }
+
     return NextResponse.json({ success: true, poiId: poi.id, compartmentId: compartmentId ?? null });
   } catch (err) {
     console.error('Inventory tree error:', err);

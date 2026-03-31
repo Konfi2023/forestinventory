@@ -261,22 +261,22 @@ function TField({ label, value, onChange, placeholder }: {
 
 function Section({ title, children, cols = 2 }: { title: string; children: React.ReactNode; cols?: number }) {
   return (
-    <div className="border border-slate-100 rounded-lg overflow-hidden">
-      <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
+    <div className="border border-slate-100 rounded-lg">
+      <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 rounded-t-lg">
         <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</span>
       </div>
-      <div className={`p-4 grid gap-3`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>{children}</div>
+      <div className={`p-4 grid gap-3 relative`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>{children}</div>
     </div>
   );
 }
 
 function SectionFull({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border border-slate-100 rounded-lg overflow-hidden">
-      <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
+    <div className="border border-slate-100 rounded-lg">
+      <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 rounded-t-lg">
         <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</span>
       </div>
-      <div className="p-4 space-y-3">{children}</div>
+      <div className="p-4 space-y-3 relative">{children}</div>
     </div>
   );
 }

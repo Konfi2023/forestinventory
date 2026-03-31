@@ -22,6 +22,92 @@ async function detectCompartment(forestId: string, lat: number, lng: number): Pr
   return null;
 }
 
+/** Propagate all plot tree data to the parent compartment */
+async function propagatePlotDataToCompartment(compartmentId: string) {
+  // Get all plot trees in this compartment
+  const trees = await prisma.forestPoiTree.findMany({
+    where: { compartmentId, plotId: { not: null } },
+    select: {
+      species: true, speciesId: true, age: true, diameter: true, height: true,
+      soilCondition: true, soilMoisture: true, exposition: true, slopeClass: true,
+      standType: true, stockingDegree: true,
+    },
+  });
+  if (trees.length === 0) return;
+
+  const comp = await prisma.forestCompartment.findUnique({ where: { id: compartmentId } });
+  if (!comp) return;
+
+  const updates: Record<string, any> = {};
+
+  // Calculate species distribution → mainSpecies / sideSpecies
+  const speciesCount: Record<string, number> = {};
+  trees.forEach(t => {
+    const sp = t.species || t.speciesId || 'OTHER';
+    speciesCount[sp] = (speciesCount[sp] || 0) + 1;
+  });
+  const total = trees.length;
+  const sorted = Object.entries(speciesCount)
+    .map(([species, count]) => ({ species, percent: Math.round((count / total) * 100) }))
+    .sort((a, b) => b.percent - a.percent);
+
+  const mainSpecies = sorted.filter(s => s.percent >= 20);
+  const sideSpecies = sorted.filter(s => s.percent > 0 && s.percent < 20);
+  if (mainSpecies.length > 0 && (!comp.mainSpecies || (comp.mainSpecies as any[]).length === 0)) {
+    updates.mainSpecies = mainSpecies;
+  }
+  if (sideSpecies.length > 0 && (!comp.sideSpecies || (comp.sideSpecies as any[]).length === 0)) {
+    updates.sideSpecies = sideSpecies;
+  }
+
+  // Average age → standAge
+  const ages = trees.filter(t => t.age != null).map(t => t.age!);
+  if (ages.length > 0 && !comp.standAge) {
+    updates.standAge = Math.round(ages.reduce((a, b) => a + b, 0) / ages.length);
+  }
+
+  // Most common site values (mode)
+  function mode<T>(vals: (T | null | undefined)[]): T | null {
+    const filtered = vals.filter(v => v != null) as T[];
+    if (!filtered.length) return null;
+    const counts = new Map<T, number>();
+    filtered.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  if (!comp.soilType) {
+    const v = mode(trees.map(t => t.soilCondition));
+    if (v) updates.soilType = v;
+  }
+  if (!comp.waterBalance) {
+    const v = mode(trees.map(t => t.soilMoisture));
+    if (v) updates.waterBalance = v;
+  }
+  if (!comp.exposition) {
+    const v = mode(trees.map(t => t.exposition));
+    if (v) updates.exposition = v;
+  }
+  if (!comp.slopeClass) {
+    const v = mode(trees.map(t => t.slopeClass));
+    if (v) updates.slopeClass = v;
+  }
+  if (!comp.developmentStage) {
+    const v = mode(trees.map(t => t.standType));
+    if (v) {
+      const stageMap: Record<string, string> = {
+        'YOUNG_GROWTH': 'Verjüngung', 'PURE_CONIFER': 'Stangenholz',
+        'PURE_DECIDUOUS': 'Stangenholz', 'MIXED': 'Baumholz I',
+        'EDGE': 'Baumholz I', 'CLEARCUT': 'Blöße',
+      };
+      updates.developmentStage = stageMap[v] ?? v;
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await prisma.forestCompartment.update({ where: { id: compartmentId }, data: updates });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -135,32 +221,9 @@ export async function POST(req: Request) {
         .catch(() => {});
     }
 
-    // Propagate plot tree site data to compartment (fire-and-forget)
-    // Only for plot-based captures — fills empty compartment fields from tree data
+    // Propagate plot data to compartment — calculate species distribution + site data
     if (plotId && compartmentId) {
-      prisma.forestCompartment.findUnique({ where: { id: compartmentId } })
-        .then(comp => {
-          if (!comp) return;
-          const updates: Record<string, any> = {};
-          // Only fill fields that are currently empty on the compartment
-          if (!comp.soilType && soilCondition) updates.soilType = soilCondition;
-          if (!comp.waterBalance && soilMoisture) updates.waterBalance = soilMoisture;
-          if (!comp.exposition && exposition) updates.exposition = exposition;
-          if (!comp.slopeClass && slopeClass) updates.slopeClass = slopeClass;
-          if (!comp.standAge && age) updates.standAge = age;
-          if (standType && !comp.developmentStage) {
-            // Map app stand types to forsteinrichtung development stages
-            const stageMap: Record<string, string> = {
-              'YOUNG_GROWTH': 'Verjüngung', 'PURE_CONIFER': 'Stangenholz',
-              'PURE_DECIDUOUS': 'Stangenholz', 'MIXED': 'Baumholz I', 'EDGE': 'Baumholz I',
-            };
-            if (stageMap[standType]) updates.developmentStage = stageMap[standType];
-          }
-          if (Object.keys(updates).length > 0) {
-            return prisma.forestCompartment.update({ where: { id: compartmentId }, data: updates });
-          }
-        })
-        .catch(() => {});
+      propagatePlotDataToCompartment(compartmentId).catch(() => {});
     }
 
     return NextResponse.json({ success: true, poiId: poi.id, compartmentId: compartmentId ?? null });

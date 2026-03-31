@@ -332,8 +332,11 @@ function SpeciesEditor({ label, entries, onChange }: {
                 <SpeciesPicker onSelect={id => { onChange(entries.map((en, idx) => idx === i ? { ...en, species: id } : en)); setEditIdx(null); }} onClose={() => setEditIdx(null)} />
               )}
             </div>
-            <Input type="number" min="0" max="100" value={e.percent || ''} onChange={ev => updatePct(i, ev.target.value)}
-              placeholder="%" className="w-20 border-slate-200 text-sm" />
+            <div className="relative w-20 shrink-0">
+              <Input type="number" min="0" max="100" value={e.percent || ''} onChange={ev => updatePct(i, ev.target.value)}
+                placeholder="%" className="border-slate-200 text-sm pr-7" />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">%</span>
+            </div>
             <button onClick={() => remove(i)} className="text-slate-400 hover:text-red-400">×</button>
           </div>
         ))}

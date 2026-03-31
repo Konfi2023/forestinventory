@@ -1203,7 +1203,6 @@ function ForestGroup({ forest, selectedId, onSelect, query }: {
 
 // ── Main Client ───────────────────────────────────────────────────────────────
 
-const HEALTH_LABEL: Record<string, string> = { HEALTHY: 'Gesund', DAMAGED: 'Geschädigt', DEAD: 'Abgestorben', MARKED_FOR_FELLING: 'Fällung' };
 const HEALTH_OPTIONS = [
   { id: 'HEALTHY', label: 'Gesund', color: 'bg-emerald-600' },
   { id: 'DAMAGED', label: 'Geschädigt', color: 'bg-amber-600' },

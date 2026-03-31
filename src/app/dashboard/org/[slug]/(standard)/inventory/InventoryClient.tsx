@@ -90,7 +90,7 @@ interface SessionTree {
   synced: boolean;
 }
 
-interface Compartment { id: string; name: string | null; color: string | null; }
+interface Compartment { id: string; name: string | null; number: string | null; color: string | null; }
 interface Forest { id: string; name: string; compartments?: Compartment[]; }
 
 interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
@@ -942,7 +942,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     >
                       <div className="flex items-center gap-3">
                         <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
-                        <span className="font-medium">{c.name || 'Abteilung'}</span>
+                        <span className="font-medium">{c.number ? `[${c.number}]` : ''}{c.name ? ` ${c.name}` : ''}{!c.number && !c.name ? 'Abteilung' : ''}</span>
                       </div>
                       {form.compartmentId === c.id && <Check size={16} className="text-violet-600" />}
                     </button>
@@ -1247,7 +1247,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     >
                       <div className="flex items-center gap-3">
                         <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
-                        <span className="font-medium">{c.name || 'Abteilung'}</span>
+                        <span className="font-medium">{c.number ? `[${c.number}]` : ''}{c.name ? ` ${c.name}` : ''}{!c.number && !c.name ? 'Abteilung' : ''}</span>
                       </div>
                       {form.compartmentId === c.id && <Check size={16} className="text-emerald-600" />}
                     </button>

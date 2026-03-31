@@ -142,8 +142,12 @@ export default function MapGeometryEditor({
         if (result.success) { toast.success('Kalamitätsfläche angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'CALAMITY'), 300); }
         else throw new Error(result.error);
       } else if (polygonMode === 'DRAW_COMPARTMENT') {
-        const result = await createCompartment({ forestId, name: 'Abteilung', geoJson, areaHa, userId, orgSlug });
-        if (result.success) { toast.success('Abteilung angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'COMPARTMENT'), 300); }
+        const numberInput = window.prompt('Abteilungsnummer eingeben (z.B. 12a, F1):');
+        if (numberInput === null) { setMode('VIEW'); setEditingFeature(null); return; } // cancelled
+        const number = numberInput.trim();
+        if (!number) { toast.error('Abteilungsnummer ist Pflicht.'); setMode('VIEW'); setEditingFeature(null); return; }
+        const result = await createCompartment({ forestId, name: '', number, geoJson, areaHa, userId, orgSlug });
+        if (result.success) { toast.success(`Abteilung [${number}] angelegt!`); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'COMPARTMENT'), 300); }
         else throw new Error(result.error);
       }
     } catch (err: any) {

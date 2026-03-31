@@ -22,7 +22,7 @@ export default async function InventoryPage({
       select: {
         id: true,
         name: true,
-        compartments: { select: { id: true, name: true, color: true }, orderBy: { name: 'asc' } },
+        compartments: { select: { id: true, name: true, number: true, color: true }, orderBy: [{ number: 'asc' }, { name: 'asc' }] },
       },
       orderBy: { name: 'asc' },
     }),

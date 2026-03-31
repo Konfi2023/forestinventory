@@ -253,6 +253,7 @@ export async function togglePolygonBiomass(
 export async function createCompartment(data: {
   forestId: string;
   name?: string;
+  number?: string;
   color?: string;
   note?: string;
   geoJson: any;
@@ -266,6 +267,7 @@ export async function createCompartment(data: {
       data: {
         forestId: data.forestId,
         name: data.name,
+        number: data.number,
         color: data.color ?? '#3b82f6',
         note: data.note,
         geoJson: data.geoJson,

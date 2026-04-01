@@ -194,16 +194,16 @@ export default function MapGeometryEditor({
         if (result.success) { toast.success('Kalamitätsfläche angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'CALAMITY'), 300); }
         else throw new Error(result.error);
       } else if (polygonMode === 'DRAW_COMPARTMENT') {
-        // Show modal dialog instead of window.prompt
+        // Show modal dialog — don't run finally cleanup
         setCompartmentDialog({ forestId, geoJson, areaHa });
-        return; // Don't reset mode yet — dialog handles it
+        return; // Dialog's onConfirm/onCancel handles mode reset
       }
     } catch (err: any) {
       toast.error(`Fehler: ${err.message}`);
-    } finally {
-      setMode('VIEW');
-      setEditingFeature(null);
     }
+    // Reset mode (not in finally — compartment dialog needs to stay open)
+    setMode('VIEW');
+    setEditingFeature(null);
   };
 
   const handlePolygonForestAssign = async (forestId: string) => {

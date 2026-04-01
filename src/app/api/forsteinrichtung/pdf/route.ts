@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
-import { ForsteinrichtungPdf, type ForsteinrichtungPdfData, type ReportCompartment, type ReportInventoryPlot } from '@/lib/pdf/ForsteinrichtungPdf';
+import { ForsteinrichtungPdf, type ForsteinrichtungPdfData, type ReportCompartment, type ReportInventoryPlot, type ReportForest } from '@/lib/pdf/ForsteinrichtungPdf';
 import { getSpeciesLabel } from '@/lib/tree-species';
 import { calcPlotMetrics, averagePlotResults } from '@/lib/forest-mensuration';
 import { estimateSiteClass, getYieldTableValues, calcStockingDegree, isYieldTableSpecies, SITE_CLASS_LABELS, type Species, type SiteClass } from '@/lib/yield-tables';
@@ -64,8 +64,10 @@ export async function GET(req: NextRequest) {
   });
 
   const compartments: ReportCompartment[] = [];
+  const reportForests: ReportForest[] = [];
 
   for (const forest of forests) {
+    const forestCompartments: ReportCompartment[] = [];
     for (const comp of forest.compartments) {
       // Plot metrics
       const plots: ReportInventoryPlot[] = comp.inventoryPlots.map((plot: any) => {
@@ -113,7 +115,7 @@ export async function GET(req: NextRequest) {
       const mapMeasures = (arr: any[]) =>
         (arr ?? []).map((m: any) => ({ type: m.type ?? '', year: m.year ?? 0, note: m.note ?? '' }));
 
-      compartments.push({
+      const rc: ReportCompartment = {
         name: comp.name,
         number: comp.number,
         forestName: forest.name,
@@ -155,6 +157,17 @@ export async function GET(req: NextRequest) {
         note: comp.note,
         plots,
         treeCount,
+      };
+      compartments.push(rc);
+      forestCompartments.push(rc);
+    }
+    if (forestCompartments.length > 0) {
+      reportForests.push({
+        name: forest.name,
+        planningPeriodStart: forest.planningPeriodStart,
+        planningPeriodEnd: forest.planningPeriodEnd,
+        annualHarvestTarget: forest.annualHarvestTarget,
+        compartments: forestCompartments,
       });
     }
   }
@@ -166,6 +179,7 @@ export async function GET(req: NextRequest) {
   const data: ForsteinrichtungPdfData = {
     orgName: org.name,
     generatedAt: new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    forests: reportForests,
     compartments,
   };
 

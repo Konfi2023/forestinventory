@@ -21,6 +21,57 @@ import { calculatePathLengthM } from '@/lib/map-helpers';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+// Modal: Abteilungsnummer eingeben
+function CompartmentNumberDialog({ onConfirm, onCancel }: {
+  onConfirm: (number: string, name: string) => void;
+  onCancel: () => void;
+}) {
+  const [number, setNumber] = useState('');
+  const [name, setName] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 space-y-4">
+        <div>
+          <h3 className="font-semibold text-slate-900 text-base">Neue Abteilung</h3>
+          <p className="text-sm text-slate-500 mt-1">Abteilungsnummer vergeben (Pflichtfeld).</p>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Abteilungsnummer *</label>
+            <input
+              ref={inputRef}
+              value={number}
+              onChange={e => setNumber(e.target.value)}
+              placeholder="z.B. 12a, F1, 3b"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              onKeyDown={e => { if (e.key === 'Enter' && number.trim()) onConfirm(number.trim(), name.trim()); }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Name (optional)</label>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="z.B. Nordabhang, Biotop"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              onKeyDown={e => { if (e.key === 'Enter' && number.trim()) onConfirm(number.trim(), name.trim()); }}
+            />
+          </div>
+        </div>
+        <div className="flex gap-3 pt-1">
+          <Button variant="outline" onClick={onCancel} className="flex-1">Abbrechen</Button>
+          <Button onClick={() => { if (number.trim()) onConfirm(number.trim(), name.trim()); }}
+            disabled={!number.trim()} className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white">
+            Anlegen
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Modal: Polygon außerhalb Waldgrenzen → Wald manuell zuweisen
 function ForestAssignDialog({ forests, polygonType, onConfirm, onCancel }: {
   forests: any[];
@@ -112,6 +163,7 @@ export default function MapGeometryEditor({
   const [showSaveBar,      setShowSaveBar]      = useState(false);
   const [drawnLengthM,     setDrawnLengthM]     = useState<number | null>(null);
   const [pendingPolygon,   setPendingPolygon]   = useState<{ geoJson: any; areaHa: number; mode: string } | null>(null);
+  const [compartmentDialog, setCompartmentDialog] = useState<{ forestId: string; geoJson: any; areaHa: number } | null>(null);
   const [currentEditAreaHa, setCurrentEditAreaHa] = useState<number | null>(null);
 
   // forests via Ref damit onCreated-Callback immer aktuelle Werte liest
@@ -142,13 +194,9 @@ export default function MapGeometryEditor({
         if (result.success) { toast.success('Kalamitätsfläche angelegt!'); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'CALAMITY'), 300); }
         else throw new Error(result.error);
       } else if (polygonMode === 'DRAW_COMPARTMENT') {
-        const numberInput = window.prompt('Abteilungsnummer eingeben (z.B. 12a, F1):');
-        if (numberInput === null) { setMode('VIEW'); setEditingFeature(null); return; } // cancelled
-        const number = numberInput.trim();
-        if (!number) { toast.error('Abteilungsnummer ist Pflicht.'); setMode('VIEW'); setEditingFeature(null); return; }
-        const result = await createCompartment({ forestId, name: '', number, geoJson, areaHa, userId, orgSlug });
-        if (result.success) { toast.success(`Abteilung [${number}] angelegt!`); refreshData(); if (result.id) setTimeout(() => selectFeature(result.id!, 'COMPARTMENT'), 300); }
-        else throw new Error(result.error);
+        // Show modal dialog instead of window.prompt
+        setCompartmentDialog({ forestId, geoJson, areaHa });
+        return; // Don't reset mode yet — dialog handles it
       }
     } catch (err: any) {
       toast.error(`Fehler: ${err.message}`);
@@ -622,6 +670,36 @@ export default function MapGeometryEditor({
         polygonType={pendingPolygon.mode}
         onConfirm={handlePolygonForestAssign}
         onCancel={() => { setPendingPolygon(null); setMode('VIEW'); setEditingFeature(null); }}
+      />
+    );
+  }
+
+  if (compartmentDialog) {
+    return (
+      <CompartmentNumberDialog
+        onConfirm={async (number, name) => {
+          const { forestId, geoJson, areaHa } = compartmentDialog;
+          setCompartmentDialog(null);
+          try {
+            const result = await createCompartment({
+              forestId, name: name || '', number, geoJson, areaHa,
+              userId: currentUserIdRef.current, orgSlug: orgSlugRef.current,
+            });
+            if (result.success) {
+              toast.success(`Abteilung [${number}] angelegt!`);
+              refreshData();
+              if (result.id) setTimeout(() => selectFeature(result.id!, 'COMPARTMENT'), 300);
+            } else {
+              throw new Error(result.error);
+            }
+          } catch (err: any) {
+            toast.error(`Fehler: ${err.message}`);
+          } finally {
+            setMode('VIEW');
+            setEditingFeature(null);
+          }
+        }}
+        onCancel={() => { setCompartmentDialog(null); setMode('VIEW'); setEditingFeature(null); }}
       />
     );
   }

@@ -528,7 +528,7 @@ function TreeRow({ poi }: { poi: TreePoi }) {
 }
 
 // ── Forest Overview (Gesamtbetrieb) ──────────────────────────────────────────
-function ForestOverview({ forest }: { forest: Forest }) {
+function ForestOverview({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlug: string; onUpdated: (f: Forest) => void }) {
   const comps = forest.compartments;
   const totalAreaHa = comps.reduce((s, c) => s + (c.areaHa ?? 0), 0);
   const totalVolume = comps.reduce((s, c) => s + (c.volumePerHa ?? 0) * (c.areaHa ?? 0), 0);
@@ -569,11 +569,7 @@ function ForestOverview({ forest }: { forest: Forest }) {
     const label = `${cls + 1}–${cls + 20}`;
     ageClasses.set(label, (ageClasses.get(label) ?? 0) + c.areaHa);
   });
-  const ageData = [...ageClasses.entries()].sort((a, b) => {
-    const numA = parseInt(a[0]);
-    const numB = parseInt(b[0]);
-    return numA - numB;
-  });
+  const ageData = [...ageClasses.entries()].sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
   const maxAgeArea = Math.max(...ageData.map(([, a]) => a), 1);
 
   // Waldfunktionen
@@ -583,19 +579,58 @@ function ForestOverview({ forest }: { forest: Forest }) {
     functionMap.set(c.forestFunction, (functionMap.get(c.forestFunction) ?? 0) + c.areaHa);
   });
 
-  const periodLabel = forest.planningPeriodStart && forest.planningPeriodEnd
-    ? `${forest.planningPeriodStart}–${forest.planningPeriodEnd}`
-    : '–';
+  // Planning fields (editable)
+  const [saving, setSaving] = useState(false);
+  const [start, setStart] = useState(forest.planningPeriodStart?.toString() ?? '');
+  const [end, setEnd]     = useState(forest.planningPeriodEnd?.toString() ?? '');
+  const [target, setTarget] = useState(forest.annualHarvestTarget?.toString() ?? '');
+
+  const handleSavePlanning = async () => {
+    setSaving(true);
+    try {
+      const res = await updateForestPlanning(forest.id, {
+        planningPeriodStart: start ? parseInt(start) : null,
+        planningPeriodEnd:   end   ? parseInt(end)   : null,
+        annualHarvestTarget: target ? parseFloat(target) : null,
+      }, orgSlug);
+      if (!res.success) throw new Error((res as any).error);
+      toast.success('Planungsdaten gespeichert');
+      onUpdated({ ...forest, planningPeriodStart: start ? parseInt(start) : null, planningPeriodEnd: end ? parseInt(end) : null, annualHarvestTarget: target ? parseFloat(target) : null });
+    } catch (e: any) {
+      toast.error(`Fehler: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-4 shrink-0">
-        <h2 className="font-bold text-slate-900 text-lg">Gesamtübersicht · {forest.name}</h2>
-        <p className="text-xs text-slate-400">Planungszeitraum: {periodLabel}</p>
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3 shrink-0">
+        <div className="flex-1">
+          <h2 className="font-bold text-slate-900 text-lg">Gesamtübersicht · {forest.name}</h2>
+        </div>
       </div>
 
       <div className="px-6 py-5 space-y-4">
+
+        {/* Planungszeitraum — editierbar */}
+        <div className="border border-emerald-200 rounded-lg bg-emerald-50/50 overflow-hidden">
+          <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+            <span className="text-xs font-bold uppercase tracking-wide text-emerald-700">Forsteinrichtung / Planungszeitraum</span>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-4 gap-3 items-end">
+              <NField label="Beginn (Jahr)" value={start} onChange={setStart} step="1" />
+              <NField label="Ende (Jahr)" value={end} onChange={setEnd} step="1" />
+              <NField label="Nutzungssatz" value={target} onChange={setTarget} unit="Vfm/Jahr" />
+              <Button onClick={handleSavePlanning} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white h-9">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Speichern'}
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Betriebskennzahlen */}
         <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
           <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
@@ -610,7 +645,6 @@ function ForestOverview({ forest }: { forest: Forest }) {
             <Stat label="Gesamtzuwachs" value={`${Math.round(totalIncrement)} Vfm/a`} />
             {avgStockingDegree != null && <Stat label="Mittl. Bestockungsgrad" value={avgStockingDegree.toFixed(2)} />}
             {avgDeadwood != null && <Stat label="Mittl. Totholz" value={`${avgDeadwood.toFixed(1)} m³/ha`} />}
-            {forest.annualHarvestTarget != null && <Stat label="Nutzungssatz" value={`${forest.annualHarvestTarget} Vfm/J.`} />}
             {totalPlannedHarvest > 0 && <Stat label="Gepl. Einschlag (gesamt)" value={`${Math.round(totalPlannedHarvest)} Vfm`} />}
           </div>
         </div>
@@ -720,61 +754,6 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-lg font-bold text-slate-900">{value}</div>
       <div className="text-[10px] text-slate-400 uppercase tracking-wide">{label}</div>
-    </div>
-  );
-}
-
-// ── Forest Planning Bar ──────────────────────────────────────────────────────
-function ForestPlanningBar({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlug: string; onUpdated: (f: Forest) => void }) {
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [start, setStart] = useState(forest.planningPeriodStart?.toString() ?? '');
-  const [end, setEnd]     = useState(forest.planningPeriodEnd?.toString() ?? '');
-  const [target, setTarget] = useState(forest.annualHarvestTarget?.toString() ?? '');
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await updateForestPlanning(forest.id, {
-        planningPeriodStart: start ? parseInt(start) : null,
-        planningPeriodEnd:   end   ? parseInt(end)   : null,
-        annualHarvestTarget: target ? parseFloat(target) : null,
-      }, orgSlug);
-      if (!res.success) throw new Error((res as any).error);
-      toast.success('Planungsdaten gespeichert');
-      onUpdated({ ...forest, planningPeriodStart: start ? parseInt(start) : null, planningPeriodEnd: end ? parseInt(end) : null, annualHarvestTarget: target ? parseFloat(target) : null });
-    } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const periodLabel = forest.planningPeriodStart && forest.planningPeriodEnd
-    ? `${forest.planningPeriodStart}–${forest.planningPeriodEnd}`
-    : null;
-
-  return (
-    <div className="border-b border-slate-200 bg-white">
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 px-6 py-2.5 text-left hover:bg-slate-50">
-        {open ? <ChevronDown size={13} className="text-slate-400" /> : <ChevronRight size={13} className="text-slate-400" />}
-        <BarChart2 size={13} className="text-emerald-600" />
-        <span className="text-xs font-bold text-slate-700">Planungszeitraum · {forest.name}</span>
-        {periodLabel && <span className="text-[11px] text-slate-400 ml-auto">{periodLabel}</span>}
-        {forest.annualHarvestTarget != null && <span className="text-[11px] text-slate-400 ml-2">{forest.annualHarvestTarget} Vfm/J.</span>}
-      </button>
-      {open && (
-        <div className="px-6 pb-4 pt-1">
-          <div className="grid grid-cols-4 gap-3 items-end">
-            <NField label="Beginn (Jahr)" value={start} onChange={setStart} step="1" />
-            <NField label="Ende (Jahr)" value={end} onChange={setEnd} step="1" />
-            <NField label="Nutzungssatz" value={target} onChange={setTarget} unit="Vfm/Jahr" />
-            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white h-9">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Speichern'}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1455,8 +1434,24 @@ function PdfExportModal({ forests, orgSlug, onClose, preselectedCompartmentIds }
   const selectAll = () => setSelected(new Set(allIds));
   const selectNone = () => setSelected(new Set());
 
+  // Check which forests have missing planning periods
+  const forestsMissingPeriod = useMemo(() => {
+    const missing: string[] = [];
+    forests.forEach(f => {
+      const hasSelected = f.compartments.some(c => selected.has(c.id));
+      if (hasSelected && (!f.planningPeriodStart || !f.planningPeriodEnd)) {
+        missing.push(f.name);
+      }
+    });
+    return missing;
+  }, [forests, selected]);
+
   const handleExport = async () => {
     if (selected.size === 0) { toast.error('Keine Abteilungen ausgewählt'); return; }
+    if (forestsMissingPeriod.length > 0) {
+      toast.error(`Planungszeitraum fehlt für: ${forestsMissingPeriod.join(', ')}. Bitte in der Gesamtübersicht des Waldes eintragen.`);
+      return;
+    }
     setLoading(true);
     try {
       const ids = [...selected].join(',');
@@ -1545,10 +1540,21 @@ function PdfExportModal({ forests, orgSlug, onClose, preselectedCompartmentIds }
           })}
         </div>
 
+        {/* Warning if planning period missing */}
+        {forestsMissingPeriod.length > 0 && selected.size > 0 && (
+          <div className="px-6 py-3 border-t border-amber-200 bg-amber-50 flex items-start gap-2 shrink-0">
+            <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-800">
+              <span className="font-semibold">Planungszeitraum fehlt</span> für: {forestsMissingPeriod.join(', ')}.
+              Bitte in der Gesamtübersicht des jeweiligen Waldes eintragen (Klick auf den Waldnamen in der Sidebar).
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0">
           <Button variant="outline" onClick={onClose}>Abbrechen</Button>
-          <Button onClick={handleExport} disabled={loading || selected.size === 0} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+          <Button onClick={handleExport} disabled={loading || selected.size === 0 || forestsMissingPeriod.length > 0} className="bg-emerald-700 hover:bg-emerald-800 text-white">
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
             {selected.size} Abteilung{selected.size !== 1 ? 'en' : ''} exportieren
           </Button>
@@ -1988,20 +1994,16 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
             if (!f) return null;
             const liveF = liveForests[f.id] ?? f;
             return (
-              <>
-                <ForestPlanningBar key={`plan-${f.id}`} forest={liveF} orgSlug={orgSlug} onUpdated={(uf) => setLiveForests(prev => ({ ...prev, [uf.id]: uf }))} />
-                <ForestOverview forest={{ ...f, planningPeriodStart: liveF.planningPeriodStart, planningPeriodEnd: liveF.planningPeriodEnd, annualHarvestTarget: liveF.annualHarvestTarget }} />
-              </>
+              <ForestOverview
+                key={`ov-${f.id}`}
+                forest={{ ...f, planningPeriodStart: liveF.planningPeriodStart, planningPeriodEnd: liveF.planningPeriodEnd, annualHarvestTarget: liveF.annualHarvestTarget }}
+                orgSlug={orgSlug}
+                onUpdated={(uf) => setLiveForests(prev => ({ ...prev, [uf.id]: uf }))}
+              />
             );
           })()
         ) : sidebarTab === 'compartments' && selectedCompartment && selectedForest ? (
           <>
-            <ForestPlanningBar
-              key={`plan-${selectedForest.id}`}
-              forest={liveForests[selectedForest.id] ?? selectedForest}
-              orgSlug={orgSlug}
-              onUpdated={(f) => setLiveForests(prev => ({ ...prev, [f.id]: f }))}
-            />
             <CompartmentEditor
               key={selectedCompartmentId!}
               compartment={selectedCompartment}

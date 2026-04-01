@@ -95,6 +95,8 @@ export interface ReportInventoryPlot {
   stockingDegree: number | null;
 }
 
+export interface ReportPlannedMeasure { type: string; year: number; note: string; }
+
 export interface ReportCompartment {
   name: string;
   number: string | null;
@@ -107,11 +109,15 @@ export interface ReportCompartment {
   nutrientLevel: string | null;
   exposition: string | null;
   slopeClass: string | null;
+  altitude: number | null;
+  siteUnit: string | null;
+  forestFunction: string | null;
   protectionStatus: string | null;
   restrictions: string | null;
   // Bestand
   standAge: number | null;
   developmentStage: string | null;
+  standTypeCode: string | null;
   mixingForm: string | null;
   structure: string | null;
   mainSpecies: ReportSpeciesEntry[];
@@ -134,6 +140,9 @@ export interface ReportCompartment {
   lastMeasureType: string | null;
   maintenanceStatus: string | null;
   accessibility: string | null;
+  // Planung
+  plannedMeasures: ReportPlannedMeasure[];
+  plannedHarvestVolume: number | null;
   note: string | null;
   // Inventur
   plots: ReportInventoryPlot[];
@@ -204,19 +213,25 @@ function CompartmentPage({ c, orgName, generatedAt }: { c: ReportCompartment; or
       {/* Standort */}
       <View style={s.section}>
         <SectionHeader title="Standort" />
-        <Grid2>
-          <Cell label="Bodentyp" value={c.soilType} />
-          <Cell label="Wasserhaushalt" value={c.waterBalance} />
-        </Grid2>
         <Grid3>
+          <Cell label="Bodentyp" value={c.soilType} />
+          <Cell label="Höhenlage" value={c.altitude != null ? `${c.altitude} m ü. NN` : null} />
+          <Cell label="Standorteinheit" value={c.siteUnit} />
+        </Grid3>
+        <Grid3>
+          <Cell label="Wasserhaushalt" value={c.waterBalance} />
           <Cell label="Nährstoffstufe" value={c.nutrientLevel} />
           <Cell label="Exposition" value={c.exposition} />
-          <Cell label="Hangneigung" value={c.slopeClass} />
         </Grid3>
-        {(c.protectionStatus || c.restrictions) && (
+        <Grid3>
+          <Cell label="Hangneigung" value={c.slopeClass} />
+          <Cell label="Waldfunktion" value={c.forestFunction} />
+          <Cell label="Schutzstatus" value={c.protectionStatus} />
+        </Grid3>
+        {c.restrictions && (
           <Grid2>
-            <Cell label="Schutzstatus" value={c.protectionStatus} />
-            <Cell label="Restriktionen" value={c.restrictions} />
+            <Cell label="Restriktionen / Auflagen" value={c.restrictions} />
+            <Cell label="" value={null} />
           </Grid2>
         )}
       </View>
@@ -226,8 +241,13 @@ function CompartmentPage({ c, orgName, generatedAt }: { c: ReportCompartment; or
         <SectionHeader title="Bestand" />
         <Grid3>
           <Cell label="Alter" value={c.standAge != null ? `${c.standAge} Jahre` : null} />
+          <Cell label="Bestandestyp" value={c.standTypeCode} />
           <Cell label="Entwicklungsstufe" value={c.developmentStage} />
+        </Grid3>
+        <Grid3>
           <Cell label="Mischungsform" value={c.mixingForm} />
+          <Cell label="Struktur" value={c.structure} />
+          <Cell label="" value={null} />
         </Grid3>
         {c.mainSpecies.length > 0 && (
           <View style={{ marginBottom: 4 }}>
@@ -326,6 +346,29 @@ function CompartmentPage({ c, orgName, generatedAt }: { c: ReportCompartment; or
           <Cell label="Befahrbarkeit" value={c.accessibility} />
         </Grid3>
       </View>
+
+      {/* Planung */}
+      {(c.plannedHarvestVolume != null || c.plannedMeasures.length > 0) && (
+        <View style={s.section}>
+          <SectionHeader title="Planung" />
+          {c.plannedHarvestVolume != null && (
+            <Grid2>
+              <Cell label="Geplanter Einschlag" value={`${c.plannedHarvestVolume} Vfm`} />
+              <Cell label="" value={null} />
+            </Grid2>
+          )}
+          {c.plannedMeasures.length > 0 && (
+            <View style={{ marginTop: 3 }}>
+              <Text style={s.label}>Geplante Maßnahmen</Text>
+              {c.plannedMeasures.map((m, i) => (
+                <Text key={i} style={{ fontSize: 8, color: C.mid, marginTop: 1 }}>
+                  • {m.type}{m.year ? ` (${m.year})` : ''}{m.note ? ` — ${m.note}` : ''}
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Notiz */}
       {c.note && (

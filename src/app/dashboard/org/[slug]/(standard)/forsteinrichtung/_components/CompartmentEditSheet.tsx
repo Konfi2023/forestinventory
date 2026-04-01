@@ -21,9 +21,12 @@ const MAINTENANCE_OPTIONS = ['vernachlässigt', 'mangelhaft', 'ausreichend', 'gu
 const ACCESSIBILITY_OPTIONS = ['nicht befahrbar', 'bedingt befahrbar', 'befahrbar', 'gut befahrbar'];
 const NUTRIENT_OPTIONS = ['sehr arm', 'arm', 'mäßig', 'mittel', 'reich', 'sehr reich'];
 const WATER_OPTIONS = ['trocken', 'mäßig trocken', 'frisch', 'mäßig feucht', 'feucht', 'nass', 'staunass'];
+const FOREST_FUNCTION_OPTIONS = ['Nutzwald', 'Schutzwald (Boden)', 'Schutzwald (Wasser)', 'Schutzwald (Lawinen)', 'Erholungswald', 'Biotopschutzwald', 'Klimaschutzwald', 'Sonstiger Schutzwald'];
+const MEASURE_TYPE_OPTIONS = ['Endnutzung', 'Vornutzung', 'Durchforstung', 'Pflanzung', 'Naturverjüngung', 'Jungbestandspflege', 'Wertästung', 'Waldschutz', 'Sonstiges'];
 
 interface SpeciesEntry { species: string; percent: number; }
 interface RejuvEntry { species: string; heightCm: number; density: string; }
+interface PlannedMeasure { type: string; year: number; note: string; }
 
 // ─── Hilfskomponenten ─────────────────────────────────────────────────────────
 
@@ -252,6 +255,12 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
   const [lastMeasureType,   setLastMeasureType]   = useState(compartment.lastMeasureType ?? '');
   const [maintenanceStatus, setMaintenanceStatus] = useState(compartment.maintenanceStatus ?? '');
   const [accessibility,     setAccessibility]     = useState(compartment.accessibility ?? '');
+  const [altitude,          setAltitude]          = useState(compartment.altitude?.toString() ?? '');
+  const [siteUnit,          setSiteUnit]          = useState(compartment.siteUnit ?? '');
+  const [forestFunction,    setForestFunction]    = useState(compartment.forestFunction ?? '');
+  const [plannedMeasures,   setPlannedMeasures]   = useState<PlannedMeasure[]>(compartment.plannedMeasures ?? []);
+  const [plannedHarvestVolume, setPlannedHarvestVolume] = useState(compartment.plannedHarvestVolume?.toString() ?? '');
+  const [standTypeCode,     setStandTypeCode]     = useState(compartment.standTypeCode ?? '');
 
   const handleSave = async () => {
     setSaving(true);
@@ -259,6 +268,7 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
       const res = await updateCompartment(compartment.id, {
         name, number, note,
         soilType, waterBalance, nutrientLevel, exposition, slopeClass, protectionStatus, restrictions,
+        altitude: altitude ? parseInt(altitude) : null, siteUnit, forestFunction,
         standAge: standAge ? parseInt(standAge) : null,
         developmentStage, mainSpecies, sideSpecies, mixingForm, structure,
         volumePerHa:    volumePerHa    ? parseFloat(volumePerHa)    : null,
@@ -269,6 +279,8 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
         siteProductivity, rejuvenation,
         vitalityNote, damageNote, stabilityNote,
         lastMeasureDate, lastMeasureType, maintenanceStatus, accessibility,
+        plannedMeasures, plannedHarvestVolume: plannedHarvestVolume ? parseFloat(plannedHarvestVolume) : null,
+        standTypeCode,
       }, orgSlug);
       if (!res.success) throw new Error(res.error);
       toast.success('Abteilung gespeichert');
@@ -304,10 +316,13 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
           {/* Standort */}
           <Section title="Standort">
             <TField label="Bodentyp" value={soilType} onChange={setSoilType} placeholder="z. B. Braunerde" />
+            <NField label="Höhenlage" value={altitude} onChange={setAltitude} unit="m ü. NN" step="1" />
+            <TField label="Standorteinheit" value={siteUnit} onChange={setSiteUnit} placeholder="z. B. TZ2, M2f" />
             <SField label="Wasserhaushalt" value={waterBalance} onChange={setWaterBalance} options={WATER_OPTIONS} />
             <SField label="Nährstoffstufe" value={nutrientLevel} onChange={setNutrientLevel} options={NUTRIENT_OPTIONS} />
             <SField label="Exposition" value={exposition} onChange={setExposition} options={EXPOSITION_OPTIONS} />
             <SField label="Hangneigung" value={slopeClass} onChange={setSlopeClass} options={SLOPE_OPTIONS} />
+            <SField label="Waldfunktion" value={forestFunction} onChange={setForestFunction} options={FOREST_FUNCTION_OPTIONS} />
             <TField label="Schutzstatus" value={protectionStatus} onChange={setProtectionStatus} placeholder="z. B. FFH, NSG" />
             <div className="col-span-2">
               <TField label="Restriktionen / Auflagen" value={restrictions} onChange={setRestrictions} placeholder="z. B. kein Kahlschlag" />
@@ -317,9 +332,10 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
           {/* Bestand */}
           <Section title="Bestand">
             <NField label="Bestandesalter" value={standAge} onChange={setStandAge} unit="Jahre" step="1" />
+            <TField label="Bestandestyp-Kürzel" value={standTypeCode} onChange={setStandTypeCode} placeholder="z. B. Fi70b" />
             <SField label="Entwicklungsstufe" value={developmentStage} onChange={setDevelopmentStage} options={DEVELOP_OPTIONS} />
-            <SField label="Mischungsform" value={mixingForm} onChange={setMixingForm} options={MIXING_OPTIONS} />
             <SField label="Struktur" value={structure} onChange={setStructure} options={STRUCTURE_OPTIONS} />
+            <SField label="Mischungsform" value={mixingForm} onChange={setMixingForm} options={MIXING_OPTIONS} />
             <div className="col-span-2">
               <SpeciesEditor label="Hauptbaumarten" entries={mainSpecies} onChange={setMainSpecies} />
             </div>
@@ -369,6 +385,34 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
             <SField label="Pflegezustand" value={maintenanceStatus} onChange={setMaintenanceStatus} options={MAINTENANCE_OPTIONS} />
             <SField label="Befahrbarkeit" value={accessibility} onChange={setAccessibility} options={ACCESSIBILITY_OPTIONS} />
           </Section>
+
+          {/* Planung */}
+          <SectionFull title="Planung (Forsteinrichtungszeitraum)">
+            <NField label="Geplanter Einschlag" value={plannedHarvestVolume} onChange={setPlannedHarvestVolume} unit="Vfm gesamt" />
+            <div>
+              <Label>Geplante Maßnahmen</Label>
+              <div className="space-y-1.5">
+                {plannedMeasures.map((m, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <select value={m.type} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, type: e.target.value } : pm))}
+                      className="flex-1 border border-slate-200 rounded-md text-sm px-3 py-1.5 bg-white">
+                      <option value="">– Art –</option>
+                      {MEASURE_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    <Input type="number" value={m.year || ''} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, year: parseInt(e.target.value) || 0 } : pm))}
+                      placeholder="Jahr" className="w-20 border-slate-200 text-sm" />
+                    <Input value={m.note} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, note: e.target.value } : pm))}
+                      placeholder="Bemerkung" className="flex-1 border-slate-200 text-sm" />
+                    <button onClick={() => setPlannedMeasures(plannedMeasures.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400">×</button>
+                  </div>
+                ))}
+                <button onClick={() => setPlannedMeasures([...plannedMeasures, { type: '', year: 0, note: '' }])}
+                  className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+                  <PlusCircle size={13} /> Maßnahme hinzufügen
+                </button>
+              </div>
+            </div>
+          </SectionFull>
 
           {/* Notiz */}
           <SectionFull title="Notiz">

@@ -288,6 +288,7 @@ export async function updateCompartment(
     // Standort
     soilType?: string; waterBalance?: string; nutrientLevel?: string;
     exposition?: string; slopeClass?: string; protectionStatus?: string; restrictions?: string;
+    altitude?: number | null; siteUnit?: string; forestFunction?: string;
     // Bestand
     standAge?: number | null; developmentStage?: string;
     mainSpecies?: any; sideSpecies?: any; mixingForm?: string; structure?: string;
@@ -302,12 +303,32 @@ export async function updateCompartment(
     // Bewirtschaftung
     lastMeasureDate?: string; lastMeasureType?: string;
     maintenanceStatus?: string; accessibility?: string;
+    // Planung
+    plannedMeasures?: any; plannedHarvestVolume?: number | null; standTypeCode?: string;
   },
   orgSlug: string
 ) {
   try {
     await prisma.forestCompartment.update({ where: { id }, data });
     revalidatePath(`/dashboard/org/${orgSlug}/map`);
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function updateForestPlanning(
+  forestId: string,
+  data: {
+    planningPeriodStart?: number | null;
+    planningPeriodEnd?: number | null;
+    annualHarvestTarget?: number | null;
+  },
+  orgSlug: string
+) {
+  try {
+    await prisma.forest.update({ where: { id: forestId }, data });
+    revalidatePath(`/dashboard/org/${orgSlug}/forsteinrichtung`);
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };

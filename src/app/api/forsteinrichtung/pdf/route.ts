@@ -106,6 +106,9 @@ export async function GET(req: NextRequest) {
       const mapRejuv = (arr: any[]) =>
         (arr ?? []).map((e: any) => ({ species: e.species, heightCm: e.heightCm ?? 0, density: e.density ?? '', label: getSpeciesLabel(e.species) }));
 
+      const mapMeasures = (arr: any[]) =>
+        (arr ?? []).map((m: any) => ({ type: m.type ?? '', year: m.year ?? 0, note: m.note ?? '' }));
+
       compartments.push({
         name: comp.name,
         number: comp.number,
@@ -117,10 +120,14 @@ export async function GET(req: NextRequest) {
         nutrientLevel: comp.nutrientLevel,
         exposition: comp.exposition,
         slopeClass: comp.slopeClass,
+        altitude: comp.altitude,
+        siteUnit: comp.siteUnit,
+        forestFunction: comp.forestFunction,
         protectionStatus: comp.protectionStatus,
         restrictions: comp.restrictions,
         standAge: comp.standAge,
         developmentStage: comp.developmentStage,
+        standTypeCode: comp.standTypeCode,
         mixingForm: comp.mixingForm,
         structure: comp.structure,
         mainSpecies: mapSpecies(comp.mainSpecies as any[]),
@@ -139,6 +146,8 @@ export async function GET(req: NextRequest) {
         lastMeasureType: comp.lastMeasureType,
         maintenanceStatus: comp.maintenanceStatus,
         accessibility: comp.accessibility,
+        plannedMeasures: mapMeasures(comp.plannedMeasures as any[]),
+        plannedHarvestVolume: comp.plannedHarvestVolume,
         note: comp.note,
         plots,
         treeCount,

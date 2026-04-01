@@ -307,6 +307,11 @@ model Forest {
   grantedUsers  User[]         @relation("ForestAccess")
   Event         Event[]
 
+  // Forsteinrichtung / Planung
+  planningPeriodStart Int?      // Beginn des Planungszeitraums (Jahr)
+  planningPeriodEnd   Int?      // Ende des Planungszeitraums (Jahr)
+  annualHarvestTarget Float?    // Jährlicher Nutzungssatz (Vfm/Jahr)
+
   // Waldbesitzer
   ownerId       String?
   owner         ForestOwner?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
@@ -534,6 +539,9 @@ model ForestCompartment {
   nutrientLevel    String?       // Nährstoffstufe
   exposition       String?       // N/NO/O/SO/S/SW/W/NW/eben
   slopeClass       String?       // eben/schwach/mittel/steil/sehr steil
+  altitude         Int?          // Höhenlage m ü. NN
+  siteUnit         String?       // Standorteinheit (z. B. TZ2, M2f)
+  forestFunction   String?       // Waldfunktion (Schutzwald/Erholungswald/Nutzwald/…)
   protectionStatus String?       // Schutzstatus
   restrictions     String?       // Restriktionen/Auflagen
 
@@ -566,6 +574,11 @@ model ForestCompartment {
   lastMeasureType  String?       // Art der Maßnahme
   maintenanceStatus String?      // Pflegezustand
   accessibility    String?       // Befahrbarkeit
+
+  // Planung
+  plannedMeasures      Json?     // [{type: string, year: number, note: string}]
+  plannedHarvestVolume Float?    // Geplanter Einschlag (Vfm) für Planungszeitraum
+  standTypeCode        String?   // Bestandestyp-Kürzel (z. B. Fi70b)
 
   forestId     String
   forest       Forest  @relation(fields: [forestId], references: [id], onDelete: Cascade)

@@ -780,30 +780,11 @@ function ForestPlanningBar({ forest, orgSlug, onUpdated }: { forest: Forest; org
 }
 
 // ── Compartment Editor (right panel) ─────────────────────────────────────────
-function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
+function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExport }: {
   compartment: Compartment; orgSlug: string; trees: TreePoi[]; onSaved: (updated: Compartment) => void;
+  onOpenPdfExport: (preselect?: string[]) => void;
 }) {
   const [saving, setSaving] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
-
-  const handleDownloadPdf = async () => {
-    setPdfLoading(true);
-    try {
-      const res = await fetch(`/api/forsteinrichtung/pdf?orgSlug=${orgSlug}&compartmentId=${compartment.id}`);
-      if (!res.ok) throw new Error('PDF-Fehler');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Abteilungsblatt_${compartment.number ?? compartment.name}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error('PDF konnte nicht erstellt werden.');
-    } finally {
-      setPdfLoading(false);
-    }
-  };
 
   const [name,             setName]             = useState(compartment.name ?? '');
   const [number,           setNumber]           = useState(compartment.number ?? '');
@@ -905,8 +886,8 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved }: {
             <span className="text-xs text-slate-400">{compartment.areaHa.toFixed(2)} ha</span>
           )}
         </div>
-        <Button variant="outline" onClick={handleDownloadPdf} disabled={pdfLoading} className="shrink-0 border-slate-200 text-slate-600 hover:text-slate-900">
-          {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+        <Button variant="outline" onClick={() => onOpenPdfExport([compartment.id])} className="shrink-0 border-slate-200 text-slate-600 hover:text-slate-900">
+          <FileDown className="w-4 h-4" />
         </Button>
         <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
@@ -1434,28 +1415,146 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
 
 // ── Left panel: compartment list ──────────────────────────────────────────────
 
-function AllPdfButton({ orgSlug }: { orgSlug: string }) {
+// ── PDF Export Modal ─────────────────────────────────────────────────────────
+function PdfExportModal({ forests, orgSlug, onClose, preselectedCompartmentIds }: {
+  forests: Forest[]; orgSlug: string; onClose: () => void; preselectedCompartmentIds?: string[];
+}) {
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    if (preselectedCompartmentIds?.length) return new Set(preselectedCompartmentIds);
+    // Default: all compartments selected
+    const all = new Set<string>();
+    forests.forEach(f => f.compartments.forEach(c => all.add(c.id)));
+    return all;
+  });
   const [loading, setLoading] = useState(false);
-  const download = async () => {
+
+  const allIds = useMemo(() => {
+    const ids: string[] = [];
+    forests.forEach(f => f.compartments.forEach(c => ids.push(c.id)));
+    return ids;
+  }, [forests]);
+
+  const toggleForest = (forest: Forest) => {
+    const ids = forest.compartments.map(c => c.id);
+    const allSelected = ids.every(id => selected.has(id));
+    setSelected(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => allSelected ? next.delete(id) : next.add(id));
+      return next;
+    });
+  };
+
+  const toggleCompartment = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelected(new Set(allIds));
+  const selectNone = () => setSelected(new Set());
+
+  const handleExport = async () => {
+    if (selected.size === 0) { toast.error('Keine Abteilungen ausgewählt'); return; }
     setLoading(true);
     try {
-      const res = await fetch(`/api/forsteinrichtung/pdf?orgSlug=${orgSlug}`);
-      if (!res.ok) throw new Error();
+      const ids = [...selected].join(',');
+      const res = await fetch(`/api/forsteinrichtung/pdf?orgSlug=${orgSlug}&compartmentIds=${ids}`);
+      if (!res.ok) throw new Error('PDF-Fehler');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `Forsteinrichtung_${orgSlug}.pdf`; a.click();
+      a.href = url;
+      a.download = `Forsteinrichtung_${orgSlug}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
       URL.revokeObjectURL(url);
+      onClose();
     } catch {
-      // silent
-    } finally { setLoading(false); }
+      toast.error('PDF konnte nicht erstellt werden.');
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
-    <button onClick={download} disabled={loading}
-      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200">
-      {loading ? <Loader2 size={11} className="animate-spin" /> : <FileDown size={11} />}
-      Forsteinrichtung exportieren
-    </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div>
+            <h3 className="font-bold text-slate-900">Forsteinrichtung exportieren</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Wälder und Abteilungen für den Bericht auswählen</p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
+        </div>
+
+        {/* Selection controls */}
+        <div className="px-6 py-2 border-b border-slate-100 flex items-center gap-3 shrink-0">
+          <button onClick={selectAll} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Alle auswählen</button>
+          <span className="text-slate-300">|</span>
+          <button onClick={selectNone} className="text-xs text-slate-500 hover:text-slate-700 font-medium">Keine</button>
+          <span className="ml-auto text-xs text-slate-400">{selected.size} von {allIds.length} Abteilungen</span>
+        </div>
+
+        {/* Forest/Compartment list */}
+        <div className="flex-1 overflow-y-auto px-6 py-3 space-y-3">
+          {forests.map(forest => {
+            const forestIds = forest.compartments.map(c => c.id);
+            const selectedCount = forestIds.filter(id => selected.has(id)).length;
+            const allSelected = selectedCount === forestIds.length;
+            const someSelected = selectedCount > 0 && !allSelected;
+
+            return (
+              <div key={forest.id}>
+                {/* Forest header with checkbox */}
+                <label className="flex items-center gap-2.5 cursor-pointer py-1.5 hover:bg-slate-50 rounded-md px-2 -mx-2">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                    onChange={() => toggleForest(forest)}
+                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <Layers size={13} className="text-emerald-600 shrink-0" />
+                  <span className="text-sm font-bold text-slate-700 flex-1">{forest.name}</span>
+                  <span className="text-[11px] text-slate-400">{selectedCount}/{forestIds.length}</span>
+                </label>
+
+                {/* Compartments */}
+                <div className="ml-6 mt-1 space-y-0.5">
+                  {forest.compartments.map(c => {
+                    const title = `${c.number ? `[${c.number}] ` : ''}${c.name || 'Abteilung'}`;
+                    return (
+                      <label key={c.id} className="flex items-center gap-2.5 cursor-pointer py-1 px-2 -mx-2 rounded hover:bg-slate-50">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(c.id)}
+                          onChange={() => toggleCompartment(c.id)}
+                          className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
+                        <span className="text-xs text-slate-700 flex-1 truncate">{title}</span>
+                        {c.areaHa != null && <span className="text-[10px] text-slate-400">{c.areaHa.toFixed(1)} ha</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0">
+          <Button variant="outline" onClick={onClose}>Abbrechen</Button>
+          <Button onClick={handleExport} disabled={loading || selected.size === 0} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
+            {selected.size} Abteilung{selected.size !== 1 ? 'en' : ''} exportieren
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1692,6 +1791,8 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
   const [liveCompartments, setLiveCompartments] = useState<Record<string, Compartment>>({});
   const [liveForests, setLiveForests] = useState<Record<string, Forest>>({});
   const [showImport, setShowImport] = useState(false);
+  const [showPdfExport, setShowPdfExport] = useState(false);
+  const [pdfPreselect, setPdfPreselect] = useState<string[] | undefined>(undefined);
 
   // Build a flat lookup of all compartments + their forest
   const allCompartments = useMemo(() => {
@@ -1753,6 +1854,14 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
           onImported={() => { setShowImport(false); window.location.reload(); }}
         />
       )}
+      {showPdfExport && (
+        <PdfExportModal
+          forests={forests}
+          orgSlug={orgSlug}
+          preselectedCompartmentIds={pdfPreselect}
+          onClose={() => { setShowPdfExport(false); setPdfPreselect(undefined); }}
+        />
+      )}
 
       {/* ── Left panel ── */}
       <div className="w-72 shrink-0 border-r border-slate-200 flex flex-col bg-white overflow-hidden">
@@ -1787,7 +1896,12 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
               <div><div className="text-base font-bold text-slate-900">{totalTrees}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Bäume</div></div>
             </div>
             <div className="flex gap-1.5">
-              <div className="flex-1"><AllPdfButton orgSlug={orgSlug} /></div>
+              <div className="flex-1">
+                <button onClick={() => { setPdfPreselect(undefined); setShowPdfExport(true); }}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200">
+                  <FileDown size={11} /> Bericht exportieren
+                </button>
+              </div>
               <button
                 onClick={() => setShowImport(true)}
                 className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200"
@@ -1894,6 +2008,7 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
               orgSlug={orgSlug}
               trees={selectedTrees}
               onSaved={handleSaved}
+              onOpenPdfExport={(pre) => { setPdfPreselect(pre); setShowPdfExport(true); }}
             />
           </>
         ) : sidebarTab === 'trees' && selectedTreePoi ? (

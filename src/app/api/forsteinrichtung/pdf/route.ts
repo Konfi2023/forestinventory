@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = req.nextUrl;
-  const orgSlug       = searchParams.get('orgSlug') ?? '';
-  const forestId      = searchParams.get('forestId') ?? '';   // optional filter
-  const compartmentId = searchParams.get('compartmentId') ?? ''; // optional single
+  const orgSlug         = searchParams.get('orgSlug') ?? '';
+  const forestId        = searchParams.get('forestId') ?? '';   // optional filter
+  const compartmentId   = searchParams.get('compartmentId') ?? ''; // optional single
+  const compartmentIds  = searchParams.get('compartmentIds') ?? ''; // comma-separated list
 
   if (!orgSlug) return NextResponse.json({ error: 'orgSlug required' }, { status: 400 });
 
@@ -41,7 +42,10 @@ export async function GET(req: NextRequest) {
     },
     include: {
       compartments: {
-        where: compartmentId ? { id: compartmentId } : {},
+        where: compartmentIds
+          ? { id: { in: compartmentIds.split(',') } }
+          : compartmentId ? { id: compartmentId } : {},
+        orderBy: [{ number: 'asc' }, { name: 'asc' }],
         include: {
           inventoryPlots: {
             include: {

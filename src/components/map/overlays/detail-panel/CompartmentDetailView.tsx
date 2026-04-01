@@ -560,8 +560,13 @@ export function CompartmentDetailView({
       headerStyle={{ background: `linear-gradient(to bottom right, ${color}40, rgba(0,0,0,0.8))` }}
       isEditing={isEditing}
       onToggleEdit={() => setIsEditing(!isEditing)}
-      editNameValue={name}
-      onEditNameChange={setName}
+      editNameValue={displayName}
+      onEditNameChange={val => {
+        // Parse [number] name format back into separate fields
+        const match = val.match(/^\[([^\]]*)\]\s*(.*)/);
+        if (match) { setNumber(match[1]); setName(match[2]); }
+        else setName(val);
+      }}
       canEdit={canEdit}
       canDelete={canDelete}
       onDelete={() => {}}

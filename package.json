@@ -55,6 +55,7 @@
     "date-fns": "^4.1.0",
     "date-holidays": "^3.26.8",
     "dexie": "^4.3.0",
+    "framer-motion": "^12.38.0",
     "ics": "^3.8.1",
     "keycloak-js": "^26.2.3",
     "leaflet": "^1.9.4",

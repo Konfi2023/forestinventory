@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import {
   Map, Leaf, ShieldCheck, PackageOpen,
-  ClipboardList, Trees, Radio,
+  ClipboardList, Trees, Radio, Wifi, Globe, ArrowUpRight,
   CheckCircle2,
   TreePine, Mountain, Building2,
   Crosshair, BarChart3, Satellite, Users,
@@ -154,16 +155,8 @@ export function LandingPageClient({ dbPlans }: Props) {
         </div>
       </section>
 
-      {/* ── Satellite strip ─────────────────────────────────────────────── */}
-      <div ref={r} className="fade relative h-48 sm:h-64 overflow-hidden">
-        <img src="/landing/satellite-roitzsch.png" alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-white text-lg sm:text-2xl font-light tracking-wide drop-shadow-lg">
-            Satellitengestütztes Waldmonitoring
-          </p>
-        </div>
-      </div>
+      {/* ── Trennlinie ────────────────────────────────────────────────────── */}
+      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-stone-100" /></div>
 
       {/* ── EUDR ──────────────────────────────────────────────────────────── */}
       <section id="eudr" className="py-28 px-6">
@@ -220,51 +213,130 @@ export function LandingPageClient({ dbPlans }: Props) {
       {/* ── Trennlinie ────────────────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-stone-100" /></div>
 
-      {/* ── Monitoring ────────────────────────────────────────────────────── */}
-      <section id="monitoring" className="py-28 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
-            {/* Left */}
-            <div ref={r} className="fade">
-              <p className="text-[11px] text-stone-300 uppercase tracking-widest mb-3">Satellitenüberwachung</p>
-              <h2 className="text-2xl sm:text-3xl font-light text-stone-800 mb-6">
-                Borkenkäfer, Sturm & Dürre<br />automatisch erkennen.
-              </h2>
-              <p className="text-[15px] text-stone-400 leading-relaxed mb-8">
-                Überwachung per Sentinel-2 und Sentinel-1 — wöchentlich und
-                automatisch. Borkenkäferbefall, Sturmwürfe und Trockenstress
-                werden erkannt, bevor Sie im Revier waren.
-              </p>
-              <div className="grid grid-cols-2 gap-6">
-                {[
-                  { label: 'Radar-Analyse',      desc: 'Wöchentliche Veränderungserkennung' },
-                  { label: 'Vitalitätsmessung',  desc: 'Monatliche Gesundheitsbewertung'    },
-                  { label: 'Sturm-Erkennung',    desc: 'Automatische Alarme'               },
-                  { label: 'Borkenkäfer-Risiko', desc: 'Temperatur- & Niederschlag-Index'   },
-                ].map(item => (
-                  <div key={item.label}>
-                    <p className="text-[13px] font-medium text-stone-700">{item.label}</p>
-                    <p className="text-[12px] text-stone-400 mt-0.5">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* ── Monitoring (dark section with scanner cards) ─────────────────── */}
+      <section id="monitoring" className="py-28 px-6 bg-[#0a0f0a] relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl border-x border-white/5 pointer-events-none" />
+        <div className="max-w-6xl mx-auto relative z-10">
 
-            {/* Right – satellite images */}
-            <div ref={r} className="fade d2 lg:pt-10 space-y-4">
-              <div className="rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: 'rgb(231 229 228)' }}>
-                <img src="/landing/satellite-roitzsch.png" alt="Satellitenbild mit Waldpolygonen" className="w-full block" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: 'rgb(231 229 228)' }}>
-                  <img src="/landing/satellite-gutconow.png" alt="Satellitenbild Wald" className="w-full block" />
-                </div>
-                <div className="rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: 'rgb(231 229 228)' }}>
-                  <img src="/landing/satellite-bogovic.png" alt="Satellitenbild Wald" className="w-full block" />
-                </div>
-              </div>
-              <p className="text-[10px] text-stone-300 text-center">Echte Satellitenbilder aus dem Forest Manager</p>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row items-end justify-between gap-8 mb-16">
+            <div className="max-w-xl">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4"
+              >
+                <Satellite size={14} className="animate-pulse" />
+                Satellitenüberwachung
+              </motion.div>
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-3xl md:text-4xl font-light text-white leading-tight"
+              >
+                Borkenkäfer, Sturm & Dürre<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
+                  automatisch erkennen.
+                </span>
+              </motion.h2>
             </div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-slate-400 max-w-sm text-sm"
+            >
+              Wöchentliche Überwachung per Sentinel-2 und Sentinel-1.
+              Schäden werden erkannt, bevor Sie im Revier waren.
+            </motion.p>
+          </div>
+
+          {/* Scanner Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {SATELLITE_PROJECTS.map((project, index) => (
+              <motion.div
+                key={project.location}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ delay: index * 0.1, duration: 0.6, ease: "easeOut" }}
+                className="group relative h-[400px] rounded-2xl overflow-hidden border border-white/10 bg-[#0d1a0d]"
+              >
+                {/* Background image */}
+                <div className="absolute inset-0">
+                  <img
+                    src={project.image}
+                    alt={project.location}
+                    className="w-full h-full object-cover transition-all duration-700 grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-[#0d1a0d]/40 mix-blend-multiply transition-opacity duration-700 group-hover:opacity-0" />
+
+                  {/* Scanner line */}
+                  <motion.div
+                    animate={{ top: ["-10%", "110%"] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    className="absolute left-0 right-0 h-1 bg-emerald-500/50 blur-[2px] shadow-[0_0_15px_#4ade80] opacity-50 group-hover:opacity-20 pointer-events-none"
+                  />
+                </div>
+
+                {/* HUD overlay */}
+                <div className="absolute inset-0 p-5 flex flex-col justify-between z-10">
+                  <div className="flex justify-between items-start">
+                    <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                      <Wifi size={12} className="text-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-mono text-emerald-400 tracking-wider">LIVE</span>
+                    </div>
+                    <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-300">
+                      {project.coords}
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-[#0a0f0a]/80 backdrop-blur-xl border border-white/10 rounded-xl" />
+                    <div className="relative z-10 p-4">
+                      <h3 className="text-lg font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">
+                        {project.location}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-2 mt-3">
+                        <div className="bg-black/20 rounded-lg p-2 border border-white/5">
+                          <div className="text-[9px] text-slate-500 uppercase font-mono mb-1">Fläche</div>
+                          <div className="text-sm font-bold text-white flex items-center gap-1">
+                            <Trees size={13} className="text-emerald-500" /> {project.area}
+                          </div>
+                        </div>
+                        <div className="bg-black/20 rounded-lg p-2 border border-white/5">
+                          <div className="text-[9px] text-slate-500 uppercase font-mono mb-1">{project.metric.label}</div>
+                          <div className="text-sm font-bold text-emerald-400">{project.metric.value}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Corner brackets */}
+                <div className="absolute top-3 left-3 w-4 h-4 border-l-2 border-t-2 border-white/20 rounded-tl-sm pointer-events-none" />
+                <div className="absolute top-3 right-3 w-4 h-4 border-r-2 border-t-2 border-white/20 rounded-tr-sm pointer-events-none" />
+                <div className="absolute bottom-3 left-3 w-4 h-4 border-l-2 border-b-2 border-white/20 rounded-bl-sm pointer-events-none" />
+                <div className="absolute bottom-3 right-3 w-4 h-4 border-r-2 border-b-2 border-white/20 rounded-br-sm pointer-events-none" />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Feature grid below cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
+            {[
+              { label: 'Radar-Analyse',      desc: 'Wöchentliche Veränderungserkennung' },
+              { label: 'Vitalitätsmessung',  desc: 'Monatliche Gesundheitsbewertung'    },
+              { label: 'Sturm-Erkennung',    desc: 'Automatische Alarme'               },
+              { label: 'Borkenkäfer-Risiko', desc: 'Temperatur- & Niederschlag-Index'   },
+            ].map(item => (
+              <div key={item.label}>
+                <p className="text-[13px] font-medium text-white">{item.label}</p>
+                <p className="text-[12px] text-slate-500 mt-0.5">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -413,4 +485,28 @@ const FEATURES = [
   { title:'Maßnahmen & Holzverkauf', description:'Einschläge planen, Polter erfassen, Verkaufskontrakte anlegen und Lieferscheine drucken.', icon:PackageOpen },
   { title:'Aufgaben & Planung', description:'Taskmanagement mit Zuweisung, Priorisierung, Kalender und wiederkehrenden Aufgaben.', icon:ClipboardList },
   { title:'Mehrere Organisationen', description:'Mehrere Forstbetriebe in einer Plattform. Rollen, Berechtigungen und getrennte Daten.', icon:Trees },
+];
+
+const SATELLITE_PROJECTS = [
+  {
+    location: 'Roitzsch, DE',
+    coords: '51.62° N, 12.27° E',
+    area: '340 ha',
+    image: '/landing/satellite-roitzsch.png',
+    metric: { label: 'NDVI Trend', value: '+2.1 %' },
+  },
+  {
+    location: 'Gut Conow, DE',
+    coords: '53.45° N, 11.18° E',
+    area: '221 ha',
+    image: '/landing/satellite-gutconow.png',
+    metric: { label: 'Vitalität', value: 'NDVI 0.74' },
+  },
+  {
+    location: 'Bogovic, HR',
+    coords: '45.32° N, 15.87° E',
+    area: '14 ha',
+    image: '/landing/satellite-bogovic.png',
+    metric: { label: 'CO₂-Speicher', value: '2.200 t' },
+  },
 ];

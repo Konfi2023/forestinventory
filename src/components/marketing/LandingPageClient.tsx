@@ -209,7 +209,7 @@ export function LandingPageClient({ dbPlans }: Props) {
               </h2>
               <p className="text-[15px] text-slate-400 leading-relaxed mb-8">
                 Die EU-Entwaldungsverordnung verpflichtet Holzproduzenten ab 2025 zur
-                Sorgfaltserklärung. Forest Manager erstellt Ihre Due-Diligence-Statements
+                Sorgfaltserklärung. ForestManager erstellt Ihre Due-Diligence-Statements
                 automatisch aus Waldpolygonen und Einschlagsdaten.
               </p>
               <ul className="space-y-3">
@@ -299,7 +299,7 @@ export function LandingPageClient({ dbPlans }: Props) {
                   <img src="/landing/satellite-bogovic.png" alt="Satellitenbild Wald" className="w-full block" />
                 </div>
               </div>
-              <p className="text-[10px] text-slate-600 text-center">Echte Satellitenbilder aus dem Forest Manager</p>
+              <p className="text-[10px] text-slate-600 text-center">Echte Satellitenbilder aus dem ForestManager</p>
             </motion.div>
           </div>
         </div>

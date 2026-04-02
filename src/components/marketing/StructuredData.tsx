@@ -22,7 +22,7 @@ const organizationSchema = {
 const softwareSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'Forest Manager',
+  name: 'ForestManager',
   url: APP_URL,
   description: 'Digitale SaaS-Plattform für Forstmanagement, Waldinventur und EUDR-Konformität für Waldbesitzer und Forstbetriebe in Europa.',
   applicationCategory: 'BusinessApplication',
@@ -59,7 +59,7 @@ const softwareSchema = {
 const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'Forest Manager',
+  name: 'ForestManager',
   url: APP_URL,
   description: 'Digitales Forstmanagement für Waldbesitzer und Forstbetriebe',
   inLanguage: 'de-DE',

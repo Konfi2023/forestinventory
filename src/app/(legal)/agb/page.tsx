@@ -1,9 +1,9 @@
-export const metadata = { title: 'AGB – Forest Manager' };
+export const metadata = { title: 'AGB – ForestManager' };
 
 export default function TermsPage() {
   return (
-    <article className="prose prose-slate max-w-none">
-      <h1 className="text-3xl font-bold text-slate-900 mb-2">
+    <article className="prose prose-invert max-w-none">
+      <h1 className="text-3xl font-bold text-white mb-2">
         Allgemeine Geschäftsbedingungen (AGB)
       </h1>
       <p className="text-sm text-slate-500 mb-10">Stand: März 2026</p>
@@ -11,7 +11,7 @@ export default function TermsPage() {
       <Section title="1. Geltungsbereich">
         <p>
           Diese Allgemeinen Geschäftsbedingungen gelten für die Nutzung der Software-as-a-Service-Lösung
-          „Forest Manager" (erreichbar unter forest-manager.eu) der natureport UG (haftungsbeschränkt),
+          „ForestManager" (erreichbar unter forest-manager.eu) der natureport UG (haftungsbeschränkt),
           Willy-Brandt-Str. 23, 20457 Hamburg (nachfolgend „Anbieter"), durch Verbraucher
           und Unternehmer (nachfolgend „Nutzer"). Abweichende Bedingungen des Nutzers werden nicht
           anerkannt, es sei denn, der Anbieter stimmt ihrer Geltung ausdrücklich schriftlich zu.
@@ -177,7 +177,7 @@ export default function TermsPage() {
         <p>
           Die Erhebung und Verarbeitung personenbezogener Daten richtet sich nach unserer
           Datenschutzerklärung, abrufbar unter{' '}
-          <a href="/datenschutz" className="text-green-700 hover:underline">
+          <a href="/datenschutz" className="text-emerald-400 hover:underline">
             forest-manager.eu/datenschutz
           </a>.
         </p>
@@ -207,9 +207,9 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <p className="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-400">
+      <p className="mt-12 pt-6 border-t border-white/10 text-xs text-slate-400">
         natureport UG (haftungsbeschränkt) · Willy-Brandt-Str. 23, 20457 Hamburg ·{' '}
-        <a href="mailto:info@natureport.eu" className="hover:text-slate-600">info@natureport.eu</a>
+        <a href="mailto:info@natureport.eu" className="hover:text-slate-400">info@natureport.eu</a>
         {' '}· Stand: März 2026
       </p>
     </article>
@@ -219,10 +219,10 @@ export default function TermsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
-      <h2 className="text-base font-semibold text-slate-900 mb-3 pb-1 border-b border-slate-100">
+      <h2 className="text-base font-semibold text-white mb-3 pb-1 border-b border-white/5">
         {title}
       </h2>
-      <div className="text-slate-600 leading-relaxed text-sm space-y-1">{children}</div>
+      <div className="text-slate-400 leading-relaxed text-sm space-y-1">{children}</div>
     </section>
   );
 }
@@ -230,8 +230,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Subsection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-4 pl-3 border-l-2 border-green-200">
-      <p className="font-medium text-slate-800 text-sm mb-1">{label}</p>
-      <p className="text-slate-600 text-sm leading-relaxed">{children}</p>
+      <p className="font-medium text-white text-sm mb-1">{label}</p>
+      <p className="text-slate-400 text-sm leading-relaxed">{children}</p>
     </div>
   );
 }

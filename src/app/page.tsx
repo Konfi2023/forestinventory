@@ -6,11 +6,11 @@ import { LandingPageClient } from '@/components/marketing/LandingPageClient';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = {
-  title: 'Forest Manager – Digitales Forstmanagement für Europa',
+  title: 'ForestManager – Digitales Forstmanagement für Europa',
   description: 'Die führende SaaS-Plattform für Waldbesitzer und Forstbetriebe: GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse. 30 Tage kostenlos testen.',
   alternates: { canonical: 'https://forest-manager.eu' },
   openGraph: {
-    title: 'Forest Manager – Digitales Forstmanagement',
+    title: 'ForestManager – Digitales Forstmanagement',
     description: 'GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse für Waldbesitzer und Forstbetriebe in Europa.',
     url: 'https://forest-manager.eu',
     type: 'website',

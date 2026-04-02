@@ -30,7 +30,7 @@ export function Header() {
               </g>
             </g>
             <text x="58" y="33" fill="#ffffff" fontFamily="sans-serif" fontWeight="500" fontSize="26" letterSpacing="-0.5">Forest</text>
-            <text x="148" y="33" fill="#4ade80" fontFamily="sans-serif" fontWeight="500" fontSize="26" letterSpacing="-0.5">Manager</text>
+            <text x="140" y="33" fill="#4ade80" fontFamily="sans-serif" fontWeight="500" fontSize="26" letterSpacing="-0.5">Manager</text>
           </svg>
         </Link>
 

@@ -1,9 +1,9 @@
-export const metadata = { title: 'Impressum – Forest Manager' };
+export const metadata = { title: 'Impressum – ForestManager' };
 
 export default function ImprintPage() {
   return (
-    <article className="prose prose-slate max-w-none">
-      <h1 className="text-3xl font-bold text-slate-900 mb-2">Impressum</h1>
+    <article className="prose prose-invert max-w-none">
+      <h1 className="text-3xl font-bold text-white mb-2">Impressum</h1>
       <p className="text-sm text-slate-500 mb-10">Angaben gemäß § 5 TMG</p>
 
       <Section title="Angaben gemäß § 5 TMG">
@@ -21,8 +21,8 @@ export default function ImprintPage() {
 
       <Section title="Kontakt">
         <p>
-          E-Mail: <a href="mailto:info@natureport.eu" className="text-green-700 hover:underline">info@natureport.eu</a><br />
-          Web: <a href="https://forest-manager.eu" className="text-green-700 hover:underline">forest-manager.eu</a>
+          E-Mail: <a href="mailto:info@natureport.eu" className="text-emerald-400 hover:underline">info@natureport.eu</a><br />
+          Web: <a href="https://forest-manager.eu" className="text-emerald-400 hover:underline">forest-manager.eu</a>
         </p>
       </Section>
 
@@ -48,7 +48,7 @@ export default function ImprintPage() {
             href="https://ec.europa.eu/consumers/odr/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-green-700 hover:underline"
+            className="text-emerald-400 hover:underline"
           >
             https://ec.europa.eu/consumers/odr/
           </a>
@@ -73,7 +73,7 @@ export default function ImprintPage() {
         </p>
       </Section>
 
-      <p className="mt-12 pt-6 border-t border-slate-200 text-sm text-slate-400">
+      <p className="mt-12 pt-6 border-t border-white/10 text-sm text-slate-400">
         Haftungshinweis: Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung
         für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich
         deren Betreiber verantwortlich.
@@ -85,10 +85,10 @@ export default function ImprintPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-8">
-      <h2 className="text-lg font-semibold text-slate-900 mb-2 pb-1 border-b border-slate-100">
+      <h2 className="text-lg font-semibold text-white mb-2 pb-1 border-b border-white/5">
         {title}
       </h2>
-      <div className="text-slate-600 leading-relaxed text-sm">{children}</div>
+      <div className="text-slate-400 leading-relaxed text-sm">{children}</div>
     </section>
   );
 }

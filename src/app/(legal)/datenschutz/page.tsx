@@ -1,21 +1,21 @@
-export const metadata = { title: 'Datenschutzerklärung – Forest Manager' };
+export const metadata = { title: 'Datenschutzerklärung – ForestManager' };
 
 export default function PrivacyPage() {
   return (
-    <article className="prose prose-slate max-w-none">
-      <h1 className="text-3xl font-bold text-slate-900 mb-2">Datenschutzerklärung</h1>
+    <article className="prose prose-invert max-w-none">
+      <h1 className="text-3xl font-bold text-white mb-2">Datenschutzerklärung</h1>
       <p className="text-sm text-slate-500 mb-2">Stand: März 2026</p>
-      <p className="text-slate-600 leading-relaxed mb-10">
+      <p className="text-slate-400 leading-relaxed mb-10">
         Der Schutz Ihrer personenbezogenen Daten ist uns ein wichtiges Anliegen. Diese
         Datenschutzerklärung informiert Sie darüber, welche Daten wir im Rahmen der Nutzung von
-        Forest Manager (forest-manager.eu) erheben, verarbeiten und an Dritte übermitteln.
+        ForestManager (forest-manager.eu) erheben, verarbeiten und an Dritte übermitteln.
       </p>
 
       <Section title="1. Verantwortlicher">
         <p>
           natureport UG (haftungsbeschränkt)<br />
           Willy-Brandt-Straße 23, 20457 Hamburg<br />
-          E-Mail: <a href="mailto:info@natureport.eu" className="text-green-700 hover:underline">info@natureport.eu</a>
+          E-Mail: <a href="mailto:info@natureport.eu" className="text-emerald-400 hover:underline">info@natureport.eu</a>
         </p>
       </Section>
 
@@ -51,7 +51,7 @@ export default function PrivacyPage() {
         <p className="mt-2">Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.</p>
         <p className="mt-1 text-slate-500 text-xs">
           Datenschutzhinweise Stripe:{' '}
-          <a href="https://stripe.com/de/privacy" target="_blank" rel="noopener noreferrer" className="text-green-700 hover:underline">
+          <a href="https://stripe.com/de/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">
             stripe.com/de/privacy
           </a>
         </p>
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
           Foundation, St John's Innovation Centre, Cambridge, UK) geladen. Dabei wird Ihre
           IP-Adresse technisch bedingt an die OSM-Server übertragen. Lizenz: ODbL.
           <br />
-          <a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer" className="text-green-700 hover:underline text-xs mt-1 inline-block">
+          <a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline text-xs mt-1 inline-block">
             Datenschutz OpenStreetMap
           </a>
         </Subsection>
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
           API übermittelt, um standortbezogene Satellitenbilder abzurufen. Es werden keine
           personenbezogenen Daten an ESA/CDSE übermittelt. Die Verarbeitung erfolgt serverseitig.
           <br />
-          <a href="https://dataspace.copernicus.eu/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-green-700 hover:underline text-xs mt-1 inline-block">
+          <a href="https://dataspace.copernicus.eu/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline text-xs mt-1 inline-block">
             Datenschutz CDSE
           </a>
         </Subsection>
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
           wird eine Verbindung zu den Windy-Servern hergestellt und Ihre IP-Adresse übertragen.
           Windy.com kann dabei eigene Cookies setzen.
           <br />
-          <a href="https://windyty.com/privacy" target="_blank" rel="noopener noreferrer" className="text-green-700 hover:underline text-xs mt-1 inline-block">
+          <a href="https://windyty.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline text-xs mt-1 inline-block">
             Datenschutz Windy
           </a>
         </Subsection>
@@ -121,7 +121,7 @@ export default function PrivacyPage() {
         an der Dienstleistungserbringung).</p>
         <p className="mt-1 text-slate-500 text-xs">
           Datenschutzhinweise OpenAI:{' '}
-          <a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-green-700 hover:underline">
+          <a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">
             openai.com/policies/privacy-policy
           </a>
         </p>
@@ -205,13 +205,13 @@ export default function PrivacyPage() {
         </p>
         <p className="mt-2">
           Zur Ausübung Ihrer Rechte wenden Sie sich an:{' '}
-          <a href="mailto:info@natureport.eu" className="text-green-700 hover:underline">
+          <a href="mailto:info@natureport.eu" className="text-emerald-400 hover:underline">
             info@natureport.eu
           </a>
         </p>
       </Section>
 
-      <p className="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-400">
+      <p className="mt-12 pt-6 border-t border-white/10 text-xs text-slate-400">
         Diese Datenschutzerklärung wurde zuletzt am März 2026 aktualisiert.
         Wir behalten uns vor, diese bei Änderungen unserer Dienste zu aktualisieren.
       </p>
@@ -222,10 +222,10 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
-      <h2 className="text-base font-semibold text-slate-900 mb-3 pb-1 border-b border-slate-100">
+      <h2 className="text-base font-semibold text-white mb-3 pb-1 border-b border-white/5">
         {title}
       </h2>
-      <div className="text-slate-600 leading-relaxed text-sm space-y-1">{children}</div>
+      <div className="text-slate-400 leading-relaxed text-sm space-y-1">{children}</div>
     </section>
   );
 }
@@ -233,8 +233,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Subsection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-4 pl-3 border-l-2 border-green-200">
-      <p className="font-medium text-slate-800 text-sm mb-1">{label}</p>
-      <p className="text-slate-600 text-sm leading-relaxed">{children}</p>
+      <p className="font-medium text-white text-sm mb-1">{label}</p>
+      <p className="text-slate-400 text-sm leading-relaxed">{children}</p>
     </div>
   );
 }

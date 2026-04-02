@@ -92,7 +92,7 @@ export const MacbookScroll = ({
         translate={translate}
       />
       {/* Base area */}
-      <div className="relative -z-10 h-[22rem] w-[32rem] overflow-hidden rounded-2xl bg-gray-200 dark:bg-[#272729]">
+      <div className="relative -z-10 h-[22rem] w-[40rem] overflow-hidden rounded-2xl bg-gray-200 dark:bg-[#272729]">
         {/* above keyboard bar */}
         <div className="relative h-10 w-full">
           <div className="absolute inset-x-0 mx-auto h-4 w-[80%] bg-[#050505]" />
@@ -140,7 +140,7 @@ export const Lid = ({
           transformOrigin: "bottom",
           transformStyle: "preserve-3d",
         }}
-        className="relative h-[12rem] w-[32rem] rounded-2xl bg-[#010101] p-2"
+        className="relative h-[12rem] w-[40rem] rounded-2xl bg-[#010101] p-2"
       >
         <div
           style={{
@@ -162,13 +162,13 @@ export const Lid = ({
           transformStyle: "preserve-3d",
           transformOrigin: "top",
         }}
-        className="absolute inset-0 h-96 w-[32rem] rounded-2xl bg-[#010101] p-2"
+        className="absolute inset-0 h-[25rem] w-[40rem] rounded-2xl bg-[#010101] p-2"
       >
         <div className="absolute inset-0 rounded-lg bg-[#272729]" />
         <img
           src={src as string}
           alt="aceternity logo"
-          className="absolute inset-0 h-full w-full rounded-lg object-contain object-center bg-[#010101]"
+          className="absolute inset-0 h-full w-full rounded-lg object-cover object-top"
         />
       </motion.div>
     </div>

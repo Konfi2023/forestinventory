@@ -54,8 +54,12 @@ export function LandingPageClient({ dbPlans }: Props) {
       `}</style>
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="pt-36 pb-24 px-6">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="relative pt-36 pb-24 px-6 overflow-hidden">
+        {/* Satellite background */}
+        <div className="absolute inset-0 z-0">
+          <img src="/landing/satellite-roitzsch.png" alt="" className="w-full h-full object-cover opacity-[0.07]" />
+        </div>
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
           <p ref={r} className="fade text-[13px] text-stone-400 mb-6">
             Forstmanagement Software
           </p>
@@ -150,8 +154,16 @@ export function LandingPageClient({ dbPlans }: Props) {
         </div>
       </section>
 
-      {/* ── Trennlinie ────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-stone-100" /></div>
+      {/* ── Satellite strip ─────────────────────────────────────────────── */}
+      <div ref={r} className="fade relative h-48 sm:h-64 overflow-hidden">
+        <img src="/landing/satellite-roitzsch.png" alt="" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-white text-lg sm:text-2xl font-light tracking-wide drop-shadow-lg">
+            Satellitengestütztes Waldmonitoring
+          </p>
+        </div>
+      </div>
 
       {/* ── EUDR ──────────────────────────────────────────────────────────── */}
       <section id="eudr" className="py-28 px-6">
@@ -238,30 +250,20 @@ export function LandingPageClient({ dbPlans }: Props) {
               </div>
             </div>
 
-            {/* Right – data */}
-            <div ref={r} className="fade d2 lg:pt-10">
-              <div className="border rounded-xl p-6" style={{ borderColor: 'rgb(231 229 228)' }}>
-                <div className="flex items-center gap-2 text-[11px] text-stone-300 mb-6">
-                  <Radio size={10} className="text-green-600" />
-                  Live-Monitoring
-                </div>
-                {[
-                  { forest: 'Revier Nord',   ndvi: '0.74', trend: '+2.1 %', ok: true  },
-                  { forest: 'Abteilung 12A', ndvi: '0.61', trend: '-4.3 %', ok: false },
-                  { forest: 'Südhanglage',   ndvi: '0.79', trend: '+0.8 %', ok: true  },
-                ].map((row, i) => (
-                  <div key={row.forest} className={`flex items-center justify-between py-3.5 ${i < 2 ? 'border-b border-stone-100' : ''}`}>
-                    <div>
-                      <p className="text-[13px] text-stone-700">{row.forest}</p>
-                      <p className="text-[11px] text-stone-300 mt-0.5">NDVI {row.ndvi}</p>
-                    </div>
-                    <span className={`text-[12px] font-mono ${row.ok ? 'text-green-600' : 'text-amber-500'}`}>
-                      {row.trend}
-                    </span>
-                  </div>
-                ))}
-                <p className="text-[10px] text-stone-300 text-center mt-4">Beispieldaten</p>
+            {/* Right – satellite images */}
+            <div ref={r} className="fade d2 lg:pt-10 space-y-4">
+              <div className="rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: 'rgb(231 229 228)' }}>
+                <img src="/landing/satellite-roitzsch.png" alt="Satellitenbild mit Waldpolygonen" className="w-full block" />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: 'rgb(231 229 228)' }}>
+                  <img src="/landing/satellite-gutconow.png" alt="Satellitenbild Wald" className="w-full block" />
+                </div>
+                <div className="rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: 'rgb(231 229 228)' }}>
+                  <img src="/landing/satellite-bogovic.png" alt="Satellitenbild Wald" className="w-full block" />
+                </div>
+              </div>
+              <p className="text-[10px] text-stone-300 text-center">Echte Satellitenbilder aus dem Forest Manager</p>
             </div>
           </div>
         </div>

@@ -94,26 +94,6 @@ export const MacbookScroll = ({
         rotate={rotate}
         translate={translate}
       />
-      {/* Annotations */}
-      {annotations && annotations.length > 0 && (
-        <motion.div
-          style={{ opacity: annotationOpacity }}
-          className="absolute left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center gap-3 pointer-events-none"
-        >
-          {annotations.map((a, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: (a.delay ?? i * 0.15) + 0.3 }}
-              className={`bg-black/70 backdrop-blur-md border border-white/10 rounded-full px-4 py-1.5 text-[11px] font-medium text-white shadow-lg ${a.position}`}
-            >
-              {a.label}
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
-
       {/* Base area */}
       <div className="relative -z-10 h-[22rem] w-[40rem] overflow-hidden rounded-2xl bg-gray-200 dark:bg-[#272729]">
         {/* above keyboard bar */}
@@ -138,6 +118,23 @@ export const MacbookScroll = ({
         )}
         {badge && <div className="absolute bottom-4 left-4">{badge}</div>}
       </div>
+
+      {/* Annotations — appear when laptop is fully open */}
+      {annotations && annotations.length > 0 && (
+        <motion.div
+          style={{ opacity: annotationOpacity }}
+          className="mt-8 flex flex-wrap justify-center gap-3"
+        >
+          {annotations.map((a, i) => (
+            <span
+              key={i}
+              className="bg-white/10 backdrop-blur-md border border-white/10 rounded-full px-5 py-2 text-[12px] font-medium text-white shadow-lg"
+            >
+              {a.label}
+            </span>
+          ))}
+        </motion.div>
+      )}
     </div>
   );
 };

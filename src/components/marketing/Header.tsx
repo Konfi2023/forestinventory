@@ -7,6 +7,7 @@ import { signIn } from 'next-auth/react';
 
 const NAV_LINKS = [
   { label: 'Funktionen', href: '#features'  },
+  { label: 'Produkt',    href: '#produkt'   },
   { label: 'EUDR',       href: '#eudr'       },
   { label: 'Monitoring', href: '#monitoring' },
   { label: 'Preise',     href: '#preise'     },

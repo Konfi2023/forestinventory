@@ -168,8 +168,8 @@ export function LandingPageClient({ dbPlans }: Props) {
       <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
 
       {/* ── Screenshot Carousel ─────────────────────────────────────────── */}
-      <section className="pt-28 pb-8 px-6">
-        <div className="max-w-6xl mx-auto mb-16">
+      <section id="produkt" className="pt-20 pb-0 px-6">
+        <div className="max-w-6xl mx-auto mb-8">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -477,7 +477,7 @@ function ScreenshotCarousel() {
   const slide = CAROUSEL_SLIDES[current];
 
   return (
-    <section className="py-20 px-6">
+    <section className="pt-0 pb-20 px-6">
       <div className="max-w-5xl mx-auto">
         {/* Image container — fixed 1440x900 aspect */}
         <div className="relative aspect-[1440/900] rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50">

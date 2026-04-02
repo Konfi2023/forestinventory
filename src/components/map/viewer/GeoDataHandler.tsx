@@ -9,6 +9,7 @@ import { geoJSONToLeaflet, geoJSONLineToLeaflet, calculatePathLengthM } from '@/
 import { getSpeciesColor, getSpeciesLabel, getDominantSpecies } from '@/lib/tree-species';
 import L from 'leaflet';
 import { createPoi } from '@/actions/poi';
+import { updateTaskContent } from '@/actions/tasks';
 import { toast } from 'sonner';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
@@ -886,13 +887,21 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
             key={task.id}
             position={[task.lat, task.lng]}
             icon={createTaskIcon(task.priority, task.status, isSelected)}
+            draggable={isSelected && interactionMode === 'VIEW'}
             eventHandlers={{
               click: (e) => {
                 if (interactionMode === 'VIEW') {
                     L.DomEvent.stopPropagation(e);
                     selectFeature(task.id, 'TASK');
                 }
-              }
+              },
+              dragend: async (e) => {
+                const pos = e.target.getLatLng();
+                try {
+                  await updateTaskContent(data.orgSlug, task.id, { lat: pos.lat, lng: pos.lng });
+                  onRefresh();
+                } catch { toast.error('Position konnte nicht gespeichert werden'); }
+              },
             }}
           >
             <Tooltip direction="top" offset={[0, -16]} opacity={0.9} className="!pointer-events-none">

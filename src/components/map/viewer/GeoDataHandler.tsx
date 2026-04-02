@@ -8,6 +8,7 @@ import { Polygon, Marker, Polyline, Tooltip, useMapEvents, useMap } from 'react-
 import { geoJSONToLeaflet, geoJSONLineToLeaflet, calculatePathLengthM } from '@/lib/map-helpers';
 import { getSpeciesColor, getSpeciesLabel, getDominantSpecies } from '@/lib/tree-species';
 import L from 'leaflet';
+import { Eye, Crosshair } from 'lucide-react';
 import { createPoi } from '@/actions/poi';
 import { updateTaskContent } from '@/actions/tasks';
 import { toast } from 'sonner';
@@ -215,6 +216,9 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
   const [pendingPoi, setPendingPoi] = useState<{ lat: number; lng: number; type: string } | null>(null);
+  const [taskPopup, setTaskPopup] = useState<{ taskId: string; lat: number; lng: number } | null>(null);
+  const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
+  const [movingTaskPos, setMovingTaskPos] = useState<[number, number] | null>(null);
 
   // useShallow: verhindert Re-Render wenn activeLayers-Inhalt gleich bleibt
   // aber eine neue Array-Referenz entsteht (z.B. durch andere Store-Updates)
@@ -508,6 +512,9 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
       }
     },
     click(e) {
+      // Close task popup on any map click
+      if (taskPopup) { setTaskPopup(null); return; }
+
       if (interactionMode === 'DRAW_POI' && activePoiType) {
         if (pendingPoi) return; // Modal offen → Karten-Klicks ignorieren
         const { lat, lng } = e.latlng;
@@ -906,41 +913,109 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
       {/* TASKS */}
       {showTasks && currentZoom >= 10 && data.tasks.map((task) => {
         if (!task.lat || !task.lng) return null;
-
-        // Dedup: Wenn Task an POI hängt oder innerhalb eines Polygons liegt -> NICHT ZEIGEN
         if (task.poiId) return null;
         if (polygonTaskIds.has(task.id)) return null;
 
+        const isMoving = movingTaskId === task.id;
+        const displayLat = isMoving && movingTaskPos ? movingTaskPos[0] : task.lat;
+        const displayLng = isMoving && movingTaskPos ? movingTaskPos[1] : task.lng;
         const isSelected = selectedId === task.id;
 
         return (
           <Marker
-            key={`task-${task.id}-${isSelected}`}
-            position={[task.lat, task.lng]}
-            icon={createTaskIcon(task.priority, task.status, isSelected)}
-            draggable={isSelected}
+            key={`task-${task.id}-${isMoving}`}
+            position={[displayLat, displayLng]}
+            icon={createTaskIcon(task.priority, task.status, isSelected || isMoving)}
+            draggable={isMoving}
             eventHandlers={{
               click: (e) => {
-                if (interactionMode === 'VIEW') {
-                    L.DomEvent.stopPropagation(e);
-                    selectFeature(task.id, 'TASK');
-                }
+                if (interactionMode !== 'VIEW') return;
+                L.DomEvent.stopPropagation(e);
+                if (isMoving) return;
+                setTaskPopup({ taskId: task.id, lat: task.lat, lng: task.lng });
               },
-              dragend: async (e) => {
+              dragend: (e) => {
                 const pos = e.target.getLatLng();
-                try {
-                  await updateTaskContent(data.orgSlug, task.id, { lat: pos.lat, lng: pos.lng });
-                  onRefresh();
-                } catch { toast.error('Position konnte nicht gespeichert werden'); }
+                setMovingTaskPos([pos.lat, pos.lng]);
               },
             }}
           >
-            <Tooltip direction="top" offset={[0, -16]} opacity={0.9} className="!pointer-events-none">
+            {!isMoving && (
+              <Tooltip direction="top" offset={[0, -16]} opacity={0.9} className="!pointer-events-none">
                 <span className="font-bold text-xs">{task.title}</span>
-            </Tooltip>
+              </Tooltip>
+            )}
           </Marker>
         );
       })}
+
+      {/* Task Context Popup */}
+      {taskPopup && (() => {
+        const task = data.tasks.find((t: any) => t.id === taskPopup.taskId);
+        if (!task) return null;
+        const popupPos = map.latLngToContainerPoint([taskPopup.lat, taskPopup.lng]);
+        return (
+          <div
+            className="absolute z-[1000] animate-in fade-in zoom-in-95 duration-100"
+            style={{ left: popupPos.x + 12, top: popupPos.y - 20 }}
+          >
+            <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden min-w-[160px]">
+              <div className="px-3 py-2 border-b border-slate-100">
+                <p className="text-xs font-bold text-slate-800 truncate max-w-[180px]">{task.title}</p>
+              </div>
+              <button
+                onClick={() => { setTaskPopup(null); selectFeature(task.id, 'TASK'); }}
+                className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+              >
+                <Eye size={14} className="text-slate-400" /> Details
+              </button>
+              <button
+                onClick={() => {
+                  setTaskPopup(null);
+                  setMovingTaskId(task.id);
+                  setMovingTaskPos([task.lat!, task.lng!]);
+                }}
+                className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-100"
+              >
+                <Crosshair size={14} className="text-slate-400" /> Verschieben
+              </button>
+              <button
+                onClick={() => setTaskPopup(null)}
+                className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-50 border-t border-slate-100"
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Moving Task Confirm Bar */}
+      {movingTaskId && movingTaskPos && (
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-xl shadow-2xl border border-slate-200 px-5 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-2 fade-in">
+          <span className="text-sm font-medium text-slate-700">Position verschieben — Pin ziehen</span>
+          <button
+            onClick={async () => {
+              try {
+                await updateTaskContent(data.orgSlug, movingTaskId, { lat: movingTaskPos[0], lng: movingTaskPos[1] });
+                onRefresh();
+                toast.success('Position gespeichert');
+              } catch { toast.error('Fehler'); }
+              setMovingTaskId(null);
+              setMovingTaskPos(null);
+            }}
+            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors"
+          >
+            Bestätigen
+          </button>
+          <button
+            onClick={() => { setMovingTaskId(null); setMovingTaskPos(null); }}
+            className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700"
+          >
+            Abbrechen
+          </button>
+        </div>
+      )}
     </>
   );
 }

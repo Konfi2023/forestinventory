@@ -54,25 +54,25 @@ export const MacbookScroll = ({
 
   const scaleX = useTransform(
     scrollYProgress,
-    [0, 0.2],
+    [0, 0.15],
     [1.2, isMobile ? 1 : 1.5],
   );
   const scaleY = useTransform(
     scrollYProgress,
-    [0, 0.2],
+    [0, 0.15],
     [0.6, isMobile ? 1 : 1.5],
   );
-  // Phase 1: 0–20% laptop opens (rotate + minimal translate). Phase 2: 20–45% paused (badge fades in). Phase 3: 45–100% scroll away.
-  const translate = useTransform(scrollYProgress, [0, 0.2, 0.45, 1], [0, 100, 100, 1500]);
-  const rotate = useTransform(scrollYProgress, [0.1, 0.12, 0.2], [-28, -28, 0]);
-  const textTransform = useTransform(scrollYProgress, [0, 0.2], [0, 100]);
-  const textOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
-  const annotationOpacity = useTransform(scrollYProgress, [0.25, 0.35], [0, 1]);
+  // Phase 1 (0–15%): Laptop opens. Phase 2 (15–55%): Hold — badge fades in. Phase 3 (55–100%): Scroll away.
+  const translate = useTransform(scrollYProgress, [0, 0.15, 0.55, 1], [0, 80, 80, 1500]);
+  const rotate = useTransform(scrollYProgress, [0.05, 0.08, 0.15], [-28, -28, 0]);
+  const textTransform = useTransform(scrollYProgress, [0, 0.15], [0, 100]);
+  const textOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
+  const annotationOpacity = useTransform(scrollYProgress, [0.25, 0.4], [0, 1]);
 
   return (
     <div
       ref={ref}
-      className="flex min-h-[280vh] shrink-0 scale-[0.35] transform flex-col items-center justify-start py-0 [perspective:800px] sm:scale-50 md:scale-100 md:py-80"
+      className="flex min-h-[400vh] shrink-0 scale-[0.35] transform flex-col items-center justify-start py-0 [perspective:800px] sm:scale-50 md:scale-100 md:py-80"
     >
       <motion.h2
         style={{

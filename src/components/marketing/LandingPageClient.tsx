@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { SignInButton } from './SignInButton';
 import { EnterpriseContactButton } from './EnterpriseContactButton';
-import { StickyScrollReveal } from './StickyScrollReveal';
+import { MacbookScroll } from '@/components/ui/macbook-scroll';
 
 /* ─── Types ─────────────────────────────────────────────────────────────────── */
 interface DbPlan {
@@ -166,8 +166,21 @@ export function LandingPageClient({ dbPlans }: Props) {
         </div>
       </section>
 
-      {/* ── Sticky Scroll Reveal (Desktop/Mobile Mockups) ────────────────── */}
-      <StickyScrollReveal />
+      {/* ── MacBook Scroll ──────────────────────────────────────────────── */}
+      <div className="overflow-hidden">
+        <MacbookScroll
+          title={
+            <span className="text-3xl md:text-4xl font-light text-white leading-tight">
+              Ihr Forstbetrieb.<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
+                Immer im Blick.
+              </span>
+            </span>
+          }
+          src="/landing/desktop-screen.jpg"
+          showGradient={false}
+        />
+      </div>
 
       <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
 

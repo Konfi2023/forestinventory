@@ -30,11 +30,13 @@ export const MacbookScroll = ({
   showGradient,
   title,
   badge,
+  annotations,
 }: {
   src?: string;
   showGradient?: boolean;
   title?: string | React.ReactNode;
   badge?: React.ReactNode;
+  annotations?: { label: string; position: string; delay?: number }[];
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -64,6 +66,7 @@ export const MacbookScroll = ({
   const rotate = useTransform(scrollYProgress, [0.1, 0.12, 0.3], [-28, -28, 0]);
   const textTransform = useTransform(scrollYProgress, [0, 0.3], [0, 100]);
   const textOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const annotationOpacity = useTransform(scrollYProgress, [0.28, 0.35], [0, 1]);
 
   return (
     <div
@@ -91,6 +94,26 @@ export const MacbookScroll = ({
         rotate={rotate}
         translate={translate}
       />
+      {/* Annotations */}
+      {annotations && annotations.length > 0 && (
+        <motion.div
+          style={{ opacity: annotationOpacity }}
+          className="absolute left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center gap-3 pointer-events-none"
+        >
+          {annotations.map((a, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: (a.delay ?? i * 0.15) + 0.3 }}
+              className={`bg-black/70 backdrop-blur-md border border-white/10 rounded-full px-4 py-1.5 text-[11px] font-medium text-white shadow-lg ${a.position}`}
+            >
+              {a.label}
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+
       {/* Base area */}
       <div className="relative -z-10 h-[22rem] w-[40rem] overflow-hidden rounded-2xl bg-gray-200 dark:bg-[#272729]">
         {/* above keyboard bar */}

@@ -6,6 +6,9 @@ import {
   Camera, Calendar, List, AlertTriangle, Clock, CalendarDays, MapPin,
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from './DatePickerSheet';
+import dynamic from 'next/dynamic';
+
+const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap').then(m => m.LocationPickerMap), { ssr: false });
 
 interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
 interface Forest { id: string; name: string; }
@@ -679,6 +682,12 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
           {gpsError === 'denied'   && <p className="mt-2 text-xs text-amber-500 text-center">GPS-Zugriff verweigert. Bitte in den Einstellungen freigeben.</p>}
           {gpsError === 'timeout'  && <p className="mt-2 text-xs text-amber-500 text-center">GPS-Signal zu schwach. Im Freien erneut versuchen.</p>}
           {gpsError === 'unavailable' && <p className="mt-2 text-xs text-amber-500 text-center">GPS nicht verfügbar auf diesem Gerät.</p>}
+          {lat != null && lng != null && (
+            <div className="mt-2">
+              <LocationPickerMap lat={lat} lng={lng} onChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }} height="160px" />
+              <p className="text-[10px] text-slate-400 text-center mt-1">Pin verschieben um Position anzupassen</p>
+            </div>
+          )}
         </div>
 
         <button onClick={submit} disabled={!title.trim() || !forestId || saving}

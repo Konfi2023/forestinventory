@@ -28,21 +28,19 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
     let successCount = 0;
 
     for (const file of acceptedFiles) {
-        const formData = new FormData();
-        formData.append("file", file);
-
         try {
-            let result;
             if (file.type.startsWith("image/")) {
-                result = await uploadTaskImage(orgSlug, taskId, formData);
-            } else {
-                result = await uploadTaskDocument(orgSlug, taskId, formData);
-            }
-            if (result?.success) {
+                // Upload via API Route (kein Server Action Body-Limit)
+                const fd = new FormData();
+                fd.append("file", file);
+                const res = await fetch(`/api/app/tasks/${taskId}/image`, { method: 'POST', body: fd });
+                if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Upload fehlgeschlagen'); }
                 successCount++;
             } else {
-                console.error("Upload returned:", result);
-                toast.error(`Fehler bei ${file.name}`);
+                const formData = new FormData();
+                formData.append("file", file);
+                await uploadTaskDocument(orgSlug, taskId, formData);
+                successCount++;
             }
         } catch (e: any) {
             console.error("Upload error:", e);

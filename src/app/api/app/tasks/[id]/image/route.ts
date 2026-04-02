@@ -85,8 +85,20 @@ export async function GET(
   const images = await prisma.image.findMany({
     where: { taskId },
     orderBy: { createdAt: 'asc' },
-    select: { id: true, url: true, name: true, createdAt: true },
+    select: { id: true, url: true, name: true, s3Key: true, createdAt: true },
   });
 
-  return NextResponse.json({ images });
+  // Presigned URLs frisch generieren (gespeicherte URLs laufen nach 1h ab)
+  const { getPresignedReadUrl } = await import('@/lib/storage');
+  const freshImages = await Promise.all(
+    images.map(async (img) => {
+      let url = img.url;
+      if (img.s3Key) {
+        try { url = await getPresignedReadUrl(img.s3Key); } catch { /* keep existing */ }
+      }
+      return { id: img.id, url, name: img.name, createdAt: img.createdAt };
+    })
+  );
+
+  return NextResponse.json({ images: freshImages });
 }

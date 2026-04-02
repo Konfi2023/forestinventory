@@ -72,6 +72,18 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   serverExternalPackages: ['better-sqlite3', '@react-pdf/renderer'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.your-objectstorage.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.amazonaws.com',
+      },
+    ],
+  },
 };
 
 const combinedConfig = withPWA(withNextIntl(nextConfig));

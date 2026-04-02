@@ -255,6 +255,19 @@ export async function getTaskDetails(orgSlug: string, taskId: string) {
 
   if (!task) return null;
 
+  // Presigned URLs für Bilder und Dokumente frisch generieren (alte laufen nach 1h ab)
+  const { getPresignedReadUrl } = await import('@/lib/storage');
+  for (const img of task.images) {
+    if (img.s3Key) {
+      try { img.url = await getPresignedReadUrl(img.s3Key); } catch { /* keep existing url */ }
+    }
+  }
+  for (const doc of task.documents) {
+    if (doc.s3Key) {
+      try { doc.url = await getPresignedReadUrl(doc.s3Key); } catch { /* keep existing url */ }
+    }
+  }
+
   // Verlinktes Polygon-Objekt auflösen (kein echter FK, daher manuell)
   let linkedPolygon: { id: string; name: string; type: string } | null = null;
   if (task.linkedPolygonId && task.linkedPolygonType) {

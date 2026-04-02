@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   Plus, X, CheckCircle2, CircleDot, CircleOff, Eye, RefreshCw,
-  Camera, Calendar, List, AlertTriangle, Clock, CalendarDays,
+  Camera, Calendar, List, AlertTriangle, Clock, CalendarDays, MapPin,
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from './DatePickerSheet';
 
@@ -504,13 +504,35 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
   const [photo, setPhoto]           = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [saving, setSaving]         = useState(false);
+  const [lat, setLat]               = useState<number | null>(null);
+  const [lng, setLng]               = useState<number | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError]     = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const getGPS = useCallback(() => {
+    if (!navigator.geolocation) { setGpsError('unavailable'); return; }
+    if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      setGpsError('insecure'); return;
+    }
+    setGpsLoading(true);
+    setGpsError(null);
+    navigator.geolocation.getCurrentPosition(
+      pos => { setLat(pos.coords.latitude); setLng(pos.coords.longitude); setGpsLoading(false); },
+      err => { setGpsLoading(false); if (err.code === 1) setGpsError('denied'); else if (err.code === 3) setGpsError('timeout'); else setGpsError('unavailable'); },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  // GPS automatisch beim Öffnen erfassen
+  useEffect(() => { getGPS(); }, [getGPS]);
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhoto(file);
     setPhotoPreview(URL.createObjectURL(file));
+    if (lat == null) getGPS();
   }
 
   async function submit() {
@@ -520,7 +542,7 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
       const res = await fetch('/api/app/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orgSlug, title: title.trim(), forestId, priority, assigneeId: assigneeId || undefined, dueDate: dueDate || undefined }),
+        body: JSON.stringify({ orgSlug, title: title.trim(), forestId, priority, assigneeId: assigneeId || undefined, dueDate: dueDate || undefined, lat: lat ?? undefined, lng: lng ?? undefined }),
       });
       if (res.ok) {
         const { task } = await res.json();
@@ -626,6 +648,37 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
               <Camera size={22} /> Foto aufnehmen
             </button>
           )}
+        </div>
+
+        {/* Standort */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Standort</label>
+          {lat != null && lng != null ? (
+            <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+              <MapPin size={18} className="text-emerald-600 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-mono text-emerald-800">{lat.toFixed(5)}, {lng.toFixed(5)}</p>
+              </div>
+              <button onClick={getGPS} disabled={gpsLoading}
+                className="text-xs text-emerald-600 font-semibold px-2 py-1 rounded-lg hover:bg-emerald-100 active:bg-emerald-100">
+                {gpsLoading ? <RefreshCw size={14} className="animate-spin" /> : 'Neu'}
+              </button>
+              <button onClick={() => { setLat(null); setLng(null); }}
+                className="text-xs text-slate-400 font-semibold px-2 py-1 rounded-lg hover:bg-slate-100 active:bg-slate-100">
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button onClick={getGPS} disabled={gpsLoading}
+              className="w-full flex items-center justify-center gap-3 py-4 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl text-base text-slate-400 active:bg-slate-100">
+              {gpsLoading ? <RefreshCw size={18} className="animate-spin" /> : <MapPin size={18} />}
+              {gpsLoading ? 'Wird ermittelt…' : 'Standort erfassen'}
+            </button>
+          )}
+          {gpsError === 'insecure' && <p className="mt-2 text-xs text-red-400 text-center">GPS erfordert HTTPS.</p>}
+          {gpsError === 'denied'   && <p className="mt-2 text-xs text-amber-500 text-center">GPS-Zugriff verweigert. Bitte in den Einstellungen freigeben.</p>}
+          {gpsError === 'timeout'  && <p className="mt-2 text-xs text-amber-500 text-center">GPS-Signal zu schwach. Im Freien erneut versuchen.</p>}
+          {gpsError === 'unavailable' && <p className="mt-2 text-xs text-amber-500 text-center">GPS nicht verfügbar auf diesem Gerät.</p>}
         </div>
 
         <button onClick={submit} disabled={!title.trim() || !forestId || saving}

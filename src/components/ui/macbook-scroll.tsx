@@ -54,24 +54,25 @@ export const MacbookScroll = ({
 
   const scaleX = useTransform(
     scrollYProgress,
-    [0, 0.3],
+    [0, 0.25],
     [1.2, isMobile ? 1 : 1.5],
   );
   const scaleY = useTransform(
     scrollYProgress,
-    [0, 0.3],
+    [0, 0.25],
     [0.6, isMobile ? 1 : 1.5],
   );
-  const translate = useTransform(scrollYProgress, [0, 1], [0, 1500]);
-  const rotate = useTransform(scrollYProgress, [0.1, 0.12, 0.3], [-28, -28, 0]);
-  const textTransform = useTransform(scrollYProgress, [0, 0.3], [0, 100]);
-  const textOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const annotationOpacity = useTransform(scrollYProgress, [0.28, 0.35], [0, 1]);
+  // Phase 1: 0–25% laptop opens, translate moves. Phase 2: 25–45% pause (badge). Phase 3: 45–100% scroll away.
+  const translate = useTransform(scrollYProgress, [0, 0.25, 0.45, 1], [0, 400, 400, 1500]);
+  const rotate = useTransform(scrollYProgress, [0.1, 0.12, 0.25], [-28, -28, 0]);
+  const textTransform = useTransform(scrollYProgress, [0, 0.25], [0, 100]);
+  const textOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
+  const annotationOpacity = useTransform(scrollYProgress, [0.28, 0.38], [0, 1]);
 
   return (
     <div
       ref={ref}
-      className="flex min-h-[200vh] shrink-0 scale-[0.35] transform flex-col items-center justify-start py-0 [perspective:800px] sm:scale-50 md:scale-100 md:py-80"
+      className="flex min-h-[280vh] shrink-0 scale-[0.35] transform flex-col items-center justify-start py-0 [perspective:800px] sm:scale-50 md:scale-100 md:py-80"
     >
       <motion.h2
         style={{
@@ -178,12 +179,14 @@ export const Lid = ({
           alt="Forest Manager Screenshot"
           className="absolute inset-0 h-full w-full rounded-lg object-cover object-top"
         />
-        {/* Badge overlay — bottom right, 30% overlapping outside */}
+        {/* Badge overlay — right side, overlapping edge */}
         {annotations && annotations[0] && annotationOpacity && (
-          <motion.div style={{ opacity: annotationOpacity }}
-            className="absolute -bottom-6 -right-8 z-10 max-w-[14rem]">
-            <div className="bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl px-5 py-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
-              <p className="text-[11px] leading-relaxed font-medium text-white/90">{annotations[0].label}</p>
+          <motion.div
+            style={{ opacity: annotationOpacity }}
+            className="absolute bottom-8 -right-20 z-10 w-[15rem]"
+          >
+            <div className="bg-black/80 backdrop-blur-[40px] border border-white/[0.08] rounded-2xl px-5 py-4 shadow-[0_16px_48px_rgba(0,0,0,0.7)]">
+              <p className="text-[11px] leading-[1.6] font-medium text-white/90">{annotations[0].label}</p>
             </div>
           </motion.div>
         )}

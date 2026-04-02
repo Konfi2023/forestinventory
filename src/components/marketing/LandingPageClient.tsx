@@ -432,9 +432,10 @@ const FEATURES = [
 ];
 
 const CAROUSEL_SLIDES = [
-  { src: '/landing/desktop-screen.png', num: '01', title: 'Ihr Wald.\nAuf einen Blick.', subtitle: 'GIS-Karte mit Satellitenansicht, POIs und Polter-Details' },
-  { src: '/landing/satellite-roitzsch.png', num: '02', title: 'Satelliten-\nMonitoring.', subtitle: 'Waldpolygone mit automatischer Veränderungserkennung' },
-  { src: '/landing/satellite-gutconow.png', num: '03', title: 'Vitalität\nmessen.', subtitle: 'NDVI-Analyse und Gesundheitsbewertung per Sentinel-2' },
+  { src: '/landing/slide-ndvi.png', num: '01', title: 'Biomasse-\nMonitoring.', subtitle: 'NDVI-Karte mit Sentinel-2 Satellitendaten — Waldvitalität auf einen Blick.' },
+  { src: '/landing/slide-task.png', num: '02', title: 'Aufgaben\nim Revier.', subtitle: 'Aufgaben mit Standort, Foto und Beschreibung — direkt auf der Karte.' },
+  { src: '/landing/slide-monitoring.png', num: '03', title: 'Klima &\nBorkenkäfer.', subtitle: 'NDVI-Jahresvergleich, Temperatur, Niederschlag und Borkenkäfer-Risiko.' },
+  { src: '/landing/slide-forsteinrichtung.png', num: '04', title: 'Forst-\neinrichtung.', subtitle: 'Abteilungsweise Bestandserfassung mit Probekreisen und Ertragstafeln.' },
 ];
 
 function ScreenshotCarousel() {

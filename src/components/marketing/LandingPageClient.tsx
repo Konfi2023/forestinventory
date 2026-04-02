@@ -165,7 +165,32 @@ export function LandingPageClient({ dbPlans }: Props) {
         </div>
       </section>
 
+      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
+
       {/* ── Screenshot Carousel ─────────────────────────────────────────── */}
+      <section className="pt-28 pb-8 px-6">
+        <div className="max-w-6xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4"
+          >
+            So sieht es aus
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-4xl font-light text-white leading-tight max-w-lg"
+          >
+            Eine Plattform.{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
+              Alle Werkzeuge.
+            </span>
+          </motion.h2>
+        </div>
+      </section>
       <ScreenshotCarousel />
 
       <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
@@ -485,12 +510,12 @@ function ScreenshotCarousel() {
                 transition={{ duration: 0.5, ease: 'easeOut' }}
               >
                 {/* Number */}
-                <span className="text-[6rem] sm:text-[8rem] font-bold leading-none text-white/[0.06] absolute top-6 left-8 sm:left-12 select-none pointer-events-none">
+                <span className="text-[6rem] sm:text-[8rem] font-light leading-none text-white/[0.06] absolute top-6 left-8 sm:left-12 select-none pointer-events-none">
                   {slide.num}
                 </span>
 
                 {/* Title */}
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-[1.05] whitespace-pre-line mb-3 max-w-md">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-light text-white leading-[1.1] whitespace-pre-line mb-3 max-w-md">
                   {slide.title}
                 </h2>
 

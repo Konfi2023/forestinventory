@@ -177,7 +177,7 @@ export function LandingPageClient({ dbPlans }: Props) {
               </span>
             </span>
           }
-          src="/landing/desktop-screen.jpg"
+          src="/landing/desktop-screen.png"
           showGradient={false}
         />
       </div>

@@ -452,78 +452,83 @@ function ScreenshotCarousel() {
   const slide = CAROUSEL_SLIDES[current];
 
   return (
-    <section className="relative h-[85vh] min-h-[600px] overflow-hidden">
-      {/* Background image */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={current}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.7, ease: 'easeInOut' }}
-          className="absolute inset-0"
-        >
-          <img src={slide.src} alt={slide.title} className="w-full h-full object-cover" />
-          {/* Gradient overlays */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f0a] via-[#0a0f0a]/70 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f0a]/80 via-transparent to-[#0a0f0a]/40" />
-        </motion.div>
-      </AnimatePresence>
+    <section className="py-20 px-6">
+      <div className="max-w-[1440px] mx-auto">
+        {/* Image container — fixed 1440x900 aspect */}
+        <div className="relative aspect-[1440/900] rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50">
+          {/* Background image — pixel-perfect */}
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={current}
+              src={slide.src}
+              alt={slide.title}
+              initial={{ opacity: 0, scale: 1.02 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.7, ease: 'easeInOut' }}
+              className="absolute inset-0 w-full h-full object-fill"
+            />
+          </AnimatePresence>
 
-      {/* Content */}
-      <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-center">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current}
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -30 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-          >
-            {/* Number */}
-            <span className="text-[8rem] sm:text-[10rem] font-bold leading-none text-white/[0.04] absolute top-8 left-6 select-none pointer-events-none">
-              {slide.num}
-            </span>
+          {/* Gradient overlay — left side for text */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
-            {/* Title */}
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] whitespace-pre-line mb-6 max-w-lg">
-              {slide.title}
-            </h2>
+          {/* Content overlay */}
+          <div className="absolute inset-0 z-10 flex flex-col justify-end p-8 sm:p-12">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              >
+                {/* Number */}
+                <span className="text-[6rem] sm:text-[8rem] font-bold leading-none text-white/[0.06] absolute top-6 left-8 sm:left-12 select-none pointer-events-none">
+                  {slide.num}
+                </span>
 
-            {/* Subtitle */}
-            <p className="text-sm sm:text-base text-slate-400 max-w-md mb-10">
-              {slide.subtitle}
-            </p>
+                {/* Title */}
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-[1.05] whitespace-pre-line mb-3 max-w-md">
+                  {slide.title}
+                </h2>
 
-            {/* Slide indicator */}
-            <div className="flex items-center gap-4">
-              {CAROUSEL_SLIDES.map((_, i) => (
-                <button key={i} onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
-                  className="relative h-[2px] w-12 bg-white/10 overflow-hidden rounded-full">
-                  {current === i && (
-                    <motion.div
-                      initial={{ width: '0%' }}
-                      animate={{ width: '100%' }}
-                      transition={{ duration: 6, ease: 'linear' }}
-                      className="absolute inset-y-0 left-0 bg-emerald-400 rounded-full"
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        </AnimatePresence>
+                {/* Subtitle */}
+                <p className="text-xs sm:text-sm text-white/60 max-w-sm mb-8">
+                  {slide.subtitle}
+                </p>
+
+                {/* Slide indicator + arrows */}
+                <div className="flex items-center gap-4">
+                  {CAROUSEL_SLIDES.map((_, i) => (
+                    <button key={i} onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
+                      className="relative h-[2px] w-10 bg-white/10 overflow-hidden rounded-full">
+                      {current === i && (
+                        <motion.div
+                          initial={{ width: '0%' }}
+                          animate={{ width: '100%' }}
+                          transition={{ duration: 6, ease: 'linear' }}
+                          className="absolute inset-y-0 left-0 bg-emerald-400 rounded-full"
+                        />
+                      )}
+                    </button>
+                  ))}
+                  {/* Arrows inline */}
+                  <div className="ml-4 flex gap-2">
+                    <button onClick={prev} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-full w-8 h-8 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button onClick={next} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-full w-8 h-8 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
-
-      {/* Nav arrows */}
-      <button onClick={prev}
-        className="absolute left-6 bottom-8 z-20 bg-white/5 backdrop-blur-md border border-white/10 rounded-full w-11 h-11 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-      <button onClick={next}
-        className="absolute left-20 bottom-8 z-20 bg-white/5 backdrop-blur-md border border-white/10 rounded-full w-11 h-11 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
     </section>
   );
 }

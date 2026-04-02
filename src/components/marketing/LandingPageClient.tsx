@@ -150,40 +150,7 @@ export function LandingPageClient({ dbPlans }: Props) {
         </div>
       </section>
 
-      {/* ── Screenshots ───────────────────────────────────────────────────── */}
-      <section className="px-6 pb-32">
-        <div className="max-w-6xl mx-auto">
-          <div ref={r} className="fade mb-16 text-center">
-            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">Desktop & Mobil</p>
-            <p className="text-[15px] text-slate-400 max-w-md mx-auto">
-              Erfassung im Revier per Smartphone. Auswertung am Schreibtisch. Funktioniert auch offline.
-            </p>
-          </div>
-          <div ref={r} className="fade d1 mb-12">
-            <div className="rounded-xl overflow-hidden border border-white/10">
-              <img src="/landing/desktop-screen.jpg" alt="Forest Manager — GIS-Karte" className="w-full block" />
-            </div>
-          </div>
-          <div className="flex justify-center gap-6 sm:gap-10">
-            <div ref={r} className="fade d2 w-44 sm:w-52">
-              <div className="rounded-2xl overflow-hidden border border-white/10">
-                <img src="/landing/mobile-tree.png" alt="Baumerfassung" className="w-full block" />
-              </div>
-              <p className="text-[11px] text-slate-500 text-center mt-3">Baumerfassung</p>
-            </div>
-            <div ref={r} className="fade d3 w-44 sm:w-52">
-              <div className="rounded-2xl overflow-hidden border border-white/10">
-                <img src="/landing/mobile-polter.png" alt="Poltererfassung" className="w-full block" />
-              </div>
-              <p className="text-[11px] text-slate-500 text-center mt-3">Poltererfassung</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
-
-      {/* ── Features ──────────────────────────────────────────────────────── */}
+      {/* ── Features (direkt nach Hero) ─────────────────────────────────── */}
       <section id="features" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
           <div ref={r} className="fade mb-16">
@@ -200,6 +167,46 @@ export function LandingPageClient({ dbPlans }: Props) {
                 <p className="text-[13px] text-slate-400 leading-relaxed">{f.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
+
+      {/* ── Screenshots (2-spaltig wie Monitoring) ─────────────────────────── */}
+      <section className="py-28 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
+            <div ref={r} className="fade">
+              <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">Desktop & Mobil</p>
+              <h2 className="text-2xl sm:text-3xl font-light text-white mb-6">
+                Erfassung im Revier.<br />Auswertung am Schreibtisch.
+              </h2>
+              <p className="text-[15px] text-slate-400 leading-relaxed mb-8">
+                Per Smartphone Bäume, Polter und Schäden direkt im Wald erfassen.
+                Am Desktop auswerten, planen und Berichte erstellen. Funktioniert auch offline.
+              </p>
+              <div className="grid grid-cols-2 gap-6">
+                <div><p className="text-[13px] font-medium text-white">Offline-fähig</p><p className="text-[12px] text-slate-500 mt-0.5">Daten werden synchronisiert</p></div>
+                <div><p className="text-[13px] font-medium text-white">Kamera-Integration</p><p className="text-[12px] text-slate-500 mt-0.5">Fotos direkt an Aufgaben</p></div>
+                <div><p className="text-[13px] font-medium text-white">GPS-Standort</p><p className="text-[12px] text-slate-500 mt-0.5">Automatische Verortung</p></div>
+                <div><p className="text-[13px] font-medium text-white">PWA-Technologie</p><p className="text-[12px] text-slate-500 mt-0.5">Kein App-Store nötig</p></div>
+              </div>
+            </div>
+
+            <div ref={r} className="fade d2 lg:pt-10 space-y-4">
+              <div className="rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                <img src="/landing/desktop-screen.jpg" alt="Forest Manager — GIS-Karte" className="w-full block" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                  <img src="/landing/mobile-tree.png" alt="Baumerfassung" className="w-full block" />
+                </div>
+                <div className="rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                  <img src="/landing/mobile-polter.png" alt="Poltererfassung" className="w-full block" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

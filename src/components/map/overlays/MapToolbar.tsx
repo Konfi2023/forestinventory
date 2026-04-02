@@ -129,19 +129,19 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
 
         {canCreate && (
         <>
-            {/* TOOL: WALD ZEICHNEN */}
+            {/* TOOL: AUFGABE ERSTELLEN */}
             <button
-                onClick={() => { setMode('DRAW_FOREST'); setPoi(null); setShowPoiMenu(false); }}
+                onClick={() => { setMode('PLACE_TASK'); setPoi(null); setShowPoiMenu(false); }}
                 className={cn(
                 "p-2.5 rounded-lg transition-all duration-200 group relative",
-                mode === 'DRAW_FOREST' 
-                    ? "bg-[#10b981] text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]" 
+                mode === 'PLACE_TASK'
+                    ? "bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.3)]"
                     : "text-gray-400 hover:text-white hover:bg-white/10"
                 )}
             >
-                <Trees size={20} />
+                <ClipboardList size={20} />
                 <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                    Wald einzeichnen
+                    Aufgabe erstellen
                 </span>
             </button>
 
@@ -150,7 +150,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                 onClick={() => { setShowPoiMenu(!showPoiMenu); setShowPathMenu(false); }}
                 className={cn(
                 "p-2.5 rounded-lg transition-all duration-200 group relative",
-                mode === 'DRAW_POI' || mode === 'PLACE_TASK' || showPoiMenu
+                mode === 'DRAW_POI' || showPoiMenu
                     ? "bg-white/10 text-white border border-white/20"
                     : "text-gray-400 hover:text-white hover:bg-white/10"
                 )}
@@ -284,16 +284,16 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
               ))}
               <div className="h-px bg-white/10 w-full my-1" />
               <button
-                onClick={() => { setMode('PLACE_TASK'); setShowPoiMenu(false); }}
+                onClick={() => { setMode('DRAW_FOREST'); setPoi(null); setShowPoiMenu(false); }}
                 className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider w-full text-left",
-                    mode === 'PLACE_TASK'
+                    mode === 'DRAW_FOREST'
                         ? "bg-white/10 text-white"
                         : "hover:bg-white/10 text-gray-400 hover:text-white"
                 )}
               >
-                  <ClipboardList size={16} className="text-cyan-400" />
-                  Aufgabe
+                  <Trees size={16} className="text-emerald-400" />
+                  Wald zeichnen
               </button>
           </div>
       )}

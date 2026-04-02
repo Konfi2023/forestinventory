@@ -51,7 +51,7 @@ export interface MapState {
   previousFeatureType: FeatureType | null;
   
   // Interaktions-Modus
-  interactionMode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY' | 'DRAW_COMPARTMENT';
+  interactionMode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY' | 'DRAW_COMPARTMENT' | 'PLACE_TASK';
 
   // Hält das GeoJSON-Objekt oder die POI-Daten, die gerade bearbeitet werden
   editingFeatureData: any | null;
@@ -94,7 +94,7 @@ export interface MapState {
   restorePreviousFeature: () => void;
   setHoveredFeature: (id: string | null) => void;
   
-  setInteractionMode: (mode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY') => void;
+  setInteractionMode: (mode: 'VIEW' | 'DRAW_FOREST' | 'EDIT_GEOMETRY' | 'DRAW_POI' | 'MOVE_POI' | 'DRAW_PATH' | 'MEASURE_DISTANCE' | 'MEASURE_AREA' | 'DRAW_PLANTING' | 'DRAW_HUNTING' | 'DRAW_CALAMITY' | 'DRAW_COMPARTMENT' | 'PLACE_TASK') => void;
   setEditingFeature: (data: any | null) => void;
   setActivePoiType: (type: PoiType) => void;
   setActivePathType: (type: PathType) => void;

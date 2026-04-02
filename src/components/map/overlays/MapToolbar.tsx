@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Layers,
   Grid3x3,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MapImporter } from '../importer/MapImporter';
@@ -149,7 +150,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                 onClick={() => { setShowPoiMenu(!showPoiMenu); setShowPathMenu(false); }}
                 className={cn(
                 "p-2.5 rounded-lg transition-all duration-200 group relative",
-                mode === 'DRAW_POI' || showPoiMenu
+                mode === 'DRAW_POI' || mode === 'PLACE_TASK' || showPoiMenu
                     ? "bg-white/10 text-white border border-white/20"
                     : "text-gray-400 hover:text-white hover:bg-white/10"
                 )}
@@ -281,6 +282,19 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                       {tool.label}
                   </button>
               ))}
+              <div className="h-px bg-white/10 w-full my-1" />
+              <button
+                onClick={() => { setMode('PLACE_TASK'); setShowPoiMenu(false); }}
+                className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider w-full text-left",
+                    mode === 'PLACE_TASK'
+                        ? "bg-white/10 text-white"
+                        : "hover:bg-white/10 text-gray-400 hover:text-white"
+                )}
+              >
+                  <ClipboardList size={16} className="text-cyan-400" />
+                  Aufgabe
+              </button>
           </div>
       )}
 
@@ -342,6 +356,19 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
              <p className="font-normal opacity-90">um das Objekt zu platzieren.</p>
              <button 
                 onClick={() => { setMode('VIEW'); setPoi(null); }} 
+                className="mt-2 bg-black/20 hover:bg-black/30 w-full py-1 rounded text-[10px] uppercase transition-colors"
+             >
+                Abbrechen
+             </button>
+         </div>
+      )}
+
+      {mode === 'PLACE_TASK' && (
+         <div className="ml-14 absolute top-24 bg-cyan-600 text-white font-bold px-4 py-3 rounded-xl shadow-2xl text-xs whitespace-nowrap animate-in slide-in-from-left-2 fade-in border border-cyan-400 z-50">
+             <p>Klicke auf die Karte,</p>
+             <p className="font-normal opacity-90">um eine Aufgabe zu platzieren.</p>
+             <button
+                onClick={() => setMode('VIEW')}
                 className="mt-2 bg-black/20 hover:bg-black/30 w-full py-1 rounded text-[10px] uppercase transition-colors"
              >
                 Abbrechen

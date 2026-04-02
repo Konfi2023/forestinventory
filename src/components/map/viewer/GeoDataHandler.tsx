@@ -537,6 +537,37 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
             }
         );
       }
+
+      if (interactionMode === 'PLACE_TASK') {
+        const { lat, lng } = e.latlng;
+        let forestId: string | undefined;
+        try {
+          const clickedPoint = point([lng, lat]);
+          const containing = data.forests.find(f => f.geoJson && booleanPointInPolygon(clickedPoint, f.geoJson));
+          forestId = containing?.id;
+        } catch { forestId = undefined; }
+        if (!forestId) forestId = data.forests[0]?.id;
+        if (!forestId) { toast.error('Kein Wald vorhanden'); return; }
+
+        toast.promise(
+          fetch('/api/app/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orgSlug: data.orgSlug, title: 'Neue Aufgabe', forestId, lat, lng }),
+          }).then(async (res) => {
+            if (!res.ok) throw new Error('Fehler');
+            const { task } = await res.json();
+            setInteractionMode('VIEW');
+            onRefresh();
+            setTimeout(() => selectFeature(task.id, 'TASK'), 500);
+          }),
+          {
+            loading: 'Erstelle Aufgabe…',
+            success: 'Aufgabe erstellt — bitte Titel anpassen',
+            error: (err) => `Fehler: ${err.message}`,
+          }
+        );
+      }
     }
   });
 
@@ -884,10 +915,10 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
 
         return (
           <Marker
-            key={task.id}
+            key={`task-${task.id}-${isSelected}`}
             position={[task.lat, task.lng]}
             icon={createTaskIcon(task.priority, task.status, isSelected)}
-            draggable={isSelected && interactionMode === 'VIEW'}
+            draggable
             eventHandlers={{
               click: (e) => {
                 if (interactionMode === 'VIEW') {

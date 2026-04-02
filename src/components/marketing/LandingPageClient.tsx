@@ -56,38 +56,43 @@ export function LandingPageClient({ dbPlans }: Props) {
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="relative pt-36 pb-24 px-6 overflow-hidden">
-        {/* Satellite background */}
         <div className="absolute inset-0 z-0">
-          <img src="/landing/satellite-roitzsch.png" alt="" className="w-full h-full object-cover opacity-[0.07]" />
+          <img src="/landing/satellite-roitzsch.png" alt="" className="w-full h-full object-cover opacity-[0.12]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f0a] via-transparent to-[#0a0f0a]" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <p ref={r} className="fade text-[13px] text-stone-400 mb-6">
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+            className="text-[13px] text-slate-500 mb-6 font-mono uppercase tracking-widest">
             Forstmanagement Software
-          </p>
-          <h1 ref={r} className="fade d1 text-4xl sm:text-5xl lg:text-[3.5rem] font-light tracking-tight leading-[1.15] text-stone-800 mb-6">
-            Ihr Wald,<br />digital verwaltet.
-          </h1>
-          <p ref={r} className="fade d2 text-[15px] text-stone-400 leading-relaxed max-w-lg mx-auto mb-10">
+          </motion.p>
+          <motion.h1 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-4xl sm:text-5xl lg:text-[3.5rem] font-light tracking-tight leading-[1.15] text-white mb-6">
+            Ihr Wald,<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">digital verwaltet.</span>
+          </motion.h1>
+          <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+            className="text-[15px] text-slate-400 leading-relaxed max-w-lg mx-auto mb-10">
             Waldinventur, GIS-Karte, Satellitenüberwachung und
             EUDR-Konformität — eine Plattform für Waldbesitzer,
             WBVen und Forstbetriebsgemeinschaften.
-          </p>
-          <div ref={r} className="fade d3 flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+          </motion.p>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <SignInButton
               label="Kostenlos testen"
-              className="text-[13px] text-white bg-stone-800 hover:bg-stone-700 px-6 py-2.5 rounded-lg transition-colors"
+              className="text-[13px] text-black bg-emerald-400 hover:bg-emerald-300 px-6 py-2.5 rounded-lg transition-colors font-medium"
             />
-            <a href="#features" className="text-[13px] text-stone-400 hover:text-stone-600 transition-colors">
+            <a href="#features" className="text-[13px] text-slate-400 hover:text-white transition-colors">
               Mehr erfahren &darr;
             </a>
-          </div>
-          <div ref={r} className="fade d4 flex items-center justify-center gap-5 text-[11px] text-stone-300">
+          </motion.div>
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
+            className="flex items-center justify-center gap-5 text-[11px] text-slate-500">
             <span>DSGVO-konform</span>
-            <span className="w-px h-3 bg-stone-200" />
+            <span className="w-px h-3 bg-white/10" />
             <span>EUDR-ready</span>
-            <span className="w-px h-3 bg-stone-200" />
+            <span className="w-px h-3 bg-white/10" />
             <span>Server in Europa</span>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -95,80 +100,68 @@ export function LandingPageClient({ dbPlans }: Props) {
       <section className="px-6 pb-32">
         <div className="max-w-6xl mx-auto">
           <div ref={r} className="fade mb-16 text-center">
-            <p className="text-[11px] text-stone-300 uppercase tracking-widest mb-3">Desktop & Mobil</p>
-            <p className="text-[15px] text-stone-400 max-w-md mx-auto">
+            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">Desktop & Mobil</p>
+            <p className="text-[15px] text-slate-400 max-w-md mx-auto">
               Erfassung im Revier per Smartphone. Auswertung am Schreibtisch. Funktioniert auch offline.
             </p>
           </div>
-
-          {/* Desktop */}
           <div ref={r} className="fade d1 mb-12">
-            <div className="rounded-xl overflow-hidden border border-stone-150" style={{ borderColor: 'rgb(231 229 228)' }}>
-              <img
-                src="/landing/desktop-screen.jpg"
-                alt="Forest Manager — GIS-Karte mit Waldpolygonen, Wetterdaten und Polter-Details"
-                className="w-full block"
-              />
+            <div className="rounded-xl overflow-hidden border border-white/10">
+              <img src="/landing/desktop-screen.jpg" alt="Forest Manager — GIS-Karte" className="w-full block" />
             </div>
           </div>
-
-          {/* Mobile */}
           <div className="flex justify-center gap-6 sm:gap-10">
             <div ref={r} className="fade d2 w-44 sm:w-52">
-              <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgb(231 229 228)' }}>
+              <div className="rounded-2xl overflow-hidden border border-white/10">
                 <img src="/landing/mobile-tree.png" alt="Baumerfassung" className="w-full block" />
               </div>
-              <p className="text-[11px] text-stone-300 text-center mt-3">Baumerfassung</p>
+              <p className="text-[11px] text-slate-500 text-center mt-3">Baumerfassung</p>
             </div>
             <div ref={r} className="fade d3 w-44 sm:w-52">
-              <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgb(231 229 228)' }}>
+              <div className="rounded-2xl overflow-hidden border border-white/10">
                 <img src="/landing/mobile-polter.png" alt="Poltererfassung" className="w-full block" />
               </div>
-              <p className="text-[11px] text-stone-300 text-center mt-3">Poltererfassung</p>
+              <p className="text-[11px] text-slate-500 text-center mt-3">Poltererfassung</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Trennlinie ────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-stone-100" /></div>
+      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
 
       {/* ── Features ──────────────────────────────────────────────────────── */}
       <section id="features" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
           <div ref={r} className="fade mb-16">
-            <p className="text-[11px] text-stone-300 uppercase tracking-widest mb-3">Funktionen</p>
-            <h2 className="text-2xl sm:text-3xl font-light text-stone-800 max-w-md">
+            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">Funktionen</p>
+            <h2 className="text-2xl sm:text-3xl font-light text-white max-w-md">
               Alles, was Ihr Forstbetrieb braucht.
             </h2>
           </div>
-
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-14">
             {FEATURES.map((f, i) => (
               <div key={f.title} ref={r} className={`fade d${i + 1}`}>
-                <f.icon size={18} className="text-green-600 mb-4" strokeWidth={1.5} />
-                <h3 className="text-[15px] font-medium text-stone-800 mb-2">{f.title}</h3>
-                <p className="text-[13px] text-stone-400 leading-relaxed">{f.description}</p>
+                <f.icon size={18} className="text-emerald-400 mb-4" strokeWidth={1.5} />
+                <h3 className="text-[15px] font-medium text-white mb-2">{f.title}</h3>
+                <p className="text-[13px] text-slate-400 leading-relaxed">{f.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Trennlinie ────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-stone-100" /></div>
+      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
 
       {/* ── EUDR ──────────────────────────────────────────────────────────── */}
       <section id="eudr" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
-            {/* Left */}
             <div ref={r} className="fade">
-              <p className="text-[11px] text-stone-300 uppercase tracking-widest mb-3">EU 2023/1115</p>
-              <h2 className="text-2xl sm:text-3xl font-light text-stone-800 mb-6">
+              <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">EU 2023/1115</p>
+              <h2 className="text-2xl sm:text-3xl font-light text-white mb-6">
                 EUDR-Konformität,<br />ohne Mehraufwand.
               </h2>
-              <p className="text-[15px] text-stone-400 leading-relaxed mb-8">
+              <p className="text-[15px] text-slate-400 leading-relaxed mb-8">
                 Die EU-Entwaldungsverordnung verpflichtet Holzproduzenten ab 2025 zur
                 Sorgfaltserklärung. Forest Manager erstellt Ihre Due-Diligence-Statements
                 automatisch aus Waldpolygonen und Einschlagsdaten.
@@ -182,14 +175,12 @@ export function LandingPageClient({ dbPlans }: Props) {
                   'Satellitendaten als Entwaldungsbeweis',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-3">
-                    <CheckCircle2 size={14} className="text-green-600 mt-0.5 shrink-0" strokeWidth={1.5} />
-                    <span className="text-[13px] text-stone-500">{item}</span>
+                    <CheckCircle2 size={14} className="text-emerald-400 mt-0.5 shrink-0" strokeWidth={1.5} />
+                    <span className="text-[13px] text-slate-400">{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
-
-            {/* Right – steps */}
             <div ref={r} className="fade d2 space-y-6 lg:pt-10">
               {[
                 { step: '01', title: 'Waldpolygone einzeichnen', desc: 'Flächen auf der Karte definieren — automatisch als EU-konforme Herkunftsnachweise aufbereitet.' },
@@ -198,10 +189,10 @@ export function LandingPageClient({ dbPlans }: Props) {
                 { step: '04', title: 'Lieferschein drucken', desc: 'Referenznummer erscheint automatisch auf allen Lieferscheinen.' },
               ].map((s) => (
                 <div key={s.step} className="flex gap-5">
-                  <span className="text-[11px] font-mono text-stone-300 mt-0.5 shrink-0 w-5">{s.step}</span>
+                  <span className="text-[11px] font-mono text-emerald-400/60 mt-0.5 shrink-0 w-5">{s.step}</span>
                   <div>
-                    <p className="text-[14px] font-medium text-stone-700 mb-1">{s.title}</p>
-                    <p className="text-[13px] text-stone-400 leading-relaxed">{s.desc}</p>
+                    <p className="text-[14px] font-medium text-white mb-1">{s.title}</p>
+                    <p className="text-[13px] text-slate-400 leading-relaxed">{s.desc}</p>
                   </div>
                 </div>
               ))}
@@ -210,8 +201,7 @@ export function LandingPageClient({ dbPlans }: Props) {
         </div>
       </section>
 
-      {/* ── Trennlinie ────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-stone-100" /></div>
+      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
 
       {/* ── Monitoring (dark section with scanner cards) ─────────────────── */}
       <section id="monitoring" className="py-28 px-6 bg-[#0a0f0a] relative overflow-hidden">
@@ -341,36 +331,33 @@ export function LandingPageClient({ dbPlans }: Props) {
         </div>
       </section>
 
-      {/* ── Trennlinie ────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-stone-100" /></div>
+      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
 
       {/* ── Preise ────────────────────────────────────────────────────────── */}
       <section id="preise" className="py-28 px-6">
         <div className="max-w-5xl mx-auto">
           <div ref={r} className="fade mb-16">
-            <p className="text-[11px] text-stone-300 uppercase tracking-widest mb-3">Preise</p>
-            <h2 className="text-2xl sm:text-3xl font-light text-stone-800 mb-4 max-w-sm">
+            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">Preise</p>
+            <h2 className="text-2xl sm:text-3xl font-light text-white mb-4 max-w-sm">
               Für jeden Forstbetrieb der passende Tarif.
             </h2>
-            <p className="text-[15px] text-stone-400">
+            <p className="text-[15px] text-slate-400">
               30 Tage kostenlos — keine Kreditkarte nötig. Voller Funktionsumfang in jedem Tarif.
             </p>
           </div>
 
-          {/* Included features */}
           <div ref={r} className="fade d1 mb-12">
-            <p className="text-[11px] text-stone-300 uppercase tracking-widest mb-4">In jedem Paket</p>
+            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-4">In jedem Paket</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {PLAN_FEATURES.map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-start gap-2">
-                  <Icon size={13} className="text-green-600 mt-0.5 shrink-0" strokeWidth={1.5} />
-                  <span className="text-[12px] text-stone-500 leading-snug">{label}</span>
+                  <Icon size={13} className="text-emerald-400 mt-0.5 shrink-0" strokeWidth={1.5} />
+                  <span className="text-[12px] text-slate-400 leading-snug">{label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Cards */}
           <div className="grid sm:grid-cols-3 gap-6 mb-8">
             {PLANS.filter(p => !p.enterprise).map((plan, i) => {
               const db = dbPlans.find(d => d.name === plan.name);
@@ -382,21 +369,20 @@ export function LandingPageClient({ dbPlans }: Props) {
                   key={plan.name}
                   ref={r}
                   className={`fade d${i + 1} rounded-xl p-6 flex flex-col border ${
-                    plan.highlight ? 'border-green-600' : ''
+                    plan.highlight ? 'border-emerald-500' : 'border-white/10'
                   }`}
-                  style={plan.highlight ? {} : { borderColor: 'rgb(231 229 228)' }}
                 >
                   {plan.badge && (
-                    <span className="text-[10px] text-green-600 font-medium mb-4">{plan.badge}</span>
+                    <span className="text-[10px] text-emerald-400 font-medium mb-4">{plan.badge}</span>
                   )}
-                  <h3 className="text-[15px] font-medium text-stone-800 mb-0.5">{plan.name}</h3>
-                  <p className="text-[12px] text-stone-400 mb-5">{plan.desc}</p>
+                  <h3 className="text-[15px] font-medium text-white mb-0.5">{plan.name}</h3>
+                  <p className="text-[12px] text-slate-500 mb-5">{plan.desc}</p>
                   <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-2xl font-light text-stone-800">{price} €</span>
-                    <span className="text-[12px] text-stone-400">/ Monat</span>
+                    <span className="text-2xl font-light text-white">{price} €</span>
+                    <span className="text-[12px] text-slate-500">/ Monat</span>
                   </div>
-                  <p className="text-[11px] text-stone-300 mb-5">zzgl. MwSt.</p>
-                  <p className="text-[12px] text-stone-500 mb-6">
+                  <p className="text-[11px] text-slate-600 mb-5">zzgl. MwSt.</p>
+                  <p className="text-[12px] text-slate-400 mb-6">
                     {maxHa ? `bis ${maxHa} ha` : 'Unbegrenzte Fläche'}
                     {maxU ? ` · ${maxU} Nutzer` : ''}
                   </p>
@@ -405,8 +391,8 @@ export function LandingPageClient({ dbPlans }: Props) {
                       label="Kostenlos testen"
                       className={`w-full py-2 rounded-lg text-[13px] text-center transition-colors ${
                         plan.highlight
-                          ? 'bg-stone-800 text-white hover:bg-stone-700'
-                          : 'border text-stone-600 hover:text-stone-800 hover:border-stone-300'
+                          ? 'bg-emerald-500 text-black hover:bg-emerald-400 font-medium'
+                          : 'border border-white/10 text-slate-400 hover:text-white hover:border-white/20'
                       }`}
                     />
                   </div>
@@ -415,13 +401,12 @@ export function LandingPageClient({ dbPlans }: Props) {
             })}
           </div>
 
-          {/* Enterprise */}
-          <div ref={r} className="fade rounded-xl border p-5 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'rgb(231 229 228)' }}>
+          <div ref={r} className="fade rounded-xl border border-white/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Building2 size={18} className="text-stone-400 shrink-0" strokeWidth={1.5} />
+              <Building2 size={18} className="text-slate-500 shrink-0" strokeWidth={1.5} />
               <div>
-                <p className="text-[14px] font-medium text-stone-700">Enterprise</p>
-                <p className="text-[12px] text-stone-400">Unbegrenzte Fläche &middot; Unbegrenzte Nutzer &middot; SLA &middot; API-Zugang</p>
+                <p className="text-[14px] font-medium text-white">Enterprise</p>
+                <p className="text-[12px] text-slate-500">Unbegrenzte Fläche &middot; Unbegrenzte Nutzer &middot; SLA &middot; API-Zugang</p>
               </div>
             </div>
             <EnterpriseContactButton />
@@ -429,26 +414,25 @@ export function LandingPageClient({ dbPlans }: Props) {
         </div>
       </section>
 
-      {/* ── Trennlinie ────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-stone-100" /></div>
+      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
 
       {/* ── CTA ───────────────────────────────────────────────────────────── */}
       <section className="py-28 px-6">
         <div ref={r} className="fade max-w-xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-light text-stone-800 mb-4">
+          <h2 className="text-2xl sm:text-3xl font-light text-white mb-4">
             Bereit für den digitalen Forstbetrieb?
           </h2>
-          <p className="text-[15px] text-stone-400 mb-8">
+          <p className="text-[15px] text-slate-400 mb-8">
             Erstellen Sie Ihren Account und richten Sie Ihren ersten Wald in wenigen Minuten ein.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <SignInButton
               label="Jetzt starten"
-              className="text-[13px] text-white bg-stone-800 hover:bg-stone-700 px-6 py-2.5 rounded-lg transition-colors"
+              className="text-[13px] text-black bg-emerald-400 hover:bg-emerald-300 px-6 py-2.5 rounded-lg transition-colors font-medium"
             />
             <a
               href="mailto:kontakt@forest-manager.eu"
-              className="text-[13px] text-stone-400 hover:text-stone-600 px-6 py-2.5 transition-colors"
+              className="text-[13px] text-slate-400 hover:text-white px-6 py-2.5 transition-colors"
             >
               Kontakt aufnehmen
             </a>

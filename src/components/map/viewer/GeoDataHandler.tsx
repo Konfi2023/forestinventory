@@ -958,6 +958,9 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
           <div
             className="absolute z-[1000] animate-in fade-in zoom-in-95 duration-100"
             style={{ left: popupPos.x + 12, top: popupPos.y - 20 }}
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+            onDoubleClick={e => e.stopPropagation()}
           >
             <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden min-w-[160px]">
               <div className="px-3 py-2 border-b border-slate-100">
@@ -992,7 +995,8 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
 
       {/* Moving Task Confirm Bar */}
       {movingTaskId && movingTaskPos && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-xl shadow-2xl border border-slate-200 px-5 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-2 fade-in">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-xl shadow-2xl border border-slate-200 px-5 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-2 fade-in"
+          onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
           <span className="text-sm font-medium text-slate-700">Position verschieben — Pin ziehen</span>
           <button
             onClick={async () => {

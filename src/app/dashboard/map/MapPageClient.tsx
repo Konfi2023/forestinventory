@@ -118,7 +118,12 @@ export default function MapPageClient({ orgSlug }: Props) {
       }
     }
 
-    const { flyTo, fitBounds } = useMapStore.getState();
+    const { flyTo, fitBounds, activeLayers } = useMapStore.getState();
+
+    // TASKS-Layer automatisch aktivieren wenn focusTaskId gesetzt
+    if (!activeLayers.includes('TASKS')) {
+      useMapStore.setState({ activeLayers: [...activeLayers, 'TASKS'] });
+    }
 
     if (targetLat && targetLng) {
       flyTo([targetLat, targetLng], 19);

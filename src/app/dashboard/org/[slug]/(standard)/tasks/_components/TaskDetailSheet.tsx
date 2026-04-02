@@ -558,19 +558,46 @@ export function TaskDetailSheet({
                 onShowOnMap={handleShowOnMap}
               />
             ) : hasCoords ? (
-              <LinkedObjectChip
-                icon={<MapPin size={12} className="text-blue-500" />}
-                name={`${effectiveLat?.toFixed(5)}, ${effectiveLng?.toFixed(5)}`}
-                onShowOnMap={handleShowOnMap}
-                onGoogleMaps={() => window.open(`https://www.google.com/maps?q=${effectiveLat},${effectiveLng}`, "_blank")}
-                mono
-              />
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <LinkedObjectChip
+                    icon={<MapPin size={12} className="text-blue-500" />}
+                    name={`${effectiveLat?.toFixed(5)}, ${effectiveLng?.toFixed(5)}`}
+                    onShowOnMap={handleShowOnMap}
+                    onGoogleMaps={() => window.open(`https://www.google.com/maps?q=${effectiveLat},${effectiveLng}`, "_blank")}
+                    mono
+                  />
+                </div>
+                {!linkedPoi && task.lat != null && (
+                  <Button size="sm" variant="ghost" className="h-7 text-xs text-slate-400 hover:text-red-500 px-2 shrink-0" onClick={async () => {
+                    try { await updateTaskContent(orgSlug, task.id, { lat: null, lng: null }); toast.success('Standort entfernt'); fetchLatestData(); } catch { toast.error('Fehler'); }
+                  }}>
+                    <X size={12} />
+                  </Button>
+                )}
+              </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg px-3 py-2.5">
                 <MapPin size={12} className="opacity-40" />
-                <span>Kein Objekt verknüpft</span>
-                <Button size="sm" variant="ghost" className="ml-auto h-6 text-xs text-slate-500 hover:text-blue-600 px-2" onClick={handleShowOnMap}>
-                  <Crosshair size={11} className="mr-1" /> Im Wald zeigen
+                <span>Kein Standort</span>
+                <Button size="sm" variant="ghost" className="ml-auto h-6 text-xs text-slate-500 hover:text-blue-600 px-2" onClick={() => {
+                  if (!navigator.geolocation) { toast.error('GPS nicht verfügbar'); return; }
+                  navigator.geolocation.getCurrentPosition(
+                    async (pos) => {
+                      try {
+                        await updateTaskContent(orgSlug, task.id, { lat: pos.coords.latitude, lng: pos.coords.longitude });
+                        toast.success('Standort gesetzt');
+                        fetchLatestData();
+                      } catch { toast.error('Fehler beim Speichern'); }
+                    },
+                    () => toast.error('GPS-Position konnte nicht ermittelt werden'),
+                    { enableHighAccuracy: true, timeout: 10000 }
+                  );
+                }}>
+                  <Crosshair size={11} className="mr-1" /> GPS-Standort setzen
+                </Button>
+                <Button size="sm" variant="ghost" className="h-6 text-xs text-slate-500 hover:text-blue-600 px-2" onClick={handleShowOnMap}>
+                  <MapPin size={11} className="mr-1" /> Im Wald zeigen
                 </Button>
               </div>
             )}

@@ -178,37 +178,13 @@ export const Lid = ({
           alt="Forest Manager Screenshot"
           className="absolute inset-0 h-full w-full rounded-lg object-cover object-top"
         />
-        {/* Floating badges over the screen */}
-        {annotations && annotationOpacity && (
-          <motion.div style={{ opacity: annotationOpacity }} className="absolute inset-0 z-10 pointer-events-none">
-            {annotations[0] && (
-              <div className="absolute top-4 left-4">
-                <div className="bg-black/50 backdrop-blur-xl border border-white/10 rounded-xl px-3.5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-                  <p className="text-[10px] font-medium text-white/90 whitespace-nowrap">{annotations[0].label}</p>
-                </div>
-              </div>
-            )}
-            {annotations[1] && (
-              <div className="absolute top-4 right-4">
-                <div className="bg-black/50 backdrop-blur-xl border border-white/10 rounded-xl px-3.5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-                  <p className="text-[10px] font-medium text-white/90 whitespace-nowrap">{annotations[1].label}</p>
-                </div>
-              </div>
-            )}
-            {annotations[2] && (
-              <div className="absolute bottom-12 left-4">
-                <div className="bg-black/50 backdrop-blur-xl border border-white/10 rounded-xl px-3.5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-                  <p className="text-[10px] font-medium text-white/90 whitespace-nowrap">{annotations[2].label}</p>
-                </div>
-              </div>
-            )}
-            {annotations[3] && (
-              <div className="absolute bottom-12 right-4">
-                <div className="bg-black/50 backdrop-blur-xl border border-white/10 rounded-xl px-3.5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-                  <p className="text-[10px] font-medium text-white/90 whitespace-nowrap">{annotations[3].label}</p>
-                </div>
-              </div>
-            )}
+        {/* Badge overlay — bottom right, 30% overlapping outside */}
+        {annotations && annotations[0] && annotationOpacity && (
+          <motion.div style={{ opacity: annotationOpacity }}
+            className="absolute -bottom-6 -right-8 z-10 max-w-[14rem]">
+            <div className="bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl px-5 py-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
+              <p className="text-[11px] leading-relaxed font-medium text-white/90">{annotations[0].label}</p>
+            </div>
           </motion.div>
         )}
       </motion.div>

@@ -180,10 +180,7 @@ export function LandingPageClient({ dbPlans }: Props) {
           src="/landing/desktop-screen.png"
           showGradient={false}
           annotations={[
-            { label: 'GIS-Karte mit Satellitenbild', position: '', delay: 0 },
-            { label: 'Polter & POIs verwalten', position: '', delay: 0.15 },
-            { label: 'Wetterdaten in Echtzeit', position: '', delay: 0.3 },
-            { label: '12 Module · 1 Plattform', position: '', delay: 0.45 },
+            { label: 'Erfassen und verwalten Sie Ihre Polter und Maßnahmen aus dem Büro und aus dem Wald heraus.', position: '', delay: 0 },
           ]}
         />
       </div>

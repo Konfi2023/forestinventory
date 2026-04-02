@@ -86,55 +86,82 @@ export const MacbookScroll = ({
           </span>
         )}
       </motion.h2>
-      {/* Lid */}
-      <Lid
-        src={src}
-        scaleX={scaleX}
-        scaleY={scaleY}
-        rotate={rotate}
-        translate={translate}
-      />
-      {/* Base area */}
-      <div className="relative -z-10 h-[22rem] w-[40rem] overflow-hidden rounded-2xl bg-gray-200 dark:bg-[#272729]">
-        {/* above keyboard bar */}
-        <div className="relative h-10 w-full">
-          <div className="absolute inset-x-0 mx-auto h-4 w-[80%] bg-[#050505]" />
+      {/* Lid + Base + Annotations wrapper */}
+      <div className="relative">
+        {/* Lid */}
+        <Lid
+          src={src}
+          scaleX={scaleX}
+          scaleY={scaleY}
+          rotate={rotate}
+          translate={translate}
+        />
+        {/* Base area */}
+        <div className="relative -z-10 h-[22rem] w-[40rem] overflow-hidden rounded-2xl bg-gray-200 dark:bg-[#272729]">
+          <div className="relative h-10 w-full">
+            <div className="absolute inset-x-0 mx-auto h-4 w-[80%] bg-[#050505]" />
+          </div>
+          <div className="relative flex">
+            <div className="mx-auto h-full w-[10%] overflow-hidden">
+              <SpeakerGrid />
+            </div>
+            <div className="mx-auto h-full w-[80%]">
+              <Keypad />
+            </div>
+            <div className="mx-auto h-full w-[10%] overflow-hidden">
+              <SpeakerGrid />
+            </div>
+          </div>
+          <Trackpad />
+          <div className="absolute inset-x-0 bottom-0 mx-auto h-2 w-20 rounded-tl-3xl rounded-tr-3xl bg-gradient-to-t from-[#272729] to-[#050505]" />
+          {showGradient && (
+            <div className="absolute inset-x-0 bottom-0 z-50 h-40 w-full bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black"></div>
+          )}
+          {badge && <div className="absolute bottom-4 left-4">{badge}</div>}
         </div>
-        <div className="relative flex">
-          <div className="mx-auto h-full w-[10%] overflow-hidden">
-            <SpeakerGrid />
-          </div>
-          <div className="mx-auto h-full w-[80%]">
-            <Keypad />
-          </div>
-          <div className="mx-auto h-full w-[10%] overflow-hidden">
-            <SpeakerGrid />
-          </div>
-        </div>
-        <Trackpad />
-        <div className="absolute inset-x-0 bottom-0 mx-auto h-2 w-20 rounded-tl-3xl rounded-tr-3xl bg-gradient-to-t from-[#272729] to-[#050505]" />
-        {showGradient && (
-          <div className="absolute inset-x-0 bottom-0 z-50 h-40 w-full bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black"></div>
-        )}
-        {badge && <div className="absolute bottom-4 left-4">{badge}</div>}
-      </div>
 
-      {/* Annotations — appear when laptop is fully open */}
-      {annotations && annotations.length > 0 && (
-        <motion.div
-          style={{ opacity: annotationOpacity }}
-          className="mt-8 flex flex-wrap justify-center gap-3"
-        >
-          {annotations.map((a, i) => (
-            <span
-              key={i}
-              className="bg-white/10 backdrop-blur-md border border-white/10 rounded-full px-5 py-2 text-[12px] font-medium text-white shadow-lg"
-            >
-              {a.label}
-            </span>
-          ))}
-        </motion.div>
-      )}
+        {/* Floating annotations around the laptop */}
+        {annotations && annotations.length > 0 && (
+          <>
+            {annotations[0] && (
+              <motion.div style={{ opacity: annotationOpacity }}
+                className="absolute -left-52 top-16 z-30">
+                <div className="bg-white/[0.06] backdrop-blur-xl border border-white/[0.08] rounded-2xl px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                  <p className="text-[12px] font-medium text-white/90">{annotations[0].label}</p>
+                </div>
+                <div className="absolute top-1/2 -right-6 w-6 h-px bg-gradient-to-r from-white/20 to-transparent" />
+              </motion.div>
+            )}
+            {annotations[1] && (
+              <motion.div style={{ opacity: annotationOpacity }}
+                className="absolute -right-56 top-8 z-30">
+                <div className="bg-white/[0.06] backdrop-blur-xl border border-white/[0.08] rounded-2xl px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                  <p className="text-[12px] font-medium text-white/90">{annotations[1].label}</p>
+                </div>
+                <div className="absolute top-1/2 -left-6 w-6 h-px bg-gradient-to-l from-white/20 to-transparent" />
+              </motion.div>
+            )}
+            {annotations[2] && (
+              <motion.div style={{ opacity: annotationOpacity }}
+                className="absolute -left-48 bottom-32 z-30">
+                <div className="bg-white/[0.06] backdrop-blur-xl border border-white/[0.08] rounded-2xl px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                  <p className="text-[12px] font-medium text-white/90">{annotations[2].label}</p>
+                </div>
+                <div className="absolute top-1/2 -right-6 w-6 h-px bg-gradient-to-r from-white/20 to-transparent" />
+              </motion.div>
+            )}
+            {annotations[3] && (
+              <motion.div style={{ opacity: annotationOpacity }}
+                className="absolute -right-52 bottom-24 z-30">
+                <div className="bg-white/[0.06] backdrop-blur-xl border border-white/[0.08] rounded-2xl px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                  <p className="text-[12px] font-medium text-white/90">{annotations[3].label}</p>
+                </div>
+                <div className="absolute top-1/2 -left-6 w-6 h-px bg-gradient-to-l from-white/20 to-transparent" />
+              </motion.div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

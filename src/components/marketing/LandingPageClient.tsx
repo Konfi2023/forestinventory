@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import {
   Map, Leaf, ShieldCheck, PackageOpen,
@@ -23,38 +23,11 @@ interface DbPlan {
 }
 interface Props { dbPlans: DbPlan[] }
 
-/* ─── Scroll reveal ─────────────────────────────────────────────────────────── */
-function useReveal() {
-  const els = useRef<Set<HTMLElement>>(new Set());
-  const ref = useCallback((el: HTMLElement | null) => { if (el) els.current.add(el); }, []);
-
-  useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => {
-        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
-      }),
-      { threshold: 0.1, rootMargin: '0px 0px -20px 0px' },
-    );
-    els.current.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
-
-  return ref;
-}
-
 /* ─── Component ─────────────────────────────────────────────────────────────── */
 export function LandingPageClient({ dbPlans }: Props) {
-  const r = useReveal();
 
   return (
     <>
-      <style>{`
-        .fade { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
-        .fade.visible { opacity: 1; transform: translateY(0); }
-        .d1{transition-delay:.06s} .d2{transition-delay:.12s} .d3{transition-delay:.18s}
-        .d4{transition-delay:.24s} .d5{transition-delay:.30s} .d6{transition-delay:.36s}
-      `}</style>
-
       {/* ── Hero (2-Spalten: Text links, Scanner rechts) ─────────────────── */}
       <section className="relative pt-32 pb-24 px-6 overflow-hidden">
         <div className="absolute inset-0 z-0">
@@ -154,19 +127,40 @@ export function LandingPageClient({ dbPlans }: Props) {
       {/* ── Features (direkt nach Hero) ─────────────────────────────────── */}
       <section id="features" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
-          <div ref={r} className="fade mb-16">
-            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">Funktionen</p>
-            <h2 className="text-2xl sm:text-3xl font-light text-white max-w-md">
-              Alles, was Ihr Forstbetrieb braucht.
-            </h2>
+          <div className="mb-16">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4"
+            >
+              Funktionen
+            </motion.div>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-3xl md:text-4xl font-light text-white leading-tight max-w-md"
+            >
+              Alles, was Ihr Forstbetrieb{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
+                braucht.
+              </span>
+            </motion.h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-14">
             {FEATURES.map((f, i) => (
-              <div key={f.title} ref={r} className={`fade d${i + 1}`}>
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+              >
                 <f.icon size={18} className="text-emerald-400 mb-4" strokeWidth={1.5} />
                 <h3 className="text-[15px] font-medium text-white mb-2">{f.title}</h3>
                 <p className="text-[13px] text-slate-400 leading-relaxed">{f.description}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -181,10 +175,13 @@ export function LandingPageClient({ dbPlans }: Props) {
       <section id="eudr" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
-            <div ref={r} className="fade">
-              <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">EU 2023/1115</p>
-              <h2 className="text-2xl sm:text-3xl font-light text-white mb-6">
-                EUDR-Konformität,<br />ohne Mehraufwand.
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
+                EU 2023/1115
+              </div>
+              <h2 className="text-3xl md:text-4xl font-light text-white mb-6 leading-tight">
+                EUDR-Konformität,<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">ohne Mehraufwand.</span>
               </h2>
               <p className="text-[15px] text-slate-400 leading-relaxed mb-8">
                 Die EU-Entwaldungsverordnung verpflichtet Holzproduzenten ab 2025 zur
@@ -205,23 +202,25 @@ export function LandingPageClient({ dbPlans }: Props) {
                   </li>
                 ))}
               </ul>
-            </div>
-            <div ref={r} className="fade d2 space-y-6 lg:pt-10">
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
+              className="space-y-6 lg:pt-10">
               {[
                 { step: '01', title: 'Waldpolygone einzeichnen', desc: 'Flächen auf der Karte definieren — automatisch als EU-konforme Herkunftsnachweise aufbereitet.' },
                 { step: '02', title: 'Erklärung ausfüllen', desc: 'Baumart, Menge und Erntezeitraum eintragen — direkt aus Ihren Einschlagsdaten.' },
                 { step: '03', title: 'Einreichen', desc: 'Ein Klick — die Meldung wird übermittelt, die Referenznummer zurückgegeben.' },
                 { step: '04', title: 'Lieferschein drucken', desc: 'Referenznummer erscheint automatisch auf allen Lieferscheinen.' },
-              ].map((s) => (
-                <div key={s.step} className="flex gap-5">
+              ].map((s, i) => (
+                <motion.div key={s.step} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 + i * 0.08 }}
+                  className="flex gap-5">
                   <span className="text-[11px] font-mono text-emerald-400/60 mt-0.5 shrink-0 w-5">{s.step}</span>
                   <div>
                     <p className="text-[14px] font-medium text-white mb-1">{s.title}</p>
                     <p className="text-[13px] text-slate-400 leading-relaxed">{s.desc}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -232,12 +231,12 @@ export function LandingPageClient({ dbPlans }: Props) {
       <section id="monitoring" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
-            <div ref={r} className="fade">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
                 <Satellite size={14} className="animate-pulse" />
                 Satellitenüberwachung
               </div>
-              <h2 className="text-2xl sm:text-3xl font-light text-white mb-6">
+              <h2 className="text-3xl md:text-4xl font-light text-white mb-6 leading-tight">
                 Borkenkäfer, Sturm & Dürre<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
                   automatisch erkennen.
@@ -261,9 +260,10 @@ export function LandingPageClient({ dbPlans }: Props) {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            <div ref={r} className="fade d2 lg:pt-10 space-y-4">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
+              className="lg:pt-10 space-y-4">
               <div className="rounded-xl overflow-hidden border border-white/10 shadow-lg">
                 <img src="/landing/satellite-roitzsch.png" alt="Satellitenbild mit Waldpolygonen" className="w-full block" />
               </div>
@@ -276,7 +276,7 @@ export function LandingPageClient({ dbPlans }: Props) {
                 </div>
               </div>
               <p className="text-[10px] text-slate-600 text-center">Echte Satellitenbilder aus dem Forest Manager</p>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -286,17 +286,23 @@ export function LandingPageClient({ dbPlans }: Props) {
       {/* ── Preise ────────────────────────────────────────────────────────── */}
       <section id="preise" className="py-28 px-6">
         <div className="max-w-5xl mx-auto">
-          <div ref={r} className="fade mb-16">
-            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-3">Preise</p>
-            <h2 className="text-2xl sm:text-3xl font-light text-white mb-4 max-w-sm">
-              Für jeden Forstbetrieb der passende Tarif.
-            </h2>
-            <p className="text-[15px] text-slate-400">
+          <div className="mb-16">
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
+              Preise
+            </motion.div>
+            <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              className="text-3xl md:text-4xl font-light text-white mb-4 max-w-sm leading-tight">
+              Für jeden Forstbetrieb der{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">passende Tarif.</span>
+            </motion.h2>
+            <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+              className="text-[15px] text-slate-400">
               30 Tage kostenlos — keine Kreditkarte nötig. Voller Funktionsumfang in jedem Tarif.
-            </p>
+            </motion.p>
           </div>
 
-          <div ref={r} className="fade d1 mb-12">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12">
             <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-4">In jedem Paket</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {PLAN_FEATURES.map(({ icon: Icon, label }) => (
@@ -306,7 +312,7 @@ export function LandingPageClient({ dbPlans }: Props) {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           <div className="grid sm:grid-cols-3 gap-6 mb-8">
             {PLANS.filter(p => !p.enterprise).map((plan, i) => {
@@ -315,10 +321,13 @@ export function LandingPageClient({ dbPlans }: Props) {
               const maxHa = db?.maxHectares ?? null;
               const maxU = db?.maxUsers ?? null;
               return (
-                <div
+                <motion.div
                   key={plan.name}
-                  ref={r}
-                  className={`fade d${i + 1} rounded-xl p-6 flex flex-col border ${
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className={`rounded-xl p-6 flex flex-col border ${
                     plan.highlight ? 'border-emerald-500' : 'border-white/10'
                   }`}
                 >
@@ -346,12 +355,13 @@ export function LandingPageClient({ dbPlans }: Props) {
                       }`}
                     />
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
 
-          <div ref={r} className="fade rounded-xl border border-white/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="rounded-xl border border-white/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Building2 size={18} className="text-slate-500 shrink-0" strokeWidth={1.5} />
               <div>
@@ -360,7 +370,7 @@ export function LandingPageClient({ dbPlans }: Props) {
               </div>
             </div>
             <EnterpriseContactButton />
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -368,7 +378,8 @@ export function LandingPageClient({ dbPlans }: Props) {
 
       {/* ── CTA ───────────────────────────────────────────────────────────── */}
       <section className="py-28 px-6">
-        <div ref={r} className="fade max-w-xl mx-auto text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          className="max-w-xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl font-light text-white mb-4">
             Bereit für den digitalen Forstbetrieb?
           </h2>
@@ -387,7 +398,7 @@ export function LandingPageClient({ dbPlans }: Props) {
               Kontakt aufnehmen
             </a>
           </div>
-        </div>
+        </motion.div>
       </section>
     </>
   );

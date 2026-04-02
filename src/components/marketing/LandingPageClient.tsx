@@ -432,83 +432,97 @@ const FEATURES = [
 ];
 
 const CAROUSEL_SLIDES = [
-  { src: '/landing/desktop-screen.png', caption: 'GIS-Karte mit Satellitenansicht und Polter-Details' },
-  { src: '/landing/satellite-roitzsch.png', caption: 'Waldpolygone mit Satellitenüberwachung' },
-  { src: '/landing/satellite-gutconow.png', caption: 'Automatische Vitalitätserkennung' },
+  { src: '/landing/desktop-screen.png', num: '01', title: 'Ihr Wald.\nAuf einen Blick.', subtitle: 'GIS-Karte mit Satellitenansicht, POIs und Polter-Details' },
+  { src: '/landing/satellite-roitzsch.png', num: '02', title: 'Satelliten-\nMonitoring.', subtitle: 'Waldpolygone mit automatischer Veränderungserkennung' },
+  { src: '/landing/satellite-gutconow.png', num: '03', title: 'Vitalität\nmessen.', subtitle: 'NDVI-Analyse und Gesundheitsbewertung per Sentinel-2' },
 ];
 
 function ScreenshotCarousel() {
   const [current, setCurrent] = useState(0);
-  const next = useCallback(() => setCurrent(i => (i + 1) % CAROUSEL_SLIDES.length), []);
-  const prev = useCallback(() => setCurrent(i => (i - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length), []);
+  const [direction, setDirection] = useState(1);
+  const next = useCallback(() => { setDirection(1); setCurrent(i => (i + 1) % CAROUSEL_SLIDES.length); }, []);
+  const prev = useCallback(() => { setDirection(-1); setCurrent(i => (i - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length); }, []);
 
-  // Auto-advance
   useEffect(() => {
-    const id = setInterval(next, 5000);
+    const id = setInterval(next, 6000);
     return () => clearInterval(id);
   }, [next]);
 
+  const slide = CAROUSEL_SLIDES[current];
+
   return (
-    <section className="py-20 px-6">
-      <div className="max-w-5xl mx-auto">
-        {/* Browser frame */}
+    <section className="relative h-[85vh] min-h-[600px] overflow-hidden">
+      {/* Background image */}
+      <AnimatePresence mode="wait">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="rounded-xl border border-white/10 bg-[#1a1a1a] overflow-hidden shadow-2xl shadow-black/50"
+          key={current}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.7, ease: 'easeInOut' }}
+          className="absolute inset-0"
         >
-          {/* Title bar */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-            <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-              <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-              <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-            </div>
-            <div className="flex-1 mx-12">
-              <div className="bg-white/5 rounded-md px-4 py-1 text-[11px] text-slate-500 font-mono text-center">forest-manager.eu</div>
-            </div>
-          </div>
-
-          {/* Image area */}
-          <div className="relative aspect-[1440/900] overflow-hidden bg-black">
-            <AnimatePresence mode="wait">
-              <motion.img
-                key={current}
-                src={CAROUSEL_SLIDES[current].src}
-                alt={CAROUSEL_SLIDES[current].caption}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            </AnimatePresence>
-
-            {/* Caption badge */}
-            <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-2.5 max-w-[18rem] shadow-lg">
-              <p className="text-[11px] font-medium text-white/90 leading-relaxed">{CAROUSEL_SLIDES[current].caption}</p>
-            </div>
-
-            {/* Nav arrows */}
-            <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 backdrop-blur-md border border-white/10 rounded-full w-9 h-9 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/70 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 backdrop-blur-md border border-white/10 rounded-full w-9 h-9 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/70 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-          </div>
+          <img src={slide.src} alt={slide.title} className="w-full h-full object-cover" />
+          {/* Gradient overlays */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f0a] via-[#0a0f0a]/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f0a]/80 via-transparent to-[#0a0f0a]/40" />
         </motion.div>
+      </AnimatePresence>
 
-        {/* Dots */}
-        <div className="flex justify-center gap-2 mt-6">
-          {CAROUSEL_SLIDES.map((_, i) => (
-            <button key={i} onClick={() => setCurrent(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${current === i ? 'w-8 bg-emerald-400' : 'w-2 bg-white/10 hover:bg-white/20'}`}
-            />
-          ))}
-        </div>
+      {/* Content */}
+      <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            {/* Number */}
+            <span className="text-[8rem] sm:text-[10rem] font-bold leading-none text-white/[0.04] absolute top-8 left-6 select-none pointer-events-none">
+              {slide.num}
+            </span>
+
+            {/* Title */}
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] whitespace-pre-line mb-6 max-w-lg">
+              {slide.title}
+            </h2>
+
+            {/* Subtitle */}
+            <p className="text-sm sm:text-base text-slate-400 max-w-md mb-10">
+              {slide.subtitle}
+            </p>
+
+            {/* Slide indicator */}
+            <div className="flex items-center gap-4">
+              {CAROUSEL_SLIDES.map((_, i) => (
+                <button key={i} onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
+                  className="relative h-[2px] w-12 bg-white/10 overflow-hidden rounded-full">
+                  {current === i && (
+                    <motion.div
+                      initial={{ width: '0%' }}
+                      animate={{ width: '100%' }}
+                      transition={{ duration: 6, ease: 'linear' }}
+                      className="absolute inset-y-0 left-0 bg-emerald-400 rounded-full"
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      {/* Nav arrows */}
+      <button onClick={prev}
+        className="absolute left-6 bottom-8 z-20 bg-white/5 backdrop-blur-md border border-white/10 rounded-full w-11 h-11 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button onClick={next}
+        className="absolute left-20 bottom-8 z-20 bg-white/5 backdrop-blur-md border border-white/10 rounded-full w-11 h-11 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </section>
   );
 }

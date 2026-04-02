@@ -558,8 +558,8 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
             if (!res.ok) throw new Error('Fehler');
             const { task } = await res.json();
             setInteractionMode('VIEW');
-            onRefresh();
-            setTimeout(() => selectFeature(task.id, 'TASK'), 500);
+            selectFeature(task.id, 'TASK');
+            await onRefresh();
           }),
           {
             loading: 'Erstelle Aufgabe…',

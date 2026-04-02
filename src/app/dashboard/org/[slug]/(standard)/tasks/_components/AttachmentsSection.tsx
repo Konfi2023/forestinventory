@@ -83,11 +83,11 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
             {/* Bilder rendern */}
             {images.map((img) => (
                 <div key={img.id} className="relative group aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
-                    <Image 
-                        src={img.url} 
-                        alt={img.name} 
-                        fill 
-                        className="object-cover transition-transform group-hover:scale-105"
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={img.url}
+                        alt={img.name}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
                     {/* Hover Actions */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">

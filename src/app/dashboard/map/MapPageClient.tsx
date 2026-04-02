@@ -155,6 +155,11 @@ export default function MapPageClient({ orgSlug }: Props) {
     // Sheet nach der Fluganimation öffnen (flyTo dauert ~1.5s)
     setTimeout(() => selectFeature(focusTaskId, 'TASK'), 1600);
 
+    // focusTaskId aus URL entfernen, damit der Effect nicht bei jedem data-Refresh erneut feuert
+    const url = new URL(window.location.href);
+    url.searchParams.delete('focusTaskId');
+    window.history.replaceState({}, '', url.pathname + url.search);
+
   }, [data, focusTaskId, selectFeature, isMapReady]);
 
 

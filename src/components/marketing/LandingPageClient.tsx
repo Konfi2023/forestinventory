@@ -453,7 +453,7 @@ function ScreenshotCarousel() {
 
   return (
     <section className="py-20 px-6">
-      <div className="max-w-[1440px] mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Image container — fixed 1440x900 aspect */}
         <div className="relative aspect-[1440/900] rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50">
           {/* Background image — pixel-perfect */}

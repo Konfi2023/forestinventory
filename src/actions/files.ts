@@ -14,9 +14,11 @@ async function checkPermission() {
 }
 
 export async function uploadTaskImage(orgSlug: string, taskId: string, formData: FormData) {
-  await checkPermission(); // Hier könnte man noch tasks:edit prüfen
+  console.log('[uploadTaskImage] called for task:', taskId);
+  await checkPermission();
 
   const file = formData.get("file") as File;
+  console.log('[uploadTaskImage] file:', file?.name, 'size:', file?.size, 'type:', file?.type);
   if (!file) throw new Error("Keine Datei");
 
   // 1. Datei physisch speichern

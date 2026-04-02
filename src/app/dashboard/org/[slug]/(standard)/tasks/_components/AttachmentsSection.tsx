@@ -25,29 +25,37 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
   // --- DROP HANDLER ---
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setUploadingCount(prev => prev + acceptedFiles.length);
-    
-    // Parallel alle Dateien hochladen
-    const promises = acceptedFiles.map(async (file) => {
+    let successCount = 0;
+
+    for (const file of acceptedFiles) {
         const formData = new FormData();
         formData.append("file", file);
 
         try {
+            let result;
             if (file.type.startsWith("image/")) {
-                await uploadTaskImage(orgSlug, taskId, formData);
+                result = await uploadTaskImage(orgSlug, taskId, formData);
             } else {
-                await uploadTaskDocument(orgSlug, taskId, formData);
+                result = await uploadTaskDocument(orgSlug, taskId, formData);
             }
-        } catch (e) {
-            console.error(e);
-            toast.error(`Fehler bei ${file.name}`);
+            if (result?.success) {
+                successCount++;
+            } else {
+                console.error("Upload returned:", result);
+                toast.error(`Fehler bei ${file.name}`);
+            }
+        } catch (e: any) {
+            console.error("Upload error:", e);
+            toast.error(`Fehler bei ${file.name}: ${e?.message || 'Unbekannt'}`);
         } finally {
             setUploadingCount(prev => prev - 1);
         }
-    });
+    }
 
-    await Promise.all(promises);
-    toast.success("Dateien hochgeladen");
-    onUpdate(); // Liste neu laden
+    if (successCount > 0) {
+        toast.success(`${successCount} Datei${successCount > 1 ? 'en' : ''} hochgeladen`);
+        onUpdate();
+    }
   }, [orgSlug, taskId, onUpdate]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });

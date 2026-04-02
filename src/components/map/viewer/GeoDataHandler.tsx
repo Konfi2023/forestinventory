@@ -918,7 +918,7 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
             key={`task-${task.id}-${isSelected}`}
             position={[task.lat, task.lng]}
             icon={createTaskIcon(task.priority, task.status, isSelected)}
-            draggable
+            draggable={isSelected}
             eventHandlers={{
               click: (e) => {
                 if (interactionMode === 'VIEW') {

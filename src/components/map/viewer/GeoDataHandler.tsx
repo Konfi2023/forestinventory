@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useMapStore, MapState, SatelliteLayerId } from '../stores/useMapStores';
 import { useShallow } from 'zustand/react/shallow';
 import { LAYER_REGISTRY } from '../registry/LayerRegistry';
-import { Polygon, Marker, Polyline, Tooltip, useMapEvents, useMap } from 'react-leaflet';
+import { Polygon, Marker, Polyline, Tooltip, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { geoJSONToLeaflet, geoJSONLineToLeaflet, calculatePathLengthM } from '@/lib/map-helpers';
 import { getSpeciesColor, getSpeciesLabel, getDominantSpecies } from '@/lib/tree-species';
 import L from 'leaflet';
@@ -208,6 +208,24 @@ function ForestAssignDialog({ forests, onConfirm, onCancel }: {
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TaskMoveBar({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) L.DomEvent.disableClickPropagation(ref.current);
+  }, []);
+  return (
+    <div ref={ref} className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-xl shadow-2xl border border-slate-200 px-5 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-2 fade-in">
+      <span className="text-sm font-medium text-slate-700">Pin ziehen, dann bestätigen</span>
+      <button onClick={onConfirm} className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors">
+        Bestätigen
+      </button>
+      <button onClick={onCancel} className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700">
+        Abbrechen
+      </button>
     </div>
   );
 }
@@ -512,9 +530,6 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
       }
     },
     click(e) {
-      // Close task popup on any map click
-      if (taskPopup) { setTaskPopup(null); return; }
-
       if (interactionMode === 'DRAW_POI' && activePoiType) {
         if (pendingPoi) return; // Modal offen → Karten-Klicks ignorieren
         const { lat, lng } = e.latlng;
@@ -949,25 +964,19 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
         );
       })}
 
-      {/* Task Context Popup */}
+      {/* Task Context Popup — via Leaflet Popup to avoid event issues */}
       {taskPopup && (() => {
         const task = data.tasks.find((t: any) => t.id === taskPopup.taskId);
         if (!task) return null;
-        const popupPos = map.latLngToContainerPoint([taskPopup.lat, taskPopup.lng]);
         return (
-          <div
-            className="absolute z-[1000] animate-in fade-in zoom-in-95 duration-100"
-            style={{ left: popupPos.x + 12, top: popupPos.y - 20 }}
-            onMouseDown={e => e.stopPropagation()}
-            onClick={e => e.stopPropagation()}
-            onDoubleClick={e => e.stopPropagation()}
-          >
-            <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden min-w-[160px]">
+          <Popup position={[taskPopup.lat, taskPopup.lng]} offset={[12, -10]} closeButton={false}
+            eventHandlers={{ remove: () => setTaskPopup(null) }}>
+            <div className="min-w-[150px] -m-3">
               <div className="px-3 py-2 border-b border-slate-100">
                 <p className="text-xs font-bold text-slate-800 truncate max-w-[180px]">{task.title}</p>
               </div>
               <button
-                onClick={() => { setTaskPopup(null); selectFeature(task.id, 'TASK'); }}
+                onClick={() => { setTaskPopup(null); map.closePopup(); selectFeature(task.id, 'TASK'); }}
                 className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
               >
                 <Eye size={14} className="text-slate-400" /> Details
@@ -975,6 +984,7 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
               <button
                 onClick={() => {
                   setTaskPopup(null);
+                  map.closePopup();
                   setMovingTaskId(task.id);
                   setMovingTaskPos([task.lat!, task.lng!]);
                 }}
@@ -982,43 +992,25 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
               >
                 <Crosshair size={14} className="text-slate-400" /> Verschieben
               </button>
-              <button
-                onClick={() => setTaskPopup(null)}
-                className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-50 border-t border-slate-100"
-              >
-                Abbrechen
-              </button>
             </div>
-          </div>
+          </Popup>
         );
       })()}
 
       {/* Moving Task Confirm Bar */}
       {movingTaskId && movingTaskPos && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-xl shadow-2xl border border-slate-200 px-5 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-2 fade-in"
-          onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
-          <span className="text-sm font-medium text-slate-700">Position verschieben — Pin ziehen</span>
-          <button
-            onClick={async () => {
-              try {
-                await updateTaskContent(data.orgSlug, movingTaskId, { lat: movingTaskPos[0], lng: movingTaskPos[1] });
-                onRefresh();
-                toast.success('Position gespeichert');
-              } catch { toast.error('Fehler'); }
-              setMovingTaskId(null);
-              setMovingTaskPos(null);
-            }}
-            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors"
-          >
-            Bestätigen
-          </button>
-          <button
-            onClick={() => { setMovingTaskId(null); setMovingTaskPos(null); }}
-            className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700"
-          >
-            Abbrechen
-          </button>
-        </div>
+        <TaskMoveBar
+          onConfirm={async () => {
+            try {
+              await updateTaskContent(data.orgSlug, movingTaskId, { lat: movingTaskPos[0], lng: movingTaskPos[1] });
+              onRefresh();
+              toast.success('Position gespeichert');
+            } catch { toast.error('Fehler'); }
+            setMovingTaskId(null);
+            setMovingTaskPos(null);
+          }}
+          onCancel={() => { setMovingTaskId(null); setMovingTaskPos(null); }}
+        />
       )}
     </>
   );

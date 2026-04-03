@@ -18,6 +18,7 @@ export async function PATCH(
       soilCondition, soilMoisture,
       exposition, slopeClass, slopePosition, standType, stockingDegree,
       damageType, damageSeverity, crownCondition,
+      imageKey, crownImageKey,
     } = body;
 
     // Zugriff prüfen
@@ -50,6 +51,8 @@ export async function PATCH(
         damageSeverity: damageSeverity !== undefined ? damageSeverity            : undefined,
         crownCondition: crownCondition !== undefined ? crownCondition            : undefined,
         notes:          notes          !== undefined ? (notes          || null) : undefined,
+        imageKey:       imageKey       !== undefined ? (imageKey       || null) : undefined,
+        crownImageKey:  crownImageKey  !== undefined ? (crownImageKey  || null) : undefined,
       },
     });
 

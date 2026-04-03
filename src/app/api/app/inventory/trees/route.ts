@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     const pois = cursor
       ? await prisma.forestPoi.findMany({
           where,
-          include: { tree: true, forest: { select: { id: true, name: true } } },
+          include: { tree: { include: { speciesRef: { select: { commonNames: true } } } }, forest: { select: { id: true, name: true } } },
           orderBy: { createdAt: 'desc' },
           take: limit + 1,
           cursor: { id: cursor },
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
         })
       : await prisma.forestPoi.findMany({
           where,
-          include: { tree: true, forest: { select: { id: true, name: true } } },
+          include: { tree: { include: { speciesRef: { select: { commonNames: true } } } }, forest: { select: { id: true, name: true } } },
           orderBy: { createdAt: 'desc' },
           take: limit + 1,
         });
@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
       forestName:     p.forest.name,
       createdAt:      p.createdAt,
       species:        p.tree?.species        ?? null,
+      speciesLabel:   (p.tree?.speciesRef?.commonNames as any)?.de ?? null,
       diameter:       p.tree?.diameter       ?? null,
       height:         p.tree?.height         ?? null,
       co2Storage:     p.tree?.co2Storage     ?? null,

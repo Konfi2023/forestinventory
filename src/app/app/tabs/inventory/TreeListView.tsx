@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { RefreshCw, TreePine, ChevronDown, Pencil, Trash2, X, Check, ClipboardList, User } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { RefreshCw, TreePine, ChevronDown, Pencil, Trash2, X, Check, ClipboardList, User, Camera } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from '../DatePickerSheet';
 import { db, type PendingTree } from '@/lib/inventory-db';
 import { TREE_SPECIES } from '@/lib/tree-species';
@@ -30,6 +30,7 @@ interface TreeRow {
   damageSeverity: number | null;
   crownCondition: number | null;
   notes: string | null;
+  speciesLabel: string | null;
   synced: boolean;
 }
 
@@ -114,6 +115,7 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
         damageSeverity: p.damageSeverity ?? null,
         crownCondition: p.crownCondition ?? null,
         notes:          p.notes          ?? null,
+        speciesLabel:   null,
         synced:         false,
       }));
   }
@@ -251,7 +253,7 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
                 <span className="w-3 h-3 rounded-full shrink-0 mt-1" style={{ backgroundColor: species?.color ?? '#64748b' }} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-base leading-tight text-slate-900">
-                    {species?.label ?? tree.species ?? 'Unbekannte Baumart'}
+                    {species?.label ?? tree.speciesLabel ?? tree.species ?? 'Unbekannte Baumart'}
                     {!tree.synced && <span className="ml-2 text-xs text-amber-500 font-normal">● Offline</span>}
                   </p>
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-slate-500 mt-1">
@@ -422,7 +424,7 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
             {/* Baum-Kontext */}
             <div className="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2.5">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: species?.color ?? '#64748b' }} />
-              <span className="text-sm font-medium text-slate-800">{species?.label ?? tree.species ?? 'Baum'}</span>
+              <span className="text-sm font-medium text-slate-800">{species?.label ?? tree.speciesLabel ?? tree.species ?? 'Baum'}</span>
               {tree.diameter && <span className="text-xs text-slate-500">Ø {tree.diameter} cm</span>}
               <span className="ml-auto text-xs font-mono text-slate-400">{tree.lat.toFixed(4)}, {tree.lng.toFixed(4)}</span>
             </div>
@@ -528,6 +530,41 @@ function EditSheet({ tree, onClose, onSaved }: {
   const [saving, setSaving]                 = useState(false);
   const [saveError, setSaveError]           = useState<string | null>(null);
   const [search, setSearch]                 = useState('');
+  const [trunkUploading, setTrunkUploading] = useState(false);
+  const [crownUploading, setCrownUploading] = useState(false);
+  const [trunkPreview, setTrunkPreview]     = useState<string | null>(null);
+  const [crownPreview, setCrownPreview]     = useState<string | null>(null);
+  const trunkInputRef = useRef<HTMLInputElement>(null);
+  const crownInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadPhoto = async (file: File, type: 'trunk' | 'crown') => {
+    const setUploading = type === 'trunk' ? setTrunkUploading : setCrownUploading;
+    const setPreview = type === 'trunk' ? setTrunkPreview : setCrownPreview;
+    setUploading(true);
+    try {
+      const res = await fetch('/api/upload/poi-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poiId: tree.id, contentType: file.type, contentLength: file.size }),
+      });
+      if (!res.ok) throw new Error('Upload-URL fehlgeschlagen');
+      const { uploadUrl, key } = await res.json();
+      const uploadRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!uploadRes.ok) throw new Error('S3 Upload fehlgeschlagen');
+      // Save key to tree
+      const field = type === 'trunk' ? 'imageKey' : 'crownImageKey';
+      await fetch(`/api/app/inventory/trees/${tree.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: key }),
+      });
+      setPreview(URL.createObjectURL(file));
+    } catch (e: any) {
+      alert(e.message || 'Upload fehlgeschlagen');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const filteredSpecies = TREE_SPECIES.filter(s =>
     s.label.toLowerCase().includes(search.toLowerCase())
@@ -607,6 +644,45 @@ function EditSheet({ tree, onClose, onSaved }: {
               <label className="block text-xs font-medium text-slate-500 mb-1.5">Höhe (m)</label>
               <input type="number" inputMode="decimal" value={height} onChange={e => setHeight(e.target.value)}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500" />
+            </div>
+          </div>
+
+          {/* Fotos */}
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Fotos</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <input ref={trunkInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f, 'trunk'); }} />
+                {trunkPreview ? (
+                  <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={trunkPreview} alt="Stammfoto" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <button onClick={() => trunkInputRef.current?.click()} disabled={trunkUploading}
+                    className="w-full aspect-square rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-1 text-slate-400 active:bg-slate-50">
+                    {trunkUploading ? <RefreshCw size={20} className="animate-spin" /> : <Camera size={20} />}
+                    <span className="text-[10px]">Stammfoto</span>
+                  </button>
+                )}
+              </div>
+              <div>
+                <input ref={crownInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f, 'crown'); }} />
+                {crownPreview ? (
+                  <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={crownPreview} alt="Kronenfoto" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <button onClick={() => crownInputRef.current?.click()} disabled={crownUploading}
+                    className="w-full aspect-square rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-1 text-slate-400 active:bg-slate-50">
+                    {crownUploading ? <RefreshCw size={20} className="animate-spin" /> : <Camera size={20} />}
+                    <span className="text-[10px]">Kronenfoto</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -744,7 +820,7 @@ function ConfirmDeleteSheet({ tree, onConfirm, onCancel }: {
         <div className="px-5 pt-3 pb-8">
           <h2 className="text-lg font-bold text-center mb-1 text-slate-900">Baum löschen?</h2>
           <p className="text-sm text-slate-500 text-center mb-6">
-            {species?.label ?? tree.species ?? 'Dieser Baum'} wird unwiderruflich gelöscht.
+            {species?.label ?? tree.speciesLabel ?? tree.species ?? 'Dieser Baum'} wird unwiderruflich gelöscht.
           </p>
 
           <button

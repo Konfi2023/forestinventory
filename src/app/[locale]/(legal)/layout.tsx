@@ -1,7 +1,17 @@
 import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
+import { setRequestLocale } from 'next-intl/server';
 
-export default function LegalLayout({ children }: { children: React.ReactNode }) {
+export default async function LegalLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   return (
     <div className="bg-[#0a0f0a] text-white min-h-screen flex flex-col">
       <Header />

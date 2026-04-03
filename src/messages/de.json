@@ -19,12 +19,29 @@
       "desc": "Definiere hier, welche Rolle welche Aktionen im System ausführen darf."
     },
     "permissions": {
-      "forest": { "view": "Wald sehen", "edit": "Wald bearbeiten", "delete": "Wald löschen" },
-      "harvest": { "view": "Ernte sehen", "create": "Ernte erfassen", "edit": "Ernte bearbeiten" },
-      "docs": { "view": "Dokumente sehen", "upload": "Uploaden" },
-      "finance": { "view": "Finanzen einsehen" },
-      "team": { "manage": "Team verwalten" },
-      "roles": { "manage": "Rollen bearbeiten" }
+      "forest": {
+        "view": "Wald sehen",
+        "edit": "Wald bearbeiten",
+        "delete": "Wald löschen"
+      },
+      "harvest": {
+        "view": "Ernte sehen",
+        "create": "Ernte erfassen",
+        "edit": "Ernte bearbeiten"
+      },
+      "docs": {
+        "view": "Dokumente sehen",
+        "upload": "Uploaden"
+      },
+      "finance": {
+        "view": "Finanzen einsehen"
+      },
+      "team": {
+        "manage": "Team verwalten"
+      },
+      "roles": {
+        "manage": "Rollen bearbeiten"
+      }
     }
   },
   "CookieConsent": {
@@ -471,88 +488,176 @@
     }
   },
   "Landing": {
-    "nav": {
-      "features": "Funktionen",
-      "pricing": "Preise",
-      "login": "Login",
-      "dashboard": "Zum Dashboard"
+    "meta": {
+      "title": "ForestManager – Digitales Forstmanagement für Europa",
+      "description": "Die führende SaaS-Plattform für Waldbesitzer und Forstbetriebe: GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse.",
+      "ogTitle": "ForestManager – Digitales Forstmanagement",
+      "ogDescription": "GIS-Karte, Satellitenüberwachung, EUDR-Konformität und KI-Analyse für Waldbesitzer und Forstbetriebe in Europa."
     },
     "hero": {
-      "title": "Dein Wald.",
-      "titleHighlight": "Digital verwaltet.",
-      "subtitle": "Die moderne Software für Waldbesitzer. Karten, Holzeinschlag, Pflanzungen und Dokumente an einem Ort.",
-      "cta": "Jetzt kostenlos testen",
-      "demo": "Live Demo ansehen"
+      "badge": "Forstmanagement Software",
+      "title1": "Ihr Wald,",
+      "title2": "digital verwaltet.",
+      "description": "Waldinventur, GIS-Karte, Satellitenüberwachung und EUDR-Konformität — eine Plattform für Waldbesitzer, WBVen und Forstbetriebsgemeinschaften.",
+      "cta": "Kostenlos testen",
+      "learnMore": "Mehr erfahren",
+      "gdpr": "DSGVO-konform",
+      "eudr": "EUDR-ready",
+      "servers": "Server in Europa"
     },
     "features": {
-      "title": "Alles, was du brauchst",
-      "mapTitle": "Interaktive Waldkarte",
-      "mapDesc": "Zeichne Flurstücke, Polter und Pflanzflächen präzise ein. Inklusive GPS-Ortung im Wald.",
-      "harvestTitle": "Holzernte & Logistik",
-      "harvestDesc": "Erfasse Mengen, erstelle Polterlisten und sende GPS-Standorte direkt an den LKW-Fahrer.",
-      "plantTitle": "Pflanz-Management",
-      "plantDesc": "Dokumentiere Aufforstungen, Baumarten und Herkünfte für Förderanträge.",
-      "docTitle": "Dokumenten-Cloud",
-      "docDesc": "Speichere Rechnungen, Gutachten und Katasterkarten sicher und direkt verknüpft mit deinem Wald."
-    },
-    "pricing": {
-      "title": "Preise, die mitwachsen",
-      "subtitle": "Wähle das Modell, das zu deiner Waldfläche passt. Voller Funktionsumfang in allen Paketen.",
-      "monthly": "Monatlich",
-      "yearly": "Jährlich",
-      "save": "Spare 2 Monate",
-      "perMonth": "/ Monat",
-      "perYear": "/ Jahr zzgl. 19% MwSt.",
-      "billedMonthly": "Monatlich abgerechnet",
-      "billedYearly": "Jährlich abgerechnet",
-      "cta": "Jetzt starten",
-      "tiers": {
-        "small": {
-          "title": "Small",
-          "price": "9",
-          "priceYear": "89",
-          "desc": "Bis 25 Hektar",
-          "sub": "Für kleine Privatwälder"
-        },
-        "medium": {
-          "title": "Medium",
-          "price": "19",
-          "priceYear": "189",
-          "desc": "Bis 100 Hektar",
-          "sub": "Unser Bestseller"
-        },
-        "large": {
-          "title": "Large",
-          "price": "29",
-          "priceYear": "289",
-          "desc": "Bis 250 Hektar",
-          "sub": "Für große Betriebe"
-        }
+      "label": "Funktionen",
+      "title": "Alles, was Ihr Forstbetrieb",
+      "titleHighlight": "braucht.",
+      "map": {
+        "title": "Interaktive Karte",
+        "desc": "GIS-Layer für Waldpolygone, Einschlagsflächen, Wege, Kalamitäten, Habitate und POIs. Zeichnen, bearbeiten, verwalten."
       },
-      "enterprise": {
-        "title": "Enterprise",
-        "sub": "Kommunen & Verbände",
-        "priceLabel": "Individuell",
-        "sizeLabel": "Ab 250 Hektar",
-        "desc": "Für Flächen über 250 Hektar, Forstbetriebsgemeinschaften (FBG) oder Kommunen bieten wir individuelle Lösungen.",
-        "cta": "Kontakt aufnehmen"
+      "monitoring": {
+        "title": "Waldüberwachung",
+        "desc": "Automatische Überwachung per Satellit. Sturm-, Trockenheits- und Borkenkäfer-Alarme — ohne manuellen Aufwand."
       },
-      "features": {
-        "0": "Alle Karten-Funktionen",
-        "1": "Holzernte & Logistik",
-        "2": "Dokumenten-Upload",
-        "3": "GPS-Tracking App",
-        "4": "E-Mail Support"
+      "compliance": {
+        "title": "EU-Compliance",
+        "desc": "Sorgfaltserklärungen erstellen, bearbeiten und direkt bei der EU-Behörde einreichen."
+      },
+      "harvest": {
+        "title": "Maßnahmen & Holzverkauf",
+        "desc": "Einschläge planen, Polter erfassen, Verkaufskontrakte anlegen und Lieferscheine drucken."
+      },
+      "tasks": {
+        "title": "Aufgaben & Planung",
+        "desc": "Taskmanagement mit Zuweisung, Priorisierung, Kalender und wiederkehrenden Aufgaben."
+      },
+      "orgs": {
+        "title": "Mehrere Organisationen",
+        "desc": "Mehrere Forstbetriebe in einer Plattform. Rollen, Berechtigungen und getrennte Daten."
       }
     },
-    "footer": {
-      "rights": "Alle Rechte vorbehalten.",
-      "imprint": "Impressum",
-      "privacy": "Datenschutz",
-      "terms": "AGB",
-      "legal": "Rechtliches",
-      "product": "Produkt",
-      "company": "Unternehmen"
+    "product": {
+      "label": "So sieht es aus",
+      "title": "Eine Plattform.",
+      "titleHighlight": "Alle Werkzeuge."
+    },
+    "carousel": {
+      "s1": {
+        "title": "Biomasse-\nMonitoring.",
+        "subtitle": "NDVI-Karte mit Sentinel-2 Satellitendaten — Waldvitalität auf einen Blick."
+      },
+      "s2": {
+        "title": "Aufgaben\nim Revier.",
+        "subtitle": "Aufgaben mit Standort, Foto und Beschreibung — direkt auf der Karte."
+      },
+      "s3": {
+        "title": "Klima &\nBorkenkäfer.",
+        "subtitle": "NDVI-Jahresvergleich, Temperatur, Niederschlag und Borkenkäfer-Risiko."
+      },
+      "s4": {
+        "title": "Einzel-\nbäume.",
+        "subtitle": "Baumart, BHD, Höhe, Stammfoto und CO₂-Speicherleistung — alles erfasst."
+      },
+      "s5": {
+        "title": "Forst-\neinrichtung.",
+        "subtitle": "Abteilungsweise Bestandserfassung mit Probekreisen und Ertragstafeln."
+      }
+    },
+    "eudr": {
+      "label": "EU 2023/1115",
+      "title1": "EUDR-Konformität,",
+      "title2": "ohne Mehraufwand.",
+      "description": "Die EU-Entwaldungsverordnung verpflichtet Holzproduzenten ab 2025 zur Sorgfaltserklärung. ForestManager erstellt Ihre Due-Diligence-Statements automatisch aus Waldpolygonen und Einschlagsdaten.",
+      "check1": "Sorgfaltserklärungen erstellen & verwalten",
+      "check2": "Direkte Einreichung an die EU-Behörde",
+      "check3": "Herkunftsnachweise aus Waldpolygonen",
+      "check4": "Referenznummern auf Lieferscheinen",
+      "check5": "Satellitendaten als Entwaldungsbeweis",
+      "step1": {
+        "title": "Waldpolygone einzeichnen",
+        "desc": "Flächen auf der Karte definieren — automatisch als EU-konforme Herkunftsnachweise aufbereitet."
+      },
+      "step2": {
+        "title": "Erklärung ausfüllen",
+        "desc": "Baumart, Menge und Erntezeitraum eintragen — direkt aus Ihren Einschlagsdaten."
+      },
+      "step3": {
+        "title": "Einreichen",
+        "desc": "Ein Klick — die Meldung wird übermittelt, die Referenznummer zurückgegeben."
+      },
+      "step4": {
+        "title": "Lieferschein drucken",
+        "desc": "Referenznummer erscheint automatisch auf allen Lieferscheinen."
+      }
+    },
+    "monitoring": {
+      "label": "Satellitenüberwachung",
+      "title1": "Borkenkäfer, Sturm & Dürre",
+      "title2": "automatisch erkennen.",
+      "description": "Wöchentliche Überwachung per Sentinel-2 und Sentinel-1. Borkenkäferbefall, Sturmwürfe und Trockenstress werden erkannt, bevor Sie im Revier waren.",
+      "radar": {
+        "title": "Radar-Analyse",
+        "desc": "Wöchentliche Veränderungserkennung"
+      },
+      "vitality": {
+        "title": "Vitalitätsmessung",
+        "desc": "Monatliche Gesundheitsbewertung"
+      },
+      "storm": {
+        "title": "Sturm-Erkennung",
+        "desc": "Automatische Alarme"
+      },
+      "beetle": {
+        "title": "Borkenkäfer-Risiko",
+        "desc": "Temperatur- & Niederschlag-Index"
+      },
+      "imageCaption": "Echte Satellitenbilder aus dem ForestManager"
+    },
+    "pricing": {
+      "label": "Preise",
+      "title": "Für jeden Forstbetrieb der",
+      "titleHighlight": "passende Tarif.",
+      "subtitle": "30 Tage kostenlos — keine Kreditkarte nötig. Voller Funktionsumfang in jedem Tarif.",
+      "included": "In jedem Paket",
+      "perMonth": "/ Monat",
+      "vat": "zzgl. MwSt.",
+      "upTo": "bis {ha} ha",
+      "unlimited": "Unbegrenzte Fläche",
+      "users": "{count} Nutzer",
+      "tryFree": "Kostenlos testen",
+      "enterprise": "Unbegrenzte Fläche · Unbegrenzte Nutzer · SLA · API-Zugang",
+      "planFeatures": {
+        "map": "Interaktive Forstkarte",
+        "pois": "POIs: Hochsitze, Wege, Hütten",
+        "tasks": "Aufgaben & Maßnahmenplanung",
+        "inventory": "Baum- & Holzpolterinventar",
+        "reports": "Berichte & Controlling",
+        "satellite": "Satellitenmonitoring",
+        "health": "Waldgesundheitsmonitoring",
+        "team": "Team-Einladungen & Rollen"
+      },
+      "plans": {
+        "basis": {
+          "name": "Basis",
+          "desc": "Kleine Privatwälder"
+        },
+        "pro": {
+          "name": "Pro",
+          "desc": "Wachsende Forstbetriebe",
+          "badge": "Beliebt"
+        },
+        "expert": {
+          "name": "Expert",
+          "desc": "Professionelle Forstunternehmen"
+        },
+        "enterprise": {
+          "name": "Enterprise"
+        }
+      }
+    },
+    "cta": {
+      "title": "Bereit für den digitalen Forstbetrieb?",
+      "description": "Erstellen Sie Ihren Account und richten Sie Ihren ersten Wald in wenigen Minuten ein.",
+      "button": "Jetzt starten",
+      "contact": "Kontakt aufnehmen"
     }
   },
   "Admin": {
@@ -672,5 +777,38 @@
         }
       }
     }
+  },
+  "Header": {
+    "features": "Funktionen",
+    "product": "Produkt",
+    "eudr": "EUDR",
+    "monitoring": "Monitoring",
+    "pricing": "Preise",
+    "signIn": "Einloggen",
+    "getStarted": "Kostenlos starten"
+  },
+  "Footer": {
+    "tagline": "Digitales Forstmanagement für Waldbesitzer und Forstbetriebe in Europa.",
+    "product": "Produkt",
+    "legal": "Rechtliches",
+    "privacy": "Datenschutz",
+    "imprint": "Impressum",
+    "terms": "AGB",
+    "gdpr": "DSGVO-konform",
+    "serverLocation": "Serverstandort Europa",
+    "eudrLabel": "EU-Entwaldungsverordnung"
+  },
+  "Enterprise": {
+    "title": "Enterprise-Anfrage",
+    "subtitle": "Wir melden uns innerhalb von 24 Stunden.",
+    "name": "Name",
+    "email": "E-Mail",
+    "message": "Nachricht",
+    "placeholder": "Beschreiben Sie Ihren Betrieb und Ihre Anforderungen...",
+    "cancel": "Abbrechen",
+    "send": "Anfrage senden",
+    "success": "Ihre Anfrage wurde gesendet. Wir melden uns bald.",
+    "error": "Fehler beim Senden. Bitte versuchen Sie es erneut.",
+    "button": "Kontakt aufnehmen"
   }
 }

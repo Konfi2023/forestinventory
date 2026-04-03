@@ -1,0 +1,139 @@
+{
+  "Landing": {
+    "meta": {
+      "title": "ForestManager – Gestion forestière numérique pour l'Europe",
+      "description": "La plateforme SaaS de référence pour les propriétaires forestiers et les entreprises du secteur : carte GIS, surveillance satellitaire, conformité EUDR et analyse par IA.",
+      "ogTitle": "ForestManager – Gestion forestière numérique",
+      "ogDescription": "Carte GIS, surveillance satellitaire, conformité EUDR et analyse par IA pour les propriétaires forestiers et les entreprises du secteur en Europe."
+    },
+    "hero": {
+      "badge": "Logiciel de gestion forestière",
+      "title1": "Votre forêt,",
+      "title2": "gérée numériquement.",
+      "description": "Inventaire forestier, carte GIS, surveillance satellitaire et conformité EUDR — une plateforme pour les propriétaires forestiers, associations et coopératives.",
+      "cta": "Essai gratuit",
+      "learnMore": "En savoir plus",
+      "gdpr": "Conforme au RGPD",
+      "eudr": "EUDR-ready",
+      "servers": "Serveurs en Europe"
+    },
+    "features": {
+      "label": "Fonctionnalités",
+      "title": "Tout ce dont votre exploitation forestière",
+      "titleHighlight": "a besoin.",
+      "map": { "title": "Carte interactive", "desc": "Couches GIS pour polygones forestiers, zones d'exploitation, chemins, calamités, habitats et POIs. Dessiner, modifier, gérer." },
+      "monitoring": { "title": "Surveillance forestière", "desc": "Surveillance automatique par satellite. Alertes tempêtes, sécheresses et scolytes — sans effort manuel." },
+      "compliance": { "title": "Conformité UE", "desc": "Créer, modifier et soumettre des déclarations de diligence raisonnée directement à l'autorité de l'UE." },
+      "harvest": { "title": "Opérations et vente de bois", "desc": "Planifier les coupes, enregistrer les piles de grumes, créer des contrats de vente et imprimer des bons de livraison." },
+      "tasks": { "title": "Tâches et planification", "desc": "Gestion des tâches avec attribution, priorisation, calendrier et tâches récurrentes." },
+      "orgs": { "title": "Plusieurs organisations", "desc": "Plusieurs exploitations forestières sur une seule plateforme. Rôles, autorisations et données séparées." }
+    },
+    "product": {
+      "label": "Découvrez en action",
+      "title": "Une plateforme.",
+      "titleHighlight": "Tous les outils."
+    },
+    "carousel": {
+      "s1": { "title": "Suivi de\nla biomasse.", "subtitle": "Carte NDVI avec données satellite Sentinel-2 — vitalité forestière en un coup d'œil." },
+      "s2": { "title": "Tâches\nsur le terrain.", "subtitle": "Tâches avec localisation, photo et description — directement sur la carte." },
+      "s3": { "title": "Climat et\nscolytes.", "subtitle": "Comparaison NDVI d'une année sur l'autre, température, précipitations et risque de scolytes." },
+      "s4": { "title": "Arbres\nindividuels.", "subtitle": "Essence, DHP, hauteur, photo du tronc et stockage de CO₂ — tout enregistré." },
+      "s5": { "title": "Inventaire\nforestier.", "subtitle": "Évaluation des peuplements par compartiment avec placettes d'échantillonnage et tables de production." }
+    },
+    "eudr": {
+      "label": "EU 2023/1115",
+      "title1": "Conformité EUDR,",
+      "title2": "sans effort supplémentaire.",
+      "description": "Le règlement de l'UE sur la déforestation oblige les producteurs de bois à soumettre des déclarations de diligence raisonnée à partir de 2025. ForestManager génère vos déclarations automatiquement à partir des polygones forestiers et des données d'exploitation.",
+      "check1": "Créer et gérer les déclarations de diligence raisonnée",
+      "check2": "Soumission directe à l'autorité de l'UE",
+      "check3": "Preuves d'origine à partir des polygones forestiers",
+      "check4": "Numéros de référence sur les bons de livraison",
+      "check5": "Données satellitaires comme preuve de non-déforestation",
+      "step1": { "title": "Dessiner les polygones forestiers", "desc": "Définir les zones sur la carte — automatiquement préparées comme preuves d'origine conformes à l'UE." },
+      "step2": { "title": "Remplir la déclaration", "desc": "Saisir l'essence, le volume et la période de récolte — directement depuis vos données d'exploitation." },
+      "step3": { "title": "Soumettre", "desc": "Un clic — la déclaration est transmise et le numéro de référence est renvoyé." },
+      "step4": { "title": "Imprimer le bon de livraison", "desc": "Le numéro de référence apparaît automatiquement sur tous les bons de livraison." }
+    },
+    "monitoring": {
+      "label": "Surveillance satellitaire",
+      "title1": "Scolytes, tempêtes et sécheresse",
+      "title2": "détectés automatiquement.",
+      "description": "Surveillance hebdomadaire via Sentinel-2 et Sentinel-1. Infestations de scolytes, chablis et stress hydrique sont détectés avant votre visite sur le terrain.",
+      "radar": { "title": "Analyse radar", "desc": "Détection hebdomadaire des changements" },
+      "vitality": { "title": "Évaluation de la vitalité", "desc": "Évaluation mensuelle de la santé" },
+      "storm": { "title": "Détection de tempêtes", "desc": "Alertes automatiques" },
+      "beetle": { "title": "Risque de scolytes", "desc": "Indice de température et de précipitations" },
+      "imageCaption": "Images satellites réelles de ForestManager"
+    },
+    "pricing": {
+      "label": "Tarifs",
+      "title": "Le bon forfait pour chaque",
+      "titleHighlight": "exploitation forestière.",
+      "subtitle": "30 jours gratuits — sans carte bancaire. Toutes les fonctionnalités dans chaque forfait.",
+      "included": "Inclus dans chaque forfait",
+      "perMonth": "/ mois",
+      "vat": "HT",
+      "upTo": "jusqu'à {ha} ha",
+      "unlimited": "Surface illimitée",
+      "users": "{count} utilisateurs",
+      "tryFree": "Essai gratuit",
+      "enterprise": "Surface illimitée · Utilisateurs illimités · SLA · Accès API",
+      "planFeatures": {
+        "map": "Carte forestière interactive",
+        "pois": "POIs : miradors, chemins, refuges",
+        "tasks": "Tâches et planification des opérations",
+        "inventory": "Inventaire des arbres et piles de grumes",
+        "reports": "Rapports et controlling",
+        "satellite": "Surveillance satellitaire",
+        "health": "Suivi de la santé forestière",
+        "team": "Invitations d'équipe et rôles"
+      },
+      "plans": {
+        "basis": { "name": "Basique", "desc": "Petites forêts privées" },
+        "pro": { "name": "Pro", "desc": "Exploitations forestières en croissance", "badge": "Populaire" },
+        "expert": { "name": "Expert", "desc": "Entreprises forestières professionnelles" },
+        "enterprise": { "name": "Enterprise" }
+      }
+    },
+    "cta": {
+      "title": "Prêt pour la gestion forestière numérique ?",
+      "description": "Créez votre compte et configurez votre première forêt en quelques minutes.",
+      "button": "Commencer",
+      "contact": "Nous contacter"
+    }
+  },
+  "Header": {
+    "features": "Fonctionnalités",
+    "product": "Produit",
+    "eudr": "EUDR",
+    "monitoring": "Surveillance",
+    "pricing": "Tarifs",
+    "signIn": "Se connecter",
+    "getStarted": "Commencer gratuitement"
+  },
+  "Footer": {
+    "tagline": "Gestion forestière numérique pour les propriétaires de forêts et les entreprises du secteur en Europe.",
+    "product": "Produit",
+    "legal": "Mentions légales",
+    "privacy": "Politique de confidentialité",
+    "imprint": "Mentions légales",
+    "terms": "CGV",
+    "gdpr": "Conforme au RGPD",
+    "serverLocation": "Serveurs en Europe",
+    "eudrLabel": "Règlement de l'UE sur la déforestation"
+  },
+  "Enterprise": {
+    "title": "Demande Enterprise",
+    "subtitle": "Nous vous répondrons sous 24 heures.",
+    "name": "Nom",
+    "email": "E-mail",
+    "message": "Message",
+    "placeholder": "Décrivez votre exploitation et vos besoins...",
+    "cancel": "Annuler",
+    "send": "Envoyer la demande",
+    "success": "Votre demande a été envoyée. Nous vous contacterons bientôt.",
+    "error": "Erreur lors de l'envoi. Veuillez réessayer.",
+    "button": "Nous contacter"
+  }
+}

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
 /**
  * In-memory Sliding-Window Rate Limiter.
  * Im PM2-Cluster-Modus hat jede Instanz eigene Counter.
- * Limits sind pro Instanz auf die Hälfte gesetzt → kombiniert entspricht das dem
- * gewünschten Gesamtlimit. Für exakte Limits später auf Redis migrieren.
  */
 const counters = new Map<string, { count: number; resetAt: number }>();
 let cleanupTick = 0;
@@ -12,7 +12,6 @@ let cleanupTick = 0;
 function rateLimit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
   const entry = counters.get(key);
-
   if (!entry || now > entry.resetAt) {
     counters.set(key, { count: 1, resetAt: now + windowMs });
     return true;
@@ -30,6 +29,9 @@ function maybeCleanup() {
   }
 }
 
+// next-intl middleware for locale detection + routing
+const intlMiddleware = createIntlMiddleware(routing);
+
 export function middleware(req: NextRequest) {
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
@@ -40,10 +42,7 @@ export function middleware(req: NextRequest) {
 
   maybeCleanup();
 
-  // Auth-Routen: Brute-Force-Schutz
-  // Callback/Session/CSRF sind interne Systemaufrufe – separater, großzügiger Counter.
-  // Sign-in-Versuche bekommen einen eigenen, strengeren Counter.
-  // Wichtig: Mobile-Netze nutzen CGNAT (viele Nutzer hinter einer IP) → Limits großzügig genug.
+  // ── Rate Limiting (API routes) ─────────────────────────────────────
   if (pathname.startsWith('/api/auth')) {
     const isSystemCall = pathname.startsWith('/api/auth/callback') ||
                          pathname.startsWith('/api/auth/session') ||
@@ -56,7 +55,6 @@ export function middleware(req: NextRequest) {
         );
       }
     } else {
-      // Eigentliche Sign-in-Versuche (/api/auth/signin, /api/auth/signout, ...)
       if (!rateLimit(`auth-login:${ip}`, 60, 15 * 60 * 1000)) {
         return NextResponse.json(
           { error: 'Zu viele Anmeldeversuche. Bitte warte 15 Minuten.' },
@@ -66,7 +64,6 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // App-API-Routen: 300 Anfragen / Minute (normaler Betrieb)
   if (pathname.startsWith('/api/')) {
     if (!rateLimit(`api:${ip}`, 150, 60 * 1000)) {
       return NextResponse.json(
@@ -76,9 +73,29 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // Landingpage: eingeloggte Nutzer sofort zum Dashboard leiten (cookie-basiert,
-  // ohne Keycloak-Roundtrip → Seite bleibt statisch und schnell für alle anderen)
-  if (pathname === '/') {
+  // ── Internal routes: no locale handling ────────────────────────────
+  const isInternalRoute =
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/app') ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/signin') ||
+    pathname.startsWith('/signout') ||
+    pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/invite') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/messkarte');
+
+  if (isInternalRoute) {
+    const res = NextResponse.next();
+    res.headers.set('x-current-path', pathname);
+    return res;
+  }
+
+  // ── Marketing routes: logged-in user redirect ──────────────────────
+  // Check root and locale-prefixed root (e.g. /, /en, /fr)
+  const isRoot = pathname === '/' || /^\/(de|en|es|fr)\/?$/.test(pathname);
+  if (isRoot) {
     const sessionCookie =
       req.cookies.get('__Secure-next-auth.session-token') ??
       req.cookies.get('next-auth.session-token');
@@ -87,12 +104,18 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // Aktuellen Pfad als Header weitergeben (für Server Components)
-  const res = NextResponse.next();
-  res.headers.set('x-current-path', pathname);
-  return res;
+  // ── Marketing routes: next-intl locale handling ────────────────────
+  return intlMiddleware(req);
 }
 
 export const config = {
-  matcher: ['/', '/api/:path*', '/dashboard/:path*'],
+  matcher: [
+    '/',
+    '/(de|en|es|fr)/:path*',
+    '/datenschutz',
+    '/impressum',
+    '/agb',
+    '/api/:path*',
+    '/dashboard/:path*',
+  ],
 };

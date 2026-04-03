@@ -1,20 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Menu, X } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-
-const NAV_LINKS = [
-  { label: 'Funktionen', href: '#features'  },
-  { label: 'Produkt',    href: '#produkt'   },
-  { label: 'EUDR',       href: '#eudr'       },
-  { label: 'Monitoring', href: '#monitoring' },
-  { label: 'Preise',     href: '#preise'     },
-];
+import { useTranslations } from 'next-intl';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const t = useTranslations('Header');
+
+  const NAV_LINKS = [
+    { label: t('features'),   href: '#features'  },
+    { label: t('product'),    href: '#produkt'   },
+    { label: t('eudr'),       href: '#eudr'       },
+    { label: t('monitoring'), href: '#monitoring' },
+    { label: t('pricing'),    href: '#preise'     },
+  ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f0a]/80 backdrop-blur-md border-b border-white/5">
@@ -43,15 +46,16 @@ export function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
+          <LanguageSwitcher />
           <button onClick={() => signIn('keycloak')} className="text-[13px] text-slate-400 hover:text-white transition-colors">
-            Einloggen
+            {t('signIn')}
           </button>
           <button onClick={() => signIn('keycloak')} className="text-[13px] text-emerald-400 hover:text-emerald-300 transition-colors">
-            Kostenlos starten &rarr;
+            {t('getStarted')} &rarr;
           </button>
         </div>
 
-        <button className="md:hidden text-slate-400" onClick={() => setOpen(o => !o)} aria-label="Menü">
+        <button className="md:hidden text-slate-400" onClick={() => setOpen(o => !o)} aria-label="Menu">
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
@@ -64,8 +68,9 @@ export function Header() {
             </a>
           ))}
           <div className="pt-3 border-t border-white/10 space-y-2">
-            <button onClick={() => signIn('keycloak')} className="text-sm text-slate-400 block">Einloggen</button>
-            <button onClick={() => signIn('keycloak')} className="text-sm text-emerald-400 block">Kostenlos starten &rarr;</button>
+            <LanguageSwitcher />
+            <button onClick={() => signIn('keycloak')} className="text-sm text-slate-400 block">{t('signIn')}</button>
+            <button onClick={() => signIn('keycloak')} className="text-sm text-emerald-400 block">{t('getStarted')} &rarr;</button>
           </div>
         </div>
       )}

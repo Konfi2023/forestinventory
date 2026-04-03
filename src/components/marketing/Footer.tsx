@@ -1,6 +1,10 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 
 export function Footer() {
+  const t = useTranslations('Footer');
+  const tHeader = useTranslations('Header');
+
   return (
     <footer className="border-t border-white/10 bg-[#0a0f0a]">
       <div className="max-w-6xl mx-auto px-6 py-16">
@@ -20,22 +24,22 @@ export function Footer() {
               </svg>
             </Link>
             <p className="text-[13px] text-slate-500 leading-relaxed max-w-[220px]">
-              Digitales Forstmanagement für Waldbesitzer und Forstbetriebe in Europa.
+              {t('tagline')}
             </p>
           </div>
 
           {/* Produkt */}
           <div>
-            <p className="text-[11px] text-slate-500 uppercase tracking-wider mb-4">Produkt</p>
+            <p className="text-[11px] text-slate-500 uppercase tracking-wider mb-4">{t('product')}</p>
             <ul className="space-y-2.5">
               {[
-                { label: 'Funktionen', href: '/#features'  },
-                { label: 'EUDR',       href: '/#eudr'       },
-                { label: 'Monitoring', href: '/#monitoring' },
-                { label: 'Preise',     href: '/#preise'     },
+                { label: tHeader('features'),   href: '/#features'  },
+                { label: tHeader('eudr'),       href: '/#eudr'       },
+                { label: tHeader('monitoring'), href: '/#monitoring' },
+                { label: tHeader('pricing'),    href: '/#preise'     },
               ].map(item => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-[13px] text-slate-400 hover:text-white transition-colors">{item.label}</Link>
+                  <a href={item.href} className="text-[13px] text-slate-400 hover:text-white transition-colors">{item.label}</a>
                 </li>
               ))}
             </ul>
@@ -43,12 +47,12 @@ export function Footer() {
 
           {/* Rechtliches */}
           <div>
-            <p className="text-[11px] text-slate-500 uppercase tracking-wider mb-4">Rechtliches</p>
+            <p className="text-[11px] text-slate-500 uppercase tracking-wider mb-4">{t('legal')}</p>
             <ul className="space-y-2.5">
               {[
-                { label: 'Datenschutz', href: '/datenschutz' },
-                { label: 'Impressum',   href: '/impressum'   },
-                { label: 'AGB',         href: '/agb'         },
+                { label: t('privacy'),  href: '/datenschutz' as const },
+                { label: t('imprint'),  href: '/impressum' as const },
+                { label: t('terms'),    href: '/agb' as const },
               ].map(item => (
                 <li key={item.href}>
                   <Link href={item.href} className="text-[13px] text-slate-400 hover:text-white transition-colors">{item.label}</Link>
@@ -60,7 +64,7 @@ export function Footer() {
 
         <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
           <p>&copy; {new Date().getFullYear()} ForestManager</p>
-          <p>DSGVO-konform &middot; Serverstandort Europa &middot; EU-Entwaldungsverordnung</p>
+          <p>{t('gdpr')} &middot; {t('serverLocation')} &middot; {t('eudrLabel')}</p>
         </div>
       </div>
     </footer>

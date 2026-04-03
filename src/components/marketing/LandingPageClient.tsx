@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { SignInButton } from './SignInButton';
 import { EnterpriseContactButton } from './EnterpriseContactButton';
+import { useTranslations } from 'next-intl';
 
 /* ─── Types ─────────────────────────────────────────────────────────────────── */
 interface DbPlan {
@@ -24,6 +25,34 @@ interface Props { dbPlans: DbPlan[] }
 
 /* ─── Component ─────────────────────────────────────────────────────────────── */
 export function LandingPageClient({ dbPlans }: Props) {
+  const t = useTranslations('Landing');
+
+  const FEATURES = [
+    { title: t('features.map.title'), description: t('features.map.desc'), icon: Map },
+    { title: t('features.monitoring.title'), description: t('features.monitoring.desc'), icon: Leaf },
+    { title: t('features.compliance.title'), description: t('features.compliance.desc'), icon: ShieldCheck },
+    { title: t('features.harvest.title'), description: t('features.harvest.desc'), icon: PackageOpen },
+    { title: t('features.tasks.title'), description: t('features.tasks.desc'), icon: ClipboardList },
+    { title: t('features.orgs.title'), description: t('features.orgs.desc'), icon: Trees },
+  ];
+
+  const PLAN_FEATURES = [
+    { icon: Map,           label: t('pricing.planFeatures.map') },
+    { icon: Crosshair,     label: t('pricing.planFeatures.pois') },
+    { icon: ClipboardList, label: t('pricing.planFeatures.tasks') },
+    { icon: Leaf,          label: t('pricing.planFeatures.inventory') },
+    { icon: BarChart3,     label: t('pricing.planFeatures.reports') },
+    { icon: Satellite,     label: t('pricing.planFeatures.satellite') },
+    { icon: ShieldCheck,   label: t('pricing.planFeatures.health') },
+    { icon: Users,         label: t('pricing.planFeatures.team') },
+  ];
+
+  const PLANS = [
+    { name: t('pricing.plans.basis.name'), desc: t('pricing.plans.basis.desc'), price: '4,90 €', badge: null, highlight: false, enterprise: false, icon: TreePine },
+    { name: t('pricing.plans.pro.name'), desc: t('pricing.plans.pro.desc'), price: '19,90 €', badge: t('pricing.plans.pro.badge'), highlight: true, enterprise: false, icon: Trees },
+    { name: t('pricing.plans.expert.name'), desc: t('pricing.plans.expert.desc'), price: '39,90 €', badge: null, highlight: false, enterprise: false, icon: Mountain },
+    { name: t('pricing.plans.enterprise.name'), desc: '', price: null, badge: null, highlight: false, enterprise: true, icon: Building2 },
+  ];
 
   return (
     <>
@@ -38,35 +67,33 @@ export function LandingPageClient({ dbPlans }: Props) {
           <div>
             <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
               className="text-[13px] text-slate-500 mb-6 font-mono uppercase tracking-widest">
-              Forstmanagement Software
+              {t('hero.badge')}
             </motion.p>
             <motion.h1 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               className="text-4xl sm:text-5xl lg:text-[3.5rem] font-light tracking-tight leading-[1.15] text-white mb-6">
-              Ihr Wald,<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">digital verwaltet.</span>
+              {t('hero.title1')}<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">{t('hero.title2')}</span>
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
               className="text-[15px] text-slate-400 leading-relaxed max-w-lg mb-10">
-              Waldinventur, GIS-Karte, Satellitenüberwachung und
-              EUDR-Konformität — eine Plattform für Waldbesitzer,
-              WBVen und Forstbetriebsgemeinschaften.
+              {t('hero.description')}
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
               className="flex flex-col sm:flex-row items-start gap-4 mb-8">
               <SignInButton
-                label="Kostenlos testen"
+                label={t('hero.cta')}
                 className="text-[13px] text-black bg-emerald-400 hover:bg-emerald-300 px-6 py-2.5 rounded-lg transition-colors font-medium"
               />
               <a href="#features" className="text-[13px] text-slate-400 hover:text-white transition-colors py-2.5">
-                Mehr erfahren &darr;
+                {t('hero.learnMore')} &darr;
               </a>
             </motion.div>
             <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
               className="flex items-center gap-5 text-[11px] text-slate-500">
-              <span>DSGVO-konform</span>
+              <span>{t('hero.gdpr')}</span>
               <span className="w-px h-3 bg-white/10" />
-              <span>EUDR-ready</span>
+              <span>{t('hero.eudr')}</span>
               <span className="w-px h-3 bg-white/10" />
-              <span>Server in Europa</span>
+              <span>{t('hero.servers')}</span>
             </motion.div>
           </div>
 
@@ -133,7 +160,7 @@ export function LandingPageClient({ dbPlans }: Props) {
               viewport={{ once: true }}
               className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4"
             >
-              Funktionen
+              {t('features.label')}
             </motion.div>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -141,9 +168,9 @@ export function LandingPageClient({ dbPlans }: Props) {
               viewport={{ once: true }}
               className="text-3xl md:text-4xl font-light text-white leading-tight max-w-md"
             >
-              Alles, was Ihr Forstbetrieb{' '}
+              {t('features.title')}{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
-                braucht.
+                {t('features.titleHighlight')}
               </span>
             </motion.h2>
           </div>
@@ -176,7 +203,7 @@ export function LandingPageClient({ dbPlans }: Props) {
             viewport={{ once: true }}
             className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4"
           >
-            So sieht es aus
+            {t('product.label')}
           </motion.div>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -184,9 +211,9 @@ export function LandingPageClient({ dbPlans }: Props) {
             viewport={{ once: true }}
             className="text-3xl md:text-4xl font-light text-white leading-tight max-w-lg"
           >
-            Eine Plattform.{' '}
+            {t('product.title')}{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
-              Alle Werkzeuge.
+              {t('product.titleHighlight')}
             </span>
           </motion.h2>
         </div>
@@ -201,25 +228,17 @@ export function LandingPageClient({ dbPlans }: Props) {
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
-                EU 2023/1115
+                {t('eudr.label')}
               </div>
               <h2 className="text-3xl md:text-4xl font-light text-white mb-6 leading-tight">
-                EUDR-Konformität,<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">ohne Mehraufwand.</span>
+                {t('eudr.title1')}<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">{t('eudr.title2')}</span>
               </h2>
               <p className="text-[15px] text-slate-400 leading-relaxed mb-8">
-                Die EU-Entwaldungsverordnung verpflichtet Holzproduzenten ab 2025 zur
-                Sorgfaltserklärung. ForestManager erstellt Ihre Due-Diligence-Statements
-                automatisch aus Waldpolygonen und Einschlagsdaten.
+                {t('eudr.description')}
               </p>
               <ul className="space-y-3">
-                {[
-                  'Sorgfaltserklärungen erstellen & verwalten',
-                  'Direkte Einreichung an die EU-Behörde',
-                  'Herkunftsnachweise aus Waldpolygonen',
-                  'Referenznummern auf Lieferscheinen',
-                  'Satellitendaten als Entwaldungsbeweis',
-                ].map(item => (
+                {[t('eudr.check1'), t('eudr.check2'), t('eudr.check3'), t('eudr.check4'), t('eudr.check5')].map(item => (
                   <li key={item} className="flex items-start gap-3">
                     <CheckCircle2 size={14} className="text-emerald-400 mt-0.5 shrink-0" strokeWidth={1.5} />
                     <span className="text-[13px] text-slate-400">{item}</span>
@@ -230,10 +249,10 @@ export function LandingPageClient({ dbPlans }: Props) {
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
               className="space-y-6 lg:pt-10">
               {[
-                { step: '01', title: 'Waldpolygone einzeichnen', desc: 'Flächen auf der Karte definieren — automatisch als EU-konforme Herkunftsnachweise aufbereitet.' },
-                { step: '02', title: 'Erklärung ausfüllen', desc: 'Baumart, Menge und Erntezeitraum eintragen — direkt aus Ihren Einschlagsdaten.' },
-                { step: '03', title: 'Einreichen', desc: 'Ein Klick — die Meldung wird übermittelt, die Referenznummer zurückgegeben.' },
-                { step: '04', title: 'Lieferschein drucken', desc: 'Referenznummer erscheint automatisch auf allen Lieferscheinen.' },
+                { step: '01', title: t('eudr.step1.title'), desc: t('eudr.step1.desc') },
+                { step: '02', title: t('eudr.step2.title'), desc: t('eudr.step2.desc') },
+                { step: '03', title: t('eudr.step3.title'), desc: t('eudr.step3.desc') },
+                { step: '04', title: t('eudr.step4.title'), desc: t('eudr.step4.desc') },
               ].map((s, i) => (
                 <motion.div key={s.step} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 + i * 0.08 }}
                   className="flex gap-5">
@@ -258,25 +277,23 @@ export function LandingPageClient({ dbPlans }: Props) {
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
                 <Satellite size={14} className="animate-pulse" />
-                Satellitenüberwachung
+                {t('monitoring.label')}
               </div>
               <h2 className="text-3xl md:text-4xl font-light text-white mb-6 leading-tight">
-                Borkenkäfer, Sturm & Dürre<br />
+                {t('monitoring.title1')}<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
-                  automatisch erkennen.
+                  {t('monitoring.title2')}
                 </span>
               </h2>
               <p className="text-[15px] text-slate-400 leading-relaxed mb-8">
-                Wöchentliche Überwachung per Sentinel-2 und Sentinel-1.
-                Borkenkäferbefall, Sturmwürfe und Trockenstress
-                werden erkannt, bevor Sie im Revier waren.
+                {t('monitoring.description')}
               </p>
               <div className="grid grid-cols-2 gap-6">
                 {[
-                  { label: 'Radar-Analyse',      desc: 'Wöchentliche Veränderungserkennung' },
-                  { label: 'Vitalitätsmessung',  desc: 'Monatliche Gesundheitsbewertung'    },
-                  { label: 'Sturm-Erkennung',    desc: 'Automatische Alarme'               },
-                  { label: 'Borkenkäfer-Risiko', desc: 'Temperatur- & Niederschlag-Index'   },
+                  { label: t('monitoring.radar.title'),   desc: t('monitoring.radar.desc') },
+                  { label: t('monitoring.vitality.title'), desc: t('monitoring.vitality.desc') },
+                  { label: t('monitoring.storm.title'),   desc: t('monitoring.storm.desc') },
+                  { label: t('monitoring.beetle.title'),  desc: t('monitoring.beetle.desc') },
                 ].map(item => (
                   <div key={item.label}>
                     <p className="text-[13px] font-medium text-white">{item.label}</p>
@@ -299,7 +316,7 @@ export function LandingPageClient({ dbPlans }: Props) {
                   <img src="/landing/satellite-bogovic.png" alt="Satellitenbild Wald" className="w-full block" />
                 </div>
               </div>
-              <p className="text-[10px] text-slate-600 text-center">Echte Satellitenbilder aus dem ForestManager</p>
+              <p className="text-[10px] text-slate-600 text-center">{t('monitoring.imageCaption')}</p>
             </motion.div>
           </div>
         </div>
@@ -313,21 +330,21 @@ export function LandingPageClient({ dbPlans }: Props) {
           <div className="mb-16">
             <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
-              Preise
+              {t('pricing.label')}
             </motion.div>
             <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               className="text-3xl md:text-4xl font-light text-white mb-4 max-w-sm leading-tight">
-              Für jeden Forstbetrieb der{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">passende Tarif.</span>
+              {t('pricing.title')}{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">{t('pricing.titleHighlight')}</span>
             </motion.h2>
             <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
               className="text-[15px] text-slate-400">
-              30 Tage kostenlos — keine Kreditkarte nötig. Voller Funktionsumfang in jedem Tarif.
+              {t('pricing.subtitle')}
             </motion.p>
           </div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12">
-            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-4">In jedem Paket</p>
+            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-4">{t('pricing.included')}</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {PLAN_FEATURES.map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-start gap-2">
@@ -362,16 +379,16 @@ export function LandingPageClient({ dbPlans }: Props) {
                   <p className="text-[12px] text-slate-500 mb-5">{plan.desc}</p>
                   <div className="flex items-baseline gap-1 mb-1">
                     <span className="text-2xl font-light text-white">{price} €</span>
-                    <span className="text-[12px] text-slate-500">/ Monat</span>
+                    <span className="text-[12px] text-slate-500">{t('pricing.perMonth')}</span>
                   </div>
-                  <p className="text-[11px] text-slate-600 mb-5">zzgl. MwSt.</p>
+                  <p className="text-[11px] text-slate-600 mb-5">{t('pricing.vat')}</p>
                   <p className="text-[12px] text-slate-400 mb-6">
-                    {maxHa ? `bis ${maxHa} ha` : 'Unbegrenzte Fläche'}
-                    {maxU ? ` · ${maxU} Nutzer` : ''}
+                    {maxHa ? t('pricing.upTo', { ha: maxHa }) : t('pricing.unlimited')}
+                    {maxU ? ` · ${t('pricing.users', { count: maxU })}` : ''}
                   </p>
                   <div className="mt-auto">
                     <SignInButton
-                      label="Kostenlos testen"
+                      label={t('pricing.tryFree')}
                       className={`w-full py-2 rounded-lg text-[13px] text-center transition-colors ${
                         plan.highlight
                           ? 'bg-emerald-500 text-black hover:bg-emerald-400 font-medium'
@@ -389,8 +406,8 @@ export function LandingPageClient({ dbPlans }: Props) {
             <div className="flex items-center gap-4">
               <Building2 size={18} className="text-slate-500 shrink-0" strokeWidth={1.5} />
               <div>
-                <p className="text-[14px] font-medium text-white">Enterprise</p>
-                <p className="text-[12px] text-slate-500">Unbegrenzte Fläche &middot; Unbegrenzte Nutzer &middot; SLA &middot; API-Zugang</p>
+                <p className="text-[14px] font-medium text-white">{t('pricing.plans.enterprise.name')}</p>
+                <p className="text-[12px] text-slate-500">{t('pricing.enterprise')}</p>
               </div>
             </div>
             <EnterpriseContactButton />
@@ -405,21 +422,21 @@ export function LandingPageClient({ dbPlans }: Props) {
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           className="max-w-xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl font-light text-white mb-4">
-            Bereit für den digitalen Forstbetrieb?
+            {t('cta.title')}
           </h2>
           <p className="text-[15px] text-slate-400 mb-8">
-            Erstellen Sie Ihren Account und richten Sie Ihren ersten Wald in wenigen Minuten ein.
+            {t('cta.description')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <SignInButton
-              label="Jetzt starten"
+              label={t('cta.button')}
               className="text-[13px] text-black bg-emerald-400 hover:bg-emerald-300 px-6 py-2.5 rounded-lg transition-colors font-medium"
             />
             <a
               href="mailto:kontakt@forest-manager.eu"
               className="text-[13px] text-slate-400 hover:text-white px-6 py-2.5 transition-colors"
             >
-              Kontakt aufnehmen
+              {t('cta.contact')}
             </a>
           </div>
         </motion.div>
@@ -429,46 +446,29 @@ export function LandingPageClient({ dbPlans }: Props) {
 }
 
 /* ─── Data ──────────────────────────────────────────────────────────────────── */
-const PLAN_FEATURES = [
-  { icon: Map,           label: 'Interaktive Forstkarte' },
-  { icon: Crosshair,     label: 'POIs: Hochsitze, Wege, Hütten' },
-  { icon: ClipboardList, label: 'Aufgaben & Maßnahmenplanung' },
-  { icon: Leaf,          label: 'Baum- & Holzpolterinventar' },
-  { icon: BarChart3,     label: 'Berichte & Controlling' },
-  { icon: Satellite,     label: 'Satellitenmonitoring' },
-  { icon: ShieldCheck,   label: 'Waldgesundheitsmonitoring' },
-  { icon: Users,         label: 'Team-Einladungen & Rollen' },
-];
-
-const PLANS = [
-  { name:'Basis', desc:'Kleine Privatwälder', price:'4,90 €', badge:null, highlight:false, enterprise:false, icon:TreePine },
-  { name:'Pro', desc:'Wachsende Forstbetriebe', price:'19,90 €', badge:'Beliebt', highlight:true, enterprise:false, icon:Trees },
-  { name:'Expert', desc:'Professionelle Forstunternehmen', price:'39,90 €', badge:null, highlight:false, enterprise:false, icon:Mountain },
-  { name:'Enterprise', desc:'', price:null, badge:null, highlight:false, enterprise:true, icon:Building2 },
-];
-
-const FEATURES = [
-  { title:'Interaktive Karte', description:'GIS-Layer für Waldpolygone, Einschlagsflächen, Wege, Kalamitäten, Habitate und POIs. Zeichnen, bearbeiten, verwalten.', icon:Map },
-  { title:'Waldüberwachung', description:'Automatische Überwachung per Satellit. Sturm-, Trockenheits- und Borkenkäfer-Alarme — ohne manuellen Aufwand.', icon:Leaf },
-  { title:'EU-Compliance', description:'Sorgfaltserklärungen erstellen, bearbeiten und direkt bei der EU-Behörde einreichen.', icon:ShieldCheck },
-  { title:'Maßnahmen & Holzverkauf', description:'Einschläge planen, Polter erfassen, Verkaufskontrakte anlegen und Lieferscheine drucken.', icon:PackageOpen },
-  { title:'Aufgaben & Planung', description:'Taskmanagement mit Zuweisung, Priorisierung, Kalender und wiederkehrenden Aufgaben.', icon:ClipboardList },
-  { title:'Mehrere Organisationen', description:'Mehrere Forstbetriebe in einer Plattform. Rollen, Berechtigungen und getrennte Daten.', icon:Trees },
-];
-
-const CAROUSEL_SLIDES = [
-  { src: '/landing/slide-ndvi.png', num: '01', title: 'Biomasse-\nMonitoring.', subtitle: 'NDVI-Karte mit Sentinel-2 Satellitendaten — Waldvitalität auf einen Blick.' },
-  { src: '/landing/slide-task.png', num: '02', title: 'Aufgaben\nim Revier.', subtitle: 'Aufgaben mit Standort, Foto und Beschreibung — direkt auf der Karte.' },
-  { src: '/landing/slide-monitoring.png', num: '03', title: 'Klima &\nBorkenkäfer.', subtitle: 'NDVI-Jahresvergleich, Temperatur, Niederschlag und Borkenkäfer-Risiko.' },
-  { src: '/landing/slide-tree.png', num: '04', title: 'Einzel-\nbäume.', subtitle: 'Baumart, BHD, Höhe, Stammfoto und CO₂-Speicherleistung — alles erfasst.' },
-  { src: '/landing/slide-forsteinrichtung.png', num: '05', title: 'Forst-\neinrichtung.', subtitle: 'Abteilungsweise Bestandserfassung mit Probekreisen und Ertragstafeln.' },
+const CAROUSEL_SLIDE_SRCS = [
+  '/landing/slide-ndvi.png',
+  '/landing/slide-task.png',
+  '/landing/slide-monitoring.png',
+  '/landing/slide-tree.png',
+  '/landing/slide-forsteinrichtung.png',
 ];
 
 function ScreenshotCarousel() {
+  const t = useTranslations('Landing');
+
+  const CAROUSEL_SLIDES = [
+    { src: CAROUSEL_SLIDE_SRCS[0], num: '01', title: t('carousel.s1.title'), subtitle: t('carousel.s1.subtitle') },
+    { src: CAROUSEL_SLIDE_SRCS[1], num: '02', title: t('carousel.s2.title'), subtitle: t('carousel.s2.subtitle') },
+    { src: CAROUSEL_SLIDE_SRCS[2], num: '03', title: t('carousel.s3.title'), subtitle: t('carousel.s3.subtitle') },
+    { src: CAROUSEL_SLIDE_SRCS[3], num: '04', title: t('carousel.s4.title'), subtitle: t('carousel.s4.subtitle') },
+    { src: CAROUSEL_SLIDE_SRCS[4], num: '05', title: t('carousel.s5.title'), subtitle: t('carousel.s5.subtitle') },
+  ];
+
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const next = useCallback(() => { setDirection(1); setCurrent(i => (i + 1) % CAROUSEL_SLIDES.length); }, []);
-  const prev = useCallback(() => { setDirection(-1); setCurrent(i => (i - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length); }, []);
+  const next = useCallback(() => { setDirection(1); setCurrent(i => (i + 1) % CAROUSEL_SLIDES.length); }, [CAROUSEL_SLIDES.length]);
+  const prev = useCallback(() => { setDirection(-1); setCurrent(i => (i - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length); }, [CAROUSEL_SLIDES.length]);
 
   useEffect(() => {
     const id = setInterval(next, 6000);

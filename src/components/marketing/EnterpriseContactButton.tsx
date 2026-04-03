@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Mail, X, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export function EnterpriseContactButton() {
   const [open, setOpen] = useState(false);
@@ -10,6 +11,7 @@ export function EnterpriseContactButton() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const t = useTranslations('Enterprise');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,11 +24,11 @@ export function EnterpriseContactButton() {
         body: JSON.stringify({ name, email, message }),
       });
       if (!res.ok) throw new Error();
-      toast.success('Ihre Anfrage wurde gesendet. Wir melden uns bald.');
+      toast.success(t('success'));
       setOpen(false);
       setName(''); setEmail(''); setMessage('');
     } catch {
-      toast.error('Fehler beim Senden. Bitte versuchen Sie es erneut.');
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
@@ -38,7 +40,7 @@ export function EnterpriseContactButton() {
         onClick={() => setOpen(true)}
         className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition"
       >
-        <Mail size={14} /> Kontakt aufnehmen
+        <Mail size={14} /> {t('button')}
       </button>
 
       {open && (
@@ -46,8 +48,8 @@ export function EnterpriseContactButton() {
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Enterprise-Anfrage</h3>
-                <p className="text-sm text-slate-500 mt-0.5">Wir melden uns innerhalb von 24 Stunden.</p>
+                <h3 className="text-lg font-bold text-slate-900">{t('title')}</h3>
+                <p className="text-sm text-slate-500 mt-0.5">{t('subtitle')}</p>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -59,7 +61,7 @@ export function EnterpriseContactButton() {
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Name</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">{t('name')}</label>
                   <input
                     type="text"
                     value={name}
@@ -69,7 +71,7 @@ export function EnterpriseContactButton() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">E-Mail</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">{t('email')}</label>
                   <input
                     type="email"
                     value={email}
@@ -80,13 +82,13 @@ export function EnterpriseContactButton() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Nachricht</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('message')}</label>
                 <textarea
                   value={message}
                   onChange={e => setMessage(e.target.value)}
                   required
                   rows={4}
-                  placeholder="Beschreiben Sie Ihren Betrieb und Ihre Anforderungen..."
+                  placeholder={t('placeholder')}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900 resize-none"
                 />
               </div>
@@ -96,7 +98,7 @@ export function EnterpriseContactButton() {
                   onClick={() => setOpen(false)}
                   className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
                 >
-                  Abbrechen
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
@@ -104,7 +106,7 @@ export function EnterpriseContactButton() {
                   className="inline-flex items-center gap-2 px-5 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition disabled:opacity-50"
                 >
                   {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                  Anfrage senden
+                  {t('send')}
                 </button>
               </div>
             </form>

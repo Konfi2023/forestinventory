@@ -122,21 +122,21 @@ export function LandingPageClient({ dbPlans }: Props) {
                   <span className="text-[10px] font-mono text-emerald-400 tracking-wider">LIVE</span>
                 </div>
                 <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-300">
-                  51.62° N, 12.27° E
+                  {t('scanner.coords')}
                 </div>
               </div>
               <div className="relative">
                 <div className="absolute inset-0 bg-[#0a0f0a]/80 backdrop-blur-xl border border-white/10 rounded-xl" />
                 <div className="relative z-10 p-4">
-                  <h3 className="text-lg font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">Roitzsch, DE</h3>
+                  <h3 className="text-lg font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">{t('scanner.location')}</h3>
                   <div className="grid grid-cols-2 gap-2 mt-3">
                     <div className="bg-black/20 rounded-lg p-2 border border-white/5">
-                      <div className="text-[9px] text-slate-500 uppercase font-mono mb-1">Fläche</div>
-                      <div className="text-sm font-bold text-white flex items-center gap-1"><Trees size={13} className="text-emerald-500" /> 340 ha</div>
+                      <div className="text-[9px] text-slate-500 uppercase font-mono mb-1">{t('scanner.areaLabel')}</div>
+                      <div className="text-sm font-bold text-white flex items-center gap-1"><Trees size={13} className="text-emerald-500" /> {t('scanner.area')}</div>
                     </div>
                     <div className="bg-black/20 rounded-lg p-2 border border-white/5">
-                      <div className="text-[9px] text-slate-500 uppercase font-mono mb-1">NDVI Trend</div>
-                      <div className="text-sm font-bold text-emerald-400">+2.1 %</div>
+                      <div className="text-[9px] text-slate-500 uppercase font-mono mb-1">{t('scanner.metricLabel')}</div>
+                      <div className="text-sm font-bold text-emerald-400">{t('scanner.metricValue')}</div>
                     </div>
                   </div>
                 </div>

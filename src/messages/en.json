@@ -21,12 +21,30 @@
       "label": "Features",
       "title": "Everything your forestry operation",
       "titleHighlight": "needs.",
-      "map": { "title": "Interactive Map", "desc": "GIS layers for forest polygons, harvest areas, paths, calamities, habitats, and POIs. Draw, edit, manage." },
-      "monitoring": { "title": "Forest Monitoring", "desc": "Automated satellite monitoring. Storm, drought, and bark beetle alerts — without manual effort." },
-      "compliance": { "title": "EU Compliance", "desc": "Create, edit, and submit due diligence statements directly to the EU authority." },
-      "harvest": { "title": "Operations & Timber Sales", "desc": "Plan harvests, record log piles, create sales contracts, and print delivery notes." },
-      "tasks": { "title": "Tasks & Planning", "desc": "Task management with assignments, prioritization, calendar, and recurring tasks." },
-      "orgs": { "title": "Multiple Organizations", "desc": "Multiple forestry operations on one platform. Roles, permissions, and separated data." }
+      "map": {
+        "title": "Interactive Map",
+        "desc": "GIS layers for forest polygons, harvest areas, paths, calamities, habitats, and POIs. Draw, edit, manage."
+      },
+      "monitoring": {
+        "title": "Forest Monitoring",
+        "desc": "Automated satellite monitoring. Storm, drought, and bark beetle alerts — without manual effort."
+      },
+      "compliance": {
+        "title": "EU Compliance",
+        "desc": "Create, edit, and submit due diligence statements directly to the EU authority."
+      },
+      "harvest": {
+        "title": "Operations & Timber Sales",
+        "desc": "Plan harvests, record log piles, create sales contracts, and print delivery notes."
+      },
+      "tasks": {
+        "title": "Tasks & Planning",
+        "desc": "Task management with assignments, prioritization, calendar, and recurring tasks."
+      },
+      "orgs": {
+        "title": "Multiple Organizations",
+        "desc": "Multiple forestry operations on one platform. Roles, permissions, and separated data."
+      }
     },
     "product": {
       "label": "See it in action",
@@ -34,11 +52,26 @@
       "titleHighlight": "All the tools."
     },
     "carousel": {
-      "s1": { "title": "Biomass\nMonitoring.", "subtitle": "NDVI map with Sentinel-2 satellite data — forest vitality at a glance." },
-      "s2": { "title": "Tasks\nin the Field.", "subtitle": "Tasks with location, photo, and description — right on the map." },
-      "s3": { "title": "Climate &\nBark Beetle.", "subtitle": "Year-over-year NDVI comparison, temperature, precipitation, and bark beetle risk." },
-      "s4": { "title": "Individual\nTrees.", "subtitle": "Species, DBH, height, stem photo, and CO₂ storage — all captured." },
-      "s5": { "title": "Forest\nInventory.", "subtitle": "Compartment-level stand assessment with sample plots and yield tables." }
+      "s1": {
+        "title": "Biomass\nMonitoring.",
+        "subtitle": "NDVI map with Sentinel-2 satellite data — forest vitality at a glance."
+      },
+      "s2": {
+        "title": "Tasks\nin the Field.",
+        "subtitle": "Tasks with location, photo, and description — right on the map."
+      },
+      "s3": {
+        "title": "Climate &\nBark Beetle.",
+        "subtitle": "Year-over-year NDVI comparison, temperature, precipitation, and bark beetle risk."
+      },
+      "s4": {
+        "title": "Individual\nTrees.",
+        "subtitle": "Species, DBH, height, stem photo, and CO₂ storage — all captured."
+      },
+      "s5": {
+        "title": "Forest\nInventory.",
+        "subtitle": "Compartment-level stand assessment with sample plots and yield tables."
+      }
     },
     "eudr": {
       "label": "EU 2023/1115",
@@ -50,20 +83,44 @@
       "check3": "Proof of origin from forest polygons",
       "check4": "Reference numbers on delivery notes",
       "check5": "Satellite data as deforestation evidence",
-      "step1": { "title": "Draw forest polygons", "desc": "Define areas on the map — automatically prepared as EU-compliant proof of origin." },
-      "step2": { "title": "Fill in the statement", "desc": "Enter species, volume, and harvest period — directly from your harvest data." },
-      "step3": { "title": "Submit", "desc": "One click — the statement is transmitted and the reference number returned." },
-      "step4": { "title": "Print delivery note", "desc": "The reference number automatically appears on all delivery notes." }
+      "step1": {
+        "title": "Draw forest polygons",
+        "desc": "Define areas on the map — automatically prepared as EU-compliant proof of origin."
+      },
+      "step2": {
+        "title": "Fill in the statement",
+        "desc": "Enter species, volume, and harvest period — directly from your harvest data."
+      },
+      "step3": {
+        "title": "Submit",
+        "desc": "One click — the statement is transmitted and the reference number returned."
+      },
+      "step4": {
+        "title": "Print delivery note",
+        "desc": "The reference number automatically appears on all delivery notes."
+      }
     },
     "monitoring": {
       "label": "Satellite Monitoring",
       "title1": "Bark beetle, storm & drought",
       "title2": "detected automatically.",
       "description": "Weekly monitoring via Sentinel-2 and Sentinel-1. Bark beetle infestations, windthrow, and drought stress are detected before you visit the site.",
-      "radar": { "title": "Radar Analysis", "desc": "Weekly change detection" },
-      "vitality": { "title": "Vitality Assessment", "desc": "Monthly health evaluation" },
-      "storm": { "title": "Storm Detection", "desc": "Automatic alerts" },
-      "beetle": { "title": "Bark Beetle Risk", "desc": "Temperature & precipitation index" },
+      "radar": {
+        "title": "Radar Analysis",
+        "desc": "Weekly change detection"
+      },
+      "vitality": {
+        "title": "Vitality Assessment",
+        "desc": "Monthly health evaluation"
+      },
+      "storm": {
+        "title": "Storm Detection",
+        "desc": "Automatic alerts"
+      },
+      "beetle": {
+        "title": "Bark Beetle Risk",
+        "desc": "Temperature & precipitation index"
+      },
       "imageCaption": "Real satellite imagery from ForestManager"
     },
     "pricing": {
@@ -90,10 +147,22 @@
         "team": "Team invitations & roles"
       },
       "plans": {
-        "basis": { "name": "Basic", "desc": "Small private forests" },
-        "pro": { "name": "Pro", "desc": "Growing forestry operations", "badge": "Popular" },
-        "expert": { "name": "Expert", "desc": "Professional forestry enterprises" },
-        "enterprise": { "name": "Enterprise" }
+        "basis": {
+          "name": "Basic",
+          "desc": "Small private forests"
+        },
+        "pro": {
+          "name": "Pro",
+          "desc": "Growing forestry operations",
+          "badge": "Popular"
+        },
+        "expert": {
+          "name": "Expert",
+          "desc": "Professional forestry enterprises"
+        },
+        "enterprise": {
+          "name": "Enterprise"
+        }
       }
     },
     "cta": {
@@ -101,6 +170,14 @@
       "description": "Create your account and set up your first forest in just a few minutes.",
       "button": "Get started",
       "contact": "Contact us"
+    },
+    "scanner": {
+      "location": "Sherwood, UK",
+      "coords": "53.20° N, 1.07° W",
+      "area": "423 ha",
+      "areaLabel": "Area",
+      "metricLabel": "NDVI Trend",
+      "metricValue": "+1.8 %"
     }
   },
   "Header": {

@@ -21,12 +21,30 @@
       "label": "Funcionalidades",
       "title": "Todo lo que su empresa forestal",
       "titleHighlight": "necesita.",
-      "map": { "title": "Mapa interactivo", "desc": "Capas GIS para polígonos forestales, áreas de corta, caminos, calamidades, hábitats y POIs. Dibujar, editar, gestionar." },
-      "monitoring": { "title": "Vigilancia forestal", "desc": "Monitorización automática por satélite. Alertas de tormentas, sequía y escolítidos — sin esfuerzo manual." },
-      "compliance": { "title": "Conformidad UE", "desc": "Crear, editar y enviar declaraciones de diligencia debida directamente a la autoridad de la UE." },
-      "harvest": { "title": "Operaciones y venta de madera", "desc": "Planificar aprovechamientos, registrar pilas de troncos, crear contratos de venta e imprimir albaranes." },
-      "tasks": { "title": "Tareas y planificación", "desc": "Gestión de tareas con asignación, priorización, calendario y tareas recurrentes." },
-      "orgs": { "title": "Múltiples organizaciones", "desc": "Varias explotaciones forestales en una sola plataforma. Roles, permisos y datos separados." }
+      "map": {
+        "title": "Mapa interactivo",
+        "desc": "Capas GIS para polígonos forestales, áreas de corta, caminos, calamidades, hábitats y POIs. Dibujar, editar, gestionar."
+      },
+      "monitoring": {
+        "title": "Vigilancia forestal",
+        "desc": "Monitorización automática por satélite. Alertas de tormentas, sequía y escolítidos — sin esfuerzo manual."
+      },
+      "compliance": {
+        "title": "Conformidad UE",
+        "desc": "Crear, editar y enviar declaraciones de diligencia debida directamente a la autoridad de la UE."
+      },
+      "harvest": {
+        "title": "Operaciones y venta de madera",
+        "desc": "Planificar aprovechamientos, registrar pilas de troncos, crear contratos de venta e imprimir albaranes."
+      },
+      "tasks": {
+        "title": "Tareas y planificación",
+        "desc": "Gestión de tareas con asignación, priorización, calendario y tareas recurrentes."
+      },
+      "orgs": {
+        "title": "Múltiples organizaciones",
+        "desc": "Varias explotaciones forestales en una sola plataforma. Roles, permisos y datos separados."
+      }
     },
     "product": {
       "label": "Véalo en acción",
@@ -34,11 +52,26 @@
       "titleHighlight": "Todas las herramientas."
     },
     "carousel": {
-      "s1": { "title": "Monitorización\nde biomasa.", "subtitle": "Mapa NDVI con datos de satélite Sentinel-2 — vitalidad del bosque de un vistazo." },
-      "s2": { "title": "Tareas\nen el campo.", "subtitle": "Tareas con ubicación, foto y descripción — directamente en el mapa." },
-      "s3": { "title": "Clima y\nescolítidos.", "subtitle": "Comparación interanual de NDVI, temperatura, precipitación y riesgo de escolítidos." },
-      "s4": { "title": "Árboles\nindividuales.", "subtitle": "Especie, DAP, altura, foto del fuste y almacenamiento de CO₂ — todo registrado." },
-      "s5": { "title": "Inventario\nforestal.", "subtitle": "Evaluación de rodales por compartimento con parcelas de muestreo y tablas de producción." }
+      "s1": {
+        "title": "Monitorización\nde biomasa.",
+        "subtitle": "Mapa NDVI con datos de satélite Sentinel-2 — vitalidad del bosque de un vistazo."
+      },
+      "s2": {
+        "title": "Tareas\nen el campo.",
+        "subtitle": "Tareas con ubicación, foto y descripción — directamente en el mapa."
+      },
+      "s3": {
+        "title": "Clima y\nescolítidos.",
+        "subtitle": "Comparación interanual de NDVI, temperatura, precipitación y riesgo de escolítidos."
+      },
+      "s4": {
+        "title": "Árboles\nindividuales.",
+        "subtitle": "Especie, DAP, altura, foto del fuste y almacenamiento de CO₂ — todo registrado."
+      },
+      "s5": {
+        "title": "Inventario\nforestal.",
+        "subtitle": "Evaluación de rodales por compartimento con parcelas de muestreo y tablas de producción."
+      }
     },
     "eudr": {
       "label": "EU 2023/1115",
@@ -50,20 +83,44 @@
       "check3": "Pruebas de origen a partir de polígonos forestales",
       "check4": "Números de referencia en albaranes",
       "check5": "Datos satelitales como prueba de no deforestación",
-      "step1": { "title": "Dibujar polígonos forestales", "desc": "Definir áreas en el mapa — preparadas automáticamente como pruebas de origen conformes a la UE." },
-      "step2": { "title": "Cumplimentar la declaración", "desc": "Introducir especie, volumen y período de cosecha — directamente desde sus datos de aprovechamiento." },
-      "step3": { "title": "Enviar", "desc": "Un clic — la declaración se transmite y se devuelve el número de referencia." },
-      "step4": { "title": "Imprimir albarán", "desc": "El número de referencia aparece automáticamente en todos los albaranes." }
+      "step1": {
+        "title": "Dibujar polígonos forestales",
+        "desc": "Definir áreas en el mapa — preparadas automáticamente como pruebas de origen conformes a la UE."
+      },
+      "step2": {
+        "title": "Cumplimentar la declaración",
+        "desc": "Introducir especie, volumen y período de cosecha — directamente desde sus datos de aprovechamiento."
+      },
+      "step3": {
+        "title": "Enviar",
+        "desc": "Un clic — la declaración se transmite y se devuelve el número de referencia."
+      },
+      "step4": {
+        "title": "Imprimir albarán",
+        "desc": "El número de referencia aparece automáticamente en todos los albaranes."
+      }
     },
     "monitoring": {
       "label": "Vigilancia por satélite",
       "title1": "Escolítidos, tormentas y sequía",
       "title2": "detectados automáticamente.",
       "description": "Monitorización semanal mediante Sentinel-2 y Sentinel-1. Plagas de escolítidos, derribos por viento y estrés hídrico se detectan antes de que visite el terreno.",
-      "radar": { "title": "Análisis radar", "desc": "Detección semanal de cambios" },
-      "vitality": { "title": "Evaluación de vitalidad", "desc": "Evaluación mensual de salud" },
-      "storm": { "title": "Detección de tormentas", "desc": "Alertas automáticas" },
-      "beetle": { "title": "Riesgo de escolítidos", "desc": "Índice de temperatura y precipitación" },
+      "radar": {
+        "title": "Análisis radar",
+        "desc": "Detección semanal de cambios"
+      },
+      "vitality": {
+        "title": "Evaluación de vitalidad",
+        "desc": "Evaluación mensual de salud"
+      },
+      "storm": {
+        "title": "Detección de tormentas",
+        "desc": "Alertas automáticas"
+      },
+      "beetle": {
+        "title": "Riesgo de escolítidos",
+        "desc": "Índice de temperatura y precipitación"
+      },
       "imageCaption": "Imágenes satelitales reales de ForestManager"
     },
     "pricing": {
@@ -90,10 +147,22 @@
         "team": "Invitaciones de equipo y roles"
       },
       "plans": {
-        "basis": { "name": "Básico", "desc": "Pequeños bosques privados" },
-        "pro": { "name": "Pro", "desc": "Empresas forestales en crecimiento", "badge": "Popular" },
-        "expert": { "name": "Expert", "desc": "Empresas forestales profesionales" },
-        "enterprise": { "name": "Enterprise" }
+        "basis": {
+          "name": "Básico",
+          "desc": "Pequeños bosques privados"
+        },
+        "pro": {
+          "name": "Pro",
+          "desc": "Empresas forestales en crecimiento",
+          "badge": "Popular"
+        },
+        "expert": {
+          "name": "Expert",
+          "desc": "Empresas forestales profesionales"
+        },
+        "enterprise": {
+          "name": "Enterprise"
+        }
       }
     },
     "cta": {
@@ -101,6 +170,14 @@
       "description": "Cree su cuenta y configure su primer bosque en pocos minutos.",
       "button": "Empezar ahora",
       "contact": "Contactar"
+    },
+    "scanner": {
+      "location": "Guadarrama, ES",
+      "coords": "40.78° N, 4.00° W",
+      "area": "280 ha",
+      "areaLabel": "Superficie",
+      "metricLabel": "Tendencia NDVI",
+      "metricValue": "+1.5 %"
     }
   },
   "Header": {

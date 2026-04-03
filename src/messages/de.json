@@ -658,6 +658,14 @@
       "description": "Erstellen Sie Ihren Account und richten Sie Ihren ersten Wald in wenigen Minuten ein.",
       "button": "Jetzt starten",
       "contact": "Kontakt aufnehmen"
+    },
+    "scanner": {
+      "location": "Roitzsch, DE",
+      "coords": "51.62° N, 12.27° E",
+      "area": "340 ha",
+      "areaLabel": "Fläche",
+      "metricLabel": "NDVI Trend",
+      "metricValue": "+2.1 %"
     }
   },
   "Admin": {

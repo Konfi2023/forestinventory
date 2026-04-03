@@ -93,7 +93,6 @@ export function middleware(req: NextRequest) {
   }
 
   // ── Marketing routes: logged-in user redirect ──────────────────────
-  // Check root and locale-prefixed root (e.g. /, /en, /fr)
   const isRoot = pathname === '/' || /^\/(de|en|es|fr)\/?$/.test(pathname);
   if (isRoot) {
     const sessionCookie =

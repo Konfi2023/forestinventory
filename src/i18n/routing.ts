@@ -6,7 +6,7 @@ export type Locale = (typeof locales)[number];
 export const routing = defineRouting({
   locales,
   defaultLocale: 'de',
-  localePrefix: 'as-needed',
+  localePrefix: 'always',
   pathnames: {
     '/': '/',
     '/datenschutz': {

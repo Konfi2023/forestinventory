@@ -67,13 +67,8 @@ export function LanguageSwitcher() {
     // Get localized path for target locale
     const localizedPath = getLocalizedPath(canonical, newLocale);
 
-    // Build full URL — always use explicit locale prefix for non-default
-    let newPath: string;
-    if (newLocale === routing.defaultLocale) {
-      newPath = localizedPath;
-    } else {
-      newPath = `/${newLocale}${localizedPath === '/' ? '' : localizedPath}`;
-    }
+    // Build full URL — every locale gets a prefix
+    const newPath = `/${newLocale}${localizedPath === '/' ? '' : localizedPath}`;
 
     window.location.href = newPath;
     setOpen(false);

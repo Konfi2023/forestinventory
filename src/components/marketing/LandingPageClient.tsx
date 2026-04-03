@@ -460,7 +460,8 @@ const CAROUSEL_SLIDES = [
   { src: '/landing/slide-ndvi.png', num: '01', title: 'Biomasse-\nMonitoring.', subtitle: 'NDVI-Karte mit Sentinel-2 Satellitendaten — Waldvitalität auf einen Blick.' },
   { src: '/landing/slide-task.png', num: '02', title: 'Aufgaben\nim Revier.', subtitle: 'Aufgaben mit Standort, Foto und Beschreibung — direkt auf der Karte.' },
   { src: '/landing/slide-monitoring.png', num: '03', title: 'Klima &\nBorkenkäfer.', subtitle: 'NDVI-Jahresvergleich, Temperatur, Niederschlag und Borkenkäfer-Risiko.' },
-  { src: '/landing/slide-forsteinrichtung.png', num: '04', title: 'Forst-\neinrichtung.', subtitle: 'Abteilungsweise Bestandserfassung mit Probekreisen und Ertragstafeln.' },
+  { src: '/landing/slide-tree.png', num: '04', title: 'Einzel-\nbäume.', subtitle: 'Baumart, BHD, Höhe, Stammfoto und CO₂-Speicherleistung — alles erfasst.' },
+  { src: '/landing/slide-forsteinrichtung.png', num: '05', title: 'Forst-\neinrichtung.', subtitle: 'Abteilungsweise Bestandserfassung mit Probekreisen und Ertragstafeln.' },
 ];
 
 function ScreenshotCarousel() {

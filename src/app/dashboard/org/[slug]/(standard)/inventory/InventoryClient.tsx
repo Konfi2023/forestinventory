@@ -1045,15 +1045,6 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               onChange={handlePhoto}
             />
 
-            <input
-              id="crown-photo-input"
-              ref={crownFileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={handleCrownPhoto}
-            />
 
             {/* GPS-Status (mini, im Hintergrund) */}
             {(gpsLoading || form.lat) && (
@@ -1286,6 +1277,15 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             <h2 className="text-xl font-bold mb-1">Krone fotografieren</h2>
             <p className="text-slate-400 text-sm mb-5">Foto der Baumkrone von unten aufnehmen. Die KI analysiert Vitalität, Verlichtung und Schäden.</p>
 
+            <input
+              id="crown-photo-input"
+              ref={crownFileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleCrownPhoto}
+            />
             <label
               htmlFor="crown-photo-input"
               className={`relative w-full aspect-square rounded-xl flex items-center justify-center cursor-pointer transition-colors mb-4 overflow-hidden ${

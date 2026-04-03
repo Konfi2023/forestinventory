@@ -1046,6 +1046,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             />
 
             <input
+              id="crown-photo-input"
               ref={crownFileInputRef}
               type="file"
               accept="image/*"
@@ -1285,10 +1286,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             <h2 className="text-xl font-bold mb-1">Krone fotografieren</h2>
             <p className="text-slate-400 text-sm mb-5">Foto der Baumkrone von unten aufnehmen. Die KI analysiert Vitalität, Verlichtung und Schäden.</p>
 
-            <div
-              onClick={() => crownFileInputRef.current?.click()}
+            <label
+              htmlFor="crown-photo-input"
               className={`relative w-full aspect-square rounded-xl flex items-center justify-center cursor-pointer transition-colors mb-4 overflow-hidden ${
-                crownPhotoPreview ? '' : 'bg-slate-100 hover:bg-slate-200 border-2 border-dashed border-slate-300'
+                crownPhotoPreview ? '' : 'bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border-2 border-dashed border-slate-300'
               }`}
             >
               {crownPhotoPreview ? (
@@ -1305,7 +1306,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   <Camera size={32} className="text-white" />
                 </div>
               )}
-            </div>
+            </label>
 
             {/* Crown AI status */}
             {crownAiStatus === 'analyzing' && (

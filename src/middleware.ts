@@ -111,6 +111,7 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     '/',
+    '/(de|en|es|fr)',
     '/(de|en|es|fr)/:path*',
     '/datenschutz',
     '/impressum',

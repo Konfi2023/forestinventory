@@ -1,94 +1,15 @@
-export const metadata = { title: 'Impressum – ForestManager' };
+import { setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
+import { LegalPage } from '@/components/marketing/LegalPage';
 
-export default function ImprintPage() {
-  return (
-    <article className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold text-white mb-2">Impressum</h1>
-      <p className="text-sm text-slate-500 mb-10">Angaben gemäß § 5 TMG</p>
-
-      <Section title="Angaben gemäß § 5 TMG">
-        <p>
-          natureport UG (haftungsbeschränkt)<br />
-          Willy-Brandt-Straße 23<br />
-          20457 Hamburg<br />
-          Deutschland
-        </p>
-      </Section>
-
-      <Section title="Vertreten durch">
-        <p>Geschäftsführer: Aschkan Allahgholi</p>
-      </Section>
-
-      <Section title="Kontakt">
-        <p>
-          E-Mail: <a href="mailto:info@natureport.eu" className="text-emerald-400 hover:underline">info@natureport.eu</a><br />
-          Web: <a href="https://forest-manager.eu" className="text-emerald-400 hover:underline">forest-manager.eu</a>
-        </p>
-      </Section>
-
-      <Section title="Registereintrag">
-        <p>
-          Eintragung im Handelsregister.<br />
-          Registergericht: Amtsgericht Hamburg<br />
-          Registernummer: HRB 194200
-        </p>
-      </Section>
-
-      <Section title="Umsatzsteuer-ID">
-        <p>
-          Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:<br />
-          DE457114766
-        </p>
-      </Section>
-
-      <Section title="Streitschlichtung (EU)">
-        <p>
-          Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:{' '}
-          <a
-            href="https://ec.europa.eu/consumers/odr/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-emerald-400 hover:underline"
-          >
-            https://ec.europa.eu/consumers/odr/
-          </a>
-          .<br />
-          Unsere E-Mail-Adresse finden Sie oben im Impressum.
-        </p>
-      </Section>
-
-      <Section title="Verbraucherstreitbeilegung">
-        <p>
-          Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
-          Verbraucherschlichtungsstelle teilzunehmen.
-        </p>
-      </Section>
-
-      <Section title="Inhaltlich Verantwortlicher">
-        <p>
-          Inhaltlich verantwortlich gemäß § 55 Abs. 2 RStV:<br />
-          natureport UG (haftungsbeschränkt)<br />
-          Willy-Brandt-Straße 23<br />
-          20457 Hamburg
-        </p>
-      </Section>
-
-      <p className="mt-12 pt-6 border-t border-white/10 text-sm text-slate-400">
-        Haftungshinweis: Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung
-        für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich
-        deren Betreiber verantwortlich.
-      </p>
-    </article>
-  );
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Legal.imprint' });
+  return { title: t('title') + ' – ForestManager' };
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-8">
-      <h2 className="text-lg font-semibold text-white mb-2 pb-1 border-b border-white/5">
-        {title}
-      </h2>
-      <div className="text-slate-400 leading-relaxed text-sm">{children}</div>
-    </section>
-  );
+export default async function ImprintPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  return <LegalPage namespace="imprint" />;
 }

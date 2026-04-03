@@ -217,5 +217,251 @@
     "success": "Your inquiry has been sent. We will be in touch soon.",
     "error": "Failed to send. Please try again.",
     "button": "Contact us"
+  },
+  "Legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "metaTitle": "Privacy Policy – ForestManager",
+      "lastUpdated": "Last updated: March 2026",
+      "intro": "The protection of your personal data is of great importance to us. This privacy policy informs you about which data we collect, process, and share with third parties when you use ForestManager (forest-manager.eu).",
+      "sections": [
+        {
+          "title": "1. Data Controller",
+          "content": "natureport UG (haftungsbeschränkt)\nWilly-Brandt-Straße 23, 20457 Hamburg\nEmail: info@natureport.eu"
+        },
+        {
+          "title": "2. Hosting & Server Log Files",
+          "content": "Our servers are located in Europe (OHV Cloud, EU data center). Each time a page is accessed, server log files are automatically recorded, including IP address, requested URL, time of access, HTTP status code, and amount of data transferred. This data is used exclusively for technical security and troubleshooting purposes and is deleted after no more than 7 days.",
+          "legalBasis": "Legal basis: Art. 6(1)(f) GDPR (legitimate interest)."
+        },
+        {
+          "title": "3. Registration & Authentication (Keycloak)",
+          "content": "For authentication, we use Keycloak, an open-source identity provider operated on our own servers in Europe. Your name, email address, and password (encrypted, bcrypt) are stored in this process. No data is shared with third parties.",
+          "legalBasis": "Legal basis: Art. 6(1)(b) GDPR (performance of contract)."
+        },
+        {
+          "title": "4. Payment Processing (Stripe)",
+          "content": "Paid subscriptions are processed through Stripe Payments Europe, Ltd. (185 Berry St., Suite 550, San Francisco, CA 94107, USA). Your payment data (credit card number, bank details) is transmitted directly to Stripe and processed there. We do not store any complete payment data ourselves. Stripe is certified under the EU-US Data Privacy Framework.",
+          "legalBasis": "Legal basis: Art. 6(1)(b) GDPR.",
+          "privacyLink": "Stripe privacy notice: https://stripe.com/de/privacy"
+        },
+        {
+          "title": "5. Map Services & Geodata",
+          "subsections": [
+            {
+              "label": "OpenStreetMap",
+              "content": "Map tiles from OpenStreetMap (OpenStreetMap Foundation, St John's Innovation Centre, Cambridge, UK) are used for the base map. Your IP address is technically transmitted to the OSM servers in this process. License: ODbL.",
+              "privacyLink": "OpenStreetMap privacy policy: https://wiki.osmfoundation.org/wiki/Privacy_Policy"
+            },
+            {
+              "label": "ALKIS / INSPIRE (Cadastral Maps)",
+              "content": "To display official parcel boundaries, WMS services from the German surveying authorities (ALKIS/INSPIRE) are integrated. Only the displayed map extent (bounding box) and your IP address are transmitted. The services are provided under the Data License Germany – Attribution – Version 2.0. No personal data is transmitted."
+            },
+            {
+              "label": "Sentinel Hub / CDSE (Satellite Data)",
+              "content": "To calculate vegetation indices (NDVI) and radar analyses (SAR), we use the API of the Copernicus Data Space Ecosystem (CDSE) operated by the European Space Agency (ESA). The coordinates of your forest polygons are transmitted to the API to retrieve location-based satellite imagery. No personal data is transmitted to ESA/CDSE. All processing is performed server-side.",
+              "privacyLink": "CDSE privacy policy: https://dataspace.copernicus.eu/privacy-policy"
+            },
+            {
+              "label": "Windy (Wind & Precipitation Map)",
+              "content": "As an optional map layer, the weather map from Windy.com (Windyty, SE, Czech Republic) is embedded. When this layer is activated, a connection to the Windy servers is established and your IP address is transmitted. Windy.com may set its own cookies.",
+              "privacyLink": "Windy privacy policy: https://windyty.com/privacy"
+            }
+          ],
+          "legalBasis": "Legal basis: Art. 6(1)(b) GDPR (performance of contract) and Art. 6(1)(f) GDPR (legitimate interest in service delivery)."
+        },
+        {
+          "title": "6. AI Features (OpenAI / GPT-4)",
+          "content": "For AI-powered analyses (e.g., biomass evaluations and recommendations), we use the API of OpenAI, LLC (3180 18th St., San Francisco, CA 94110, USA). Aggregated forest data (e.g., calculated NDVI values, tree species, areas in hectares) is transmitted to the OpenAI API. No personal data such as name, email, or address is transmitted to OpenAI. To protect your privacy, all requests are processed server-side. OpenAI is certified under the EU-US Data Privacy Framework.",
+          "modelInfo": "We use the GPT-4o model. OpenAI does not use API inputs for training their models (API Terms of Use, as of March 2024).",
+          "legalBasis": "Legal basis: Art. 6(1)(f) GDPR (legitimate interest in service delivery).",
+          "privacyLink": "OpenAI privacy notice: https://openai.com/policies/privacy-policy"
+        },
+        {
+          "title": "7. Weather Data (Open-Meteo)",
+          "content": "For historical and current weather data (precipitation, temperature, wind), we use the API of Open-Meteo (open-meteo.com), an open-source project. Only the geographic coordinates of your forest locations are transmitted. No personal data is shared with Open-Meteo. The API requires no authentication and does not store any user-related data.",
+          "legalBasis": "Legal basis: Art. 6(1)(b) GDPR."
+        },
+        {
+          "title": "8. Cloud Storage & File Upload (Hetzner Object Storage)",
+          "content": "Uploaded photos and documents (e.g., log pile photos, inventory app recordings) are stored in encrypted form on Hetzner Object Storage (S3-compatible, located in Helsinki, EU). Hetzner Online GmbH, Gunzenhausen, is contractually bound as a data processor in accordance with Art. 28 GDPR.",
+          "legalBasis": "Legal basis: Art. 6(1)(b) GDPR."
+        },
+        {
+          "title": "9. Email Delivery (Resend)",
+          "content": "System emails (e.g., invitations, password resets, notifications) are sent via the service provider Resend Inc. (San Francisco, USA). The email address and message content are transmitted in this process. Resend is certified under the EU-US Data Privacy Framework.",
+          "legalBasis": "Legal basis: Art. 6(1)(b) GDPR."
+        },
+        {
+          "title": "10. Error Monitoring (GlitchTip)",
+          "content": "To detect and resolve software errors, we use GlitchTip, a self-hosted, GDPR-friendly alternative to Sentry. When an error occurs, technical information (error type, stack trace, browser information) is recorded. No personal user data is stored in error reports. All data remains on our own servers in Europe.",
+          "legalBasis": "Legal basis: Art. 6(1)(f) GDPR."
+        },
+        {
+          "title": "11. Mobile App & Offline Storage",
+          "content": "The mobile web app uses IndexedDB (Dexie.js) in the user's browser for offline data storage. Tree data, GPS coordinates, and photos are stored locally in the browser until an internet connection is available. This data only leaves the device during the manual synchronization process. No cookies are set for this purpose."
+        },
+        {
+          "title": "12. Cookies & Tracking",
+          "content": "We only use technically necessary cookies (session cookie for login). No tracking cookies, analytics tools (Google Analytics, Matomo, or similar), or advertising networks are used. No cookie consent is required."
+        },
+        {
+          "title": "13. Your Rights",
+          "content": "You have the following rights regarding your personal data:",
+          "items": [
+            "Right of access (Art. 15 GDPR)",
+            "Right to rectification (Art. 16 GDPR)",
+            "Right to erasure / \"right to be forgotten\" (Art. 17 GDPR)",
+            "Right to restriction of processing (Art. 18 GDPR)",
+            "Right to data portability (Art. 20 GDPR)",
+            "Right to object (Art. 21 GDPR)",
+            "Right to lodge a complaint with a supervisory authority"
+          ],
+          "supervisoryAuthority": "Competent supervisory authority for Hamburg: The Hamburg Commissioner for Data Protection and Freedom of Information, Ludwig-Erhard-Str. 22, 20459 Hamburg.",
+          "contact": "To exercise your rights, please contact: info@natureport.eu"
+        }
+      ],
+      "footer": "This privacy policy was last updated in March 2026. We reserve the right to update it when changes are made to our services."
+    },
+    "imprint": {
+      "title": "Legal Notice",
+      "metaTitle": "Legal Notice – ForestManager",
+      "subtitle": "Information pursuant to Section 5 TMG (German Telemedia Act)",
+      "sections": [
+        {
+          "title": "Information pursuant to Section 5 TMG",
+          "content": "natureport UG (haftungsbeschränkt)\nWilly-Brandt-Straße 23\n20457 Hamburg\nGermany"
+        },
+        {
+          "title": "Represented by",
+          "content": "Managing Director: Aschkan Allahgholi"
+        },
+        {
+          "title": "Contact",
+          "content": "Email: info@natureport.eu\nWeb: forest-manager.eu"
+        },
+        {
+          "title": "Commercial Register Entry",
+          "content": "Registered in the commercial register.\nRegister court: Amtsgericht Hamburg (Hamburg District Court)\nRegister number: HRB 194200"
+        },
+        {
+          "title": "VAT ID",
+          "content": "VAT identification number pursuant to Section 27a of the German VAT Act (Umsatzsteuergesetz):\nDE457114766"
+        },
+        {
+          "title": "Dispute Resolution (EU)",
+          "content": "The European Commission provides a platform for online dispute resolution (ODR): https://ec.europa.eu/consumers/odr/.\nOur email address can be found above in the legal notice."
+        },
+        {
+          "title": "Consumer Dispute Resolution",
+          "content": "We are neither willing nor obligated to participate in dispute resolution proceedings before a consumer arbitration board."
+        },
+        {
+          "title": "Editorially Responsible",
+          "content": "Editorially responsible pursuant to Section 55(2) RStV (German Interstate Broadcasting Treaty):\nnatureport UG (haftungsbeschränkt)\nWilly-Brandt-Straße 23\n20457 Hamburg"
+        }
+      ],
+      "footer": "Disclaimer: Despite careful content review, we assume no liability for the content of external links. The operators of linked pages are solely responsible for their content."
+    },
+    "terms": {
+      "title": "General Terms and Conditions",
+      "metaTitle": "Terms and Conditions – ForestManager",
+      "lastUpdated": "Last updated: March 2026",
+      "sections": [
+        {
+          "title": "1. Scope of Application",
+          "content": "These General Terms and Conditions apply to the use of the Software-as-a-Service solution \"ForestManager\" (accessible at forest-manager.eu) provided by natureport UG (haftungsbeschränkt), Willy-Brandt-Str. 23, 20457 Hamburg (hereinafter \"Provider\"), by consumers and businesses (hereinafter \"User\"). Deviating terms of the User shall not be recognized unless the Provider expressly agrees to their validity in writing."
+        },
+        {
+          "title": "2. Scope of Services",
+          "content": "The Provider operates a web-based platform for the digital management of forest areas. The scope of services includes in particular:",
+          "items": [
+            "Interactive GIS map for recording and managing forest polygons",
+            "Timber harvesting and log pile recording, delivery note generation",
+            "Task and measure management",
+            "Satellite-based forest monitoring (biomass, NDVI, SAR analysis)",
+            "Automatic weather data analysis",
+            "AI-powered analysis and recommendation features (powered by OpenAI GPT-4o)",
+            "Mobile web app with offline functionality for forest inventory",
+            "Preparation for the EU Deforestation Regulation (EUDR) / DDS generation",
+            "Multi-tenancy for forest management cooperatives"
+          ],
+          "closing": "The scope of features depends on the subscription plan selected. Changes to the scope of services will be communicated to the User in a timely manner."
+        },
+        {
+          "title": "3. Contract Formation & Trial Period",
+          "content": "The contract is formed upon the User's registration and selection of a subscription. New users are granted a free trial period of 30 days. After the trial period expires, the account is converted to the selected paid plan. A credit card is not required for the trial period."
+        },
+        {
+          "title": "4. Geodata & Third-Party Services",
+          "subsections": [
+            {
+              "label": "4.1 OpenStreetMap",
+              "content": "The base map is based on data from OpenStreetMap (© OpenStreetMap contributors), licensed under the Open Database License (ODbL). The User is obligated to provide appropriate attribution when sharing content based on OpenStreetMap data."
+            },
+            {
+              "label": "4.2 ALKIS / INSPIRE (Parcel Maps)",
+              "content": "The optional parcel and cadastral maps are based on official geospatial data from the German surveying authorities, provided via WMS services (ALKIS/INSPIRE). This data is partially available under the Data License Germany – Attribution – Version 2.0 and partially under Creative Commons CC BY-ND 4.0. The User may use these maps for visualization and overlay with their own forest data. Technical extraction, further processing, or creation of derivative map products is prohibited under the license terms.\n\nThe provision of parcel maps is a free value-added service and is not part of the paid subscription. The Provider does not guarantee comprehensive availability, timeliness, or accuracy. Regional restrictions due to data sources are possible."
+            },
+            {
+              "label": "4.3 Copernicus / Sentinel Hub (Satellite Data)",
+              "content": "Satellite data (Sentinel-2, Sentinel-1) is retrieved via the Copernicus Data Space Ecosystem (CDSE) operated by ESA. Use is subject to the terms of use of the European Union's Copernicus programme. The data is available under the Copernicus Open License. Satellite data is only retrieved for registered forest areas and their defined polygons."
+            },
+            {
+              "label": "4.4 Weather Data (Open-Meteo)",
+              "content": "Historical and current weather data is retrieved via Open-Meteo (open-meteo.com), an open-source weather service. The data is used for analyzing climatic conditions in the context of forest management."
+            },
+            {
+              "label": "4.5 AI Analysis (OpenAI / GPT-4o)",
+              "content": "Certain analysis features (e.g., biomass estimates, action recommendations) are provided with the support of the OpenAI API (GPT-4o model). The Provider points out that AI-generated content may contain errors and does not replace professional forestry advice. The User is responsible for the professional review of outputs. The Provider is not liable for decisions made solely on the basis of AI outputs."
+            },
+            {
+              "label": "4.6 Windy (Wind & Precipitation Data)",
+              "content": "An optional map layer integrating Windy.com is available. Use is subject to the terms of use of Windyty, SE. The layer is only activated upon user request."
+            }
+          ]
+        },
+        {
+          "title": "5. Usage Rights & User Data",
+          "content": "The Provider grants the User a non-exclusive, non-transferable right to use the platform within the scope of the booked subscription. The User remains the owner of all data entered by them (forest polygons, inventory data, photos, etc.) and may export this data at any time. The Provider processes this data exclusively for the purpose of contract performance."
+        },
+        {
+          "title": "6. Prices, Payment & Billing",
+          "content": "Current prices are available at forest-manager.eu. All prices are quoted exclusive of the applicable statutory value-added tax (19%). Payment is processed via Stripe Payments Europe, Ltd. Paid subscriptions begin after the trial period expires. For monthly billing, the amount is charged monthly in advance from the selected payment method. For annual billing, the annual amount is due annually in advance."
+        },
+        {
+          "title": "7. Term & Cancellation",
+          "content": "Paid subscriptions are automatically renewed for the selected period (monthly or annually) unless cancelled in a timely manner. Cancellation is possible at any time effective at the end of the current billing period via the account dashboard. After cancellation, the User retains access to all features until the end of the billing period. The Provider is entitled to block the account without notice in the event of a serious violation of these Terms or payment default of more than 30 days."
+        },
+        {
+          "title": "8. Availability & Maintenance",
+          "content": "The Provider aims for an availability of 99% on an annual average but does not guarantee this. Scheduled maintenance will be carried out during off-peak hours (e.g., nights or weekends) where possible and communicated in advance. There is no entitlement to uninterrupted availability."
+        },
+        {
+          "title": "9. Liability",
+          "content": "The Provider is liable without limitation for intent and gross negligence, as well as for damages arising from injury to life, body, or health. In cases of slight negligence, liability is limited to the breach of material contractual obligations (cardinal obligations) and to the foreseeable, typical damage at the time of contract formation. Liability for indirect damages and lost profits is excluded to the extent permitted by law.",
+          "thirdPartyDisclaimer": "The Provider is not liable for the accuracy of satellite data, AI outputs, weather data, or official geodata (ALKIS), as these originate from third-party providers. The User is obligated to consult qualified professionals for forestry-related decisions."
+        },
+        {
+          "title": "10. Right of Withdrawal (Consumers)",
+          "content": "Consumers have a statutory right of withdrawal of 14 days from the conclusion of the contract. The right of withdrawal expires prematurely if the service has been fully provided and the User expressly consented, prior to the expiry of the withdrawal period, to the Provider beginning performance, and confirmed their awareness that they would lose their right of withdrawal upon full contract performance.",
+          "withdrawalAddress": "Withdrawal address: info@natureport.eu"
+        },
+        {
+          "title": "11. Data Protection",
+          "content": "The collection and processing of personal data is governed by our Privacy Policy, available at forest-manager.eu/datenschutz."
+        },
+        {
+          "title": "12. Amendments to the Terms",
+          "content": "The Provider reserves the right to amend these Terms with a notice period of at least 30 days. Amendments will be communicated to the User by email. If the User does not object to the amended Terms within 30 days of receiving the notification, the new Terms shall be deemed accepted. The User will be expressly informed of this right to object and the consequences of silence in the notification."
+        },
+        {
+          "title": "13. Final Provisions",
+          "content": "The law of the Federal Republic of Germany shall apply. For consumers, this only applies insofar as it does not restrict mandatory consumer protection provisions of the User's country of residence. The place of jurisdiction is Hamburg, insofar as the User is a merchant, a legal entity under public law, or a special fund under public law.",
+          "severability": "Should individual provisions of these Terms be or become invalid, the validity of the remaining provisions shall remain unaffected."
+        }
+      ],
+      "footer": "natureport UG (haftungsbeschränkt) · Willy-Brandt-Str. 23, 20457 Hamburg · info@natureport.eu · Last updated: March 2026"
+    }
   }
 }

@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 import { useLocale } from 'next-intl';
-import { useRouter, usePathname } from '@/i18n/navigation';
+import { usePathname } from 'next/navigation';
+import { routing } from '@/i18n/routing';
 
 const LANGUAGES = [
   { code: 'de', label: 'DE' },
@@ -14,8 +15,7 @@ const LANGUAGES = [
 
 export function LanguageSwitcher() {
   const locale = useLocale();
-  const router = useRouter();
-  const pathname = usePathname();
+  const fullPathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -30,7 +30,16 @@ export function LanguageSwitcher() {
   }, []);
 
   function switchLocale(newLocale: string) {
-    router.replace(pathname, { locale: newLocale as 'de' | 'en' | 'es' | 'fr' });
+    // Strip current locale prefix from pathname
+    let path = fullPathname;
+    const localePattern = new RegExp(`^/(${routing.locales.join('|')})(/|$)`);
+    path = path.replace(localePattern, '/');
+    if (path === '') path = '/';
+
+    // Add new locale prefix (skip for default locale 'de')
+    const newPath = newLocale === routing.defaultLocale ? path : `/${newLocale}${path === '/' ? '' : path}`;
+
+    window.location.href = newPath;
     setOpen(false);
   }
 
@@ -39,14 +48,14 @@ export function LanguageSwitcher() {
       <button
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-white transition-colors"
-        aria-label="Sprache wechseln"
+        aria-label="Language"
       >
         <Globe size={14} />
         <span className="uppercase">{locale}</span>
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-2 bg-[#0a0f0a] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50">
+        <div className="absolute top-full right-0 mt-2 bg-[#0a0f0a] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50 min-w-[80px]">
           {LANGUAGES.map(lang => (
             <button
               key={lang.code}

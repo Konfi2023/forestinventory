@@ -49,6 +49,9 @@ export function LanguageSwitcher() {
   }, []);
 
   function switchLocale(newLocale: string) {
+    // Set NEXT_LOCALE cookie so next-intl middleware respects the choice
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
+
     // Strip current locale prefix
     let path = fullPathname;
     const localePattern = new RegExp(`^/(${routing.locales.join('|')})(/|$)`);
@@ -64,7 +67,7 @@ export function LanguageSwitcher() {
     // Get localized path for target locale
     const localizedPath = getLocalizedPath(canonical, newLocale);
 
-    // Build full URL
+    // Build full URL — always use explicit locale prefix for non-default
     let newPath: string;
     if (newLocale === routing.defaultLocale) {
       newPath = localizedPath;

@@ -47,11 +47,8 @@ export function Header() {
 
         <div className="hidden md:flex items-center gap-4">
           <LanguageSwitcher />
-          <button onClick={() => signIn('keycloak')} className="text-[13px] text-slate-400 hover:text-white transition-colors">
-            {t('signIn')}
-          </button>
           <button onClick={() => signIn('keycloak')} className="text-[13px] text-emerald-400 hover:text-emerald-300 transition-colors">
-            {t('getStarted')} &rarr;
+            Start &rarr;
           </button>
         </div>
 
@@ -69,8 +66,7 @@ export function Header() {
           ))}
           <div className="pt-3 border-t border-white/10 space-y-2">
             <LanguageSwitcher />
-            <button onClick={() => signIn('keycloak')} className="text-sm text-slate-400 block">{t('signIn')}</button>
-            <button onClick={() => signIn('keycloak')} className="text-sm text-emerald-400 block">{t('getStarted')} &rarr;</button>
+            <button onClick={() => signIn('keycloak')} className="text-sm text-emerald-400 block">Start &rarr;</button>
           </div>
         </div>
       )}

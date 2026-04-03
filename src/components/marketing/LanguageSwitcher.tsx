@@ -13,6 +13,25 @@ const LANGUAGES = [
   { code: 'fr', label: 'FR' },
 ] as const;
 
+// Reverse lookup: localized path → canonical path key
+const LOCALIZED_PATHS: Record<string, string> = {};
+const pathnames = routing.pathnames as Record<string, string | Record<string, string>>;
+for (const [canonical, localized] of Object.entries(pathnames)) {
+  if (typeof localized === 'object') {
+    for (const [, localPath] of Object.entries(localized)) {
+      LOCALIZED_PATHS[localPath] = canonical;
+    }
+  }
+}
+
+// Forward lookup: canonical path → localized path for a locale
+function getLocalizedPath(canonicalPath: string, locale: string): string {
+  const entry = pathnames[canonicalPath];
+  if (!entry) return canonicalPath;
+  if (typeof entry === 'string') return entry;
+  return (entry as Record<string, string>)[locale] ?? canonicalPath;
+}
+
 export function LanguageSwitcher() {
   const locale = useLocale();
   const fullPathname = usePathname();
@@ -30,14 +49,28 @@ export function LanguageSwitcher() {
   }, []);
 
   function switchLocale(newLocale: string) {
-    // Strip current locale prefix from pathname
+    // Strip current locale prefix
     let path = fullPathname;
     const localePattern = new RegExp(`^/(${routing.locales.join('|')})(/|$)`);
-    path = path.replace(localePattern, '/');
-    if (path === '') path = '/';
+    const match = path.match(localePattern);
+    if (match) {
+      path = path.replace(localePattern, '/');
+    }
+    if (path === '' || path === '/') path = '/';
 
-    // Add new locale prefix (skip for default locale 'de')
-    const newPath = newLocale === routing.defaultLocale ? path : `/${newLocale}${path === '/' ? '' : path}`;
+    // Resolve canonical path (e.g. /privacy → /datenschutz canonical key)
+    const canonical = LOCALIZED_PATHS[path] ?? path;
+
+    // Get localized path for target locale
+    const localizedPath = getLocalizedPath(canonical, newLocale);
+
+    // Build full URL
+    let newPath: string;
+    if (newLocale === routing.defaultLocale) {
+      newPath = localizedPath;
+    } else {
+      newPath = `/${newLocale}${localizedPath === '/' ? '' : localizedPath}`;
+    }
 
     window.location.href = newPath;
     setOpen(false);

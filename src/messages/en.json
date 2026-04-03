@@ -54,23 +54,28 @@
     "carousel": {
       "s1": {
         "title": "Biomass\nMonitoring.",
-        "subtitle": "NDVI map with Sentinel-2 satellite data — forest vitality at a glance."
+        "subtitle": "NDVI map with Sentinel-2 satellite data — forest vitality at a glance.",
+        "image": "/landing/slide-ndvi.png"
       },
       "s2": {
         "title": "Tasks\nin the Field.",
-        "subtitle": "Tasks with location, photo, and description — right on the map."
+        "subtitle": "Tasks with location, photo, and description — right on the map.",
+        "image": "/landing/slide-task.png"
       },
       "s3": {
         "title": "Climate &\nBark Beetle.",
-        "subtitle": "Year-over-year NDVI comparison, temperature, precipitation, and bark beetle risk."
+        "subtitle": "Year-over-year NDVI comparison, temperature, precipitation, and bark beetle risk.",
+        "image": "/landing/slide-monitoring.png"
       },
       "s4": {
         "title": "Individual\nTrees.",
-        "subtitle": "Species, DBH, height, stem photo, and CO₂ storage — all captured."
+        "subtitle": "Species, DBH, height, stem photo, and CO₂ storage — all captured.",
+        "image": "/landing/slide-tree.png"
       },
       "s5": {
         "title": "Forest\nInventory.",
-        "subtitle": "Compartment-level stand assessment with sample plots and yield tables."
+        "subtitle": "Compartment-level stand assessment with sample plots and yield tables.",
+        "image": "/landing/slide-forsteinrichtung.png"
       }
     },
     "eudr": {

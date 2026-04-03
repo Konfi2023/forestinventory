@@ -542,23 +542,28 @@
     "carousel": {
       "s1": {
         "title": "Biomasse-\nMonitoring.",
-        "subtitle": "NDVI-Karte mit Sentinel-2 Satellitendaten — Waldvitalität auf einen Blick."
+        "subtitle": "NDVI-Karte mit Sentinel-2 Satellitendaten — Waldvitalität auf einen Blick.",
+        "image": "/landing/slide-ndvi.png"
       },
       "s2": {
         "title": "Aufgaben\nim Revier.",
-        "subtitle": "Aufgaben mit Standort, Foto und Beschreibung — direkt auf der Karte."
+        "subtitle": "Aufgaben mit Standort, Foto und Beschreibung — direkt auf der Karte.",
+        "image": "/landing/slide-task.png"
       },
       "s3": {
         "title": "Klima &\nBorkenkäfer.",
-        "subtitle": "NDVI-Jahresvergleich, Temperatur, Niederschlag und Borkenkäfer-Risiko."
+        "subtitle": "NDVI-Jahresvergleich, Temperatur, Niederschlag und Borkenkäfer-Risiko.",
+        "image": "/landing/slide-monitoring.png"
       },
       "s4": {
         "title": "Einzel-\nbäume.",
-        "subtitle": "Baumart, BHD, Höhe, Stammfoto und CO₂-Speicherleistung — alles erfasst."
+        "subtitle": "Baumart, BHD, Höhe, Stammfoto und CO₂-Speicherleistung — alles erfasst.",
+        "image": "/landing/slide-tree.png"
       },
       "s5": {
         "title": "Forst-\neinrichtung.",
-        "subtitle": "Abteilungsweise Bestandserfassung mit Probekreisen und Ertragstafeln."
+        "subtitle": "Abteilungsweise Bestandserfassung mit Probekreisen und Ertragstafeln.",
+        "image": "/landing/slide-forsteinrichtung.png"
       }
     },
     "eudr": {

@@ -446,23 +446,16 @@ export function LandingPageClient({ dbPlans }: Props) {
 }
 
 /* ─── Data ──────────────────────────────────────────────────────────────────── */
-const CAROUSEL_SLIDE_SRCS = [
-  '/landing/slide-ndvi.png',
-  '/landing/slide-task.png',
-  '/landing/slide-monitoring.png',
-  '/landing/slide-tree.png',
-  '/landing/slide-forsteinrichtung.png',
-];
 
 function ScreenshotCarousel() {
   const t = useTranslations('Landing');
 
   const CAROUSEL_SLIDES = [
-    { src: CAROUSEL_SLIDE_SRCS[0], num: '01', title: t('carousel.s1.title'), subtitle: t('carousel.s1.subtitle') },
-    { src: CAROUSEL_SLIDE_SRCS[1], num: '02', title: t('carousel.s2.title'), subtitle: t('carousel.s2.subtitle') },
-    { src: CAROUSEL_SLIDE_SRCS[2], num: '03', title: t('carousel.s3.title'), subtitle: t('carousel.s3.subtitle') },
-    { src: CAROUSEL_SLIDE_SRCS[3], num: '04', title: t('carousel.s4.title'), subtitle: t('carousel.s4.subtitle') },
-    { src: CAROUSEL_SLIDE_SRCS[4], num: '05', title: t('carousel.s5.title'), subtitle: t('carousel.s5.subtitle') },
+    { src: t('carousel.s1.image'), num: '01', title: t('carousel.s1.title'), subtitle: t('carousel.s1.subtitle') },
+    { src: t('carousel.s2.image'), num: '02', title: t('carousel.s2.title'), subtitle: t('carousel.s2.subtitle') },
+    { src: t('carousel.s3.image'), num: '03', title: t('carousel.s3.title'), subtitle: t('carousel.s3.subtitle') },
+    { src: t('carousel.s4.image'), num: '04', title: t('carousel.s4.title'), subtitle: t('carousel.s4.subtitle') },
+    { src: t('carousel.s5.image'), num: '05', title: t('carousel.s5.title'), subtitle: t('carousel.s5.subtitle') },
   ];
 
   const [current, setCurrent] = useState(0);

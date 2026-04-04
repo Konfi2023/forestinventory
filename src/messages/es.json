@@ -463,5 +463,159 @@
       ],
       "footer": "natureport UG (haftungsbeschränkt) · Willy-Brandt-Str. 23, 20457 Hamburg · info@natureport.eu · Última actualización: marzo de 2026"
     }
+  },
+  "Enterprise": {
+    "title": "Consulta Enterprise",
+    "subtitle": "Nos pondremos en contacto en un plazo de 24 horas.",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "message": "Mensaje",
+    "placeholder": "Describa su operación y requisitos...",
+    "cancel": "Cancelar",
+    "send": "Enviar consulta",
+    "success": "Su consulta ha sido enviada. Nos pondremos en contacto pronto.",
+    "error": "Error al enviar. Inténtelo de nuevo.",
+    "button": "Contactar"
+  },
+  "Onboarding": {
+    "step1": {
+      "title": "¡Bienvenido!",
+      "subtitle": "¿Cómo desea utilizar Forest Inventory?",
+      "private": "Particular",
+      "privateDesc": "Propietario forestal privado",
+      "business": "Empresa",
+      "businessDesc": "Empresa forestal, proveedor de servicios o asociación",
+      "select": "Seleccionar"
+    },
+    "step2": {
+      "title": "Sus datos",
+      "subtitlePrivate": "Introduzca su nombre y, opcionalmente, su dirección.",
+      "subtitleBusiness": "Introduzca los datos de su empresa.",
+      "orgNamePrivate": "Nombre de la explotación / Su nombre",
+      "orgNameBusiness": "Nombre de la empresa",
+      "placeholderPrivate": "p. ej. Bosque García",
+      "placeholderBusiness": "p. ej. Forestal S.L.",
+      "vatId": "NIF/CIF",
+      "optional": "opcional",
+      "billingEmail": "Correo de facturación",
+      "address": "Dirección",
+      "street": "Calle y número",
+      "zip": "Código postal",
+      "city": "Ciudad",
+      "country": "País",
+      "defaultCountry": "Alemania",
+      "enterName": "Introduzca un nombre."
+    },
+    "step3": {
+      "title": "Elegir plan",
+      "subtitle": "Todos los planes incluyen todas las funciones — la única diferencia es el área y el tamaño del equipo.",
+      "subtitleNewOrg": "Elija el plan adecuado para <strong>{orgName}</strong>.",
+      "includedInAll": "Incluido en todos los planes",
+      "freeTrial": "30 días de prueba gratis",
+      "noCardRequired": "No se necesita tarjeta de crédito.",
+      "paymentLater": "No se necesita tarjeta de crédito. El método de pago se puede añadir más tarde.",
+      "tryFree": "Probar gratis",
+      "toSummary": "Continuar al resumen",
+      "orWithoutPayment": "o empezar sin método de pago"
+    },
+    "step4": {
+      "title": "Resumen",
+      "subtitle": "Revise su selección y comience.",
+      "org": "Explotación",
+      "plan": "Plan",
+      "billing": "Facturación",
+      "monthly": "Mensual",
+      "yearly": "Anual",
+      "price": "Precio",
+      "perMonth": "mes",
+      "perYear": "año",
+      "onRequest": "Bajo consulta",
+      "plusVat": "IVA no incluido",
+      "freeUntil": "Prueba gratis hasta",
+      "autoCharge": "Después se inicia la facturación automáticamente. Puede cancelar en cualquier momento.",
+      "trialInfo": "30 días de prueba gratis.",
+      "trialInfoDetail": "Añadirá su método de pago ahora, pero no se le cobrará hasta que finalice el período de prueba.",
+      "startAndPay": "Comenzar y añadir método de pago",
+      "stripeSecure": "Pago seguro con Stripe. Sin compromiso — cancele en cualquier momento."
+    },
+    "back": "Atrás",
+    "next": "Siguiente",
+    "fillRequired": "Complete todos los campos obligatorios.",
+    "selectPlan": "Seleccione un plan.",
+    "trialStarted": "¡Período de prueba iniciado!",
+    "trialError": "Error al iniciar el período de prueba.",
+    "accountCreated": "¡Cuenta creada!",
+    "accountError": "Error al crear la cuenta.",
+    "newOrg": {
+      "title": "Crear nueva explotación",
+      "subtitle": "¿Qué tipo de explotación desea crear?",
+      "detailsTitle": "Datos de la explotación",
+      "cancel": "Cancelar",
+      "orgCreated": "¡Explotación creada — período de prueba iniciado!",
+      "orgCreatedPaid": "¡Explotación creada con éxito!",
+      "orgError": "Error al crear la explotación."
+    },
+    "success": {
+      "title": "¡Pago realizado!",
+      "subtitle": "Tu período de prueba comienza hoy. Serás redirigido en breve...",
+      "toDashboard": "Ir al panel"
+    }
+  },
+  "SignOut": {
+    "title": "¿Cerrar sesión?",
+    "subtitle": "Se cerrará su sesión en Forest Inventory.",
+    "confirm": "Sí, cerrar sesión",
+    "signingOut": "Cerrando sesión…",
+    "cancel": "Cancelar"
+  },
+  "AuthError": {
+    "title": "Sesión expirada",
+    "expired": "Su sesión ha expirado. Reinicie el proceso — su invitación sigue siendo válida.",
+    "generic": "Se ha producido un error. Inténtelo de nuevo.",
+    "restart": "Reiniciar",
+    "home": "Ir a inicio"
+  },
+  "PlanCards": {
+    "monthly": "Mensual",
+    "yearly": "Anual",
+    "annualDiscount": "50 % de descuento en el 1.er año con compra directa",
+    "includedInAll": "Incluido en todos los planes",
+    "features": {
+      "map": "Mapa forestal interactivo",
+      "pois": "POIs: puestos de caza, caminos, refugios, vehículos",
+      "tasks": "Tareas y planificación de medidas",
+      "inventory": "Inventario de árboles y pilas de troncos (app móvil)",
+      "reports": "Informes y control de costes",
+      "satellite": "Monitorización por satélite (biomasa, NDVI)",
+      "health": "Monitorización de salud forestal",
+      "team": "Invitaciones de equipo y roles"
+    },
+    "perMonth": "/ mes",
+    "yearlyBilled": "{price} € facturado anualmente",
+    "plusVat": "IVA no incluido",
+    "upToHa": "hasta {ha} ha",
+    "unlimitedArea": "Área ilimitada",
+    "users": "{count} usuarios",
+    "unlimitedUsers": "Usuarios ilimitados",
+    "selected": "Seleccionado",
+    "select": "Seleccionar",
+    "popular": "Popular",
+    "blockedReduce": "Por favor, {reason} para seleccionar este plan.",
+    "reduceArea": "reduzca el área forestal a menos de {ha} ha",
+    "reduceUsers": "reduzca los usuarios a {count}",
+    "and": "y",
+    "taglines": {
+      "Basis": "Para pequeños bosques privados",
+      "Pro": "Para empresas forestales en crecimiento",
+      "Expert": "Para empresas forestales profesionales"
+    },
+    "support": {
+      "Basis": "Soporte por correo",
+      "Pro": "Soporte prioritario",
+      "Expert": "Soporte telefónico"
+    },
+    "enterprise": "Enterprise",
+    "enterpriseDesc": "Área ilimitada · Usuarios ilimitados · Todas las funciones · SLA personalizado · Soporte dedicado · Acceso API",
+    "contactUs": "Contactar"
   }
 }

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import {
   TreePine,
@@ -13,9 +14,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { startTrial, completeOnboarding, type OnboardingData } from "@/actions/onboarding";
-import { addDays, format } from "date-fns";
-import { de } from "date-fns/locale";
+import { addDays, format, type Locale as DateFnsLocale } from "date-fns";
+import { de, enUS, es, fr } from "date-fns/locale";
 import { PlanCards, ALL_FEATURES } from "@/components/billing/PlanCards";
+
+const dateFnsLocales: Record<string, DateFnsLocale> = { de, en: enUS, es, fr };
 
 type PlanData = {
   id: string;
@@ -37,6 +40,9 @@ type Props = {
 
 export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
   const router = useRouter();
+  const t = useTranslations("Onboarding");
+  const tp = useTranslations("PlanCards");
+  const locale = useLocale();
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
 
@@ -49,12 +55,14 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
   const [street, setStreet] = useState("");
   const [zip, setZip] = useState("");
   const [city, setCity] = useState("");
-  const [country, setCountry] = useState("Deutschland");
+  const [country, setCountry] = useState(t("step2.defaultCountry"));
 
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
   const [selectedPlan, setSelectedPlan] = useState<PlanData | null>(null);
 
-  const trialEndDate = format(addDays(new Date(), 30), "dd. MMMM yyyy", { locale: de });
+  const trialEndDate = format(addDays(new Date(), 30), "dd. MMMM yyyy", {
+    locale: dateFnsLocales[locale] ?? de,
+  });
 
   function getSelectedPrice() {
     if (!selectedPlan) return null;
@@ -68,16 +76,9 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
     return selectedPlan.yearlyPriceId;
   }
 
-  function getMonthlyEquivalent(plan: PlanData) {
-    if (billingInterval === "yearly" && plan.yearlyPrice) {
-      return (plan.yearlyPrice / 12).toFixed(2);
-    }
-    return plan.monthlyPrice?.toFixed(2) ?? null;
-  }
-
   async function handleStartTrial() {
     if (!accountType || !orgName.trim()) {
-      toast.error("Bitte füllen Sie alle Pflichtfelder aus.");
+      toast.error(t("fillRequired"));
       return;
     }
     setLoading(true);
@@ -91,13 +92,13 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
         street: street.trim() || undefined,
         zip: zip.trim() || undefined,
         city: city.trim() || undefined,
-        country: country.trim() || "Deutschland",
+        country: country.trim() || t("step2.defaultCountry"),
       };
       const result = await startTrial(data);
-      toast.success("Testzeitraum gestartet!");
+      toast.success(t("trialStarted"));
       router.push(`/dashboard/org/${result.slug}`);
     } catch (err: any) {
-      toast.error(err.message || "Fehler beim Starten des Testzeitraums.");
+      toast.error(err.message || t("trialError"));
     } finally {
       setLoading(false);
     }
@@ -105,7 +106,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
 
   async function handleCheckout() {
     if (!accountType || !orgName.trim() || !selectedPlan) {
-      toast.error("Bitte wählen Sie ein Paket aus.");
+      toast.error(t("selectPlan"));
       return;
     }
     setLoading(true);
@@ -120,7 +121,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
         street: street.trim() || undefined,
         zip: zip.trim() || undefined,
         city: city.trim() || undefined,
-        country: country.trim() || "Deutschland",
+        country: country.trim() || t("step2.defaultCountry"),
         planId: selectedPlan.id,
         planInterval: billingInterval,
         selectedPriceId: priceId || undefined,
@@ -129,11 +130,11 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl;
       } else {
-        toast.success("Konto erstellt!");
+        toast.success(t("accountCreated"));
         router.push(`/dashboard/org/${result.slug}`);
       }
     } catch (err: any) {
-      toast.error(err.message || "Fehler beim Erstellen des Kontos.");
+      toast.error(err.message || t("accountError"));
     } finally {
       setLoading(false);
     }
@@ -173,8 +174,8 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
           {step === 1 && (
             <div className="space-y-8">
               <div className="text-center">
-                <h1 className="text-3xl font-bold text-slate-900">Willkommen!</h1>
-                <p className="mt-2 text-slate-500">Wie möchten Sie Forest Inventory nutzen?</p>
+                <h1 className="text-3xl font-bold text-slate-900">{t("step1.title")}</h1>
+                <p className="mt-2 text-slate-500">{t("step1.subtitle")}</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
@@ -184,10 +185,10 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                   }`}
                 >
                   <TreePine className="text-green-700 mb-4" size={40} />
-                  <div className="font-bold text-slate-900 text-lg">Privatperson</div>
-                  <div className="text-slate-500 text-sm mt-1">Privater Waldbesitzer</div>
+                  <div className="font-bold text-slate-900 text-lg">{t("step1.private")}</div>
+                  <div className="text-slate-500 text-sm mt-1">{t("step1.privateDesc")}</div>
                   <div className="mt-4 flex items-center gap-1 text-green-700 text-sm font-medium">
-                    Auswählen <ChevronRight size={16} />
+                    {t("step1.select")} <ChevronRight size={16} />
                   </div>
                 </button>
                 <button
@@ -197,12 +198,10 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                   }`}
                 >
                   <Building2 className="text-green-700 mb-4" size={40} />
-                  <div className="font-bold text-slate-900 text-lg">Unternehmen</div>
-                  <div className="text-slate-500 text-sm mt-1">
-                    Forstbetrieb, Dienstleister oder Verband
-                  </div>
+                  <div className="font-bold text-slate-900 text-lg">{t("step1.business")}</div>
+                  <div className="text-slate-500 text-sm mt-1">{t("step1.businessDesc")}</div>
                   <div className="mt-4 flex items-center gap-1 text-green-700 text-sm font-medium">
-                    Auswählen <ChevronRight size={16} />
+                    {t("step1.select")} <ChevronRight size={16} />
                   </div>
                 </button>
               </div>
@@ -213,11 +212,9 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Ihre Angaben</h1>
+                <h1 className="text-3xl font-bold text-slate-900">{t("step2.title")}</h1>
                 <p className="mt-2 text-slate-500">
-                  {accountType === "PRIVATE"
-                    ? "Bitte geben Sie Ihren Namen und optional Ihre Adresse an."
-                    : "Bitte geben Sie Ihre Unternehmensdaten ein."}
+                  {accountType === "PRIVATE" ? t("step2.subtitlePrivate") : t("step2.subtitleBusiness")}
                 </p>
               </div>
 
@@ -225,14 +222,14 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                 {/* Org name */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    {accountType === "PRIVATE" ? "Betriebsname / Ihr Name" : "Firmenname"}{" "}
+                    {accountType === "PRIVATE" ? t("step2.orgNamePrivate") : t("step2.orgNameBusiness")}{" "}
                     <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    placeholder={accountType === "PRIVATE" ? "z.B. Waldbesitz Müller" : "z.B. Forstbetrieb GmbH"}
+                    placeholder={accountType === "PRIVATE" ? t("step2.placeholderPrivate") : t("step2.placeholderBusiness")}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                   />
                 </div>
@@ -242,7 +239,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">
-                        USt-ID <span className="text-slate-400 text-xs">(optional)</span>
+                        {t("step2.vatId")} <span className="text-slate-400 text-xs">({t("step2.optional")})</span>
                       </label>
                       <input
                         type="text"
@@ -254,7 +251,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Rechnungs-E-Mail
+                        {t("step2.billingEmail")}
                       </label>
                       <input
                         type="email"
@@ -269,9 +266,9 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                 {/* Address */}
                 <div className="pt-2">
                   <p className="text-sm font-medium text-slate-700 mb-3">
-                    Adresse{" "}
+                    {t("step2.address")}{" "}
                     {accountType === "PRIVATE" && (
-                      <span className="text-slate-400 text-xs">(optional)</span>
+                      <span className="text-slate-400 text-xs">({t("step2.optional")})</span>
                     )}
                   </p>
                   <div className="space-y-3">
@@ -279,7 +276,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                       type="text"
                       value={street}
                       onChange={(e) => setStreet(e.target.value)}
-                      placeholder="Straße und Hausnummer"
+                      placeholder={t("step2.street")}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                     />
                     <div className="grid grid-cols-3 gap-3">
@@ -287,14 +284,14 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                         type="text"
                         value={zip}
                         onChange={(e) => setZip(e.target.value)}
-                        placeholder="PLZ"
+                        placeholder={t("step2.zip")}
                         className="px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                       />
                       <input
                         type="text"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        placeholder="Ort"
+                        placeholder={t("step2.city")}
                         className="col-span-2 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                       />
                     </div>
@@ -302,7 +299,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                       type="text"
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      placeholder="Land"
+                      placeholder={t("step2.country")}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                     />
                   </div>
@@ -314,19 +311,19 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                   onClick={() => setStep(1)}
                   className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <ChevronLeft size={16} /> Zurück
+                  <ChevronLeft size={16} /> {t("back")}
                 </button>
                 <button
                   onClick={() => {
                     if (!orgName.trim()) {
-                      toast.error("Bitte geben Sie einen Namen ein.");
+                      toast.error(t("step2.enterName"));
                       return;
                     }
                     setStep(3);
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium"
                 >
-                  Weiter <ChevronRight size={16} />
+                  {t("next")} <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -339,18 +336,18 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
               {/* ── Links: Features ── */}
               <div className="lg:col-span-1 space-y-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-slate-900">Paket wählen</h1>
-                  <p className="mt-2 text-slate-500">Alle Pakete beinhalten den vollen Funktionsumfang — der Unterschied liegt nur in Fläche und Teamgröße.</p>
+                  <h1 className="text-3xl font-bold text-slate-900">{t("step3.title")}</h1>
+                  <p className="mt-2 text-slate-500">{t("step3.subtitle")}</p>
                 </div>
 
                 <div className="space-y-3">
-                  <p className="text-xs font-bold text-green-700 uppercase tracking-wider">In jedem Paket enthalten</p>
-                  {ALL_FEATURES.map(({ icon: Icon, label }) => (
-                    <div key={label} className="flex items-center gap-3">
+                  <p className="text-xs font-bold text-green-700 uppercase tracking-wider">{t("step3.includedInAll")}</p>
+                  {ALL_FEATURES.map(({ icon: Icon, labelKey }) => (
+                    <div key={labelKey} className="flex items-center gap-3">
                       <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
                         <Icon size={13} className="text-green-600" />
                       </div>
-                      <span className="text-sm text-slate-700">{label}</span>
+                      <span className="text-sm text-slate-700">{tp(`features.${labelKey}`)}</span>
                     </div>
                   ))}
                 </div>
@@ -360,7 +357,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                     onClick={() => setStep(2)}
                     className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition"
                   >
-                    <ChevronLeft size={15} /> Zurück
+                    <ChevronLeft size={15} /> {t("back")}
                   </button>
                 </div>
               </div>
@@ -381,8 +378,8 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                 {/* Free trial */}
                 <div className="rounded-xl border border-dashed border-slate-200 px-4 py-3 flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">30 Tage kostenlos testen</div>
-                    <div className="text-xs text-slate-400 mt-0.5">Keine Kreditkarte erforderlich.</div>
+                    <div className="text-sm font-semibold text-slate-900">{t("step3.freeTrial")}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{t("step3.noCardRequired")}</div>
                   </div>
                   <button
                     onClick={handleStartTrial}
@@ -390,19 +387,19 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                     className="shrink-0 flex items-center gap-2 px-4 py-2 border-2 border-green-700 text-green-700 rounded-lg text-sm font-medium hover:bg-green-50 transition disabled:opacity-50"
                   >
                     {loading ? <Loader2 size={14} className="animate-spin" /> : null}
-                    Kostenlos testen
+                    {t("step3.tryFree")}
                   </button>
                 </div>
 
                 <button
                   onClick={() => {
-                    if (!selectedPlan) { toast.error("Bitte wählen Sie ein Paket aus."); return; }
+                    if (!selectedPlan) { toast.error(t("selectPlan")); return; }
                     setStep(4);
                   }}
                   disabled={!selectedPlan}
                   className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium disabled:opacity-50"
                 >
-                  Weiter zur Zusammenfassung <ChevronRight size={16} />
+                  {t("step3.toSummary")} <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -412,47 +409,47 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
           {step === 4 && selectedPlan && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Zusammenfassung</h1>
-                <p className="mt-2 text-slate-500">Überprüfen Sie Ihre Auswahl und starten Sie.</p>
+                <h1 className="text-3xl font-bold text-slate-900">{t("step4.title")}</h1>
+                <p className="mt-2 text-slate-500">{t("step4.subtitle")}</p>
               </div>
 
               <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Betrieb</span>
+                  <span className="text-slate-600">{t("step4.org")}</span>
                   <span className="font-semibold text-slate-900">{orgName}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Paket</span>
+                  <span className="text-slate-600">{t("step4.plan")}</span>
                   <span className="font-semibold text-slate-900">{selectedPlan.name}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Abrechnung</span>
+                  <span className="text-slate-600">{t("step4.billing")}</span>
                   <span className="font-semibold text-slate-900">
-                    {billingInterval === "monthly" ? "Monatlich" : "Jährlich"}
+                    {billingInterval === "monthly" ? t("step4.monthly") : t("step4.yearly")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Preis</span>
+                  <span className="text-slate-600">{t("step4.price")}</span>
                   <div className="text-right">
                     <span className="font-semibold text-slate-900">
-                      {getSelectedPrice() ? `${getSelectedPrice()} € / ${billingInterval === "monthly" ? "Monat" : "Jahr"}` : "Auf Anfrage"}
+                      {getSelectedPrice() ? `${getSelectedPrice()} € / ${billingInterval === "monthly" ? t("step4.perMonth") : t("step4.perYear")}` : t("step4.onRequest")}
                     </span>
-                    {getSelectedPrice() && <p className="text-xs text-slate-400">zzgl. MwSt.</p>}
+                    {getSelectedPrice() && <p className="text-xs text-slate-400">{t("step4.plusVat")}</p>}
                   </div>
                 </div>
                 <div className="border-t border-slate-200 pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Kostenlos testen bis</span>
+                    <span className="text-slate-600">{t("step4.freeUntil")}</span>
                     <span className="font-semibold text-green-700">{trialEndDate}</span>
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
-                    Danach beginnt die Abrechnung automatisch. Sie können jederzeit kündigen.
+                    {t("step4.autoCharge")}
                   </p>
                 </div>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
-                <strong>30 Tage gratis testen.</strong> Sie hinterlegen jetzt Ihre Zahlungsmethode, werden aber erst nach dem Testzeitraum belastet.
+                <strong>{t("step4.trialInfo")}</strong> {t("step4.trialInfoDetail")}
               </div>
 
               <div className="flex gap-3">
@@ -460,7 +457,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                   onClick={() => setStep(3)}
                   className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <ChevronLeft size={16} /> Zurück
+                  <ChevronLeft size={16} /> {t("back")}
                 </button>
                 <button
                   onClick={handleCheckout}
@@ -471,7 +468,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                     <Loader2 size={18} className="animate-spin" />
                   ) : (
                     <>
-                      Jetzt starten &amp; Zahlungsmethode hinterlegen
+                      {t("step4.startAndPay")}
                       <ChevronRight size={16} />
                     </>
                   )}
@@ -479,7 +476,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
               </div>
 
               <p className="text-center text-xs text-slate-400">
-                Sichere Zahlung über Stripe. Keine Bindung — jederzeit kündbar.
+                {t("step4.stripeSecure")}
               </p>
             </div>
           )}

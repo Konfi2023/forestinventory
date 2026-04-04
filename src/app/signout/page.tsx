@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { useState } from "react";
@@ -12,6 +13,7 @@ function SignOutContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const [loading, setLoading] = useState(false);
+  const t = useTranslations("SignOut");
 
   const handleSignOut = async () => {
     setLoading(true);
@@ -33,7 +35,7 @@ function SignOutContent() {
         disabled={loading}
       >
         <LogOut className="w-4 h-4 mr-2" />
-        {loading ? "Wird abgemeldet…" : "Ja, abmelden"}
+        {loading ? t("signingOut") : t("confirm")}
       </Button>
       <Button
         variant="outline"
@@ -41,13 +43,15 @@ function SignOutContent() {
         onClick={() => router.back()}
         disabled={loading}
       >
-        Abbrechen
+        {t("cancel")}
       </Button>
     </div>
   );
 }
 
 export default function SignOutPage() {
+  const t = useTranslations("SignOut");
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-slate-100 p-8 text-center space-y-6">
@@ -62,8 +66,8 @@ export default function SignOutPage() {
         </div>
 
         <div className="space-y-1">
-          <h1 className="text-xl font-bold text-slate-900">Abmelden?</h1>
-          <p className="text-sm text-slate-500">Sie werden von Forest Inventory abgemeldet.</p>
+          <h1 className="text-xl font-bold text-slate-900">{t("title")}</h1>
+          <p className="text-sm text-slate-500">{t("subtitle")}</p>
         </div>
 
         <Suspense fallback={<div className="h-20" />}>

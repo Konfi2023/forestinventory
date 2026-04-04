@@ -463,5 +463,159 @@
       ],
       "footer": "natureport UG (haftungsbeschränkt) · Willy-Brandt-Str. 23, 20457 Hamburg · info@natureport.eu · Last updated: March 2026"
     }
+  },
+  "Enterprise": {
+    "title": "Enterprise Inquiry",
+    "subtitle": "We'll get back to you within 24 hours.",
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "placeholder": "Describe your operation and requirements...",
+    "cancel": "Cancel",
+    "send": "Send Inquiry",
+    "success": "Your inquiry has been sent. We'll be in touch soon.",
+    "error": "Error sending. Please try again.",
+    "button": "Contact Us"
+  },
+  "Onboarding": {
+    "step1": {
+      "title": "Welcome!",
+      "subtitle": "How would you like to use Forest Inventory?",
+      "private": "Private",
+      "privateDesc": "Private forest owner",
+      "business": "Business",
+      "businessDesc": "Forestry company, service provider, or association",
+      "select": "Select"
+    },
+    "step2": {
+      "title": "Your Details",
+      "subtitlePrivate": "Please enter your name and optionally your address.",
+      "subtitleBusiness": "Please enter your company details.",
+      "orgNamePrivate": "Operation name / Your name",
+      "orgNameBusiness": "Company name",
+      "placeholderPrivate": "e.g. Miller Forest Estate",
+      "placeholderBusiness": "e.g. Forest Services Ltd",
+      "vatId": "VAT ID",
+      "optional": "optional",
+      "billingEmail": "Billing email",
+      "address": "Address",
+      "street": "Street and number",
+      "zip": "Postal code",
+      "city": "City",
+      "country": "Country",
+      "defaultCountry": "Germany",
+      "enterName": "Please enter a name."
+    },
+    "step3": {
+      "title": "Choose Plan",
+      "subtitle": "All plans include the full feature set — the only difference is area and team size.",
+      "subtitleNewOrg": "Choose the right plan for <strong>{orgName}</strong>.",
+      "includedInAll": "Included in every plan",
+      "freeTrial": "30-day free trial",
+      "noCardRequired": "No credit card required.",
+      "paymentLater": "No credit card required. Payment method can be added later.",
+      "tryFree": "Try for free",
+      "toSummary": "Continue to summary",
+      "orWithoutPayment": "or start without payment method"
+    },
+    "step4": {
+      "title": "Summary",
+      "subtitle": "Review your selection and get started.",
+      "org": "Operation",
+      "plan": "Plan",
+      "billing": "Billing",
+      "monthly": "Monthly",
+      "yearly": "Annually",
+      "price": "Price",
+      "perMonth": "month",
+      "perYear": "year",
+      "onRequest": "On request",
+      "plusVat": "excl. VAT",
+      "freeUntil": "Free trial until",
+      "autoCharge": "Billing starts automatically after that. You can cancel anytime.",
+      "trialInfo": "30-day free trial.",
+      "trialInfoDetail": "You'll add your payment method now but won't be charged until after the trial period.",
+      "startAndPay": "Get started & add payment method",
+      "stripeSecure": "Secure payment via Stripe. No commitment — cancel anytime."
+    },
+    "back": "Back",
+    "next": "Next",
+    "fillRequired": "Please fill in all required fields.",
+    "selectPlan": "Please select a plan.",
+    "trialStarted": "Trial started!",
+    "trialError": "Error starting the trial.",
+    "accountCreated": "Account created!",
+    "accountError": "Error creating the account.",
+    "newOrg": {
+      "title": "Create New Operation",
+      "subtitle": "What type of operation would you like to create?",
+      "detailsTitle": "Operation Details",
+      "cancel": "Cancel",
+      "orgCreated": "Operation created — trial started!",
+      "orgCreatedPaid": "Operation created successfully!",
+      "orgError": "Error creating the operation."
+    },
+    "success": {
+      "title": "Payment successful!",
+      "subtitle": "Your trial period starts today. You'll be redirected shortly...",
+      "toDashboard": "Go to Dashboard"
+    }
+  },
+  "SignOut": {
+    "title": "Sign out?",
+    "subtitle": "You will be signed out of Forest Inventory.",
+    "confirm": "Yes, sign out",
+    "signingOut": "Signing out…",
+    "cancel": "Cancel"
+  },
+  "AuthError": {
+    "title": "Session expired",
+    "expired": "Your session has expired. Please restart the process — your invitation is still valid.",
+    "generic": "An error has occurred. Please try again.",
+    "restart": "Restart",
+    "home": "Go to homepage"
+  },
+  "PlanCards": {
+    "monthly": "Monthly",
+    "yearly": "Annually",
+    "annualDiscount": "50% off in the 1st year with direct purchase",
+    "includedInAll": "Included in every plan",
+    "features": {
+      "map": "Interactive forest map",
+      "pois": "POIs: hunting stands, paths, huts, vehicles",
+      "tasks": "Tasks & measure planning",
+      "inventory": "Tree & log pile inventory (mobile app)",
+      "reports": "Reports & cost controlling",
+      "satellite": "Satellite monitoring (biomass, NDVI)",
+      "health": "Forest health monitoring",
+      "team": "Team invitations & roles"
+    },
+    "perMonth": "/ month",
+    "yearlyBilled": "{price} € billed annually",
+    "plusVat": "excl. VAT",
+    "upToHa": "up to {ha} ha",
+    "unlimitedArea": "Unlimited area",
+    "users": "{count} users",
+    "unlimitedUsers": "Unlimited users",
+    "selected": "Selected",
+    "select": "Select",
+    "popular": "Popular",
+    "blockedReduce": "Please {reason} to select this plan.",
+    "reduceArea": "reduce forest area to under {ha} ha",
+    "reduceUsers": "reduce users to {count}",
+    "and": "and",
+    "taglines": {
+      "Basis": "For small private forests",
+      "Pro": "For growing forestry operations",
+      "Expert": "For professional forestry companies"
+    },
+    "support": {
+      "Basis": "Email support",
+      "Pro": "Priority support",
+      "Expert": "Phone support"
+    },
+    "enterprise": "Enterprise",
+    "enterpriseDesc": "Unlimited area · Unlimited users · All features · Custom SLA · Dedicated support · API access",
+    "contactUs": "Contact Us"
   }
 }

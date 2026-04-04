@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
@@ -10,6 +11,7 @@ function ErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const callbackUrl = searchParams.get("callbackUrl");
+  const t = useTranslations("AuthError");
 
   const isExpired = error === "OAuthCallback" || error === "OAuthSignin";
   const returnUrl = callbackUrl ?? "/";
@@ -22,23 +24,21 @@ function ErrorContent() {
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-xl font-bold text-slate-900">Sitzung abgelaufen</h1>
+          <h1 className="text-xl font-bold text-slate-900">{t("title")}</h1>
           <p className="text-sm text-slate-500 leading-relaxed">
-            {isExpired
-              ? "Ihre Sitzung ist abgelaufen. Bitte starten Sie den Vorgang neu — Ihre Einladung ist weiterhin gültig."
-              : "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."}
+            {isExpired ? t("expired") : t("generic")}
           </p>
         </div>
 
         <div className="flex flex-col gap-3">
           <Link href={returnUrl}>
             <Button className="w-full bg-slate-900 hover:bg-slate-700">
-              Neu starten
+              {t("restart")}
             </Button>
           </Link>
           <Link href="/">
             <Button variant="outline" className="w-full">
-              Zur Startseite
+              {t("home")}
             </Button>
           </Link>
         </div>

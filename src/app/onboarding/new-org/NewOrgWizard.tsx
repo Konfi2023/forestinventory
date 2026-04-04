@@ -2,15 +2,18 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import {
   TreePine, Building2,
   ChevronRight, ChevronLeft, Check, Loader2, X,
 } from "lucide-react";
 import { createAdditionalOrg, type OnboardingData } from "@/actions/onboarding";
-import { addDays, format } from "date-fns";
-import { de } from "date-fns/locale";
+import { addDays, format, type Locale as DateFnsLocale } from "date-fns";
+import { de, enUS, es, fr } from "date-fns/locale";
 import { PlanCards } from "@/components/billing/PlanCards";
+
+const dateFnsLocales: Record<string, DateFnsLocale> = { de, en: enUS, es, fr };
 
 type PlanData = {
   id: string;
@@ -32,6 +35,8 @@ type Props = {
 
 export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
   const router = useRouter();
+  const t = useTranslations("Onboarding");
+  const locale = useLocale();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -43,11 +48,13 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
   const [street, setStreet] = useState("");
   const [zip, setZip] = useState("");
   const [city, setCity] = useState("");
-  const [country, setCountry] = useState("Deutschland");
+  const [country, setCountry] = useState(t("step2.defaultCountry"));
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
   const [selectedPlan, setSelectedPlan] = useState<PlanData | null>(null);
 
-  const trialEndDate = format(addDays(new Date(), 30), "dd. MMMM yyyy", { locale: de });
+  const trialEndDate = format(addDays(new Date(), 30), "dd. MMMM yyyy", {
+    locale: dateFnsLocales[locale] ?? de,
+  });
 
   function getSelectedPrice() {
     if (!selectedPlan) return null;
@@ -61,7 +68,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
 
   async function handleStartTrial() {
     if (!accountType || !orgName.trim()) {
-      toast.error("Bitte füllen Sie alle Pflichtfelder aus.");
+      toast.error(t("fillRequired"));
       return;
     }
     setLoading(true);
@@ -75,12 +82,12 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
         street: street.trim() || undefined,
         zip: zip.trim() || undefined,
         city: city.trim() || undefined,
-        country: country.trim() || "Deutschland",
+        country: country.trim() || t("step2.defaultCountry"),
       });
-      toast.success("Betrieb erstellt — Testzeitraum gestartet!");
+      toast.success(t("newOrg.orgCreated"));
       router.push(`/dashboard/org/${result.slug}`);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Fehler beim Erstellen des Betriebs.");
+      toast.error(err instanceof Error ? err.message : t("newOrg.orgError"));
     } finally {
       setLoading(false);
     }
@@ -88,7 +95,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
 
   async function handleCheckout() {
     if (!accountType || !orgName.trim() || !selectedPlan) {
-      toast.error("Bitte wählen Sie ein Paket aus.");
+      toast.error(t("selectPlan"));
       return;
     }
     setLoading(true);
@@ -103,7 +110,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
         street: street.trim() || undefined,
         zip: zip.trim() || undefined,
         city: city.trim() || undefined,
-        country: country.trim() || "Deutschland",
+        country: country.trim() || t("step2.defaultCountry"),
         planId: selectedPlan.id,
         planInterval: billingInterval,
         selectedPriceId: priceId || undefined,
@@ -111,11 +118,11 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl;
       } else {
-        toast.success("Betrieb erfolgreich angelegt!");
+        toast.success(t("newOrg.orgCreatedPaid"));
         router.push(`/dashboard/org/${result.slug}`);
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Fehler beim Erstellen des Betriebs.");
+      toast.error(err instanceof Error ? err.message : t("newOrg.orgError"));
     } finally {
       setLoading(false);
     }
@@ -150,7 +157,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
             href={cancelHref}
             className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 transition-colors"
           >
-            <X size={15} /> Abbrechen
+            <X size={15} /> {t("newOrg.cancel")}
           </a>
         </div>
       </header>
@@ -162,8 +169,8 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
           {step === 1 && (
             <div className="space-y-8">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Neuen Betrieb anlegen</h1>
-                <p className="mt-2 text-slate-500">Welche Art von Betrieb möchten Sie anlegen?</p>
+                <h1 className="text-3xl font-bold text-slate-900">{t("newOrg.title")}</h1>
+                <p className="mt-2 text-slate-500">{t("newOrg.subtitle")}</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
@@ -173,10 +180,10 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                   }`}
                 >
                   <TreePine className="text-green-700 mb-4" size={40} />
-                  <div className="font-bold text-slate-900 text-lg">Privatperson</div>
-                  <div className="text-slate-500 text-sm mt-1">Privater Waldbesitzer</div>
+                  <div className="font-bold text-slate-900 text-lg">{t("step1.private")}</div>
+                  <div className="text-slate-500 text-sm mt-1">{t("step1.privateDesc")}</div>
                   <div className="mt-4 flex items-center gap-1 text-green-700 text-sm font-medium">
-                    Auswählen <ChevronRight size={16} />
+                    {t("step1.select")} <ChevronRight size={16} />
                   </div>
                 </button>
                 <button
@@ -186,10 +193,10 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                   }`}
                 >
                   <Building2 className="text-green-700 mb-4" size={40} />
-                  <div className="font-bold text-slate-900 text-lg">Unternehmen</div>
-                  <div className="text-slate-500 text-sm mt-1">Forstbetrieb, Dienstleister oder Verband</div>
+                  <div className="font-bold text-slate-900 text-lg">{t("step1.business")}</div>
+                  <div className="text-slate-500 text-sm mt-1">{t("step1.businessDesc")}</div>
                   <div className="mt-4 flex items-center gap-1 text-green-700 text-sm font-medium">
-                    Auswählen <ChevronRight size={16} />
+                    {t("step1.select")} <ChevronRight size={16} />
                   </div>
                 </button>
               </div>
@@ -200,24 +207,22 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Betriebsdaten</h1>
+                <h1 className="text-3xl font-bold text-slate-900">{t("newOrg.detailsTitle")}</h1>
                 <p className="mt-2 text-slate-500">
-                  {accountType === "PRIVATE"
-                    ? "Bitte geben Sie Ihren Namen und optional Ihre Adresse an."
-                    : "Bitte geben Sie Ihre Unternehmensdaten ein."}
+                  {accountType === "PRIVATE" ? t("step2.subtitlePrivate") : t("step2.subtitleBusiness")}
                 </p>
               </div>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    {accountType === "PRIVATE" ? "Betriebsname / Ihr Name" : "Firmenname"}{" "}
+                    {accountType === "PRIVATE" ? t("step2.orgNamePrivate") : t("step2.orgNameBusiness")}{" "}
                     <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    placeholder={accountType === "PRIVATE" ? "z.B. Waldbesitz Müller" : "z.B. Forstbetrieb GmbH"}
+                    placeholder={accountType === "PRIVATE" ? t("step2.placeholderPrivate") : t("step2.placeholderBusiness")}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                   />
                 </div>
@@ -225,7 +230,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">
-                        USt-ID <span className="text-slate-400 text-xs">(optional)</span>
+                        {t("step2.vatId")} <span className="text-slate-400 text-xs">({t("step2.optional")})</span>
                       </label>
                       <input
                         type="text"
@@ -236,7 +241,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Rechnungs-E-Mail</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">{t("step2.billingEmail")}</label>
                       <input
                         type="email"
                         value={billingEmail}
@@ -248,15 +253,15 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                 )}
                 <div className="pt-2">
                   <p className="text-sm font-medium text-slate-700 mb-3">
-                    Adresse{" "}
-                    {accountType === "PRIVATE" && <span className="text-slate-400 text-xs">(optional)</span>}
+                    {t("step2.address")}{" "}
+                    {accountType === "PRIVATE" && <span className="text-slate-400 text-xs">({t("step2.optional")})</span>}
                   </p>
                   <div className="space-y-3">
                     <input
                       type="text"
                       value={street}
                       onChange={(e) => setStreet(e.target.value)}
-                      placeholder="Straße und Hausnummer"
+                      placeholder={t("step2.street")}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                     />
                     <div className="grid grid-cols-3 gap-3">
@@ -264,14 +269,14 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                         type="text"
                         value={zip}
                         onChange={(e) => setZip(e.target.value)}
-                        placeholder="PLZ"
+                        placeholder={t("step2.zip")}
                         className="px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                       />
                       <input
                         type="text"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        placeholder="Ort"
+                        placeholder={t("step2.city")}
                         className="col-span-2 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                       />
                     </div>
@@ -279,7 +284,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                       type="text"
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      placeholder="Land"
+                      placeholder={t("step2.country")}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                     />
                   </div>
@@ -290,16 +295,16 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                   onClick={() => setStep(1)}
                   className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <ChevronLeft size={16} /> Zurück
+                  <ChevronLeft size={16} /> {t("back")}
                 </button>
                 <button
                   onClick={() => {
-                    if (!orgName.trim()) { toast.error("Bitte geben Sie einen Namen ein."); return; }
+                    if (!orgName.trim()) { toast.error(t("step2.enterName")); return; }
                     setStep(3);
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium"
                 >
-                  Weiter <ChevronRight size={16} />
+                  {t("next")} <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -309,10 +314,10 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Paket wählen</h1>
-                <p className="mt-2 text-slate-500">
-                  Wählen Sie das passende Paket für <strong>{orgName}</strong>.
-                </p>
+                <h1 className="text-3xl font-bold text-slate-900">{t("step3.title")}</h1>
+                <p className="mt-2 text-slate-500" dangerouslySetInnerHTML={{
+                  __html: t("step3.subtitleNewOrg", { orgName }),
+                }} />
               </div>
               <PlanCards
                 plans={plans}
@@ -327,15 +332,15 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                   <div className="w-full border-t border-slate-200" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-white px-4 text-sm text-slate-400">oder ohne Zahlungsmethode starten</span>
+                  <span className="bg-white px-4 text-sm text-slate-400">{t("step3.orWithoutPayment")}</span>
                 </div>
               </div>
               <div className="rounded-2xl border-2 border-dashed border-slate-200 p-6">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
-                    <div className="font-bold text-slate-900">30 Tage kostenlos testen</div>
+                    <div className="font-bold text-slate-900">{t("step3.freeTrial")}</div>
                     <div className="text-slate-500 text-sm mt-1">
-                      Keine Kreditkarte erforderlich. Zahlungsmethode kann später hinterlegt werden.
+                      {t("step3.paymentLater")}
                     </div>
                   </div>
                   <button
@@ -344,7 +349,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                     className="flex items-center gap-2 px-5 py-2.5 border-2 border-green-700 text-green-700 rounded-lg font-medium hover:bg-green-50 transition disabled:opacity-50"
                   >
                     {loading && <Loader2 size={16} className="animate-spin" />}
-                    Kostenlos testen
+                    {t("step3.tryFree")}
                   </button>
                 </div>
               </div>
@@ -353,17 +358,17 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                   onClick={() => setStep(2)}
                   className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <ChevronLeft size={16} /> Zurück
+                  <ChevronLeft size={16} /> {t("back")}
                 </button>
                 <button
                   onClick={() => {
-                    if (!selectedPlan) { toast.error("Bitte wählen Sie ein Paket aus."); return; }
+                    if (!selectedPlan) { toast.error(t("selectPlan")); return; }
                     setStep(4);
                   }}
                   disabled={!selectedPlan}
                   className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium disabled:opacity-50"
                 >
-                  Weiter zur Zusammenfassung <ChevronRight size={16} />
+                  {t("step3.toSummary")} <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -373,54 +378,54 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
           {step === 4 && selectedPlan && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Zusammenfassung</h1>
-                <p className="mt-2 text-slate-500">Überprüfen Sie Ihre Auswahl und starten Sie.</p>
+                <h1 className="text-3xl font-bold text-slate-900">{t("step4.title")}</h1>
+                <p className="mt-2 text-slate-500">{t("step4.subtitle")}</p>
               </div>
               <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Betrieb</span>
+                  <span className="text-slate-600">{t("step4.org")}</span>
                   <span className="font-semibold text-slate-900">{orgName}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Paket</span>
+                  <span className="text-slate-600">{t("step4.plan")}</span>
                   <span className="font-semibold text-slate-900">{selectedPlan.name}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Abrechnung</span>
+                  <span className="text-slate-600">{t("step4.billing")}</span>
                   <span className="font-semibold text-slate-900">
-                    {billingInterval === "monthly" ? "Monatlich" : "Jährlich"}
+                    {billingInterval === "monthly" ? t("step4.monthly") : t("step4.yearly")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Preis</span>
+                  <span className="text-slate-600">{t("step4.price")}</span>
                   <div className="text-right">
                     <span className="font-semibold text-slate-900">
                       {getSelectedPrice()
-                        ? `${getSelectedPrice()} € / ${billingInterval === "monthly" ? "Monat" : "Jahr"}`
-                        : "Auf Anfrage"}
+                        ? `${getSelectedPrice()} € / ${billingInterval === "monthly" ? t("step4.perMonth") : t("step4.perYear")}`
+                        : t("step4.onRequest")}
                     </span>
-                    {getSelectedPrice() && <p className="text-xs text-slate-400">zzgl. MwSt.</p>}
+                    {getSelectedPrice() && <p className="text-xs text-slate-400">{t("step4.plusVat")}</p>}
                   </div>
                 </div>
                 <div className="border-t border-slate-200 pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Kostenlos testen bis</span>
+                    <span className="text-slate-600">{t("step4.freeUntil")}</span>
                     <span className="font-semibold text-green-700">{trialEndDate}</span>
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
-                    Danach beginnt die Abrechnung automatisch. Sie können jederzeit kündigen.
+                    {t("step4.autoCharge")}
                   </p>
                 </div>
               </div>
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
-                <strong>30 Tage gratis testen.</strong> Sie hinterlegen jetzt Ihre Zahlungsmethode, werden aber erst nach dem Testzeitraum belastet.
+                <strong>{t("step4.trialInfo")}</strong> {t("step4.trialInfoDetail")}
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(3)}
                   className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <ChevronLeft size={16} /> Zurück
+                  <ChevronLeft size={16} /> {t("back")}
                 </button>
                 <button
                   onClick={handleCheckout}
@@ -429,12 +434,12 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                 >
                   {loading
                     ? <Loader2 size={18} className="animate-spin" />
-                    : <><span>Jetzt starten &amp; Zahlungsmethode hinterlegen</span><ChevronRight size={16} /></>
+                    : <><span>{t("step4.startAndPay")}</span><ChevronRight size={16} /></>
                   }
                 </button>
               </div>
               <p className="text-center text-xs text-slate-400">
-                Sichere Zahlung über Stripe. Keine Bindung — jederzeit kündbar.
+                {t("step4.stripeSecure")}
               </p>
             </div>
           )}

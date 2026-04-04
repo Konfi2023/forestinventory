@@ -2,10 +2,12 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CheckCircle2, TreePine } from "lucide-react";
 
 export default function OnboardingSuccessPage() {
   const router = useRouter();
+  const t = useTranslations("Onboarding.success");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -25,9 +27,9 @@ export default function OnboardingSuccessPage() {
         <div className="flex justify-center">
           <CheckCircle2 className="text-green-500" size={80} strokeWidth={1.5} />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900">Zahlung erfolgreich!</h1>
+        <h1 className="text-3xl font-bold text-slate-900">{t("title")}</h1>
         <p className="text-slate-600 text-lg">
-          Dein Testzeitraum beginnt heute. Du wirst in Kürze weitergeleitet...
+          {t("subtitle")}
         </p>
         <div className="flex justify-center">
           <div className="w-32 h-1 bg-slate-100 rounded-full overflow-hidden">
@@ -40,7 +42,7 @@ export default function OnboardingSuccessPage() {
         onClick={() => router.push("/dashboard")}
         className="mt-10 px-6 py-3 bg-green-700 text-white rounded-lg font-medium hover:bg-green-800 transition"
       >
-        Zum Dashboard
+        {t("toDashboard")}
       </button>
     </div>
   );

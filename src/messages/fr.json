@@ -463,5 +463,159 @@
       ],
       "footer": "natureport UG (haftungsbeschränkt) · Willy-Brandt-Str. 23, 20457 Hamburg · info@natureport.eu · Dernière mise à jour : mars 2026"
     }
+  },
+  "Enterprise": {
+    "title": "Demande Enterprise",
+    "subtitle": "Nous vous répondrons dans les 24 heures.",
+    "name": "Nom",
+    "email": "E-mail",
+    "message": "Message",
+    "placeholder": "Décrivez votre exploitation et vos besoins...",
+    "cancel": "Annuler",
+    "send": "Envoyer la demande",
+    "success": "Votre demande a été envoyée. Nous reviendrons vers vous bientôt.",
+    "error": "Erreur lors de l'envoi. Veuillez réessayer.",
+    "button": "Nous contacter"
+  },
+  "Onboarding": {
+    "step1": {
+      "title": "Bienvenue !",
+      "subtitle": "Comment souhaitez-vous utiliser Forest Inventory ?",
+      "private": "Particulier",
+      "privateDesc": "Propriétaire forestier privé",
+      "business": "Entreprise",
+      "businessDesc": "Entreprise forestière, prestataire ou association",
+      "select": "Sélectionner"
+    },
+    "step2": {
+      "title": "Vos coordonnées",
+      "subtitlePrivate": "Veuillez entrer votre nom et éventuellement votre adresse.",
+      "subtitleBusiness": "Veuillez entrer les coordonnées de votre entreprise.",
+      "orgNamePrivate": "Nom de l'exploitation / Votre nom",
+      "orgNameBusiness": "Nom de l'entreprise",
+      "placeholderPrivate": "p. ex. Forêt Dupont",
+      "placeholderBusiness": "p. ex. Forestière SARL",
+      "vatId": "N° TVA",
+      "optional": "facultatif",
+      "billingEmail": "E-mail de facturation",
+      "address": "Adresse",
+      "street": "Rue et numéro",
+      "zip": "Code postal",
+      "city": "Ville",
+      "country": "Pays",
+      "defaultCountry": "Allemagne",
+      "enterName": "Veuillez entrer un nom."
+    },
+    "step3": {
+      "title": "Choisir un plan",
+      "subtitle": "Tous les plans incluent toutes les fonctionnalités — la seule différence est la surface et la taille de l'équipe.",
+      "subtitleNewOrg": "Choisissez le plan adapté pour <strong>{orgName}</strong>.",
+      "includedInAll": "Inclus dans chaque plan",
+      "freeTrial": "30 jours d'essai gratuit",
+      "noCardRequired": "Aucune carte de crédit requise.",
+      "paymentLater": "Aucune carte de crédit requise. Le moyen de paiement peut être ajouté plus tard.",
+      "tryFree": "Essayer gratuitement",
+      "toSummary": "Continuer vers le récapitulatif",
+      "orWithoutPayment": "ou démarrer sans moyen de paiement"
+    },
+    "step4": {
+      "title": "Récapitulatif",
+      "subtitle": "Vérifiez votre sélection et commencez.",
+      "org": "Exploitation",
+      "plan": "Plan",
+      "billing": "Facturation",
+      "monthly": "Mensuel",
+      "yearly": "Annuel",
+      "price": "Prix",
+      "perMonth": "mois",
+      "perYear": "an",
+      "onRequest": "Sur demande",
+      "plusVat": "HT",
+      "freeUntil": "Essai gratuit jusqu'au",
+      "autoCharge": "La facturation commence automatiquement après. Vous pouvez annuler à tout moment.",
+      "trialInfo": "30 jours d'essai gratuit.",
+      "trialInfoDetail": "Vous ajoutez votre moyen de paiement maintenant, mais ne serez facturé qu'après la période d'essai.",
+      "startAndPay": "Commencer et ajouter un moyen de paiement",
+      "stripeSecure": "Paiement sécurisé via Stripe. Sans engagement — annulable à tout moment."
+    },
+    "back": "Retour",
+    "next": "Suivant",
+    "fillRequired": "Veuillez remplir tous les champs obligatoires.",
+    "selectPlan": "Veuillez sélectionner un plan.",
+    "trialStarted": "Période d'essai lancée !",
+    "trialError": "Erreur lors du lancement de la période d'essai.",
+    "accountCreated": "Compte créé !",
+    "accountError": "Erreur lors de la création du compte.",
+    "newOrg": {
+      "title": "Créer une nouvelle exploitation",
+      "subtitle": "Quel type d'exploitation souhaitez-vous créer ?",
+      "detailsTitle": "Données de l'exploitation",
+      "cancel": "Annuler",
+      "orgCreated": "Exploitation créée — période d'essai lancée !",
+      "orgCreatedPaid": "Exploitation créée avec succès !",
+      "orgError": "Erreur lors de la création de l'exploitation."
+    },
+    "success": {
+      "title": "Paiement réussi !",
+      "subtitle": "Votre période d'essai commence aujourd'hui. Vous allez être redirigé...",
+      "toDashboard": "Vers le tableau de bord"
+    }
+  },
+  "SignOut": {
+    "title": "Se déconnecter ?",
+    "subtitle": "Vous allez être déconnecté de Forest Inventory.",
+    "confirm": "Oui, se déconnecter",
+    "signingOut": "Déconnexion en cours…",
+    "cancel": "Annuler"
+  },
+  "AuthError": {
+    "title": "Session expirée",
+    "expired": "Votre session a expiré. Veuillez relancer le processus — votre invitation est toujours valide.",
+    "generic": "Une erreur s'est produite. Veuillez réessayer.",
+    "restart": "Redémarrer",
+    "home": "Aller à l'accueil"
+  },
+  "PlanCards": {
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "annualDiscount": "50 % de réduction la 1re année avec achat direct",
+    "includedInAll": "Inclus dans chaque plan",
+    "features": {
+      "map": "Carte forestière interactive",
+      "pois": "POIs : miradors, chemins, cabanes, véhicules",
+      "tasks": "Tâches et planification des mesures",
+      "inventory": "Inventaire d'arbres et de piles de bois (app mobile)",
+      "reports": "Rapports et contrôle des coûts",
+      "satellite": "Surveillance satellite (biomasse, NDVI)",
+      "health": "Surveillance de la santé forestière",
+      "team": "Invitations d'équipe et rôles"
+    },
+    "perMonth": "/ mois",
+    "yearlyBilled": "{price} € facturé annuellement",
+    "plusVat": "HT",
+    "upToHa": "jusqu'à {ha} ha",
+    "unlimitedArea": "Surface illimitée",
+    "users": "{count} utilisateurs",
+    "unlimitedUsers": "Utilisateurs illimités",
+    "selected": "Sélectionné",
+    "select": "Sélectionner",
+    "popular": "Populaire",
+    "blockedReduce": "Veuillez {reason} pour sélectionner ce plan.",
+    "reduceArea": "réduire la surface forestière à moins de {ha} ha",
+    "reduceUsers": "réduire les utilisateurs à {count}",
+    "and": "et",
+    "taglines": {
+      "Basis": "Pour les petites forêts privées",
+      "Pro": "Pour les entreprises forestières en croissance",
+      "Expert": "Pour les entreprises forestières professionnelles"
+    },
+    "support": {
+      "Basis": "Support par e-mail",
+      "Pro": "Support prioritaire",
+      "Expert": "Support téléphonique"
+    },
+    "enterprise": "Enterprise",
+    "enterpriseDesc": "Surface illimitée · Utilisateurs illimités · Toutes les fonctionnalités · SLA personnalisé · Support dédié · Accès API",
+    "contactUs": "Nous contacter"
   }
 }

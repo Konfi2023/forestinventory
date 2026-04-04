@@ -984,5 +984,146 @@
     "success": "Ihre Anfrage wurde gesendet. Wir melden uns bald.",
     "error": "Fehler beim Senden. Bitte versuchen Sie es erneut.",
     "button": "Kontakt aufnehmen"
+  },
+  "Onboarding": {
+    "step1": {
+      "title": "Willkommen!",
+      "subtitle": "Wie möchten Sie Forest Inventory nutzen?",
+      "private": "Privatperson",
+      "privateDesc": "Privater Waldbesitzer",
+      "business": "Unternehmen",
+      "businessDesc": "Forstbetrieb, Dienstleister oder Verband",
+      "select": "Auswählen"
+    },
+    "step2": {
+      "title": "Ihre Angaben",
+      "subtitlePrivate": "Bitte geben Sie Ihren Namen und optional Ihre Adresse an.",
+      "subtitleBusiness": "Bitte geben Sie Ihre Unternehmensdaten ein.",
+      "orgNamePrivate": "Betriebsname / Ihr Name",
+      "orgNameBusiness": "Firmenname",
+      "placeholderPrivate": "z.B. Waldbesitz Müller",
+      "placeholderBusiness": "z.B. Forstbetrieb GmbH",
+      "vatId": "USt-ID",
+      "optional": "optional",
+      "billingEmail": "Rechnungs-E-Mail",
+      "address": "Adresse",
+      "street": "Straße und Hausnummer",
+      "zip": "PLZ",
+      "city": "Ort",
+      "country": "Land",
+      "defaultCountry": "Deutschland",
+      "enterName": "Bitte geben Sie einen Namen ein."
+    },
+    "step3": {
+      "title": "Paket wählen",
+      "subtitle": "Alle Pakete beinhalten den vollen Funktionsumfang — der Unterschied liegt nur in Fläche und Teamgröße.",
+      "subtitleNewOrg": "Wählen Sie das passende Paket für <strong>{orgName}</strong>.",
+      "includedInAll": "In jedem Paket enthalten",
+      "freeTrial": "30 Tage kostenlos testen",
+      "noCardRequired": "Keine Kreditkarte erforderlich.",
+      "paymentLater": "Keine Kreditkarte erforderlich. Zahlungsmethode kann später hinterlegt werden.",
+      "tryFree": "Kostenlos testen",
+      "toSummary": "Weiter zur Zusammenfassung",
+      "orWithoutPayment": "oder ohne Zahlungsmethode starten"
+    },
+    "step4": {
+      "title": "Zusammenfassung",
+      "subtitle": "Überprüfen Sie Ihre Auswahl und starten Sie.",
+      "org": "Betrieb",
+      "plan": "Paket",
+      "billing": "Abrechnung",
+      "monthly": "Monatlich",
+      "yearly": "Jährlich",
+      "price": "Preis",
+      "perMonth": "Monat",
+      "perYear": "Jahr",
+      "onRequest": "Auf Anfrage",
+      "plusVat": "zzgl. MwSt.",
+      "freeUntil": "Kostenlos testen bis",
+      "autoCharge": "Danach beginnt die Abrechnung automatisch. Sie können jederzeit kündigen.",
+      "trialInfo": "30 Tage gratis testen.",
+      "trialInfoDetail": "Sie hinterlegen jetzt Ihre Zahlungsmethode, werden aber erst nach dem Testzeitraum belastet.",
+      "startAndPay": "Jetzt starten & Zahlungsmethode hinterlegen",
+      "stripeSecure": "Sichere Zahlung über Stripe. Keine Bindung — jederzeit kündbar."
+    },
+    "back": "Zurück",
+    "next": "Weiter",
+    "fillRequired": "Bitte füllen Sie alle Pflichtfelder aus.",
+    "selectPlan": "Bitte wählen Sie ein Paket aus.",
+    "trialStarted": "Testzeitraum gestartet!",
+    "trialError": "Fehler beim Starten des Testzeitraums.",
+    "accountCreated": "Konto erstellt!",
+    "accountError": "Fehler beim Erstellen des Kontos.",
+    "newOrg": {
+      "title": "Neuen Betrieb anlegen",
+      "subtitle": "Welche Art von Betrieb möchten Sie anlegen?",
+      "detailsTitle": "Betriebsdaten",
+      "cancel": "Abbrechen",
+      "orgCreated": "Betrieb erstellt — Testzeitraum gestartet!",
+      "orgCreatedPaid": "Betrieb erfolgreich angelegt!",
+      "orgError": "Fehler beim Erstellen des Betriebs."
+    },
+    "success": {
+      "title": "Zahlung erfolgreich!",
+      "subtitle": "Dein Testzeitraum beginnt heute. Du wirst in Kürze weitergeleitet...",
+      "toDashboard": "Zum Dashboard"
+    }
+  },
+  "SignOut": {
+    "title": "Abmelden?",
+    "subtitle": "Sie werden von Forest Inventory abgemeldet.",
+    "confirm": "Ja, abmelden",
+    "signingOut": "Wird abgemeldet…",
+    "cancel": "Abbrechen"
+  },
+  "AuthError": {
+    "title": "Sitzung abgelaufen",
+    "expired": "Ihre Sitzung ist abgelaufen. Bitte starten Sie den Vorgang neu — Ihre Einladung ist weiterhin gültig.",
+    "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "restart": "Neu starten",
+    "home": "Zur Startseite"
+  },
+  "PlanCards": {
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "annualDiscount": "50 % Rabatt im 1. Jahr beim Direktabschluss",
+    "includedInAll": "In jedem Paket enthalten",
+    "features": {
+      "map": "Interaktive Forstkarte",
+      "pois": "POIs: Hochsitze, Wege, Hütten, Fahrzeuge",
+      "tasks": "Aufgaben & Maßnahmenplanung",
+      "inventory": "Baum- & Holzpolterinventar (Mobile App)",
+      "reports": "Berichte & Kostencontrolling",
+      "satellite": "Satellitenmonitoring (Biomasse, NDVI)",
+      "health": "Waldgesundheitsmonitoring",
+      "team": "Team-Einladungen & Rollen"
+    },
+    "perMonth": "/ Monat",
+    "yearlyBilled": "{price} € jährlich abgerechnet",
+    "plusVat": "zzgl. MwSt.",
+    "upToHa": "bis {ha} ha",
+    "unlimitedArea": "Unbegrenzte Fläche",
+    "users": "{count} Nutzer",
+    "unlimitedUsers": "Unbegrenzte Nutzer",
+    "selected": "Ausgewählt",
+    "select": "Auswählen",
+    "popular": "Beliebt",
+    "blockedReduce": "Bitte {reason}, um dieses Paket zu wählen.",
+    "reduceArea": "Waldfläche auf unter {ha} ha reduzieren",
+    "reduceUsers": "Nutzer auf {count} reduzieren",
+    "and": "und",
+    "taglines": {
+      "Basis": "Für kleine Privatwälder",
+      "Pro": "Für wachsende Forstbetriebe",
+      "Expert": "Für professionelle Forstunternehmen"
+    },
+    "support": {
+      "Basis": "E-Mail Support",
+      "Pro": "Prioritäts-Support",
+      "Expert": "Telefonischer Support"
+    },
+    "enterprise": "Enterprise",
+    "enterpriseDesc": "Unbegrenzte Fläche · Unbegrenzte Nutzer · Alle Funktionen · Individuelle SLA · Dedizierter Support · API-Zugang",
+    "contactUs": "Kontakt aufnehmen"
   }
 }

@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Menu, X } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const t = useTranslations('Header');
+  const locale = useLocale();
 
   const NAV_LINKS = [
     { label: t('features'),   href: '#features'  },
@@ -47,7 +48,7 @@ export function Header() {
 
         <div className="hidden md:flex items-center gap-4">
           <LanguageSwitcher />
-          <button onClick={() => signIn('keycloak')} className="text-[13px] text-emerald-400 hover:text-emerald-300 transition-colors">
+          <button onClick={() => signIn('keycloak', undefined, { ui_locales: locale })} className="text-[13px] text-emerald-400 hover:text-emerald-300 transition-colors">
             Start &rarr;
           </button>
         </div>
@@ -66,7 +67,7 @@ export function Header() {
           ))}
           <div className="pt-3 border-t border-white/10 space-y-2">
             <LanguageSwitcher />
-            <button onClick={() => signIn('keycloak')} className="text-sm text-emerald-400 block">Start &rarr;</button>
+            <button onClick={() => signIn('keycloak', undefined, { ui_locales: locale })} className="text-sm text-emerald-400 block">Start &rarr;</button>
           </div>
         </div>
       )}

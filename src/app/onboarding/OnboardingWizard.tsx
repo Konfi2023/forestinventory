@@ -284,10 +284,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                 {/* Address */}
                 <div className="pt-2">
                   <p className="text-sm font-medium text-slate-700 mb-3">
-                    {t("step2.address")}{" "}
-                    {accountType === "PRIVATE" && (
-                      <span className="text-slate-400 text-xs">({t("step2.optional")})</span>
-                    )}
+                    {t("step2.address")} <span className="text-red-500">*</span>
                   </p>
                   <div className="space-y-3">
                     <input
@@ -336,8 +333,8 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                 </button>
                 <button
                   onClick={() => {
-                    if (!orgName.trim()) {
-                      toast.error(t("step2.enterName"));
+                    if (!orgName.trim() || !street.trim() || !zip.trim() || !city.trim() || !country) {
+                      toast.error(t("fillRequired"));
                       return;
                     }
                     setStep(3);

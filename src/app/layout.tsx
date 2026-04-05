@@ -112,7 +112,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* Hier waren die Komponenten rot, weil der Import fehlte */}
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <SentryProvider dsn={process.env.NEXT_PUBLIC_SENTRY_DSN} />
           <NextAuthProvider>
             <SessionGuard />

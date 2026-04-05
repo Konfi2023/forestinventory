@@ -19,7 +19,7 @@
     </div>
 
     <p style="font-size:13px;color:#94a3b8;text-align:center;margin:0 0 24px;">
-        ${msg("linkExpirationText", linkExpiration!5)}
+        ${msg("linkExpirationText", ((linkExpiration!300)?number / 60)?string["0"])}
     </p>
 
     <!-- Divider -->
@@ -27,9 +27,7 @@
 
     <!-- Fallback link -->
     <p style="font-size:12px;color:#94a3b8;margin:0 0 8px;">${msg("linkFallback")}</p>
-    <p style="font-size:12px;color:#4ade80;word-break:break-all;margin:0 0 24px;">
-        <a href="${link}" style="color:#16a34a;text-decoration:underline;">${link}</a>
-    </p>
+    <div style="font-size:11px;word-break:break-all;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin:0 0 24px;"><a href="${link}" style="color:#16a34a;text-decoration:underline;">${link}</a></div>
 
     <p style="margin:0;color:#475569;font-size:14px;white-space:pre-line;">${msg("signOff")?no_esc}</p>
 </@layout.emailLayout>

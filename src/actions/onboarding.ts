@@ -13,11 +13,12 @@ export type OnboardingData = {
   orgName: string;
   legalName?: string;
   vatId?: string;
+  eoriNumber?: string;
   billingEmail?: string;
   street?: string;
   zip?: string;
   city?: string;
-  country?: string;
+  country?: string; // ISO 3166-1 alpha-2 code (e.g. "DE", "ES")
   planId?: string;
   planInterval?: "monthly" | "yearly";
   selectedPriceId?: string;
@@ -64,10 +65,11 @@ async function createOrgWithTrial(data: OnboardingData, userId: string, userEmai
         legalName: data.legalName || data.orgName,
         billingEmail: data.billingEmail || userEmail || undefined,
         vatId: data.vatId || undefined,
+        eoriNumber: data.eoriNumber || undefined,
         street: data.street || undefined,
         zip: data.zip || undefined,
         city: data.city || undefined,
-        country: data.country || "Deutschland",
+        country: data.country || "DE",
         subscriptionStatus: SubscriptionStatus.TRIAL,
         trialEndsAt,
         onboardingComplete: true,

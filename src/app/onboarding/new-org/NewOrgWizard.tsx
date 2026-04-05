@@ -13,6 +13,7 @@ import { createAdditionalOrg, type OnboardingData } from "@/actions/onboarding";
 import { addDays, format, type Locale as DateFnsLocale } from "date-fns";
 import { de, enUS, es, fr } from "date-fns/locale";
 import { PlanCards } from "@/components/billing/PlanCards";
+import { getDefaultCountry, getCountryOptions } from "@/lib/countries";
 
 const dateFnsLocales: Record<string, DateFnsLocale> = { de, en: enUS, es, fr };
 
@@ -45,12 +46,15 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
   const [orgName, setOrgName] = useState("");
   const [legalName, setLegalName] = useState("");
   const [vatId, setVatId] = useState("");
+  const [eoriNumber, setEoriNumber] = useState("");
   const [billingEmail, setBillingEmail] = useState(userEmail);
   const [street, setStreet] = useState("");
   const [zip, setZip] = useState("");
   const [city, setCity] = useState("");
-  const [country, setCountry] = useState(t("step2.defaultCountry"));
+  const [country, setCountry] = useState(getDefaultCountry(locale));
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
+
+  const countryOptions = getCountryOptions(locale);
   const [selectedPlan, setSelectedPlan] = useState<PlanData | null>(null);
 
   const trialEndDate = format(addDays(new Date(), 30), "dd. MMMM yyyy", {
@@ -79,11 +83,12 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
         orgName: orgName.trim(),
         legalName: legalName.trim() || undefined,
         vatId: vatId.trim() || undefined,
+        eoriNumber: eoriNumber.trim() || undefined,
         billingEmail: billingEmail.trim() || userEmail,
         street: street.trim() || undefined,
         zip: zip.trim() || undefined,
         city: city.trim() || undefined,
-        country: country.trim() || t("step2.defaultCountry"),
+        country: country || getDefaultCountry(locale),
       });
       toast.success(t("newOrg.orgCreated"));
       router.push(`/dashboard/org/${result.slug}`);
@@ -107,11 +112,12 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
         orgName: orgName.trim(),
         legalName: legalName.trim() || undefined,
         vatId: vatId.trim() || undefined,
+        eoriNumber: eoriNumber.trim() || undefined,
         billingEmail: billingEmail.trim() || userEmail,
         street: street.trim() || undefined,
         zip: zip.trim() || undefined,
         city: city.trim() || undefined,
-        country: country.trim() || t("step2.defaultCountry"),
+        country: country || getDefaultCountry(locale),
         planId: selectedPlan.id,
         planInterval: billingInterval,
         selectedPriceId: priceId || undefined,
@@ -226,17 +232,31 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                 </div>
                 {accountType === "BUSINESS" && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        {t("step2.vatId")} <span className="text-slate-400 text-xs">({t("step2.optional")})</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={vatId}
-                        onChange={(e) => setVatId(e.target.value)}
-                        placeholder="DE123456789"
-                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          {t("step2.vatId")} <span className="text-slate-400 text-xs">({t("step2.optional")})</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={vatId}
+                          onChange={(e) => setVatId(e.target.value)}
+                          placeholder="DE123456789"
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          {t("step2.eoriNumber")} <span className="text-slate-400 text-xs">({t("step2.optional")})</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={eoriNumber}
+                          onChange={(e) => setEoriNumber(e.target.value)}
+                          placeholder={t("step2.eoriPlaceholder")}
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">{t("step2.billingEmail")}</label>
@@ -278,13 +298,16 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
                         className="col-span-2 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
                       />
                     </div>
-                    <input
-                      type="text"
+                    <select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      placeholder={t("step2.country")}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
-                    />
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900 bg-white"
+                    >
+                      <option value="" disabled>{t("step2.selectCountry")}</option>
+                      {countryOptions.map(({ code, name }) => (
+                        <option key={code} value={code}>{name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>

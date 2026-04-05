@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CheckCircle2, TreePine } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 export default function OnboardingSuccessPage() {
   const router = useRouter();
@@ -18,9 +19,8 @@ export default function OnboardingSuccessPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
-      <div className="flex items-center gap-2 mb-12">
-        <TreePine className="text-green-700" size={28} />
-        <span className="font-bold text-xl tracking-tight"><span className="text-slate-900">Forest</span><span className="text-green-600">Manager</span></span>
+      <div className="mb-12">
+        <Logo variant="dark" height={28} />
       </div>
 
       <div className="text-center space-y-4 max-w-md">

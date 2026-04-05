@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
+import { Logo } from "@/components/ui/Logo";
 import {
   TreePine, Building2,
   ChevronRight, ChevronLeft, Check, Loader2, X,
@@ -132,10 +133,7 @@ export function NewOrgWizard({ userEmail, cancelHref, plans }: Props) {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <header className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <TreePine className="text-green-700" size={24} />
-          <span className="font-bold text-lg tracking-tight"><span className="text-slate-900">Forest</span><span className="text-green-600">Manager</span></span>
-        </div>
+        <Logo variant="dark" height={24} />
         <div className="flex items-center gap-6">
           {/* Step indicators */}
           <div className="flex items-center gap-2 text-sm text-slate-500">

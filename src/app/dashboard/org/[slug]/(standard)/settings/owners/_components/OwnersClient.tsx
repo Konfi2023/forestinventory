@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import {
   createForestOwner,
   updateForestOwner,
@@ -63,6 +64,7 @@ export function OwnersClient({
   organizationId: string;
   initialOwners: Owner[];
 }) {
+  const t = useTranslations("SettingsPage.owners");
   const [owners, setOwners] = useState<Owner[]>(initialOwners);
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -116,29 +118,29 @@ export function OwnersClient({
           setOwners((prev) =>
             prev.map((o) => (o.id === editingId ? { ...o, ...updated } : o))
           );
-          toast.success("Waldbesitzer aktualisiert");
+          toast.success(t("updated"));
         } else {
           const created = await createForestOwner(organizationId, data);
           setOwners((prev) => [...prev, { ...created, forests: [] }]);
-          toast.success("Waldbesitzer angelegt");
+          toast.success(t("created"));
         }
         setShowForm(false);
         setEditingId(null);
       } catch (err: any) {
-        toast.error(err.message || "Fehler beim Speichern");
+        toast.error(err.message || t("saveError"));
       }
     });
   }
 
   function handleDelete(id: string, name: string) {
-    if (!confirm(`„${name}" wirklich löschen?`)) return;
+    if (!confirm(t("confirmDelete", { name }))) return;
     startTransition(async () => {
       try {
         await deleteForestOwner(id);
         setOwners((prev) => prev.filter((o) => o.id !== id));
-        toast.success("Waldbesitzer gelöscht");
+        toast.success(t("deleted"));
       } catch (err: any) {
-        toast.error(err.message || "Fehler beim Löschen");
+        toast.error(err.message || t("deleteError"));
       }
     });
   }
@@ -152,7 +154,7 @@ export function OwnersClient({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Suchen nach Name, E-Mail, Ort…"
+            placeholder={t("searchPlaceholder")}
             className="pl-8 pr-8"
           />
           {query && (
@@ -167,7 +169,7 @@ export function OwnersClient({
 
         {!showForm && (
           <Button size="sm" onClick={openCreate} className="gap-1.5 shrink-0">
-            <Plus className="w-4 h-4" /> Hinzufügen
+            <Plus className="w-4 h-4" /> {t("add")}
           </Button>
         )}
 
@@ -177,9 +179,8 @@ export function OwnersClient({
           className="gap-1.5 shrink-0"
           onClick={() => exportCsv(owners)}
           disabled={owners.length === 0}
-          title="Alle Waldbesitzer als CSV exportieren"
         >
-          <Download className="w-4 h-4" /> Export
+          <Download className="w-4 h-4" /> {t("export")}
         </Button>
 
         <AiImportDialog
@@ -194,42 +195,42 @@ export function OwnersClient({
           onSubmit={handleSubmit}
           className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3"
         >
-          <p className="font-medium text-sm text-slate-900">Neuer Waldbesitzer</p>
+          <p className="font-medium text-sm text-slate-900">{t("newOwner")}</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="text-xs text-slate-500 mb-1 block">Name *</label>
-              <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Max Mustermann" />
+              <label className="text-xs text-slate-500 mb-1 block">{t("nameLabel")}</label>
+              <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">E-Mail</label>
-              <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="max@example.de" />
+              <label className="text-xs text-slate-500 mb-1 block">{t("emailLabel")}</label>
+              <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Telefon</label>
-              <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+49 123 456789" />
+              <label className="text-xs text-slate-500 mb-1 block">{t("phoneLabel")}</label>
+              <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Straße & Hausnummer</label>
-              <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} placeholder="Musterstraße 1" />
+              <label className="text-xs text-slate-500 mb-1 block">{t("streetLabel")}</label>
+              <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">PLZ</label>
-                <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} placeholder="12345" />
+                <label className="text-xs text-slate-500 mb-1 block">{t("zipLabel")}</label>
+                <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} />
               </div>
               <div className="col-span-2">
-                <label className="text-xs text-slate-500 mb-1 block">Ort</label>
-                <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="Musterstadt" />
+                <label className="text-xs text-slate-500 mb-1 block">{t("cityLabel")}</label>
+                <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
               </div>
             </div>
             <div className="col-span-2">
-              <label className="text-xs text-slate-500 mb-1 block">Notiz</label>
-              <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Interne Notizen..." rows={2} />
+              <label className="text-xs text-slate-500 mb-1 block">{t("notesLabel")}</label>
+              <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder={t("notesPlaceholder")} rows={2} />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); }}>Abbrechen</Button>
-            <Button type="submit" size="sm" disabled={isPending}>{isPending ? "Speichern…" : "Speichern"}</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); }}>{t("cancel")}</Button>
+            <Button type="submit" size="sm" disabled={isPending}>{isPending ? t("saving") : t("save")}</Button>
           </div>
         </form>
       )}
@@ -237,7 +238,7 @@ export function OwnersClient({
       {/* Ergebnis-Hinweis bei Suche */}
       {query && (
         <p className="text-xs text-slate-500">
-          {filtered.length} von {owners.length} Waldbesitzern
+          {t("searchResults", { filtered: filtered.length, total: owners.length })}
         </p>
       )}
 
@@ -245,16 +246,16 @@ export function OwnersClient({
       {owners.length === 0 && !showForm && (
         <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200">
           <User className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          <p className="text-sm text-slate-500">Noch keine Waldbesitzer angelegt.</p>
+          <p className="text-sm text-slate-500">{t("emptyTitle")}</p>
           <p className="text-xs text-slate-400 mt-1">
-            Manuell hinzufügen oder per CSV importieren.
+            {t("emptySubtitle")}
           </p>
         </div>
       )}
 
       {query && filtered.length === 0 && owners.length > 0 && (
         <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-          <p className="text-sm text-slate-500">Keine Treffer für „{query}"</p>
+          <p className="text-sm text-slate-500">{t("noResults", { query })}</p>
         </div>
       )}
 
@@ -272,12 +273,12 @@ export function OwnersClient({
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-slate-900 text-sm">{owner.name}</p>
                 <p className="text-xs text-slate-500 truncate">
-                  {[owner.email, owner.phone].filter(Boolean).join(" · ") || "Keine Kontaktdaten"}
+                  {[owner.email, owner.phone].filter(Boolean).join(" · ") || t("noContact")}
                 </p>
               </div>
               <div className="flex items-center gap-1 text-xs text-slate-400 shrink-0">
                 <Trees className="w-3.5 h-3.5" />
-                <span>{owner.forests.length} Waldfläche{owner.forests.length !== 1 ? "n" : ""}</span>
+                <span>{owner.forests.length !== 1 ? t("forestCountPlural", { count: owner.forests.length }) : t("forestCount", { count: owner.forests.length })}</span>
                 {totalHa > 0 && <span className="ml-1">· {totalHa.toFixed(1)} ha</span>}
               </div>
               <div className="flex items-center gap-1 ml-2">
@@ -328,7 +329,7 @@ export function OwnersClient({
                 )}
                 {owner.forests.length > 0 && (
                   <div className="col-span-2 mt-2">
-                    <p className="text-xs font-medium text-slate-500 mb-1">Zugewiesene Wälder:</p>
+                    <p className="text-xs font-medium text-slate-500 mb-1">{t("assignedForests")}</p>
                     <div className="flex flex-wrap gap-1">
                       {owner.forests.map((f) => (
                         <span key={f.id} className="inline-flex items-center gap-1 bg-green-50 text-green-800 text-xs px-2 py-0.5 rounded-full border border-green-200">
@@ -351,42 +352,42 @@ export function OwnersClient({
           onSubmit={handleSubmit}
           className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3"
         >
-          <p className="font-medium text-sm text-slate-900">Waldbesitzer bearbeiten</p>
+          <p className="font-medium text-sm text-slate-900">{t("editOwner")}</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="text-xs text-slate-500 mb-1 block">Name *</label>
-              <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Max Mustermann" />
+              <label className="text-xs text-slate-500 mb-1 block">{t("nameLabel")}</label>
+              <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">E-Mail</label>
-              <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="max@example.de" />
+              <label className="text-xs text-slate-500 mb-1 block">{t("emailLabel")}</label>
+              <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Telefon</label>
-              <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+49 123 456789" />
+              <label className="text-xs text-slate-500 mb-1 block">{t("phoneLabel")}</label>
+              <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Straße & Hausnummer</label>
-              <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} placeholder="Musterstraße 1" />
+              <label className="text-xs text-slate-500 mb-1 block">{t("streetLabel")}</label>
+              <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">PLZ</label>
-                <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} placeholder="12345" />
+                <label className="text-xs text-slate-500 mb-1 block">{t("zipLabel")}</label>
+                <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} />
               </div>
               <div className="col-span-2">
-                <label className="text-xs text-slate-500 mb-1 block">Ort</label>
-                <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="Musterstadt" />
+                <label className="text-xs text-slate-500 mb-1 block">{t("cityLabel")}</label>
+                <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
               </div>
             </div>
             <div className="col-span-2">
-              <label className="text-xs text-slate-500 mb-1 block">Notiz</label>
-              <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Interne Notizen..." rows={2} />
+              <label className="text-xs text-slate-500 mb-1 block">{t("notesLabel")}</label>
+              <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder={t("notesPlaceholder")} rows={2} />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); }}>Abbrechen</Button>
-            <Button type="submit" size="sm" disabled={isPending}>{isPending ? "Speichern…" : "Speichern"}</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); }}>{t("cancel")}</Button>
+            <Button type="submit" size="sm" disabled={isPending}>{isPending ? t("saving") : t("save")}</Button>
           </div>
         </form>
       )}

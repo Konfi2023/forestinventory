@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Loader2, Trees } from "lucide-react";
 import { createForest, updateForest } from "@/actions/forest";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface Props {
   orgSlug: string;
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function ForestDialog({ orgSlug, members, forest, trigger, open: controlledOpen, onOpenChange }: Props) {
+  const t = useTranslations('ForestDialog');
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
@@ -55,7 +57,7 @@ export function ForestDialog({ orgSlug, members, forest, trigger, open: controll
   }, [isOpen, forest]);
 
   const handleSubmit = async () => {
-    if (!name) return toast.error("Name fehlt");
+    if (!name) return toast.error(t('nameRequired'));
     setIsLoading(true);
 
     try {
@@ -69,14 +71,14 @@ export function ForestDialog({ orgSlug, members, forest, trigger, open: controll
 
       if (forest) {
         await updateForest(orgSlug, forest.id, payload);
-        toast.success("Wald aktualisiert");
+        toast.success(t('forestUpdated'));
       } else {
         await createForest(orgSlug, payload);
-        toast.success("Wald angelegt");
+        toast.success(t('forestCreated'));
       }
       setOpen(false);
     } catch (e) {
-      toast.error("Fehler beim Speichern");
+      toast.error(t('errorSaving'));
     } finally {
       setIsLoading(false);
     }
@@ -93,13 +95,13 @@ export function ForestDialog({ orgSlug, members, forest, trigger, open: controll
       <DialogTrigger asChild>
         {trigger || (
             <Button>
-                <Plus className="mr-2 h-4 w-4" /> Neuer Wald
+                <Plus className="mr-2 h-4 w-4" /> {t('newForest')}
             </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{forest ? "Wald bearbeiten" : "Neuen Wald anlegen"}</DialogTitle>
+          <DialogTitle>{forest ? t('editTitle') : t('createTitle')}</DialogTitle>
         </DialogHeader>
         
         <div className="grid gap-6 py-4">
@@ -107,33 +109,33 @@ export function ForestDialog({ orgSlug, members, forest, trigger, open: controll
             {/* Stammdaten */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label>Bezeichnung</Label>
-                    <Input placeholder="z.B. Nordhang" value={name} onChange={e => setName(e.target.value)} />
+                    <Label>{t('nameLabel')}</Label>
+                    <Input placeholder={t('namePlaceholder')} value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                    <Label>Standort / Region</Label>
-                    <Input placeholder="z.B. Hamburg" value={location} onChange={e => setLocation(e.target.value)} />
+                    <Label>{t('locationLabel')}</Label>
+                    <Input placeholder={t('locationPlaceholder')} value={location} onChange={e => setLocation(e.target.value)} />
                 </div>
             </div>
 
             <div className="space-y-2">
-                <Label>Fläche (ha)</Label>
+                <Label>{t('areaLabel')}</Label>
                 <Input type="number" placeholder="0.0" value={areaHa} onChange={e => setAreaHa(e.target.value)} />
             </div>
 
             <div className="space-y-2">
-                <Label>Beschreibung</Label>
-                <Textarea placeholder="Notizen..." value={desc} onChange={e => setDesc(e.target.value)} />
+                <Label>{t('descriptionLabel')}</Label>
+                <Textarea placeholder={t('descriptionPlaceholder')} value={desc} onChange={e => setDesc(e.target.value)} />
             </div>
 
             {/* Berechtigungen */}
             <div className="space-y-3 border rounded-md p-4 bg-slate-50">
                 <div className="flex items-center gap-2">
                     <Trees className="h-4 w-4 text-slate-500" />
-                    <Label className="font-semibold">Zugriffsberechtigung</Label>
+                    <Label className="font-semibold">{t('accessLabel')}</Label>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                    Administratoren haben immer Zugriff. Wählen Sie hier zusätzliche Mitarbeiter aus (z.B. lokale Förster).
+                    {t('accessHint')}
                 </p>
                 
                 <ScrollArea className="h-40 border rounded bg-white p-2">
@@ -155,7 +157,7 @@ export function ForestDialog({ orgSlug, members, forest, trigger, open: controll
                                             {member.user.firstName} {member.user.lastName}
                                         </span>
                                         <span className="text-xs text-slate-400 ml-2">
-                                            {isAdmin ? "(Admin - immer Zugriff)" : member.role.name}
+                                            {isAdmin ? t('adminNote') : member.role.name}
                                         </span>
                                     </label>
                                 </div>
@@ -168,9 +170,9 @@ export function ForestDialog({ orgSlug, members, forest, trigger, open: controll
         </div>
 
         <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Abbrechen</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t('cancel')}</Button>
             <Button onClick={handleSubmit} disabled={isLoading}>
-                {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Speichern
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />} {t('save')}
             </Button>
         </DialogFooter>
       </DialogContent>

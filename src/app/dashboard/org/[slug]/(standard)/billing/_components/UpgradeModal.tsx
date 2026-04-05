@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { X, Loader2, ChevronRight, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { createCheckoutSession } from '@/actions/stripe-actions';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }: Props) {
+  const t = useTranslations('Billing');
   const [open, setOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanData | null>(null);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('yearly');
@@ -25,7 +27,7 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
       ? selectedPlan.monthlyPriceId
       : selectedPlan.yearlyPriceId;
     if (!priceId) {
-      toast.error('Kein Preis für dieses Paket hinterlegt.');
+      toast.error(t('noPriceError'));
       return;
     }
     setLoading(true);
@@ -33,7 +35,7 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
       const { url } = await createCheckoutSession(priceId, orgId, billingInterval);
       if (url) window.location.href = url;
     } catch (err: any) {
-      toast.error(err.message || 'Fehler beim Erstellen der Checkout-Session.');
+      toast.error(err.message || t('checkoutError'));
       setLoading(false);
     }
   }
@@ -46,7 +48,7 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
         className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium text-sm"
       >
         <CreditCard size={16} />
-        Paket wählen &amp; bezahlen
+        {t('choosePlan')}
       </button>
 
       {/* Modal overlay */}
@@ -56,9 +58,9 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Paket wählen</h2>
+                <h2 className="text-xl font-bold text-slate-900">{t('choosePlanTitle')}</h2>
                 <p className="text-sm text-slate-500 mt-0.5">
-                  Wählen Sie das passende Paket und hinterlegen Sie Ihre Zahlungsmethode.
+                  {t('choosePlanSubtitle')}
                 </p>
               </div>
               <button
@@ -87,14 +89,14 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
             {/* Footer */}
             <div className="px-8 py-5 border-t border-slate-100 flex items-center justify-between gap-4 flex-wrap">
               <p className="text-xs text-slate-400">
-                30 Tage gratis testen · Danach automatische Abrechnung · Jederzeit kündbar
+                {t('trialInfo')}
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setOpen(false)}
                   className="px-5 py-2.5 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50 transition text-sm font-medium"
                 >
-                  Abbrechen
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleCheckout}
@@ -105,7 +107,7 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
                     <>
-                      Weiter zur Kasse <ChevronRight size={16} />
+                      {t('checkout')} <ChevronRight size={16} />
                     </>
                   )}
                 </button>

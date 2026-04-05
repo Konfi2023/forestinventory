@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getAccessibleForests } from "@/lib/forest-access";
 import { PackageOpen } from "lucide-react";
 import { OperationList } from "./_components/OperationList";
@@ -67,16 +68,18 @@ export default async function OperationsPage({
     })),
   }));
 
+  const t = await getTranslations("Operations");
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <PackageOpen className="text-amber-600" size={24} />
-            Maßnahmen & Holzverkauf
+            {t("pageTitle")}
           </h2>
           <p className="text-muted-foreground mt-1">
-            Einschlagsmaßnahmen, Polter-Verwaltung und Holzverkäufe
+            {t("pageSubtitle")}
           </p>
         </div>
       </div>

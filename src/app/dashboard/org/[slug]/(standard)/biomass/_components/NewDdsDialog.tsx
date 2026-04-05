@@ -12,21 +12,21 @@ import { toast } from "sonner";
 import { createDds } from "@/actions/eudr";
 import { HS_CODE_OPTIONS, SCIENTIFIC_NAMES } from "@/lib/eudr-helpers";
 import { TREE_SPECIES } from "@/lib/tree-species";
+import { useTranslations } from "next-intl";
 
-const ACTIVITY_LABELS: Record<string, string> = {
-  DOMESTIC: "Inverkehrbringen (Domestic)",
-  IMPORT:   "Einfuhr (Import)",
-  EXPORT:   "Ausfuhr (Export)",
+const ACTIVITY_KEYS: Record<string, string> = {
+  DOMESTIC: "actDomestic",
+  IMPORT:   "actImport",
+  EXPORT:   "actExport",
 };
 
-const EU_COUNTRIES = [
-  { code: "DE", label: "Deutschland" }, { code: "AT", label: "Österreich" },
-  { code: "CH", label: "Schweiz" },     { code: "FR", label: "Frankreich" },
-  { code: "PL", label: "Polen" },       { code: "CZ", label: "Tschechien" },
-  { code: "SK", label: "Slowakei" },    { code: "HU", label: "Ungarn" },
-  { code: "RO", label: "Rumänien" },    { code: "SE", label: "Schweden" },
-  { code: "FI", label: "Finnland" },    { code: "OTHER", label: "Sonstiges" },
-];
+const EU_COUNTRY_CODES = ["DE","AT","CH","FR","PL","CZ","SK","HU","RO","SE","FI","OTHER"] as const;
+
+const COUNTRY_KEYS: Record<string, string> = {
+  DE: "countryDE", AT: "countryAT", CH: "countryCH", FR: "countryFR",
+  PL: "countryPL", CZ: "countryCZ", SK: "countrySK", HU: "countryHU",
+  RO: "countryRO", SE: "countrySE", FI: "countryFI", OTHER: "countryOther",
+};
 
 interface Props {
   orgSlug: string;
@@ -35,6 +35,7 @@ interface Props {
 }
 
 export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
+  const t = useTranslations('Biomass');
   const [open, setOpen]       = useState(false);
   const [saving, setSaving]   = useState(false);
 
@@ -52,7 +53,7 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hsCode) { toast.error("Bitte HS-Code auswählen"); return; }
+    if (!hsCode) { toast.error(t('hsCodeRequired')); return; }
     setSaving(true);
     try {
       const res = await createDds(orgSlug, {
@@ -67,8 +68,8 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
           forestId: forestId || undefined,
         },
       });
-      if (!res.success) throw new Error("Fehler beim Erstellen");
-      toast.success("DDS-Entwurf erstellt");
+      if (!res.success) throw new Error(t('createError'));
+      toast.success(t('ddsCreated'));
       setOpen(false);
       // Reset
       setNote(""); setDescription(""); setSpecies(""); setQuantityM3(""); setForestId("");
@@ -83,7 +84,7 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white">
-          <Plus size={13} /> Neue DDS
+          <Plus size={13} /> {t('newDds')}
         </Button>
       </DialogTrigger>
 
@@ -91,7 +92,7 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText size={16} className="text-emerald-600" />
-            Neue Sorgfaltserklärung (DDS)
+            {t('newDdsTitle')}
           </DialogTitle>
         </DialogHeader>
 
@@ -99,9 +100,9 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
 
           {/* Aktivitätstyp */}
           <div className="space-y-1.5">
-            <Label>Aktivitätstyp</Label>
+            <Label>{t('activityType')}</Label>
             <div className="grid grid-cols-3 gap-2">
-              {Object.entries(ACTIVITY_LABELS).map(([val, lbl]) => (
+              {Object.entries(ACTIVITY_KEYS).map(([val, key]) => (
                 <button
                   key={val} type="button"
                   onClick={() => setActivityType(val)}
@@ -111,7 +112,7 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
                       : "border-slate-200 text-slate-500 hover:border-slate-300"
                   }`}
                 >
-                  {lbl}
+                  {t(key)}
                 </button>
               ))}
             </div>
@@ -119,11 +120,11 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
 
           {/* Produkt */}
           <div className="space-y-3 bg-slate-50 rounded-lg p-3 border border-slate-200">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Produkt</p>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{t('product')}</p>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">HS-Code *</Label>
+                <Label className="text-xs">{t('hsCode')}</Label>
                 <select
                   value={hsCode}
                   onChange={e => setHsCode(e.target.value)}
@@ -137,13 +138,13 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs">Baumart</Label>
+                <Label className="text-xs">{t('treeSpecies')}</Label>
                 <select
                   value={species}
                   onChange={e => setSpecies(e.target.value)}
                   className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white"
                 >
-                  <option value="">— wählen —</option>
+                  <option value="">{t('selectSpecies')}</option>
                   {TREE_SPECIES.map(s => (
                     <option key={s.id} value={s.id}>{s.label}</option>
                   ))}
@@ -153,40 +154,40 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
 
             {scientificName && (
               <p className="text-[10px] text-slate-500 italic">
-                Wissenschaftl. Name: <strong>{scientificName}</strong>
+                {t('scientificName')} <strong>{scientificName}</strong>
               </p>
             )}
 
             <div className="space-y-1">
-              <Label className="text-xs">Beschreibung (optional)</Label>
+              <Label className="text-xs">{t('descriptionLabel')}</Label>
               <Input
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="z.B. Fichtenstammholz B/C"
+                placeholder={t('descriptionPlaceholder')}
                 className="text-xs h-8"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Menge (m³)</Label>
+                <Label className="text-xs">{t('quantityM3')}</Label>
                 <Input
                   type="number" min="0" step="0.1"
                   value={quantityM3}
                   onChange={e => setQuantityM3(e.target.value)}
-                  placeholder="z.B. 45.5"
+                  placeholder={t('quantityPlaceholder')}
                   className="text-xs h-8"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Herkunftsland</Label>
+                <Label className="text-xs">{t('countryOfHarvest')}</Label>
                 <select
                   value={country}
                   onChange={e => setCountry(e.target.value)}
                   className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8"
                 >
-                  {EU_COUNTRIES.map(c => (
-                    <option key={c.code} value={c.code}>{c.label}</option>
+                  {EU_COUNTRY_CODES.map(code => (
+                    <option key={code} value={code}>{t(COUNTRY_KEYS[code])}</option>
                   ))}
                 </select>
               </div>
@@ -196,13 +197,13 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
           {/* Wald-Verknüpfung */}
           {forests.length > 0 && (
             <div className="space-y-1">
-              <Label className="text-xs">Wald (optional)</Label>
+              <Label className="text-xs">{t('forest')}</Label>
               <select
                 value={forestId}
                 onChange={e => setForestId(e.target.value)}
                 className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white"
               >
-                <option value="">— Wald wählen —</option>
+                <option value="">{t('selectForest')}</option>
                 {forests.map(f => (
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
@@ -212,22 +213,22 @@ export function NewDdsDialog({ orgSlug, defaultActivityType, forests }: Props) {
 
           {/* Interne Notiz */}
           <div className="space-y-1">
-            <Label className="text-xs">Interne Notiz (optional)</Label>
+            <Label className="text-xs">{t('internalNote')}</Label>
             <Input
               value={note}
               onChange={e => setNote(e.target.value)}
-              placeholder="z.B. Wintereinschlag 2026, Abteilung Nord"
+              placeholder={t('notePlaceholder')}
               className="text-xs h-8"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
             <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
-              Abbrechen
+              {t('cancel')}
             </Button>
             <Button type="submit" size="sm" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
               {saving ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
-              Als Entwurf speichern
+              {t('saveAsDraft')}
             </Button>
           </div>
         </form>

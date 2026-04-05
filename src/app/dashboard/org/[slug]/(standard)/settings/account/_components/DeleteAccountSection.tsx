@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { signOut } from "next-auth/react";
 import { deleteAccount } from "@/actions/account";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export function DeleteAccountSection({ email }: { email: string }) {
+  const t = useTranslations("SettingsPage.account");
   const [open, setOpen] = useState(false);
   const [inputEmail, setInputEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,13 +29,13 @@ export function DeleteAccountSection({ email }: { email: string }) {
     setLoading(true);
     try {
       await deleteAccount(inputEmail);
-      toast.success("Account wurde gelöscht.");
+      toast.success(t("deleted"));
       const res = await fetch('/api/auth/keycloak-logout?callbackUrl=/');
       const { url: keycloakLogoutUrl } = await res.json();
       await signOut({ redirect: false });
       window.location.href = keycloakLogoutUrl;
     } catch (e: any) {
-      toast.error(e.message || "Fehler beim Löschen");
+      toast.error(e.message || t("deleteError"));
       setLoading(false);
     }
   };
@@ -43,11 +45,9 @@ export function DeleteAccountSection({ email }: { email: string }) {
       <div className="flex items-start gap-3">
         <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
         <div>
-          <h3 className="font-semibold text-slate-900">Account löschen</h3>
+          <h3 className="font-semibold text-slate-900">{t("title")}</h3>
           <p className="text-sm text-slate-600 mt-1">
-            Löscht Ihren Account und alle persönlichen Daten dauerhaft und
-            DSGVO-konform. Zugewiesene Aufgaben werden auf „Nicht zugewiesen"
-            zurückgesetzt. Diese Aktion kann nicht rückgängig gemacht werden.
+            {t("description")}
           </p>
         </div>
       </div>
@@ -56,20 +56,19 @@ export function DeleteAccountSection({ email }: { email: string }) {
         <DialogTrigger asChild>
           <Button variant="destructive" size="sm">
             <Trash2 className="h-4 w-4 mr-2" />
-            Account dauerhaft löschen
+            {t("deleteButton")}
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Account wirklich löschen?</DialogTitle>
+            <DialogTitle>{t("dialogTitle")}</DialogTitle>
             <DialogDescription>
-              Alle persönlichen Daten werden unwiderruflich gelöscht. Zur
-              Bestätigung geben Sie bitte Ihre E-Mail-Adresse ein:
+              {t("dialogDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2 py-2">
-            <Label htmlFor="confirm-email">E-Mail-Adresse</Label>
+            <Label htmlFor="confirm-email">{t("emailLabel")}</Label>
             <Input
               id="confirm-email"
               type="email"
@@ -82,14 +81,14 @@ export function DeleteAccountSection({ email }: { email: string }) {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
-              Abbrechen
+              {t("cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={loading || inputEmail.toLowerCase() !== email.toLowerCase()}
             >
-              {loading ? "Wird gelöscht…" : "Account löschen"}
+              {loading ? t("deleting") : t("confirmDelete")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Check, X, Euro } from "lucide-react";
 import {
@@ -49,6 +50,7 @@ function CategoryRow({
   const [rate, setRate] = useState(String(cat.hourlyRate));
   const [color, setColor] = useState(cat.color);
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("SettingsPage.rates");
 
   function cancel() {
     setName(cat.name);
@@ -60,7 +62,7 @@ function CategoryRow({
   function save() {
     const rateNum = parseFloat(rate.replace(",", "."));
     if (!name.trim() || isNaN(rateNum)) {
-      toast.error("Bitte Name und gültigen Stundensatz angeben");
+      toast.error(t("validationError"));
       return;
     }
     startTransition(async () => {
@@ -68,22 +70,22 @@ function CategoryRow({
         await updateRateCategory(cat.id, { name: name.trim(), hourlyRate: rateNum, color });
         onSaved({ ...cat, name: name.trim(), hourlyRate: rateNum, color });
         setEditing(false);
-        toast.success("Gespeichert");
+        toast.success(t("saved"));
       } catch (e: unknown) {
-        toast.error(e instanceof Error ? e.message : "Fehler beim Speichern");
+        toast.error(e instanceof Error ? e.message : t("saveError"));
       }
     });
   }
 
   function remove() {
-    if (!confirm(`Kategorie "${cat.name}" wirklich löschen?`)) return;
+    if (!confirm(t("confirmDelete", { name: cat.name }))) return;
     startTransition(async () => {
       try {
         await deleteRateCategory(cat.id);
         onDeleted(cat.id);
-        toast.success("Gelöscht");
+        toast.success(t("deleted"));
       } catch (e: unknown) {
-        toast.error(e instanceof Error ? e.message : "Fehler");
+        toast.error(e instanceof Error ? e.message : t("deleteError"));
       }
     });
   }
@@ -103,7 +105,7 @@ function CategoryRow({
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="flex-1 text-sm border border-slate-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-slate-400"
-            placeholder="Kategoriename"
+            placeholder={t("categoryPlaceholder")}
             autoFocus
           />
           {/* Rate */}
@@ -133,7 +135,7 @@ function CategoryRow({
           <span className="flex-1 text-sm font-medium text-slate-800">
             {cat.name}
             {cat.isBuiltIn && (
-              <span className="ml-2 text-[10px] text-slate-400 font-normal uppercase tracking-wide">Standard</span>
+              <span className="ml-2 text-[10px] text-slate-400 font-normal uppercase tracking-wide">{t("builtIn")}</span>
             )}
           </span>
           <span className="text-sm font-mono text-slate-700 w-24 text-right">
@@ -172,11 +174,12 @@ function AddRow({
   const [rate, setRate] = useState("");
   const [color, setColor] = useState("#94a3b8");
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("SettingsPage.rates");
 
   function save() {
     const rateNum = parseFloat(rate.replace(",", "."));
     if (!name.trim() || isNaN(rateNum)) {
-      toast.error("Bitte Name und gültigen Stundensatz angeben");
+      toast.error(t("validationError"));
       return;
     }
     startTransition(async () => {
@@ -199,9 +202,9 @@ function AddRow({
         setRate("");
         setColor("#94a3b8");
         setOpen(false);
-        toast.success("Kategorie erstellt");
+        toast.success(t("created"));
       } catch (e: unknown) {
-        toast.error(e instanceof Error ? e.message : "Fehler");
+        toast.error(e instanceof Error ? e.message : t("createError"));
       }
     });
   }
@@ -213,7 +216,7 @@ function AddRow({
         className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 px-4 py-3 w-full text-left transition-colors"
       >
         <Plus size={15} />
-        Neue Kategorie hinzufügen
+        {t("addCategory")}
       </button>
     );
   }
@@ -229,7 +232,7 @@ function AddRow({
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="flex-1 text-sm border border-slate-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-slate-400"
-        placeholder="Kategoriename (z.B. Pflanzung)"
+        placeholder={t("addCategoryPlaceholder")}
         autoFocus
       />
       <div className="flex items-center gap-1 w-28 shrink-0">
@@ -259,14 +262,14 @@ export function RatesClient({
   initialCategories: Category[];
 }) {
   const [categories, setCategories] = useState(initialCategories);
+  const t = useTranslations("SettingsPage.rates");
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-base font-semibold text-slate-900">Stundensätze</h3>
+        <h3 className="text-base font-semibold text-slate-900">{t("title")}</h3>
         <p className="text-sm text-slate-500 mt-1">
-          Lege Stundensätze pro Tätigkeitskategorie fest. Diese werden im Zeitcontrolling
-          zur Kostenkalkulation verwendet. Du kannst auch eigene Kategorien erstellen.
+          {t("description")}
         </p>
       </div>
 
@@ -274,8 +277,8 @@ export function RatesClient({
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
           <div className="w-3 shrink-0" />
-          <span className="flex-1 text-xs font-medium text-slate-500 uppercase tracking-wide">Kategorie</span>
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide w-24 text-right">Stundensatz</span>
+          <span className="flex-1 text-xs font-medium text-slate-500 uppercase tracking-wide">{t("headerCategory")}</span>
+          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide w-24 text-right">{t("headerRate")}</span>
           <div className="w-8" />
         </div>
 
@@ -299,8 +302,7 @@ export function RatesClient({
       <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start gap-3">
         <Euro size={16} className="text-amber-600 mt-0.5 shrink-0" />
         <p className="text-sm text-amber-800">
-          Die Stundensätze gelten als Standard für alle neuen Zeitbuchungen. Im Zeitcontrolling
-          kannst du den Satz für einzelne Einträge punktuell überschreiben.
+          {t("infoText")}
         </p>
       </div>
     </div>

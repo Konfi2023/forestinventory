@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import {
   createServiceProvider,
   updateServiceProvider,
@@ -32,7 +33,7 @@ const EMPTY_FORM = {
   name: "", email: "", phone: "", street: "", zip: "", city: "", category: "", notes: "",
 };
 
-const CATEGORIES = [
+const CATEGORY_KEYS = [
   "Forstunternehmer", "Holzrücker", "Pflanzentrupp", "Gutachter",
   "Sägewerk", "Holzhändler", "Maschinenring", "Sonstiges",
 ];
@@ -62,6 +63,7 @@ export function ServiceProvidersClient({
   organizationId: string;
   initialProviders: Provider[];
 }) {
+  const t = useTranslations("SettingsPage.serviceProviders");
   const [providers, setProviders] = useState<Provider[]>(initialProviders);
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -115,29 +117,29 @@ export function ServiceProvidersClient({
         if (editingId) {
           const updated = await updateServiceProvider(editingId, data);
           setProviders((prev) => prev.map((p) => p.id === editingId ? { ...p, ...updated } : p));
-          toast.success("Dienstleister aktualisiert");
+          toast.success(t("updated"));
         } else {
           const created = await createServiceProvider(organizationId, data);
           setProviders((prev) => [...prev, created]);
-          toast.success("Dienstleister angelegt");
+          toast.success(t("created"));
         }
         setShowForm(false);
         setEditingId(null);
       } catch (err: any) {
-        toast.error(err.message || "Fehler beim Speichern");
+        toast.error(err.message || t("saveError"));
       }
     });
   }
 
   function handleDelete(id: string, name: string) {
-    if (!confirm(`„${name}" wirklich löschen?`)) return;
+    if (!confirm(t("confirmDelete", { name }))) return;
     startTransition(async () => {
       try {
         await deleteServiceProvider(id);
         setProviders((prev) => prev.filter((p) => p.id !== id));
-        toast.success("Dienstleister gelöscht");
+        toast.success(t("deleted"));
       } catch (err: any) {
-        toast.error(err.message || "Fehler beim Löschen");
+        toast.error(err.message || t("deleteError"));
       }
     });
   }
@@ -145,45 +147,45 @@ export function ServiceProvidersClient({
   const FormFields = () => (
     <div className="grid grid-cols-2 gap-3">
       <div className="col-span-2">
-        <label className="text-xs text-slate-500 mb-1 block">Name / Firma *</label>
-        <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Forstbetrieb Müller GmbH" />
+        <label className="text-xs text-slate-500 mb-1 block">{t("nameLabel")}</label>
+        <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
       </div>
       <div>
-        <label className="text-xs text-slate-500 mb-1 block">Kategorie</label>
+        <label className="text-xs text-slate-500 mb-1 block">{t("categoryLabel")}</label>
         <select
           value={form.category}
           onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
           className="w-full text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
         >
-          <option value="">— Kategorie wählen —</option>
-          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          <option value="">{t("categoryPlaceholder")}</option>
+          {CATEGORY_KEYS.map((c) => <option key={c} value={c}>{t(`categories.${c}`)}</option>)}
         </select>
       </div>
       <div>
-        <label className="text-xs text-slate-500 mb-1 block">E-Mail</label>
-        <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="info@example.de" />
+        <label className="text-xs text-slate-500 mb-1 block">{t("emailLabel")}</label>
+        <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
       </div>
       <div>
-        <label className="text-xs text-slate-500 mb-1 block">Telefon</label>
-        <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+49 123 456789" />
+        <label className="text-xs text-slate-500 mb-1 block">{t("phoneLabel")}</label>
+        <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
       </div>
       <div>
-        <label className="text-xs text-slate-500 mb-1 block">Straße & Hausnummer</label>
-        <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} placeholder="Musterstraße 1" />
+        <label className="text-xs text-slate-500 mb-1 block">{t("streetLabel")}</label>
+        <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} />
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">PLZ</label>
-          <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} placeholder="12345" />
+          <label className="text-xs text-slate-500 mb-1 block">{t("zipLabel")}</label>
+          <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} />
         </div>
         <div className="col-span-2">
-          <label className="text-xs text-slate-500 mb-1 block">Ort</label>
-          <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="Musterstadt" />
+          <label className="text-xs text-slate-500 mb-1 block">{t("cityLabel")}</label>
+          <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
         </div>
       </div>
       <div className="col-span-2">
-        <label className="text-xs text-slate-500 mb-1 block">Notiz</label>
-        <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Interne Notizen..." rows={2} />
+        <label className="text-xs text-slate-500 mb-1 block">{t("notesLabel")}</label>
+        <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder={t("notesPlaceholder")} rows={2} />
       </div>
     </div>
   );
@@ -197,7 +199,7 @@ export function ServiceProvidersClient({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Suchen nach Name, Kategorie, Ort…"
+            placeholder={t("searchPlaceholder")}
             className="pl-8 pr-8"
           />
           {query && (
@@ -208,11 +210,11 @@ export function ServiceProvidersClient({
         </div>
         {!showForm && (
           <Button size="sm" onClick={openCreate} className="gap-1.5 shrink-0">
-            <Plus className="w-4 h-4" /> Hinzufügen
+            <Plus className="w-4 h-4" /> {t("add")}
           </Button>
         )}
-        <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => exportCsv(providers)} disabled={providers.length === 0} title="Als CSV exportieren">
-          <Download className="w-4 h-4" /> Export
+        <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => exportCsv(providers)} disabled={providers.length === 0}>
+          <Download className="w-4 h-4" /> {t("export")}
         </Button>
         <AiImportDialog
           organizationId={organizationId}
@@ -221,17 +223,17 @@ export function ServiceProvidersClient({
       </div>
 
       {query && (
-        <p className="text-xs text-slate-500">{filtered.length} von {providers.length} Dienstleistern</p>
+        <p className="text-xs text-slate-500">{t("searchResults", { filtered: filtered.length, total: providers.length })}</p>
       )}
 
       {/* Neu-Formular oben */}
       {showForm && !editingId && (
         <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
-          <p className="font-medium text-sm text-slate-900">Neuer Dienstleister</p>
+          <p className="font-medium text-sm text-slate-900">{t("newProvider")}</p>
           <FormFields />
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); }}>Abbrechen</Button>
-            <Button type="submit" size="sm" disabled={isPending}>{isPending ? "Speichern…" : "Speichern"}</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); }}>{t("cancel")}</Button>
+            <Button type="submit" size="sm" disabled={isPending}>{isPending ? t("saving") : t("save")}</Button>
           </div>
         </form>
       )}
@@ -240,14 +242,14 @@ export function ServiceProvidersClient({
       {providers.length === 0 && !showForm && (
         <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200">
           <Building2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          <p className="text-sm text-slate-500">Noch keine Dienstleister angelegt.</p>
-          <p className="text-xs text-slate-400 mt-1">Manuell hinzufügen oder per KI-Import.</p>
+          <p className="text-sm text-slate-500">{t("emptyTitle")}</p>
+          <p className="text-xs text-slate-400 mt-1">{t("emptySubtitle")}</p>
         </div>
       )}
 
       {query && filtered.length === 0 && providers.length > 0 && (
         <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-          <p className="text-sm text-slate-500">Keine Treffer für „{query}"</p>
+          <p className="text-sm text-slate-500">{t("noResults", { query })}</p>
         </div>
       )}
 
@@ -263,7 +265,7 @@ export function ServiceProvidersClient({
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-slate-900 text-sm">{p.name}</p>
                 <p className="text-xs text-slate-500 truncate">
-                  {[p.category, p.email, p.phone].filter(Boolean).join(" · ") || "Keine Kontaktdaten"}
+                  {[p.category, p.email, p.phone].filter(Boolean).join(" · ") || t("noContact")}
                 </p>
               </div>
               {p.category && (
@@ -305,11 +307,11 @@ export function ServiceProvidersClient({
       {/* Edit-Formular */}
       {showForm && editingId && (
         <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
-          <p className="font-medium text-sm text-slate-900">Dienstleister bearbeiten</p>
+          <p className="font-medium text-sm text-slate-900">{t("editProvider")}</p>
           <FormFields />
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); }}>Abbrechen</Button>
-            <Button type="submit" size="sm" disabled={isPending}>{isPending ? "Speichern…" : "Speichern"}</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); }}>{t("cancel")}</Button>
+            <Button type="submit" size="sm" disabled={isPending}>{isPending ? t("saving") : t("save")}</Button>
           </div>
         </form>
       )}

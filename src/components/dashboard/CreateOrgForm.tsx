@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +12,15 @@ import { Loader2, Building2, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-
 import { toast } from "sonner";
 import { OrgType } from "@prisma/client";
 
-const STEPS = [
-  { id: 1, title: "Account", desc: "Wie soll Ihr Betrieb im System heißen?" },
-  { id: 2, title: "Betriebsprofil", desc: "Helfen Sie uns, das System für Sie einzurichten." },
-];
-
 export function CreateOrgForm() {
+  const t = useTranslations("CreateOrg");
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+
+  const STEPS = [
+    { id: 1, title: t("step1Title"), desc: t("step1Desc") },
+    { id: 2, title: t("step2Title"), desc: t("step2Desc") },
+  ];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -44,7 +46,7 @@ export function CreateOrgForm() {
   const validateStep = () => {
     if (step === 1) {
       if (!formData.name || formData.name.length < 3) {
-        toast.error("Bitte einen Namen mit mind. 3 Zeichen eingeben.");
+        toast.error(t("nameMinLength"));
         return false;
       }
       if (!formData.slug) return false;
@@ -68,7 +70,7 @@ export function CreateOrgForm() {
         totalHectares: parseFloat(formData.totalHectares) || 0
       });
     } catch (e: any) {
-      toast.error(e.message || "Fehler beim Erstellen");
+      toast.error(e.message || t("createError"));
       setIsLoading(false);
     }
   };
@@ -81,7 +83,7 @@ export function CreateOrgForm() {
                 <Building2 size={20}/>
             </div>
             <div className="text-xs font-medium text-slate-400">
-                Schritt {step} von 2
+                {t("stepOf", { step })}
             </div>
         </div>
         <CardTitle>{STEPS[step - 1].title}</CardTitle>
@@ -102,16 +104,16 @@ export function CreateOrgForm() {
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
-              <Label>Name der Organisation</Label>
+              <Label>{t("orgName")}</Label>
               <Input
                 value={formData.name}
                 onChange={(e) => updateData("name", e.target.value)}
-                placeholder="z.B. Forstbetrieb Müller"
+                placeholder={t("orgNamePlaceholder")}
                 autoFocus
               />
             </div>
             <div className="space-y-2">
-              <Label>System-Adresse (Slug)</Label>
+              <Label>{t("slugLabel")}</Label>
               <div className="flex items-center">
                   <span className="text-sm text-slate-400 bg-slate-50 border border-r-0 rounded-l-md px-3 h-10 flex items-center">
                       forest-app.de/
@@ -122,7 +124,7 @@ export function CreateOrgForm() {
                     className="rounded-l-none font-mono text-sm"
                   />
               </div>
-              <p className="text-[10px] text-muted-foreground">Kürzel für Ihre URL. Nur Kleinbuchstaben und Bindestriche.</p>
+              <p className="text-[10px] text-muted-foreground">{t("slugHint")}</p>
             </div>
           </div>
         )}
@@ -131,22 +133,22 @@ export function CreateOrgForm() {
         {step === 2 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
-              <Label>Art des Betriebs</Label>
+              <Label>{t("orgType")}</Label>
               <Select value={formData.orgType} onValueChange={(val) => updateData("orgType", val)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PRIVATE_OWNER">Privatwaldbesitzer</SelectItem>
-                  <SelectItem value="FORESTRY_COMPANY">Forstbetrieb / GmbH</SelectItem>
-                  <SelectItem value="SERVICE_PROVIDER">Dienstleister / Unternehmer</SelectItem>
-                  <SelectItem value="ASSOCIATION">Forstbetriebsgemeinschaft (FBG/WBV)</SelectItem>
-                  <SelectItem value="PUBLIC">Öffentlich / Kommune</SelectItem>
+                  <SelectItem value="PRIVATE_OWNER">{t("typePrivate")}</SelectItem>
+                  <SelectItem value="FORESTRY_COMPANY">{t("typeForestry")}</SelectItem>
+                  <SelectItem value="SERVICE_PROVIDER">{t("typeService")}</SelectItem>
+                  <SelectItem value="ASSOCIATION">{t("typeAssociation")}</SelectItem>
+                  <SelectItem value="PUBLIC">{t("typePublic")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Bewirtschaftete Fläche (optional)</Label>
+              <Label>{t("areaLabel")}</Label>
               <div className="relative">
                 <Input
                     type="number"
@@ -156,7 +158,7 @@ export function CreateOrgForm() {
                 />
                 <span className="absolute right-3 top-2.5 text-sm text-slate-400">ha</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Hilft uns, die Ansichten optimal auf Ihren Betrieb anzupassen.</p>
+              <p className="text-[10px] text-muted-foreground">{t("areaHint")}</p>
             </div>
           </div>
         )}
@@ -166,7 +168,7 @@ export function CreateOrgForm() {
       <CardFooter className="flex justify-between border-t p-6 bg-slate-50/50">
         {step > 1 ? (
             <Button variant="ghost" onClick={handleBack}>
-                <ArrowLeft className="w-4 h-4 mr-2" /> Zurück
+                <ArrowLeft className="w-4 h-4 mr-2" /> {t("back")}
             </Button>
         ) : (
             <div></div>
@@ -174,11 +176,11 @@ export function CreateOrgForm() {
 
         {step < 2 ? (
             <Button onClick={handleNext}>
-                Weiter <ArrowRight className="w-4 h-4 ml-2" />
+                {t("next")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
         ) : (
             <Button onClick={handleSubmit} disabled={isLoading} className="bg-green-600 hover:bg-green-700">
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4 mr-2"/> Betrieb erstellen</>}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4 mr-2"/> {t("create")}</>}
             </Button>
         )}
       </CardFooter>

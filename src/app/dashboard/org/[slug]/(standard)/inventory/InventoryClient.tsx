@@ -12,60 +12,61 @@ import {
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 import { ImportInventoryDialog } from './ImportInventoryDialog';
 import { BhdMeasurement } from '@/components/BhdMeasurement';
+import { useTranslations } from 'next-intl';
 
 const SOIL_CONDITIONS = [
-  { id: 'SANDY', label: 'Sandig' },
-  { id: 'LOAMY', label: 'Lehmig' },
-  { id: 'CLAY', label: 'Tonig' },
-  { id: 'HUMUS', label: 'Humos' },
-  { id: 'ROCKY', label: 'Steinig' },
-  { id: 'MIXED', label: 'Gemischt' },
+  { id: 'SANDY', tKey: 'soilSandy' },
+  { id: 'LOAMY', tKey: 'soilLoamy' },
+  { id: 'CLAY', tKey: 'soilClay' },
+  { id: 'HUMUS', tKey: 'soilHumus' },
+  { id: 'ROCKY', tKey: 'soilRocky' },
+  { id: 'MIXED', tKey: 'soilMixed' },
 ];
 
 const SOIL_MOISTURE = [
-  { id: 'DRY', label: 'Trocken' },
-  { id: 'FRESH', label: 'Frisch' },
-  { id: 'MOIST', label: 'Feucht' },
-  { id: 'WET', label: 'Nass' },
-  { id: 'WATERLOGGED', label: 'Staunass' },
+  { id: 'DRY', tKey: 'moistDry' },
+  { id: 'FRESH', tKey: 'moistFresh' },
+  { id: 'MOIST', tKey: 'moistMoist' },
+  { id: 'WET', tKey: 'moistWet' },
+  { id: 'WATERLOGGED', tKey: 'moistWaterlogged' },
 ];
 
 const EXPOSITIONS = [
-  { id: 'N', label: 'N' }, { id: 'NE', label: 'NO' }, { id: 'E', label: 'O' },
-  { id: 'SE', label: 'SO' }, { id: 'S', label: 'S' }, { id: 'SW', label: 'SW' },
-  { id: 'W', label: 'W' }, { id: 'NW', label: 'NW' }, { id: 'FLAT', label: 'Eben' },
+  { id: 'N', tKey: 'expN' }, { id: 'NE', tKey: 'expNE' }, { id: 'E', tKey: 'expE' },
+  { id: 'SE', tKey: 'expSE' }, { id: 'S', tKey: 'expS' }, { id: 'SW', tKey: 'expSW' },
+  { id: 'W', tKey: 'expW' }, { id: 'NW', tKey: 'expNW' }, { id: 'FLAT', tKey: 'expFlat' },
 ];
 
 const SLOPE_CLASSES = [
-  { id: 'FLAT', label: 'Flach (<5°)' },
-  { id: 'MODERATE', label: 'Mäßig (5–15°)' },
-  { id: 'STEEP', label: 'Steil (15–30°)' },
-  { id: 'VERY_STEEP', label: 'Sehr steil (>30°)' },
+  { id: 'FLAT', tKey: 'slopeFlat' },
+  { id: 'MODERATE', tKey: 'slopeModerate' },
+  { id: 'STEEP', tKey: 'slopeSteep' },
+  { id: 'VERY_STEEP', tKey: 'slopeVerySteep' },
 ];
 
 const SLOPE_POSITIONS = [
-  { id: 'SUMMIT', label: 'Kuppe' },
-  { id: 'UPPER_SLOPE', label: 'Oberhang' },
-  { id: 'MID_SLOPE', label: 'Mittelhang' },
-  { id: 'LOWER_SLOPE', label: 'Unterhang' },
-  { id: 'VALLEY', label: 'Talboden' },
+  { id: 'SUMMIT', tKey: 'positionSummit' },
+  { id: 'UPPER_SLOPE', tKey: 'positionUpperSlope' },
+  { id: 'MID_SLOPE', tKey: 'positionMidSlope' },
+  { id: 'LOWER_SLOPE', tKey: 'positionLowerSlope' },
+  { id: 'VALLEY', tKey: 'positionValley' },
 ];
 
 const STAND_TYPES = [
-  { id: 'PURE_CONIFER',   label: 'Rein Nadel' },
-  { id: 'PURE_DECIDUOUS', label: 'Rein Laub' },
-  { id: 'MIXED',          label: 'Mischbestand' },
-  { id: 'EDGE',           label: 'Waldrand' },
-  { id: 'CLEARCUT',       label: 'Freifläche' },
-  { id: 'YOUNG_GROWTH',   label: 'Jungwuchs' },
+  { id: 'PURE_CONIFER',   tKey: 'standPureConifer' },
+  { id: 'PURE_DECIDUOUS', tKey: 'standPureDeciduous' },
+  { id: 'MIXED',          tKey: 'standMixed' },
+  { id: 'EDGE',           tKey: 'standEdge' },
+  { id: 'CLEARCUT',       tKey: 'standClearcut' },
+  { id: 'YOUNG_GROWTH',   tKey: 'standYoungGrowth' },
 ];
 
 const STOCKING_DEGREES = [
-  { id: 'OPEN',       label: 'Locker' },
-  { id: 'SPARSE',     label: 'Licht' },
-  { id: 'MEDIUM',     label: 'Mittel' },
-  { id: 'DENSE',      label: 'Dicht' },
-  { id: 'VERY_DENSE', label: 'Sehr dicht' },
+  { id: 'OPEN',       tKey: 'stockingOpen' },
+  { id: 'SPARSE',     tKey: 'stockingSparse' },
+  { id: 'MEDIUM',     tKey: 'stockingMedium' },
+  { id: 'DENSE',      tKey: 'stockingDense' },
+  { id: 'VERY_DENSE', tKey: 'stockingVeryDense' },
 ];
 
 type Step = 'mode' | 'plot-setup' | 'camera' | 'location' | 'crown' | 'species' | 'height-age' | 'crown-health' | 'stand' | 'soil' | 'exposition' | 'notes' | 'review' | 'saved' | 'task' | 'plot-done' | 'summary';
@@ -134,6 +135,7 @@ const EMPTY_FORM: TreeForm = {
 };
 
 export function InventoryClient({ forests, orgSlug, members = [], userId = '' }: InventoryClientProps) {
+  const t = useTranslations('Inventory');
   const [step, setStep] = useState<Step>('mode');
   const [showImport, setShowImport] = useState(false);
   const [mode, setMode] = useState<'single' | 'plot' | null>(null);
@@ -1618,7 +1620,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 {STAND_TYPES.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, standType: f.standType === s.id ? '' : s.id }))}
                     className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${form.standType === s.id ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-                    {s.label}
+                    {t(s.tKey)}
                   </button>
                 ))}
               </div>
@@ -1630,7 +1632,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 {STOCKING_DEGREES.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, stockingDegree: f.stockingDegree === s.id ? '' : s.id }))}
                     className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${form.stockingDegree === s.id ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-                    {s.label}
+                    {t(s.tKey)}
                   </button>
                 ))}
               </div>
@@ -1660,7 +1662,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 {SOIL_CONDITIONS.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, soilCondition: f.soilCondition === s.id ? '' : s.id }))}
                     className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${form.soilCondition === s.id ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-                    {s.label}
+                    {t(s.tKey)}
                   </button>
                 ))}
               </div>
@@ -1674,7 +1676,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 {SOIL_MOISTURE.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, soilMoisture: f.soilMoisture === s.id ? '' : s.id }))}
                     className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${form.soilMoisture === s.id ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-                    {s.label}
+                    {t(s.tKey)}
                   </button>
                 ))}
               </div>
@@ -1705,7 +1707,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     ...(s.id === 'FLAT' || f.exposition === s.id ? { slopeClass: '', slopePosition: '' } : {}),
                   }))}
                     className={`py-3 rounded-xl text-sm font-medium transition-colors ${form.exposition === s.id ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-                    {s.label}
+                    {t(s.tKey)}
                   </button>
                 ))}
               </div>
@@ -1719,7 +1721,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     {SLOPE_CLASSES.map(s => (
                       <button key={s.id} onClick={() => setForm(f => ({ ...f, slopeClass: f.slopeClass === s.id ? '' : s.id }))}
                         className={`py-3 rounded-xl text-sm font-medium transition-colors ${form.slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-                        {s.label}
+                        {t(s.tKey)}
                       </button>
                     ))}
                   </div>
@@ -1730,7 +1732,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     {SLOPE_POSITIONS.map(s => (
                       <button key={s.id} onClick={() => setForm(f => ({ ...f, slopePosition: f.slopePosition === s.id ? '' : s.id }))}
                         className={`py-3 rounded-xl text-sm font-medium transition-colors ${form.slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-                        {s.label}
+                        {t(s.tKey)}
                       </button>
                     ))}
                   </div>
@@ -1838,9 +1840,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 <div className="px-4 py-3 flex justify-between">
                   <span className="text-sm text-slate-500">Bestand</span>
                   <span className="text-sm text-slate-700">
-                    {STAND_TYPES.find(s => s.id === form.standType)?.label ?? ''}
+                    {(() => { const found = STAND_TYPES.find(s => s.id === form.standType); return found ? t(found.tKey) : ''; })()}
                     {form.standType && form.stockingDegree && ' · '}
-                    {STOCKING_DEGREES.find(s => s.id === form.stockingDegree)?.label ?? ''}
+                    {(() => { const found = STOCKING_DEGREES.find(s => s.id === form.stockingDegree); return found ? t(found.tKey) : ''; })()}
                   </span>
                 </div>
               )}
@@ -1849,9 +1851,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 <div className="px-4 py-3 flex justify-between">
                   <span className="text-sm text-slate-500">Boden</span>
                   <span className="text-sm text-slate-700">
-                    {SOIL_CONDITIONS.find(s => s.id === form.soilCondition)?.label ?? ''}
+                    {(() => { const found = SOIL_CONDITIONS.find(s => s.id === form.soilCondition); return found ? t(found.tKey) : ''; })()}
                     {form.soilCondition && form.soilMoisture && ' · '}
-                    {SOIL_MOISTURE.find(s => s.id === form.soilMoisture)?.label ?? ''}
+                    {(() => { const found = SOIL_MOISTURE.find(s => s.id === form.soilMoisture); return found ? t(found.tKey) : ''; })()}
                   </span>
                 </div>
               )}
@@ -1860,9 +1862,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 <div className="px-4 py-3 flex justify-between">
                   <span className="text-sm text-slate-500">Exposition</span>
                   <span className="text-sm text-slate-700">
-                    {EXPOSITIONS.find(s => s.id === form.exposition)?.label ?? ''}
-                    {form.slopeClass && ` · ${SLOPE_CLASSES.find(s => s.id === form.slopeClass)?.label ?? ''}`}
-                    {form.slopePosition && ` · ${SLOPE_POSITIONS.find(s => s.id === form.slopePosition)?.label ?? ''}`}
+                    {(() => { const found = EXPOSITIONS.find(s => s.id === form.exposition); return found ? t(found.tKey) : ''; })()}
+                    {form.slopeClass && (() => { const found = SLOPE_CLASSES.find(s => s.id === form.slopeClass); return found ? ` · ${t(found.tKey)}` : ''; })()}
+                    {form.slopePosition && (() => { const found = SLOPE_POSITIONS.find(s => s.id === form.slopePosition); return found ? ` · ${t(found.tKey)}` : ''; })()}
                   </span>
                 </div>
               )}
@@ -2181,8 +2183,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   {sessionTrees.map((tree, i) => {
                     const speciesLabel = TREE_SPECIES.find(s => s.id === tree.species)?.label ?? tree.species;
                     const speciesColor = TREE_SPECIES.find(s => s.id === tree.species)?.color ?? '#64748b';
-                    const soilLabel = SOIL_CONDITIONS.find(s => s.id === tree.soilCondition)?.label;
-                    const moistLabel = SOIL_MOISTURE.find(s => s.id === tree.soilMoisture)?.label;
+                    const soilFound = SOIL_CONDITIONS.find(s => s.id === tree.soilCondition);
+                    const soilLabel = soilFound ? t(soilFound.tKey) : undefined;
+                    const moistFound = SOIL_MOISTURE.find(s => s.id === tree.soilMoisture);
+                    const moistLabel = moistFound ? t(moistFound.tKey) : undefined;
                     return (
                       <div key={i} className="bg-white border border-slate-200 rounded-xl p-3">
                         <div className="flex items-center gap-2 mb-1.5">

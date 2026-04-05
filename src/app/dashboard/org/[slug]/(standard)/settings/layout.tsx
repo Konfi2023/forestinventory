@@ -2,6 +2,7 @@ import { SettingsTabsClient } from "./_components/SettingsTabsClient";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getTranslations } from "next-intl/server";
 
 export default async function SettingsLayout({
   children,
@@ -26,12 +27,14 @@ export default async function SettingsLayout({
       membership?.role?.name === "Administrator";
   }
 
+  const t = await getTranslations("SettingsPage");
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Administration</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t("layoutTitle")}</h2>
         <p className="text-muted-foreground">
-          Verwalten Sie Ihre Organisation, das Team, Berechtigungen und Adressbücher.
+          {t("layoutSubtitle")}
         </p>
       </div>
 

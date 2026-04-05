@@ -10,6 +10,7 @@ import { getTaskSchedules, toggleScheduleActive, deleteTaskSchedule } from "@/ac
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { EditScheduleDialog } from "./EditScheduleDialog";
 import { CreateTaskDialog } from "./CreateTaskDialog"; // NEU: Importieren
 
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
+  const t = useTranslations("Tasks");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [schedules, setSchedules] = useState<any[]>([]);
@@ -45,7 +47,7 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
       const data = await getTaskSchedules(orgSlug);
       setSchedules(data);
     } catch (e) {
-      toast.error("Konnte Serien nicht laden");
+      toast.error(t("couldNotLoadSchedules"));
     } finally {
       setLoading(false);
     }
@@ -55,10 +57,10 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
     try {
       setSchedules(prev => prev.map(s => s.id === id ? { ...s, active: !currentStatus } : s));
       await toggleScheduleActive(orgSlug, id, !currentStatus);
-      toast.success(currentStatus ? "Serie pausiert" : "Serie aktiviert");
+      toast.success(currentStatus ? t("seriesPaused") : t("seriesActivated"));
     } catch (e) {
       loadData();
-      toast.error("Fehler beim Ändern");
+      toast.error(t("errorChanging"));
     }
   };
 
@@ -66,10 +68,10 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
     try {
       setSchedules(prev => prev.map(s => s.id === id ? { ...s, active: false } : s));
       await toggleScheduleActive(orgSlug, id, false);
-      toast.success("Serie gestoppt — bestehende Aufgaben bleiben erhalten");
+      toast.success(t("seriesStopped"));
     } catch (e) {
       loadData();
-      toast.error("Fehler");
+      toast.error(t("errorGeneric"));
     } finally {
       setPendingDeleteId(null);
     }
@@ -79,10 +81,10 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
     try {
       setSchedules(prev => prev.filter(s => s.id !== id));
       await deleteTaskSchedule(orgSlug, id);
-      toast.success("Serie und alle verknüpften Daten gelöscht");
+      toast.success(t("seriesAndDataDeleted"));
     } catch (e) {
       loadData();
-      toast.error("Fehler beim Löschen");
+      toast.error(t("errorDeleting"));
     } finally {
       setPendingDeleteId(null);
     }
@@ -92,16 +94,16 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         <Repeat className="w-4 h-4 mr-2" />
-        Serien verwalten
+        {t("manageSchedules")}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-900px">
           <DialogHeader className="flex flex-row items-center justify-between">
             <div>
-                <DialogTitle>Wiederkehrende Aufgaben</DialogTitle>
+                <DialogTitle>{t("recurringTasks")}</DialogTitle>
                 <DialogDescription>
-                Verwalten Sie Ihre automatischen Routinen.
+                {t("manageRoutines")}
                 </DialogDescription>
             </div>
             
@@ -122,7 +124,7 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
                             // Lösung: Wir hören auf Änderungen oder laden einfach neu wenn man zurückkommt.
                         }}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Neue Serie
+                            {t("newSeries")}
                         </Button>
                     }
                 />
@@ -139,11 +141,11 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Titel / Wald</TableHead>
-                      <TableHead>Intervall</TableHead>
-                      <TableHead>Nächster Lauf</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Aktionen</TableHead>
+                      <TableHead>{t("titleForest")}</TableHead>
+                      <TableHead>{t("interval")}</TableHead>
+                      <TableHead>{t("nextRun")}</TableHead>
+                      <TableHead>{t("statusLabel")}</TableHead>
+                      <TableHead className="text-right">{t("actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -155,7 +157,7 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-normal">
-                            Alle {s.interval} {translateUnit(s.unit)}
+                            {t("every")} {s.interval} {translateUnit(s.unit, t)}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -166,35 +168,35 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
                         </TableCell>
                         <TableCell>
                           {s.active ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">Aktiv</Badge>
+                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">{t("active")}</Badge>
                           ) : (
-                            <Badge variant="secondary">Pausiert</Badge>
+                            <Badge variant="secondary">{t("paused")}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
                           {pendingDeleteId === s.id ? (
                             <div className="flex justify-end items-center gap-1 animate-in fade-in slide-in-from-right-2">
-                              <span className="text-xs text-slate-500 mr-1">Löschen?</span>
+                              <span className="text-xs text-slate-500 mr-1">{t("confirmDelete")}</span>
                               <Button
                                 size="sm" variant="outline"
                                 className="text-amber-600 border-amber-200 hover:bg-amber-50 h-7 px-2 text-xs"
                                 onClick={() => handleStop(s.id)}
                               >
-                                Stoppen
+                                {t("stop")}
                               </Button>
                               <Button
                                 size="sm" variant="outline"
                                 className="text-red-600 border-red-200 hover:bg-red-50 h-7 px-2 text-xs"
                                 onClick={() => handleDelete(s.id)}
                               >
-                                Alles löschen
+                                {t("deleteAll")}
                               </Button>
                               <Button
                                 size="sm" variant="ghost"
                                 className="h-7 px-2 text-xs text-slate-400"
                                 onClick={() => setPendingDeleteId(null)}
                               >
-                                Abbrechen
+                                {t("cancel")}
                               </Button>
                             </div>
                           ) : (
@@ -226,7 +228,7 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
                     {schedules.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                          Keine Serien eingerichtet.
+                          {t("noSchedules")}
                         </TableCell>
                       </TableRow>
                     )}
@@ -253,12 +255,12 @@ export function ManageSchedulesDialog({ orgSlug, forests, members }: Props) {
   );
 }
 
-function translateUnit(unit: string) {
+function translateUnit(unit: string, t: any) {
   switch(unit) {
-    case 'DAYS': return 'Tage';
-    case 'WEEKS': return 'Wochen';
-    case 'MONTHS': return 'Monate';
-    case 'YEARS': return 'Jahre';
+    case 'DAYS': return t('unitDays');
+    case 'WEEKS': return t('unitWeeks');
+    case 'MONTHS': return t('unitMonths');
+    case 'YEARS': return t('unitYears');
     default: return unit;
   }
 }

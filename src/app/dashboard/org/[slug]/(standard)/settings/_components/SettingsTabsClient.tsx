@@ -2,19 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export function SettingsTabsClient({ slug, canManageRoles }: { slug: string; canManageRoles: boolean }) {
   const pathname = usePathname();
+  const t = useTranslations("SettingsPage.tabs");
 
   const tabs = [
-    { href: `/dashboard/org/${slug}/settings`, label: "Allgemein", exact: true },
-    { href: `/dashboard/org/${slug}/settings/members`, label: "Team & Mitglieder", exact: false },
-    ...(canManageRoles ? [{ href: `/dashboard/org/${slug}/settings/roles`, label: "Rollen & Rechte", exact: false }] : []),
-    { href: `/dashboard/org/${slug}/settings/rates`, label: "Stundensätze", exact: false },
-    { href: `/dashboard/org/${slug}/settings/vat`, label: "MwSt.-Sätze", exact: false },
-    { href: `/dashboard/org/${slug}/settings/eudr`, label: "EUDR-Compliance", exact: false },
-    { href: `/dashboard/org/${slug}/settings/account`, label: "Mein Account", exact: false },
+    { href: `/dashboard/org/${slug}/settings`, label: t("general"), exact: true },
+    { href: `/dashboard/org/${slug}/settings/members`, label: t("members"), exact: false },
+    ...(canManageRoles ? [{ href: `/dashboard/org/${slug}/settings/roles`, label: t("roles"), exact: false }] : []),
+    { href: `/dashboard/org/${slug}/settings/rates`, label: t("rates"), exact: false },
+    { href: `/dashboard/org/${slug}/settings/vat`, label: t("vat"), exact: false },
+    { href: `/dashboard/org/${slug}/settings/eudr`, label: t("eudr"), exact: false },
+    { href: `/dashboard/org/${slug}/settings/account`, label: t("account"), exact: false },
   ];
 
   return (

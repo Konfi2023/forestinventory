@@ -6,6 +6,7 @@ import { Menu, LayoutDashboard, ClipboardList, CalendarDays, Settings, CreditCar
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -21,17 +22,18 @@ interface Props {
 export function MobileNav({ orgName, orgSlug, userEmail, roleName, navPermissions, isOrgAdmin }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const t = useTranslations("Dashboard");
 
   const can = (perm: string) => isOrgAdmin || navPermissions.includes(perm);
 
   const mobileLinks = [
-    { href: `/dashboard/org/${orgSlug}`,                  label: "Übersicht",              icon: LayoutDashboard, soon: false, perm: null },
-    { href: `/dashboard/org/${orgSlug}/tasks`,             label: "Aufgaben & Planung",     icon: ClipboardList,   soon: false, perm: "nav:tasks" },
-    { href: `/dashboard/org/${orgSlug}/calendar`,          label: "Kalender",               icon: CalendarDays,    soon: false, perm: "nav:calendar" },
-    { href: `/dashboard/org/${orgSlug}/contacts`,          label: "Kontakte",               icon: BookUser,        soon: false, perm: "nav:contacts" },
-    { href: `/dashboard/org/${orgSlug}/kostencontrolling`, label: "Rechnungen & Berichte",  icon: Euro,            soon: true,  perm: null },
-    { href: `/dashboard/org/${orgSlug}/billing`,           label: "Abrechnungen",           icon: CreditCard,      soon: false, perm: "nav:billing" },
-    { href: `/dashboard/org/${orgSlug}/settings`,          label: "Administration",         icon: Settings,        soon: false, perm: null },
+    { href: `/dashboard/org/${orgSlug}`,                  label: t("nav.overview"),        icon: LayoutDashboard, soon: false, perm: null },
+    { href: `/dashboard/org/${orgSlug}/tasks`,             label: t("nav.tasks"),           icon: ClipboardList,   soon: false, perm: "nav:tasks" },
+    { href: `/dashboard/org/${orgSlug}/calendar`,          label: t("nav.calendar"),        icon: CalendarDays,    soon: false, perm: "nav:calendar" },
+    { href: `/dashboard/org/${orgSlug}/contacts`,          label: t("nav.contacts"),        icon: BookUser,        soon: false, perm: "nav:contacts" },
+    { href: `/dashboard/org/${orgSlug}/kostencontrolling`, label: t("nav.invoices"),        icon: Euro,            soon: true,  perm: null },
+    { href: `/dashboard/org/${orgSlug}/billing`,           label: t("nav.billing"),         icon: CreditCard,      soon: false, perm: "nav:billing" },
+    { href: `/dashboard/org/${orgSlug}/settings`,          label: t("nav.administration"),  icon: Settings,        soon: false, perm: null },
   ].filter(link => link.perm === null || can(link.perm));
 
   return (
@@ -59,7 +61,7 @@ export function MobileNav({ orgName, orgSlug, userEmail, roleName, navPermission
                     <div key={link.href} className="flex items-center gap-3 px-4 py-3 rounded-md opacity-40 cursor-not-allowed select-none">
                       <Icon size={20} className="text-slate-500" />
                       <span className="text-slate-500">{link.label}</span>
-                      <span className="ml-auto text-[10px] font-bold uppercase tracking-wide bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded">Bald</span>
+                      <span className="ml-auto text-[10px] font-bold uppercase tracking-wide bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded">{t("nav.soon")}</span>
                     </div>
                   );
                 }

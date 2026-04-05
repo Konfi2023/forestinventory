@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { GeneralSettingsForm } from "./_components/GeneralSettingsForm";
+import { getTranslations } from "next-intl/server";
 
 export default async function SettingsPage({
   params,
@@ -20,15 +21,17 @@ export default async function SettingsPage({
 
   if (!org) return notFound();
 
+  const t = await getTranslations("SettingsPage");
+
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h3 className="text-lg font-medium">Allgemeine Informationen</h3>
+        <h3 className="text-lg font-medium">{t("pageTitle")}</h3>
         <p className="text-sm text-muted-foreground">
-          Stammdaten und Rechnungsadresse Ihrer Organisation.
+          {t("pageSubtitle")}
         </p>
       </div>
-      
+
       <GeneralSettingsForm organization={org} />
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,9 +19,10 @@ import { createRole } from "@/actions/roles";
 import { toast } from "sonner";
 
 export function CreateRoleDialog({ orgSlug }: { orgSlug: string }) {
+  const t = useTranslations("TeamAdmin");
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Form State
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
@@ -31,11 +33,11 @@ export function CreateRoleDialog({ orgSlug }: { orgSlug: string }) {
 
     try {
       await createRole(orgSlug, name, desc);
-      setOpen(false); // Modal schließen
-      setName("");    // Reset
+      setOpen(false);
+      setName("");
       setDesc("");
     } catch (error) {
-      toast.error("Fehler beim Erstellen der Rolle");
+      toast.error(t("roleCreateError"));
     } finally {
       setIsLoading(false);
     }
@@ -46,21 +48,21 @@ export function CreateRoleDialog({ orgSlug }: { orgSlug: string }) {
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
-          Neue Rolle
+          {t("createRoleButton")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Neue Rolle erstellen</DialogTitle>
+            <DialogTitle>{t("createRoleTitle")}</DialogTitle>
             <DialogDescription>
-              Erstellen Sie eine neue Rolle. Sie können danach die Berechtigungen in der Tabelle zuweisen.
+              {t("createRoleDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Name
+                {t("roleNameLabel")}
               </Label>
               <Input
                 id="name"
@@ -72,7 +74,7 @@ export function CreateRoleDialog({ orgSlug }: { orgSlug: string }) {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="desc" className="text-right">
-                Beschreibung
+                {t("roleDescLabel")}
               </Label>
               <Input
                 id="desc"
@@ -84,7 +86,7 @@ export function CreateRoleDialog({ orgSlug }: { orgSlug: string }) {
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Speichert..." : "Erstellen"}
+              {isLoading ? t("roleCreating") : t("roleCreate")}
             </Button>
           </DialogFooter>
         </form>

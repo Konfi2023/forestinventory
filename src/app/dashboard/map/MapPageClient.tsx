@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation'; 
+import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 // 1. Server Actions
 import { getMapDataBySlug } from '@/app/dashboard/map/actions';
@@ -19,16 +20,21 @@ import { TaskSidebar } from '@/components/map/overlays/TaskSidebar';
 import { TaskDetailSheet } from '@/app/dashboard/org/[slug]/(standard)/tasks/_components/TaskDetailSheet';
 
 // 4. Dynamic Components
+function MapLoadingFallback() {
+  const t = useTranslations("Map");
+  return (
+    <div className="w-full h-full bg-[#050505] flex items-center justify-center text-gray-500">
+      <Loader2 className="animate-spin w-8 h-8 text-[#10b981] mr-2" />
+      <span className="font-mono text-sm">{t("mapInitializing")}</span>
+    </div>
+  );
+}
+
 const MapViewer = dynamic(
   () => import('@/components/map/viewer/MapViewer'),
   {
     ssr: false,
-    loading: () => (
-      <div className="w-full h-full bg-[#050505] flex items-center justify-center text-gray-500">
-        <Loader2 className="animate-spin w-8 h-8 text-[#10b981] mr-2" />
-        <span className="font-mono text-sm">Karte wird initialisiert...</span>
-      </div>
-    )
+    loading: () => <MapLoadingFallback />
   }
 );
 
@@ -54,6 +60,7 @@ export default function MapPageClient({ orgSlug }: Props) {
       usedAreaHa: number,
   } | null>(null);
 
+  const t = useTranslations("Map");
   const selectedId = useMapStore(s => s.selectedFeatureId);
   const selectedType = useMapStore(s => s.selectedFeatureType);
   const selectFeature = useMapStore(s => s.selectFeature);
@@ -189,7 +196,7 @@ export default function MapPageClient({ orgSlug }: Props) {
     return (
       <div className="w-full h-full flex items-center justify-center text-gray-500 bg-[#050505]">
         <Loader2 className="animate-spin w-8 h-8 text-[#10b981]" />
-        <span className="ml-2 font-mono text-sm">Lade Geodaten...</span>
+        <span className="ml-2 font-mono text-sm">{t("loadingGeoData")}</span>
       </div>
     );
   }

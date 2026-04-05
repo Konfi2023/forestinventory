@@ -21,6 +21,7 @@ import {
   Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog, CloudDrizzle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { getInitials, getUserColor } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -59,6 +60,7 @@ interface Props {
 }
 
 export function CalendarView({ orgSlug, currentUserId, members, forests }: Props) {
+  const t = useTranslations("Calendar");
   const calendarRef = useRef<FullCalendar>(null);
 
   // --- STATE ---
@@ -156,7 +158,7 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
       const data = await getCalendarData(orgSlug, info.start, info.end);
       successCallback(data);
     } catch (error) {
-      toast.error("Fehler beim Laden");
+      toast.error(t("errorLoading"));
       successCallback([]);
     }
   };
@@ -213,10 +215,10 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
     try {
         if (type === 'task') await updateTaskScheduling(orgSlug, id, info.event.start, info.event.end);
         else await updateEventDate(orgSlug, id, info.event.start, info.event.end);
-        toast.success("Verschoben");
+        toast.success(t("moved"));
     } catch (e) {
         info.revert();
-        toast.error("Fehler");
+        toast.error(t("errorGeneric"));
     }
   };
 
@@ -229,10 +231,10 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
 
      try {
          await updateTaskScheduling(orgSlug, id, event.start as Date, event.end || null);
-         toast.success("Eingeplant");
+         toast.success(t("scheduled"));
          calendarRef.current?.getApi().refetchEvents();
      } catch(e) {
-         toast.error("Fehler");
+         toast.error(t("errorGeneric"));
          loadBacklog(true);
      }
   };
@@ -264,11 +266,11 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
 
         try {
             await unscheduleTask(orgSlug, id); 
-            toast.success("Zurück in Backlog");
-            loadBacklog(true); 
+            toast.success(t("backToBacklog"));
+            loadBacklog(true);
         } catch (e) {
-            toast.error("Fehler");
-            refreshAll(); 
+            toast.error(t("errorGeneric"));
+            refreshAll();
         }
     }
   };
@@ -277,10 +279,10 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
       if(!selectedTask) return;
       try {
           await unscheduleTask(orgSlug, selectedTask.id);
-          toast.success("Zurück in Backlog");
+          toast.success(t("backToBacklog"));
           setIsSheetOpen(false);
           refreshAll();
-      } catch(e) { toast.error("Fehler"); }
+      } catch(e) { toast.error(t("errorGeneric")); }
   };
 
   return (
@@ -322,13 +324,13 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
 
         <Dialog open={showTypeSelection} onOpenChange={setShowTypeSelection}>
             <DialogContent className="sm:max-w-sm">
-                <DialogHeader><DialogTitle>Neuer Eintrag</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("newEntry")}</DialogTitle></DialogHeader>
                 <div className="grid grid-cols-2 gap-4 py-4">
                     <Button variant="outline" className="h-24 flex flex-col gap-2 hover:bg-blue-50 hover:border-blue-500" onClick={() => { setShowTypeSelection(false); setShowCreateTask(true); }}>
-                        <ClipboardList className="w-8 h-8 text-blue-600"/><span className="font-semibold">Aufgabe</span>
+                        <ClipboardList className="w-8 h-8 text-blue-600"/><span className="font-semibold">{t("task")}</span>
                     </Button>
                     <Button variant="outline" className="h-24 flex flex-col gap-2 hover:bg-green-50 hover:border-green-500" onClick={() => { setShowTypeSelection(false); setShowCreateEvent(true); }}>
-                        <CalendarIcon className="w-8 h-8 text-green-600"/><span className="font-semibold">Termin</span>
+                        <CalendarIcon className="w-8 h-8 text-green-600"/><span className="font-semibold">{t("event")}</span>
                     </Button>
                 </div>
             </DialogContent>
@@ -361,13 +363,13 @@ export function CalendarView({ orgSlug, currentUserId, members, forests }: Props
         <ConfirmDialog
           open={!!deleteEventTarget}
           onOpenChange={(o) => { if (!o) setDeleteEventTarget(null); }}
-          title="Termin löschen?"
-          confirmLabel="Löschen"
+          title={t("deleteEvent")}
+          confirmLabel={t("deleteLabel")}
           destructive
           onConfirm={async () => {
             if (!deleteEventTarget) return;
-            try { await deleteEvent(orgSlug, deleteEventTarget.id); deleteEventTarget.remove(); toast.success("Termin gelöscht"); }
-            catch { toast.error("Fehler beim Löschen"); }
+            try { await deleteEvent(orgSlug, deleteEventTarget.id); deleteEventTarget.remove(); toast.success(t("eventDeleted")); }
+            catch { toast.error(t("errorDeleting")); }
             finally { setDeleteEventTarget(null); }
           }}
         />

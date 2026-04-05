@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { 
   MoreHorizontal, 
@@ -92,6 +93,7 @@ export function UserTable({
   canManageUsers,
 }: UserTableProps) {
   
+  const t = useTranslations("TeamAdmin");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const [confirm, setConfirm] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
@@ -100,17 +102,17 @@ export function UserTable({
     const targetMember = members.find(m => m.id === memberId);
     const isMe = targetMember?.user.id === currentUserId;
     setConfirm({
-      title: isMe ? "Organisation verlassen?" : "Mitglied entfernen?",
+      title: isMe ? t("leaveOrgTitle") : t("removeMemberTitle"),
       description: isMe
-        ? "Sie verlieren sofort den Zugriff auf diese Organisation."
-        : "Der Benutzer wird aus der Organisation entfernt und verliert alle Zugriffsrechte.",
+        ? t("leaveOrgDescription")
+        : t("removeMemberDescription"),
       onConfirm: async () => {
         setIsLoading(true);
         try {
           const result = await removeMember(orgSlug, memberId);
           if (result.isSelf) window.location.href = "/";
         } catch (e: any) {
-          toast.error(e.message || "Fehler beim Entfernen");
+          toast.error(e.message || t("removeError"));
         } finally {
           setIsLoading(false);
           setConfirm(null);
@@ -124,7 +126,7 @@ export function UserTable({
     try {
       await updateMemberRole(orgSlug, memberId, newRoleId);
     } catch (e: any) {
-      toast.error(e.message || "Fehler beim Ändern der Rolle");
+      toast.error(e.message || t("changeRoleError"));
     } finally {
       setIsLoading(false);
     }
@@ -132,14 +134,14 @@ export function UserTable({
 
   const handleRevokeInvite = (inviteId: string) => {
     setConfirm({
-      title: "Einladung zurückziehen?",
-      description: "Der Einladungslink wird ungültig. Der Empfänger kann ihn nicht mehr verwenden.",
+      title: t("revokeTitle"),
+      description: t("revokeDescription"),
       onConfirm: async () => {
         setIsLoading(true);
         try {
           await revokeInvite(orgSlug, inviteId);
         } catch (e: any) {
-          toast.error(e.message || "Fehler beim Zurückziehen");
+          toast.error(e.message || t("revokeError"));
         } finally {
           setIsLoading(false);
           setConfirm(null);
@@ -152,9 +154,9 @@ export function UserTable({
     setIsLoading(true);
     try {
       await resendInvite(orgSlug, inviteId);
-      toast.success("Einladung erneut gesendet.");
+      toast.success(t("inviteResent"));
     } catch (e: any) {
-      toast.error(e.message || "Fehler beim Senden");
+      toast.error(e.message || t("resendError"));
     } finally {
       setIsLoading(false);
     }
@@ -166,10 +168,10 @@ export function UserTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[300px]">Benutzer / E-Mail</TableHead>
-            <TableHead>Rolle</TableHead>
-            <TableHead>Zugriff</TableHead>
-            <TableHead className="text-right">Aktionen</TableHead>
+            <TableHead className="w-[300px]">{t("tableUserEmail")}</TableHead>
+            <TableHead>{t("tableRole")}</TableHead>
+            <TableHead>{t("tableAccess")}</TableHead>
+            <TableHead className="text-right">{t("tableActions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -187,7 +189,7 @@ export function UserTable({
                       {invite.email}
                     </span>
                     <span className="text-xs text-amber-600 italic flex items-center gap-1">
-                      Wartet auf Annahme...
+                      {t("pendingInvite")}
                     </span>
                   </div>
                 </div>
@@ -208,18 +210,18 @@ export function UserTable({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Einladung verwalten</DropdownMenuLabel>
+                    <DropdownMenuLabel>{t("manageInvite")}</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => handleResendInvite(invite.id)}>
                       <RefreshCw className="mr-2 h-4 w-4" />
-                      Erneut senden
+                      {t("resendInvite")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-red-600 focus:text-red-600"
                       onClick={() => handleRevokeInvite(invite.id)}
                     >
                       <XCircle className="mr-2 h-4 w-4" />
-                      Zurückziehen
+                      {t("revokeInvite")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -238,9 +240,9 @@ export function UserTable({
             const canEdit = isMe || (canManageUsers && !targetIsAdmin) || amIAdmin;
 
             const accessCount = member.user.accessibleForests?.length || 0;
-            const accessLabel = targetIsAdmin 
-                ? "Alle (Admin)" 
-                : accessCount === 0 ? "Kein Zugriff" : `${accessCount} Wälder`;
+            const accessLabel = targetIsAdmin
+                ? t("allAdmin")
+                : accessCount === 0 ? t("noAccess") : t("forestCount", { count: accessCount });
 
             return (
               <TableRow key={member.id}>
@@ -258,7 +260,7 @@ export function UserTable({
                           ? `${member.user.firstName} ${member.user.lastName || ""}`
                           : member.user.email 
                         }
-                        {isMe && <span className="text-[10px] text-slate-400 font-normal border px-1 rounded">(Du)</span>}
+                        {isMe && <span className="text-[10px] text-slate-400 font-normal border px-1 rounded">{t("you")}</span>}
                       </span>
                       <span className="text-xs text-slate-500">{member.user.email}</span>
                     </div>
@@ -293,13 +295,13 @@ export function UserTable({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Benutzer verwalten</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t("manageUser")}</DropdownMenuLabel>
                             {(amIAdmin || (canManageUsers && !targetIsAdmin)) && (
                               <>
                                 <DropdownMenuSub>
                                   <DropdownMenuSubTrigger>
                                     <UserCog className="mr-2 h-4 w-4" />
-                                    Rolle ändern
+                                    {t("changeRole")}
                                   </DropdownMenuSubTrigger>
                                   <DropdownMenuSubContent>
                                     <DropdownMenuRadioGroup
@@ -322,13 +324,13 @@ export function UserTable({
                             onClick={() => handleRemoveMember(member.id)}
                             >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            {isMe ? "Organisation verlassen" : "Entfernen"}
+                            {isMe ? t("leaveOrg") : t("removeMember")}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                   ) : (
-                    <div className="flex justify-end pr-2 text-slate-300" title="Keine Berechtigung zur Bearbeitung">
+                    <div className="flex justify-end pr-2 text-slate-300" title={t("noPermission")}>
                       <Lock className="h-4 w-4" />
                     </div>
                   )}
@@ -340,7 +342,7 @@ export function UserTable({
           {members.length === 0 && invites.length === 0 && (
             <TableRow>
               <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                Keine Mitglieder gefunden.
+                {t("noMembers")}
               </TableCell>
             </TableRow>
           )}
@@ -353,7 +355,7 @@ export function UserTable({
       onOpenChange={(o) => { if (!o) setConfirm(null); }}
       title={confirm?.title ?? ""}
       description={confirm?.description}
-      confirmLabel="Bestätigen"
+      confirmLabel={t("confirm")}
       destructive
       loading={isLoading}
       onConfirm={() => confirm?.onConfirm()}

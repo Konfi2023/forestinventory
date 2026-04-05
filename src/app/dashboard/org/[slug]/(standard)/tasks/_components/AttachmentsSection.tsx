@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Paperclip, Loader2, FileText, Trash2, Download, File as FileIcon, UploadCloud } from "lucide-react";
 import { uploadTaskImage, uploadTaskDocument, deleteTaskImage, deleteTaskDocument } from "@/actions/files";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdate }: Props) {
+  const t = useTranslations("Tasks");
   const [uploadingCount, setUploadingCount] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: 'image' | 'document' } | null>(null);
 
@@ -34,7 +36,7 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
                 const fd = new FormData();
                 fd.append("file", file);
                 const res = await fetch(`/api/app/tasks/${taskId}/image`, { method: 'POST', body: fd });
-                if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Upload fehlgeschlagen'); }
+                if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || t('uploadFailed')); }
                 successCount++;
             } else {
                 const formData = new FormData();
@@ -44,14 +46,14 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
             }
         } catch (e: any) {
             console.error("Upload error:", e);
-            toast.error(`Fehler bei ${file.name}: ${e?.message || 'Unbekannt'}`);
+            toast.error(t("errorFile", { name: file.name, message: e?.message || t("errorUnknown") }));
         } finally {
             setUploadingCount(prev => prev - 1);
         }
     }
 
     if (successCount > 0) {
-        toast.success(`${successCount} Datei${successCount > 1 ? 'en' : ''} hochgeladen`);
+        toast.success(successCount > 1 ? t("filesUploadedPlural", { count: successCount }) : t("filesUploaded", { count: successCount }));
         onUpdate();
     }
   }, [orgSlug, taskId, onUpdate]);
@@ -64,10 +66,10 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
         if(type === 'image') await deleteTaskImage(orgSlug, id);
         else await deleteTaskDocument(orgSlug, id);
         
-        toast.success("Gelöscht");
+        toast.success(t("deleted"));
         onUpdate();
     } catch(e) {
-        toast.error("Fehler beim Löschen");
+        toast.error(t("errorDeletingFile"));
     }
   };
 
@@ -79,7 +81,7 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
         <Paperclip size={16} />
-        Anhänge & Dateien
+        {t("attachmentsAndFiles")}
       </div>
 
       {/* 1. DATEI GRID (Wenn Dateien da sind) */}
@@ -151,7 +153,7 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
         {uploadingCount > 0 ? (
             <div className="flex flex-col items-center text-muted-foreground animate-pulse">
                 <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                <span className="text-xs">Lade hoch...</span>
+                <span className="text-xs">{t("uploading")}</span>
             </div>
         ) : (
             <>
@@ -160,10 +162,10 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
                 </div>
                 <div className="space-y-1">
                     <p className="text-sm font-medium text-slate-700">
-                        {isDragActive ? "Jetzt loslassen" : "Hier klicken oder Dateien ablegen"}
+                        {isDragActive ? t("dropHere") : t("clickOrDrop")}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                        Bilder (JPG, PNG) oder Dokumente (PDF). Max 10MB.
+                        {t("fileHint")}
                     </p>
                 </div>
             </>
@@ -173,8 +175,8 @@ export function AttachmentsSection({ orgSlug, taskId, images, documents, onUpdat
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
-        title="Datei löschen?"
-        confirmLabel="Löschen"
+        title={t("deleteFile")}
+        confirmLabel={t("deleteLabel")}
         destructive
         onConfirm={() => deleteTarget && handleDelete(deleteTarget.id, deleteTarget.type).finally(() => setDeleteTarget(null))}
       />

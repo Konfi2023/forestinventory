@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 function CutMarks() {
   return (
     <>
@@ -29,6 +31,8 @@ function Card() {
 }
 
 export function MesskarteClient() {
+  const t = useTranslations('Messkarte');
+
   return (
     <>
       <style>{`
@@ -42,12 +46,10 @@ export function MesskarteClient() {
       {/* Screen instructions */}
       <div className="no-print" style={{ padding: '2rem', maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-          Forest Manager Messkarte
+          {t('title')}
         </h1>
         <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.875rem', lineHeight: 1.6 }}>
-          Drucke diese Seite auf A4 aus (100 % Skalierung, nicht &quot;An Seite anpassen&quot;).
-          Schneide die Karte entlang der Schnittmarken aus.
-          Für eine langlebige Karte: auf dickes Papier drucken und laminieren.
+          {t('printInstruction')}
         </p>
         <button
           onClick={() => window.print()}
@@ -56,7 +58,7 @@ export function MesskarteClient() {
             borderRadius: '0.75rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
           }}
         >
-          Jetzt drucken
+          {t('printNow')}
         </button>
       </div>
 
@@ -68,7 +70,7 @@ export function MesskarteClient() {
           <Card />
         </div>
         <p style={{ textAlign: 'center', fontSize: '7pt', color: '#94a3b8', marginTop: '3mm' }}>
-          85,6 &times; 54 mm (ISO/IEC 7810 ID-1) — Entlang der Markierungen ausschneiden
+          {t('cutLine')}
         </p>
 
         {/* Card 2 (backup) */}
@@ -77,7 +79,7 @@ export function MesskarteClient() {
           <Card />
         </div>
         <p style={{ textAlign: 'center', fontSize: '7pt', color: '#94a3b8', marginTop: '3mm' }}>
-          Ersatzkarte
+          {t('backupCard')}
         </p>
       </div>
     </>

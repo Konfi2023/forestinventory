@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { InviteList } from "@/components/dashboard/InviteList";
 import { LogOut } from "lucide-react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 export default async function DashboardRoot({
   searchParams,
@@ -55,9 +56,10 @@ export default async function DashboardRoot({
   });
 
   if (pendingInvites.length > 0 && createOrg !== '1') {
+    const t = await getTranslations("Dashboard");
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-            <LogoutButton />
+            <LogoutButton signOutLabel={t("signOut")} />
             <InviteList invites={pendingInvites} />
         </div>
     );
@@ -67,11 +69,11 @@ export default async function DashboardRoot({
   redirect('/onboarding');
 }
 
-function LogoutButton() {
+function LogoutButton({ signOutLabel }: { signOutLabel: string }) {
     return (
         <div className="absolute top-4 right-4">
             <Link href="/api/auth/signout" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-2">
-                <LogOut size={16} /> Abmelden
+                <LogOut size={16} /> {signOutLabel}
             </Link>
         </div>
     );

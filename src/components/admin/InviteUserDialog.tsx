@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { UserPlus, Loader2 } from "lucide-react";
 import { inviteUser } from "@/actions/invites";
-import { toast } from "sonner"; // Falls installiert, sonst alert
+import { toast } from "sonner";
 
 type Role = {
   id: string;
@@ -30,19 +31,20 @@ type Role = {
 };
 
 export function InviteUserDialog({ orgSlug, availableRoles }: { orgSlug: string, availableRoles: Role[] }) {
+  const t = useTranslations("TeamAdmin");
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [email, setEmail] = useState("");
   const [roleId, setRoleId] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if(!roleId) {
-      toast.error("Bitte eine Rolle wählen");
+      toast.error(t("roleRequired"));
       return;
     }
-    
+
     setIsLoading(true);
 
     try {
@@ -50,9 +52,9 @@ export function InviteUserDialog({ orgSlug, availableRoles }: { orgSlug: string,
       setOpen(false);
       setEmail("");
       setRoleId("");
-      toast.success("Einladung wurde gesendet!");
+      toast.success(t("inviteSent"));
     } catch (error: any) {
-      toast.error(error.message || "Fehler beim Einladen");
+      toast.error(error.message || t("inviteError"));
     } finally {
       setIsLoading(false);
     }
@@ -63,34 +65,34 @@ export function InviteUserDialog({ orgSlug, availableRoles }: { orgSlug: string,
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="mr-2 h-4 w-4" />
-          Nutzer einladen
+          {t("inviteButton")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Teammitglied einladen</DialogTitle>
+            <DialogTitle>{t("inviteTitle")}</DialogTitle>
             <DialogDescription>
-              Senden Sie eine E-Mail-Einladung an einen neuen Benutzer.
+              {t("inviteDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">E-Mail Adresse</Label>
+              <Label htmlFor="email">{t("emailLabel")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="max@forst.de"
+                placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="role">Rolle zuweisen</Label>
+              <Label htmlFor="role">{t("roleLabel")}</Label>
               <Select onValueChange={setRoleId} value={roleId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Rolle wählen..." />
+                  <SelectValue placeholder={t("rolePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableRoles.map((role) => (
@@ -105,7 +107,7 @@ export function InviteUserDialog({ orgSlug, availableRoles }: { orgSlug: string,
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Einladung senden
+              {t("sendInvite")}
             </Button>
           </DialogFooter>
         </form>

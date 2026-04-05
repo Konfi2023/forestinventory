@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { updateTaskSchedule } from "@/actions/tasks";
 import { RecurrenceUnit, TaskPriority } from "@prisma/client";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Loader2, Save, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, members, onSuccess }: Props) {
+  const t = useTranslations("Tasks");
   const [isLoading, setIsLoading] = useState(false);
   
   // State mit Werten aus der existierenden Serie initialisieren
@@ -66,11 +68,11 @@ export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, 
         priority,
         endDate: endDate ? new Date(endDate) : undefined,
       });
-      toast.success("Serie aktualisiert");
+      toast.success(t("seriesUpdated"));
       onSuccess(); // Liste neu laden
       onClose();   // Dialog schließen
     } catch (e) {
-      toast.error("Fehler beim Speichern");
+      toast.error(t("errorSaving"));
     } finally {
       setIsLoading(false);
     }
@@ -80,18 +82,18 @@ export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-500px">
         <DialogHeader>
-          <DialogTitle>Serie bearbeiten</DialogTitle>
+          <DialogTitle>{t("editSeries")}</DialogTitle>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label>Titel</Label>
+            <Label>{t("title")}</Label>
             <Input value={title} onChange={e => setTitle(e.target.value)} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
              <div className="grid gap-2">
-                <Label>Bestand</Label>
+                <Label>{t("stand")}</Label>
                 <Select value={forestId} onValueChange={setForestId}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -100,37 +102,37 @@ export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, 
                 </Select>
              </div>
              <div className="grid gap-2">
-                <Label>Priorität</Label>
+                <Label>{t("priority")}</Label>
                 <Select value={priority} onValueChange={(v) => setPriority(v as TaskPriority)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="LOW">Niedrig</SelectItem>
-                        <SelectItem value="MEDIUM">Mittel</SelectItem>
-                        <SelectItem value="HIGH">Hoch</SelectItem>
-                        <SelectItem value="URGENT">Dringend</SelectItem>
+                        <SelectItem value="LOW">{t("priorityLow")}</SelectItem>
+                        <SelectItem value="MEDIUM">{t("priorityMedium")}</SelectItem>
+                        <SelectItem value="HIGH">{t("priorityHigh")}</SelectItem>
+                        <SelectItem value="URGENT">{t("priorityUrgent")}</SelectItem>
                     </SelectContent>
                 </Select>
              </div>
           </div>
 
           <div className="grid gap-2">
-            <Label>Wiederholung</Label>
+            <Label>{t("recurrence")}</Label>
             <div className="flex gap-2">
                 <Input type="number" min="1" className="w-20" value={interval} onChange={e => setInterval(e.target.value)} />
                 <Select value={unit} onValueChange={(v) => setUnit(v as RecurrenceUnit)}>
                     <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="DAYS">Tage</SelectItem>
-                        <SelectItem value="WEEKS">Wochen</SelectItem>
-                        <SelectItem value="MONTHS">Monate</SelectItem>
-                        <SelectItem value="YEARS">Jahre</SelectItem>
+                        <SelectItem value="DAYS">{t("unitDays")}</SelectItem>
+                        <SelectItem value="WEEKS">{t("unitWeeks")}</SelectItem>
+                        <SelectItem value="MONTHS">{t("unitMonths")}</SelectItem>
+                        <SelectItem value="YEARS">{t("unitYears")}</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
           </div>
 
           <div className="grid gap-2">
-            <Label>Enddatum (optional)</Label>
+            <Label>{t("endDateOptional")}</Label>
             <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
 
@@ -140,28 +142,28 @@ export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, 
             return (
               <div className="bg-blue-50 border border-blue-100 rounded-md p-3 space-y-1.5">
                 <p className="text-[10px] font-semibold uppercase text-blue-500 flex items-center gap-1.5">
-                  <Calendar size={11} /> Nächste Termine (ab jetzt)
+                  <Calendar size={11} /> {t("nextDatesFromNow")}
                 </p>
                 {dates.map((d, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-blue-800">
                     <span className="text-[10px] text-blue-400 w-4">{i + 1}.</span>
                     {format(d, "EEEE, dd. MMMM yyyy", { locale: de })}
                     {endDate && d > new Date(endDate) && (
-                      <span className="text-[10px] text-slate-400 ml-1">(nach Enddatum)</span>
+                      <span className="text-[10px] text-slate-400 ml-1">{t("afterEndDate")}</span>
                     )}
                   </div>
                 ))}
-                <p className="text-[10px] text-blue-400">… und so weiter</p>
+                <p className="text-[10px] text-blue-400">{t("andSoOn")}</p>
               </div>
             );
           })()}
 
           <div className="grid gap-2">
-              <Label>Standard-Bearbeiter</Label>
+              <Label>{t("defaultAssignee")}</Label>
               <Select value={assigneeId} onValueChange={setAssigneeId}>
-                <SelectTrigger><SelectValue placeholder="Niemand" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("nobody")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unassigned">- Offen lassen -</SelectItem>
+                  <SelectItem value="unassigned">{t("leaveOpen")}</SelectItem>
                   {members.map((m: any) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.firstName ? `${m.firstName} ${m.lastName}` : m.email}
@@ -173,10 +175,10 @@ export function EditScheduleDialog({ schedule, open, onClose, orgSlug, forests, 
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Abbrechen</Button>
+          <Button variant="outline" onClick={onClose}>{t("cancel")}</Button>
           <Button onClick={handleSave} disabled={isLoading}>
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4 mr-2"/>}
-            Speichern
+            {t("save")}
           </Button>
         </DialogFooter>
       </DialogContent>

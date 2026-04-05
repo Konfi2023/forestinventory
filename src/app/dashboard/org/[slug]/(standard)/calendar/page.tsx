@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { CalendarView } from "./_components/CalendarView";
 import { SubscribeCalendarDialog } from "./_components/SubscribeCalendarDialog"; // Import!
 
@@ -31,12 +32,14 @@ export default async function CalendarPage({
     orderBy: { name: 'asc' }
   });
 
+  const t = await getTranslations("Calendar");
+
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col gap-4">
       <div className="flex justify-between items-center">
         <div>
-            <h2 className="text-2xl font-bold tracking-tight">Kalender</h2>
-            <p className="text-muted-foreground">Übersicht aller Aufgaben und Termine.</p>
+            <h2 className="text-2xl font-bold tracking-tight">{t("pageTitle")}</h2>
+            <p className="text-muted-foreground">{t("pageSubtitle")}</p>
         </div>
         
         {/* HIER IST DER BUTTON */}

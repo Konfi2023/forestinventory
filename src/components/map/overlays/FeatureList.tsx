@@ -14,6 +14,7 @@ import type { FeatureType } from '@/components/map/stores/useMapStores';
 import { batchDeleteForests } from '@/actions/forest';
 import { toast } from 'sonner';
 import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
+import { useTranslations } from 'next-intl';
 
 // ---------------------------------------------------------------------------
 // Typen
@@ -41,28 +42,28 @@ interface NormalizedFeature {
 // Icon / Farb-Mapping
 // ---------------------------------------------------------------------------
 
-const POI_META: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  HUNTING_STAND: { icon: Tent,     color: '#eab308', label: 'Hochsitz'    },
-  LOG_PILE:      { icon: Boxes,    color: '#3b82f6', label: 'Polter'      },
-  HUT:           { icon: Home,     color: '#f97316', label: 'Hütte'       },
-  BARRIER:       { icon: Ban,      color: '#ef4444', label: 'Schranke'    },
-  VEHICLE:       { icon: Truck,    color: '#6b7280', label: 'Fahrzeug'    },
-  TREE:          { icon: TreePine, color: '#22c55e', label: 'Einzelbaum'  },
+const POI_META: Record<string, { icon: React.ElementType; color: string; tKey: string }> = {
+  HUNTING_STAND: { icon: Tent,     color: '#eab308', tKey: 'poiHuntingStand' },
+  LOG_PILE:      { icon: Boxes,    color: '#3b82f6', tKey: 'poiLogPile'      },
+  HUT:           { icon: Home,     color: '#f97316', tKey: 'poiHut'          },
+  BARRIER:       { icon: Ban,      color: '#ef4444', tKey: 'poiBarrier'      },
+  VEHICLE:       { icon: Truck,    color: '#6b7280', tKey: 'poiVehicle'      },
+  TREE:          { icon: TreePine, color: '#22c55e', tKey: 'poiTree'         },
 };
 
-const POLYGON_META: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  PLANTING:    { icon: Sprout,        color: '#22c55e', label: 'Aufforstung'    },
-  MAINTENANCE: { icon: Wrench,        color: '#ef4444', label: 'Pflegemaßnahme' },
-  CALAMITY:    { icon: AlertTriangle, color: '#f97316', label: 'Schadereignis'  },
-  HABITAT:     { icon: Shield,        color: '#a855f7', label: 'Habitat'        },
-  HUNTING:     { icon: Target,        color: '#84cc16', label: 'Jagdbezirk'     },
-  FOREST:      { icon: Trees,         color: '#10b981', label: 'Wald'           },
+const POLYGON_META: Record<string, { icon: React.ElementType; color: string; tKey: string }> = {
+  PLANTING:    { icon: Sprout,        color: '#22c55e', tKey: 'polyPlanting'    },
+  MAINTENANCE: { icon: Wrench,        color: '#ef4444', tKey: 'polyMaintenance' },
+  CALAMITY:    { icon: AlertTriangle, color: '#f97316', tKey: 'polyCalamity'    },
+  HABITAT:     { icon: Shield,        color: '#a855f7', tKey: 'polyHabitat'     },
+  HUNTING:     { icon: Target,        color: '#84cc16', tKey: 'polyHunting'     },
+  FOREST:      { icon: Trees,         color: '#10b981', tKey: 'polyForest'      },
 };
 
-const PATH_META: Record<string, { label: string }> = {
-  ROAD:       { label: 'Weg / Straße'  },
-  SKID_TRAIL: { label: 'Rückegasse'    },
-  WATER:      { label: 'Gewässer'      },
+const PATH_META: Record<string, { tKey: string }> = {
+  ROAD:       { tKey: 'pathRoad'     },
+  SKID_TRAIL: { tKey: 'pathSkidTrail' },
+  WATER:      { tKey: 'pathWater'    },
 };
 
 const MAX_RESULTS = 150;
@@ -71,11 +72,11 @@ const MAX_RESULTS = 150;
 // Normalisierung aller Forest-Daten
 // ---------------------------------------------------------------------------
 
-function buildFeatureList(forests: any[]): NormalizedFeature[] {
+function buildFeatureList(forests: any[], t: (key: string) => string): NormalizedFeature[] {
   const list: NormalizedFeature[] = [];
 
   forests.forEach(forest => {
-    const forestName = forest.name ?? 'Unbenannter Wald';
+    const forestName = forest.name ?? t('unnamedForest');
     // Import-Quelle aus description extrahieren: "Importiert aus xyz.gpkg"
     const importMatch = (forest.description ?? '').match(/^Importiert aus (.+)$/);
     const importSource = importMatch ? importMatch[1] : undefined;
@@ -94,10 +95,11 @@ function buildFeatureList(forests: any[]): NormalizedFeature[] {
     });
 
     (forest.pois ?? []).forEach((poi: any) => {
-      const meta = POI_META[poi.type] ?? { icon: Tent, color: '#9ca3af', label: poi.type };
+      const meta = POI_META[poi.type] ?? { icon: Tent, color: '#9ca3af', tKey: '' };
+      const metaLabel = meta.tKey ? t(meta.tKey) : poi.type;
       list.push({
         id: poi.id, forestId: forest.id, forestName,
-        label: poi.name ?? meta.label, subLabel: meta.label,
+        label: poi.name ?? metaLabel, subLabel: metaLabel,
         category: 'POI', featureType: 'POI',
         icon: meta.icon, color: meta.color,
         lat: poi.lat, lng: poi.lng,
@@ -107,7 +109,7 @@ function buildFeatureList(forests: any[]): NormalizedFeature[] {
     (forest.plantings ?? []).forEach((p: any) => {
       list.push({
         id: p.id, forestId: forest.id, forestName,
-        label: p.treeSpecies ?? 'Aufforstung', subLabel: POLYGON_META.PLANTING.label,
+        label: p.treeSpecies ?? t('polyPlanting'), subLabel: t(POLYGON_META.PLANTING.tKey),
         category: 'POLYGON', featureType: 'PLANTING',
         icon: POLYGON_META.PLANTING.icon, color: POLYGON_META.PLANTING.color, geoJson: p.geoJson,
       });
@@ -116,7 +118,7 @@ function buildFeatureList(forests: any[]): NormalizedFeature[] {
     (forest.maintenance ?? []).forEach((m: any) => {
       list.push({
         id: m.id, forestId: forest.id, forestName,
-        label: m.description ?? 'Pflegemaßnahme', subLabel: POLYGON_META.MAINTENANCE.label,
+        label: m.description ?? t('polyMaintenance'), subLabel: t(POLYGON_META.MAINTENANCE.tKey),
         category: 'POLYGON', featureType: 'MAINTENANCE',
         icon: POLYGON_META.MAINTENANCE.icon, color: POLYGON_META.MAINTENANCE.color, geoJson: m.geoJson,
       });
@@ -125,7 +127,7 @@ function buildFeatureList(forests: any[]): NormalizedFeature[] {
     (forest.calamities ?? []).forEach((c: any) => {
       list.push({
         id: c.id, forestId: forest.id, forestName,
-        label: c.cause ?? 'Schadereignis', subLabel: POLYGON_META.CALAMITY.label,
+        label: c.cause ?? t('polyCalamity'), subLabel: t(POLYGON_META.CALAMITY.tKey),
         category: 'POLYGON', featureType: 'CALAMITY',
         icon: POLYGON_META.CALAMITY.icon, color: POLYGON_META.CALAMITY.color, geoJson: c.geoJson,
       });
@@ -134,7 +136,7 @@ function buildFeatureList(forests: any[]): NormalizedFeature[] {
     (forest.habitats ?? []).forEach((h: any) => {
       list.push({
         id: h.id, forestId: forest.id, forestName,
-        label: h.type ?? 'Habitat', subLabel: POLYGON_META.HABITAT.label,
+        label: h.type ?? t('polyHabitat'), subLabel: t(POLYGON_META.HABITAT.tKey),
         category: 'POLYGON', featureType: 'HABITAT',
         icon: POLYGON_META.HABITAT.icon, color: POLYGON_META.HABITAT.color, geoJson: h.geoJson,
       });
@@ -143,14 +145,14 @@ function buildFeatureList(forests: any[]): NormalizedFeature[] {
     (forest.hunting ?? []).forEach((h: any) => {
       list.push({
         id: h.id, forestId: forest.id, forestName,
-        label: h.name ?? 'Jagdbezirk', subLabel: POLYGON_META.HUNTING.label,
+        label: h.name ?? t('polyHunting'), subLabel: t(POLYGON_META.HUNTING.tKey),
         category: 'POLYGON', featureType: 'HUNTING',
         icon: POLYGON_META.HUNTING.icon, color: POLYGON_META.HUNTING.color, geoJson: h.geoJson,
       });
     });
 
     (forest.paths ?? []).forEach((p: any) => {
-      const pathLabel = PATH_META[p.type]?.label ?? p.type;
+      const pathLabel = PATH_META[p.type] ? t(PATH_META[p.type].tKey) : p.type;
       list.push({
         id: p.id, forestId: forest.id, forestName,
         label: p.name ?? pathLabel, subLabel: pathLabel,
@@ -175,15 +177,16 @@ interface Props {
   onRefresh?: () => void;
 }
 
-const CATEGORY_LABELS: Record<FeatureCategory, string> = {
-  ALL:     'Alle',
-  FOREST:  'Wälder',
-  POLYGON: 'Flächen',
-  POI:     'POIs',
-  PATH:    'Wege',
+const CATEGORY_KEYS: Record<FeatureCategory, string> = {
+  ALL:     'catAll',
+  FOREST:  'catForests',
+  POLYGON: 'catPolygons',
+  POI:     'catPois',
+  PATH:    'catPaths',
 };
 
 export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
+  const t = useTranslations('Map');
   const flyTo         = useMapStore(s => s.flyTo);
   const fitBounds     = useMapStore(s => s.fitBounds);
   const selectFeature = useMapStore(s => s.selectFeature);
@@ -198,7 +201,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
   const [isDeleting, setIsDeleting]   = useState(false);
   const [importsOpen, setImportsOpen] = useState(false);
 
-  const allFeatures = useMemo(() => buildFeatureList(forests), [forests]);
+  const allFeatures = useMemo(() => buildFeatureList(forests, t), [forests, t]);
 
   const filtered = useMemo(() => {
     let list = allFeatures;
@@ -266,20 +269,20 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
 
   const handleBatchDelete = async (ids: string[], label: string) => {
     setIsDeleting(true);
-    const toastId = toast.loading(`Lösche ${ids.length} Waldfläche(n)…`);
+    const toastId = toast.loading(t('deletingAreas', { count: ids.length }));
     try {
       const res = await batchDeleteForests(ids, orgSlug);
       toast.dismiss(toastId);
       if (res.success) {
-        toast.success(`${res.deleted} Waldfläche(n) gelöscht.`);
+        toast.success(t('areasDeleted', { count: res.deleted ?? 0 }));
         exitSelectMode();
         onRefresh?.();
       } else {
-        toast.error(`Fehler: ${res.error}`);
+        toast.error(`${t('errorSaving')}: ${res.error}`);
       }
     } catch (e: any) {
       toast.dismiss(toastId);
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(`${t('errorSaving')}: ${e.message}`);
     } finally {
       setIsDeleting(false);
     }
@@ -312,7 +315,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
           <input
             value={rawSearch}
             onChange={e => setRawSearch(e.target.value)}
-            placeholder="Suchen…"
+            placeholder={t('search')}
             className="w-full bg-white/6 border border-white/10 rounded-lg pl-8 pr-8 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 focus:bg-white/8 transition-colors"
           />
           {rawSearch && (
@@ -328,7 +331,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
 
       {/* Kategorie-Filter */}
       <div className="flex gap-1 px-3 pb-2 shrink-0 overflow-x-auto">
-        {(Object.keys(CATEGORY_LABELS) as FeatureCategory[]).map(cat => (
+        {(Object.keys(CATEGORY_KEYS) as FeatureCategory[]).map(cat => (
           <button
             key={cat}
             onClick={() => { setCategory(cat); if (cat !== 'FOREST') exitSelectMode(); }}
@@ -339,7 +342,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
                 : 'bg-white/6 text-gray-400 hover:bg-white/10 hover:text-white',
             )}
           >
-            {CATEGORY_LABELS[cat]}
+            {t(CATEGORY_KEYS[cat])}
           </button>
         ))}
       </div>
@@ -353,7 +356,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
           >
             <span className="flex items-center gap-1.5">
               <Undo2 size={12} />
-              {importGroups.length} Import{importGroups.length > 1 ? 's' : ''} rückgängig machen
+              {t('undoImports', { count: importGroups.length })}
             </span>
             {importsOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
@@ -363,7 +366,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
                 <div key={source} className="flex items-center justify-between gap-2">
                   <span className="text-[10px] text-gray-300 truncate flex-1" title={source}>
                     {source}
-                    <span className="text-gray-500 ml-1">({features.length} Flächen)</span>
+                    <span className="text-gray-500 ml-1">({t('importAreas', { count: features.length })})</span>
                   </span>
                   <DeleteConfirmDialog
                     trigger={
@@ -371,11 +374,11 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
                         className="shrink-0 text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
                         disabled={isDeleting}
                       >
-                        Löschen
+                        {t('delete')}
                       </button>
                     }
-                    title={`Import "${source}" löschen?`}
-                    description={`${features.length} Waldfläche(n) werden unwiderruflich gelöscht.`}
+                    title={t('deleteImportTitle', { source })}
+                    description={t('deleteImportDesc', { count: features.length })}
                     confirmString={source}
                     onConfirm={async () => {
                       await handleBatchDelete(features.map(f => f.id), source);
@@ -396,7 +399,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
               onClick={() => setSelectMode(true)}
               className="text-[10px] text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors"
             >
-              <CheckSquare size={11} /> Mehrere auswählen
+              <CheckSquare size={11} /> {t('selectMultiple')}
             </button>
           ) : (
             <>
@@ -405,8 +408,8 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
                 className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
               >
                 {allVisibleSelected
-                  ? <><CheckSquare size={11} /> Alle abwählen</>
-                  : <><Square size={11} /> Alle wählen</>
+                  ? <><CheckSquare size={11} /> {t('deselectAll')}</>
+                  : <><Square size={11} /> {t('selectAll')}</>
                 }
               </button>
               <span className="flex-1" />
@@ -414,7 +417,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
                 onClick={exitSelectMode}
                 className="text-[10px] text-gray-500 hover:text-gray-300"
               >
-                Abbrechen
+                {t('cancel')}
               </button>
             </>
           )}
@@ -425,10 +428,10 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
       <div className="px-3 pb-1.5 shrink-0">
         <span className="text-[10px] text-gray-600">
           {filtered.length === 0
-            ? 'Keine Ergebnisse'
+            ? t('noResults')
             : overflow > 0
-              ? `${shown.length} von ${filtered.length.toLocaleString('de-DE')} — Suche verfeinern`
-              : `${filtered.length.toLocaleString('de-DE')} Objekte`
+              ? t('refineSearch', { shown: shown.length, total: filtered.length.toLocaleString() })
+              : t('objectCount', { count: filtered.length })
           }
         </span>
       </div>
@@ -438,7 +441,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
         {shown.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-24 text-gray-600 text-xs gap-1">
             <Search className="w-5 h-5 opacity-30" />
-            Keine Objekte gefunden
+            {t('noObjectsFound')}
           </div>
         ) : (
           shown.map(feature => (
@@ -453,7 +456,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
         )}
         {overflow > 0 && (
           <div className="text-center py-3 text-[10px] text-gray-600 border border-dashed border-white/8 rounded-lg mt-1">
-            + {overflow.toLocaleString('de-DE')} weitere — Suche verfeinern
+            {t('moreRefine', { count: overflow })}
           </div>
         )}
       </div>
@@ -462,7 +465,7 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
       {selectMode && selected.size > 0 && (
         <div className="shrink-0 border-t border-white/10 px-3 py-2 bg-black/40 flex items-center justify-between gap-2">
           <span className="text-xs text-gray-300">
-            {selected.size} Fläche{selected.size !== 1 ? 'n' : ''} ausgewählt
+            {t('areasSelected', { count: selected.size })}
           </span>
           <DeleteConfirmDialog
             trigger={
@@ -470,14 +473,14 @@ export function FeatureList({ forests, orgSlug = '', onRefresh }: Props) {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-colors disabled:opacity-50"
                 disabled={isDeleting}
               >
-                <Trash2 size={12} /> Löschen
+                <Trash2 size={12} /> {t('delete')}
               </button>
             }
-            title={`${selected.size} Waldfläche(n) löschen?`}
-            description="Alle ausgewählten Flächen inkl. zugehöriger POIs, Wege und Aufgaben werden unwiderruflich gelöscht."
-            confirmString="löschen"
+            title={t('deleteAreasTitle', { count: selected.size })}
+            description={t('deleteAreasDesc')}
+            confirmString={t('delete').toLowerCase()}
             onConfirm={async () => {
-              await handleBatchDelete([...selected], `${selected.size} Flächen`);
+              await handleBatchDelete([...selected], t('importAreas', { count: selected.size }));
             }}
           />
         </div>

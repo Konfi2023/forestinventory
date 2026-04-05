@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, CalendarClock } from "lucide-react";
 import { createEvent } from "@/actions/events";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function CreateEventDialog({ orgSlug, isOpen, onClose, defaultDate, onSuccess }: Props) {
+  const t = useTranslations("Calendar");
   const [isLoading, setIsLoading] = useState(false);
 
   // Form State
@@ -49,7 +51,7 @@ export function CreateEventDialog({ orgSlug, isOpen, onClose, defaultDate, onSuc
   }, [isOpen, defaultDate]);
 
   const handleSave = async () => {
-    if (!title || !startDate) return toast.error("Titel und Startdatum fehlen");
+    if (!title || !startDate) return toast.error(t("titleAndDateMissing"));
     
     setIsLoading(true);
     try {
@@ -77,11 +79,11 @@ export function CreateEventDialog({ orgSlug, isOpen, onClose, defaultDate, onSuc
         allDay
       });
 
-      toast.success("Termin erstellt");
+      toast.success(t("eventCreated"));
       onSuccess(); // Kalender aktualisieren!
       onClose();
     } catch (e) {
-      toast.error("Fehler beim Erstellen");
+      toast.error(t("errorCreating"));
     } finally {
       setIsLoading(false);
     }
@@ -91,17 +93,17 @@ export function CreateEventDialog({ orgSlug, isOpen, onClose, defaultDate, onSuc
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Neuen Termin eintragen</DialogTitle>
+          <DialogTitle>{t("newEvent")}</DialogTitle>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           {/* Titel */}
           <div className="grid gap-2">
-             <Label>Titel</Label>
-             <Input 
-                value={title} 
-                onChange={e => setTitle(e.target.value)} 
-                placeholder="z.B. Jagdgesellschaft" 
+             <Label>{t("titleLabel")}</Label>
+             <Input
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder={t("titlePlaceholder")}
                 autoFocus 
              />
           </div>
@@ -109,19 +111,19 @@ export function CreateEventDialog({ orgSlug, isOpen, onClose, defaultDate, onSuc
           {/* Ganztägig Switch */}
           <div className="flex items-center space-x-2 border p-3 rounded-md bg-slate-50">
              <Switch id="all-day" checked={allDay} onCheckedChange={setAllDay} />
-             <Label htmlFor="all-day" className="cursor-pointer flex-1 font-medium">Ganztägiger Termin</Label>
+             <Label htmlFor="all-day" className="cursor-pointer flex-1 font-medium">{t("allDayEvent")}</Label>
              <CalendarClock size={16} className="text-slate-400"/>
           </div>
 
           {/* Start */}
           <div className="grid grid-cols-2 gap-4">
              <div className="grid gap-2">
-                <Label>Startdatum</Label>
+                <Label>{t("startDate")}</Label>
                 <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
              </div>
              {!allDay && (
                  <div className="grid gap-2">
-                    <Label>Uhrzeit</Label>
+                    <Label>{t("time")}</Label>
                     <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
                  </div>
              )}
@@ -130,12 +132,12 @@ export function CreateEventDialog({ orgSlug, isOpen, onClose, defaultDate, onSuc
           {/* Ende */}
           <div className="grid grid-cols-2 gap-4">
              <div className="grid gap-2">
-                <Label>Enddatum</Label>
+                <Label>{t("endDate")}</Label>
                 <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
              </div>
              {!allDay && (
                  <div className="grid gap-2">
-                    <Label>Uhrzeit</Label>
+                    <Label>{t("time")}</Label>
                     <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
                  </div>
              )}
@@ -143,15 +145,15 @@ export function CreateEventDialog({ orgSlug, isOpen, onClose, defaultDate, onSuc
 
           {/* Beschreibung */}
           <div className="grid gap-2">
-             <Label>Beschreibung</Label>
-             <Textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Details..." />
+             <Label>{t("descriptionLabel")}</Label>
+             <Textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder={t("descriptionPlaceholder")} />
           </div>
         </div>
 
         <DialogFooter>
-            <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
+            <Button variant="ghost" onClick={onClose}>{t("cancel")}</Button>
             <Button onClick={handleSave} disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin w-4 h-4"/> : "Speichern"}
+                {isLoading ? <Loader2 className="animate-spin w-4 h-4"/> : t("saveLabel")}
             </Button>
         </DialogFooter>
       </DialogContent>

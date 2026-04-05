@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { createCustomerPortal } from "@/actions/stripe-actions";
@@ -11,11 +12,12 @@ interface Props {
 }
 
 export function ManagePaymentButton({ orgId, hasStripeCustomer }: Props) {
+  const t = useTranslations("Billing");
   const [loading, setLoading] = useState(false);
 
   async function handlePortal() {
     if (!hasStripeCustomer) {
-      toast.error("Noch kein Stripe-Kunde. Bitte schließen Sie zuerst ein Abonnement ab.");
+      toast.error(t("noStripeCustomer"));
       return;
     }
     setLoading(true);
@@ -23,7 +25,7 @@ export function ManagePaymentButton({ orgId, hasStripeCustomer }: Props) {
       const { url } = await createCustomerPortal(orgId);
       window.location.href = url;
     } catch (err: any) {
-      toast.error(err.message || "Fehler beim Öffnen des Kundenportals.");
+      toast.error(err.message || t("portalError"));
       setLoading(false);
     }
   }
@@ -39,7 +41,7 @@ export function ManagePaymentButton({ orgId, hasStripeCustomer }: Props) {
       ) : (
         <ExternalLink size={16} />
       )}
-      Zahlungen &amp; Rechnungen verwalten
+      {t("managePayments")}
     </button>
   );
 }

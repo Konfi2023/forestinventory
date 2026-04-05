@@ -22,6 +22,7 @@ import { cn, getUserColor, getInitials } from '@/lib/utils';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
 import { TREE_SPECIES, getSpeciesColor, getSpeciesLabel } from '@/lib/tree-species';
+import { useTranslations } from 'next-intl';
 
 function formatArea(ha?: number | null): string {
   if (!ha) return '—';
@@ -367,6 +368,7 @@ export function CompartmentDetailView({
   compartment, forest, orgSlug, tasks, members, forests, compartmentTrees,
   onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
 }: Props) {
+  const t = useTranslations('Map');
   const setInteractionMode = useMapStore(s => s.setInteractionMode);
   const setEditingFeature  = useMapStore(s => s.setEditingFeature);
   const interactionMode    = useMapStore(s => s.interactionMode);
@@ -438,7 +440,7 @@ export function CompartmentDetailView({
   }, [compartmentTrees, compartment.areaHa]);
 
   const isGeometryEditing = interactionMode === 'EDIT_GEOMETRY';
-  const displayName = (name.trim() || number.trim()) ? `${number ? `[${number}] ` : ''}${name.trim() || 'Abteilung'}` : 'Abteilung';
+  const displayName = (name.trim() || number.trim()) ? `${number ? `[${number}] ` : ''}${name.trim() || t('compartment')}` : t('compartment');
 
   // ── Linked Tasks ─────────────────────────────────────────────────────────────
   const linkedTasks = useMemo(() => {
@@ -477,7 +479,7 @@ export function CompartmentDetailView({
         lastMeasureDate, lastMeasureType, maintenanceStatus, accessibility,
       }, orgSlug);
       if (!res.success) throw new Error(res.error ?? 'Unbekannter Fehler');
-      toast.success('Abteilung aktualisiert');
+      toast.success(t('compartmentSaved'));
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
@@ -493,7 +495,7 @@ export function CompartmentDetailView({
       const res = await togglePolygonBiomass(compartment.id, 'COMPARTMENT', enabled, orgSlug);
       if (!res.success) throw new Error(res.error);
       setTrackBiomass(enabled);
-      toast.success(enabled ? 'Biomasse-Tracking aktiviert' : 'Biomasse-Tracking deaktiviert');
+      toast.success(enabled ? t('biomassEnabled') : t('biomassDisabled'));
       onRefresh();
     } catch (e: any) {
       toast.error(`Fehler: ${e.message}`);
@@ -510,7 +512,7 @@ export function CompartmentDetailView({
       setInteractionMode('EDIT_GEOMETRY');
       setEditingFeature({ id: compartment.id, geoJson: compartment.geoJson, featureType: 'COMPARTMENT', name: displayName, orgSlug });
       onClose();
-      toast.info('Ziehpunkte verschieben um Fläche zu ändern');
+      toast.info(t('editAreaDragHint'));
     }
   };
 
@@ -575,12 +577,12 @@ export function CompartmentDetailView({
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <div className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1.5">
-            <Ruler size={12} /> Fläche
+            <Ruler size={12} /> {t('area')}
           </div>
           <div className="text-lg text-white font-mono font-medium">{formatArea(compartment.areaHa)}</div>
         </div>
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-          <div className="text-[10px] uppercase text-gray-500 font-bold mb-1">Wald</div>
+          <div className="text-[10px] uppercase text-gray-500 font-bold mb-1">{t('forest')}</div>
           <div className="text-sm text-gray-300 truncate">{forest?.name ?? '—'}</div>
         </div>
       </div>
@@ -613,7 +615,7 @@ export function CompartmentDetailView({
       )}
 
       {/* ── STANDORT ── */}
-      <Section icon={<Mountain size={13} />} title="Standort">
+      <Section icon={<Mountain size={13} />} title={t('site')}>
         {isEditing ? (
           <>
             <TextField label="Bodentyp" value={soilType} onChange={setSoilType} placeholder="z. B. Braunerde" />
@@ -642,7 +644,7 @@ export function CompartmentDetailView({
       </Section>
 
       {/* ── BESTAND ── */}
-      <Section icon={<Trees size={13} />} title="Bestand" defaultOpen>
+      <Section icon={<Trees size={13} />} title={t('stand')} defaultOpen>
         {isEditing ? (
           <>
             <div className="grid grid-cols-2 gap-3">
@@ -686,7 +688,7 @@ export function CompartmentDetailView({
       </Section>
 
       {/* ── KENNZAHLEN ── */}
-      <Section icon={<BarChart3 size={13} />} title="Kennzahlen">
+      <Section icon={<BarChart3 size={13} />} title={t('metrics')}>
         {treeStats && (
           <div className="bg-blue-950/30 border border-blue-500/20 rounded-lg p-2.5 space-y-1.5 mb-2">
             <p className="text-[10px] text-blue-400 font-bold uppercase flex items-center gap-1">
@@ -732,7 +734,7 @@ export function CompartmentDetailView({
       </Section>
 
       {/* ── VERJÜNGUNG ── */}
-      <Section icon={<Sprout size={13} />} title="Verjüngung">
+      <Section icon={<Sprout size={13} />} title={t('rejuvenation')}>
         {isEditing ? (
           <>
             <p className="text-[10px] text-gray-500">Vorhandene Verjüngungsarten mit Höhe und Dichte</p>
@@ -753,13 +755,13 @@ export function CompartmentDetailView({
               ))}
             </div>
           ) : (
-            <p className="text-xs text-gray-600">Keine Verjüngung erfasst.</p>
+            <p className="text-xs text-gray-600">{t('noRejuvenation')}</p>
           )
         )}
       </Section>
 
       {/* ── ZUSTAND ── */}
-      <Section icon={<Heart size={13} />} title="Zustand">
+      <Section icon={<Heart size={13} />} title={t('condition')}>
         {isEditing ? (
           <>
             <div>
@@ -799,14 +801,14 @@ export function CompartmentDetailView({
               </div>
             )}
             {!compartment.vitalityNote && !compartment.damageNote && !compartment.stabilityNote && (
-              <p className="text-xs text-gray-600">Kein Zustand erfasst.</p>
+              <p className="text-xs text-gray-600">{t('noConditionRecorded')}</p>
             )}
           </div>
         )}
       </Section>
 
       {/* ── BEWIRTSCHAFTUNG ── */}
-      <Section icon={<Wrench size={13} />} title="Bewirtschaftung">
+      <Section icon={<Wrench size={13} />} title={t('management')}>
         {isEditing ? (
           <>
             <div className="grid grid-cols-2 gap-3">
@@ -830,14 +832,14 @@ export function CompartmentDetailView({
 
       {/* ── NOTIZ ── */}
       <div>
-        <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">Notiz</h4>
+        <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">{t('note')}</h4>
         {isEditing ? (
           <Textarea value={note} onChange={e => setNote(e.target.value)}
             className="bg-black/50 border-white/20 text-white min-h-[80px]"
-            placeholder="Allgemeine Notizen zur Abteilung…" />
+            placeholder={t('notePlaceholder')} />
         ) : (
           <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[48px] whitespace-pre-wrap">
-            {compartment.note || 'Keine Notiz.'}
+            {compartment.note || t('noNote')}
           </p>
         )}
       </div>
@@ -846,13 +848,13 @@ export function CompartmentDetailView({
       {!isEditing && (
         <div className="space-y-3 pt-4 border-t border-white/10 mt-4">
           <div className="flex justify-between items-center">
-            <h4 className="text-[10px] uppercase text-gray-500 font-bold">Aufgaben</h4>
+            <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('tasks')}</h4>
             <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-300">{linkedTasks.length}</span>
           </div>
           <div className="space-y-2">
             {linkedTasks.length === 0 ? (
               <div className="text-center py-4 text-xs text-gray-600 border border-dashed border-white/10 rounded-lg">
-                Alles erledigt.
+                {t('allDone')}
               </div>
             ) : (
               linkedTasks.map((task: any) => (
@@ -893,7 +895,7 @@ export function CompartmentDetailView({
               variant="outline"
               onClick={() => setShowCreateTask(true)}
             >
-              <PlusCircle className="w-3 h-3 mr-2" /> Neue Aufgabe hier
+              <PlusCircle className="w-3 h-3 mr-2" /> {t('newTaskHere')}
             </Button>
           </div>
         </div>
@@ -904,8 +906,8 @@ export function CompartmentDetailView({
         <div className="flex items-center gap-2">
           <Radio size={13} className={trackBiomass ? 'text-emerald-400' : 'text-gray-600'} />
           <div>
-            <p className="text-xs text-gray-300 font-medium">SAR-Monitoring</p>
-            <p className="text-[10px] text-gray-600">Sentinel-1 Tracking im Biomasse-Monitor</p>
+            <p className="text-xs text-gray-300 font-medium">{t('sarMonitoring')}</p>
+            <p className="text-[10px] text-gray-600">{t('sarDescription')}</p>
           </div>
         </div>
         <button
@@ -921,15 +923,15 @@ export function CompartmentDetailView({
       {/* ── GEOMETRIE ── */}
       {isEditing && (
         <div className="pt-2 border-t border-white/10 mt-2">
-          <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">Geometrie</label>
+          <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">{t('geometry')}</label>
           <Button
             variant="outline"
             className={`w-full border-white/10 text-gray-300 hover:text-white hover:bg-white/10 h-10 font-bold ${isGeometryEditing ? 'bg-blue-900/20 border-blue-500 text-blue-400' : ''}`}
             onClick={handleToggleGeometry}
           >
             {isGeometryEditing
-              ? <><Check className="w-4 h-4 mr-2" /> Bearbeiten beenden</>
-              : <><ScanLine className="w-4 h-4 mr-2" /> Fläche auf Karte ändern</>}
+              ? <><Check className="w-4 h-4 mr-2" /> {t('editGeometryDone')}</>
+              : <><ScanLine className="w-4 h-4 mr-2" /> {t('editAreaStart')}</>}
           </Button>
         </div>
       )}
@@ -941,11 +943,11 @@ export function CompartmentDetailView({
             <DeleteConfirmDialog
               trigger={
                 <Button variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-950/30 px-3">
-                  <Trash2 className="w-4 h-4 mr-2" /> Löschen
+                  <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
                 </Button>
               }
-              title="Abteilung löschen?"
-              description="Die Abteilung wird unwiderruflich von der Karte entfernt. Verknüpfte Bäume behalten ihre Position."
+              title={t('deleteCompartmentTitle')}
+              description={t('deleteCompartmentDesc')}
               confirmString={displayName}
               onConfirm={async () => {
                 const taskIds = deleteTasksToo ? linkedTasks.map((t: any) => t.id) : undefined;
@@ -956,11 +958,11 @@ export function CompartmentDetailView({
             >
               {linkedTasks.length > 0 && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
-                  <p className="text-xs font-semibold text-amber-800">Verknüpfte Aufgaben ({linkedTasks.length})</p>
+                  <p className="text-xs font-semibold text-amber-800">{t('linkedTasks', { count: linkedTasks.length })}</p>
                   <label className="flex items-center gap-2 cursor-pointer pt-1">
                     <input type="checkbox" checked={deleteTasksToo} onChange={e => setDeleteTasksToo(e.target.checked)}
                       className="rounded border-amber-400 text-red-600 focus:ring-red-500" />
-                    <span className="text-sm text-slate-700">Aufgaben ebenfalls löschen</span>
+                    <span className="text-sm text-slate-700">{t('deleteTasksToo')}</span>
                   </label>
                 </div>
               )}
@@ -968,10 +970,10 @@ export function CompartmentDetailView({
           ) : <div />}
           <div className="flex gap-2">
             <Button variant="ghost" onClick={resetEditing} className="text-gray-400">
-              Abbrechen
+              {t('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={isSaving} style={{ backgroundColor: color }} className="text-white hover:opacity-90">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Speichern'}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
             </Button>
           </div>
         </div>

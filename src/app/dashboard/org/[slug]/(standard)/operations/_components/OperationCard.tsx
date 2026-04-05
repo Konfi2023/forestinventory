@@ -8,23 +8,24 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { deleteOperation, updateOperation } from "@/actions/operations";
 import { LogPileSection } from "./LogPileSection";
 import { TimberSaleSection } from "./TimberSaleSection";
 import { OperationStatus, OperationType } from "@prisma/client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
-const TYPE_LABELS: Record<OperationType, string> = {
-  HARVEST: "Einschlag", PLANTING: "Aufforstung", MAINTENANCE: "Pflege",
-  PLANNING: "Planung", MONITORING: "Monitoring",
+const TYPE_KEYS: Record<OperationType, string> = {
+  HARVEST: "typeHarvest", PLANTING: "typePlanting", MAINTENANCE: "typeMaintenance",
+  PLANNING: "typePlanning", MONITORING: "typeMonitoring",
 };
 
-const STATUS_CONFIG: Record<OperationStatus, { label: string; bg: string; text: string; border: string }> = {
-  PLANNED:     { label: "Geplant",       bg: "bg-slate-100",    text: "text-slate-600",    border: "border-slate-300"  },
-  IN_PROGRESS: { label: "Laufend",       bg: "bg-blue-50",      text: "text-blue-700",     border: "border-blue-300"   },
-  COMPLETED:   { label: "Abgeschlossen", bg: "bg-emerald-50",   text: "text-emerald-700",  border: "border-emerald-300"},
-  CANCELLED:   { label: "Abgebrochen",   bg: "bg-red-50",       text: "text-red-700",      border: "border-red-300"    },
-  ON_HOLD:     { label: "Pausiert",      bg: "bg-amber-50",     text: "text-amber-700",    border: "border-amber-300"  },
+const STATUS_CONFIG: Record<OperationStatus, { key: string; bg: string; text: string; border: string }> = {
+  PLANNED:     { key: "statusPlanned",     bg: "bg-slate-100",    text: "text-slate-600",    border: "border-slate-300"  },
+  IN_PROGRESS: { key: "statusInProgress",  bg: "bg-blue-50",      text: "text-blue-700",     border: "border-blue-300"   },
+  COMPLETED:   { key: "statusCompleted",   bg: "bg-emerald-50",   text: "text-emerald-700",  border: "border-emerald-300"},
+  CANCELLED:   { key: "statusCancelled",   bg: "bg-red-50",       text: "text-red-700",      border: "border-red-300"    },
+  ON_HOLD:     { key: "statusOnHold",      bg: "bg-amber-50",     text: "text-amber-700",    border: "border-amber-300"  },
 };
 
 const STATUS_ORDER: OperationStatus[] = ["PLANNED", "IN_PROGRESS", "COMPLETED", "ON_HOLD"];
@@ -36,6 +37,7 @@ interface Props {
 }
 
 export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
+  const t = useTranslations("Operations");
   const [open,    setOpen]    = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -78,7 +80,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
     setUpdatingStatus(true);
     try {
       await updateOperation(orgSlug, operation.id, { status });
-      toast.success(`Status: ${STATUS_CONFIG[status].label}`);
+      toast.success(`Status: ${t(STATUS_CONFIG[status].key)}`);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -90,7 +92,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
     setSavingDesc(true);
     try {
       await updateOperation(orgSlug, operation.id, { description: desc || undefined });
-      toast.success("Beschreibung gespeichert");
+      toast.success(t("descriptionSaved"));
       setEditingDesc(false);
     } catch (e: any) {
       toast.error(e.message);
@@ -103,7 +105,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
     setDeleting(true);
     try {
       await deleteOperation(orgSlug, operation.id);
-      toast.success("Maßnahme gelöscht");
+      toast.success(t("operationDeleted"));
     } catch (e: any) {
       toast.error(e.message);
       setDeleting(false);
@@ -130,10 +132,10 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
               </span>
               <p className="font-semibold text-sm text-slate-800">{operation.title}</p>
               <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">
-                {TYPE_LABELS[operation.type as OperationType] ?? operation.type}
+                {TYPE_KEYS[operation.type as OperationType] ? t(TYPE_KEYS[operation.type as OperationType]) : operation.type}
               </span>
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
-                {cfg.label}
+                {t(cfg.key)}
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
@@ -156,30 +158,30 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
         {/* Gesamt fm */}
         <div className="px-3 py-2">
           <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5">
-            <Scale size={9} /> Gesamt (fm)
+            <Scale size={9} /> {t("totalFm")}
           </div>
           <div className="text-sm font-bold text-slate-800 font-mono">
             {totalFm > 0 ? totalFm.toFixed(1) : "—"}
           </div>
           {totalEstFm > 0 && totalMeasFm === 0 && (
-            <div className="text-[9px] text-slate-400">geschätzt</div>
+            <div className="text-[9px] text-slate-400">{t("estimated")}</div>
           )}
           {totalEstFm > 0 && totalMeasFm > 0 && totalEstFm !== totalMeasFm && (
-            <div className="text-[9px] text-slate-400">gesch. {totalEstFm.toFixed(1)}</div>
+            <div className="text-[9px] text-slate-400">{t("estShort", { value: totalEstFm.toFixed(1) })}</div>
           )}
         </div>
 
         {/* Vermessen */}
         <div className="px-3 py-2">
           <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5">
-            <ClipboardCheck size={9} /> Vermessen
+            <ClipboardCheck size={9} /> {t("measured")}
           </div>
           <div className={`text-sm font-bold font-mono ${totalMeasFm > 0 ? "text-blue-700" : "text-slate-300"}`}>
             {totalMeasFm > 0 ? totalMeasFm.toFixed(1) : "—"}
           </div>
           {totalMeasFm > 0 && totalFm > 0 && (
             <div className="text-[9px] text-blue-400">
-              {Math.round((totalMeasFm / totalFm) * 100)} % d. Ges.
+              {t("ofTotal", { pct: Math.round((totalMeasFm / totalFm) * 100) })}
             </div>
           )}
         </div>
@@ -187,20 +189,20 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
         {/* Verkauft / Abgefahren */}
         <div className="px-3 py-2">
           <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5">
-            <TrendingUp size={9} /> Verkauft
+            <TrendingUp size={9} /> {t("sold")}
           </div>
           <div className={`text-sm font-bold font-mono ${soldFm > 0 ? "text-amber-700" : "text-slate-300"}`}>
             {soldFm > 0 ? `${soldFm.toFixed(1)}` : "—"}
           </div>
           {soldFm > 0 && totalFm > 0 && (
-            <div className="text-[9px] text-amber-500">{soldPct} % abgeschlossen</div>
+            <div className="text-[9px] text-amber-500">{t("soldPct", { pct: soldPct })}</div>
           )}
         </div>
 
         {/* Erlös */}
         <div className="px-3 py-2">
           <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5">
-            <ShoppingCart size={9} /> Erlös
+            <ShoppingCart size={9} /> {t("revenue")}
           </div>
           <div className={`text-sm font-bold ${totalRevenue > 0 ? "text-emerald-700" : "text-slate-300"}`}>
             {totalRevenue > 0
@@ -208,7 +210,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
               : "—"}
           </div>
           {sales.length > 0 && (
-            <div className="text-[9px] text-slate-400">{sales.length} Verkauf{sales.length !== 1 ? "käufe" : ""}</div>
+            <div className="text-[9px] text-slate-400">{sales.length !== 1 ? t("salesCountPlural", { count: sales.length }) : t("salesCount", { count: sales.length })}</div>
           )}
         </div>
       </div>
@@ -251,7 +253,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
                   value={desc}
                   onChange={e => setDesc(e.target.value)}
                   rows={2}
-                  placeholder="Beschreibung / Hinweise zur Maßnahme ..."
+                  placeholder={t("descriptionHint")}
                   className="flex-1 text-xs border border-slate-200 rounded-md px-2 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
                   autoFocus
                 />
@@ -277,12 +279,12 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
                   className={`text-xs flex-1 ${desc ? "text-slate-500 italic" : "text-slate-300"}`}
                   onClick={() => setEditingDesc(true)}
                 >
-                  {desc || "Beschreibung hinzufügen ..."}
+                  {desc || t("addDescription")}
                 </p>
                 <button
                   onClick={() => setEditingDesc(true)}
                   className="opacity-0 group-hover/desc:opacity-100 p-1 rounded text-slate-300 hover:text-amber-600 hover:bg-amber-50 transition-all shrink-0"
-                  title="Beschreibung bearbeiten"
+                  title={t("editDescription")}
                 >
                   <Pencil size={11} />
                 </button>
@@ -313,7 +315,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
           {/* Footer: Status + Löschen */}
           <div className="px-4 py-2.5 flex items-center justify-between bg-slate-50/50 gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] text-slate-400 font-medium mr-1">Status:</span>
+              <span className="text-[10px] text-slate-400 font-medium mr-1">{t("statusLabel")}</span>
               {STATUS_ORDER.map(s => {
                 const c = STATUS_CONFIG[s];
                 const active = operation.status === s;
@@ -328,7 +330,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
                         : "border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600 bg-white"
                     }`}
                   >
-                    {c.label}
+                    {t(c.key)}
                   </button>
                 );
               })}
@@ -339,7 +341,7 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
               className="text-red-400 hover:text-red-600 hover:bg-red-50 h-7 px-2 text-xs ml-auto"
             >
               {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-              <span className="ml-1 hidden sm:inline">Löschen</span>
+              <span className="ml-1 hidden sm:inline">{t("delete")}</span>
             </Button>
           </div>
         </div>
@@ -348,9 +350,9 @@ export function OperationCard({ operation, logPilePois, orgSlug }: Props) {
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
-        title={`Maßnahme "${operation.title}" löschen?`}
-        description="Alle Polter werden ebenfalls gelöscht."
-        confirmLabel="Löschen"
+        title={t("deleteOperation", { title: operation.title })}
+        description={t("deleteDescription")}
+        confirmLabel={t("deleteConfirm")}
         destructive
         onConfirm={handleDelete}
       />

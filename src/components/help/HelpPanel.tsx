@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { HelpCircle, X, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { getHelpContent } from "@/lib/help-content";
+import { useTranslations } from "next-intl";
 
 function useIsMapPage() {
   const pathname = usePathname();
@@ -15,6 +16,8 @@ export function HelpPanel() {
   const isMap = useIsMapPage();
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  const t = useTranslations("Help");
 
   const content = getHelpContent(pathname);
   if (!content) return null;
@@ -30,7 +33,7 @@ export function HelpPanel() {
       {/* Trigger button */}
       <button
         onClick={() => setOpen(true)}
-        title="Hilfe"
+        title={t("help")}
         style={btnStyle}
         className={`no-print fixed z-40 flex items-center justify-center transition-colors ${
           isMap
@@ -79,7 +82,7 @@ export function HelpPanel() {
           {content.faqs.length > 0 && (
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                Häufige Fragen
+                {t("faqTitle")}
               </h3>
               <div className="space-y-2">
                 {content.faqs.map((faq, i) => (
@@ -114,7 +117,7 @@ export function HelpPanel() {
               className="flex items-center gap-2 text-sm text-emerald-700 hover:text-emerald-800 font-medium transition-colors"
             >
               <ExternalLink size={14} />
-              Vollständige Dokumentation öffnen
+              {t("openDocs")}
             </a>
           )}
         </div>
@@ -122,7 +125,7 @@ export function HelpPanel() {
         {/* Footer */}
         <div className="px-5 py-4 border-t border-slate-100 bg-slate-50">
           <p className="text-xs text-slate-400">
-            Weitere Fragen?{" "}
+            {t("moreQuestions")}{" "}
             <a
               href="mailto:info@forest-manager.eu"
               className="text-emerald-700 hover:underline"

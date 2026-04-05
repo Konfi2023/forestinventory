@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import {
   LayoutDashboard,
   Settings,
@@ -64,13 +65,14 @@ export default async function OrgLayout({
   });
 
   if (!membership) {
+    const t = await getTranslations("Dashboard");
     return (
         <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 gap-4">
-            <h1 className="text-2xl font-bold text-red-600">Zugriff verweigert</h1>
-            <p className="text-slate-600">Sie sind kein Mitglied der Organisation "{slug}".</p>
+            <h1 className="text-2xl font-bold text-red-600">{t("accessDenied")}</h1>
+            <p className="text-slate-600">{t("notMemberOfOrg", { slug })}</p>
             <Link href="/dashboard">
                 <div className="px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 transition">
-                    Zurück zur Übersicht
+                    {t("backToOverview")}
                 </div>
             </Link>
         </div>
@@ -82,7 +84,10 @@ export default async function OrgLayout({
   const navPerms = membership.role.permissions;
   const canNav = (perm: string) => isOrgAdmin || navPerms.includes(perm);
 
-  // 3. Alle Mitgliedschaften laden (für den Org-Switcher)
+  // 3. Translations laden
+  const t = await getTranslations("Dashboard");
+
+  // 4. Alle Mitgliedschaften laden (für den Org-Switcher)
   const allMemberships = await prisma.membership.findMany({
     where: { userId: session.user.id },
     include: { 
@@ -116,30 +121,30 @@ export default async function OrgLayout({
 
         {/* Navigation Links */}
         <nav className="flex-1 px-3 space-y-1 mt-6 overflow-y-auto custom-scrollbar flex flex-col">
-          <NavItem href={`/dashboard/org/${slug}`} icon={<LayoutDashboard size={20} />} label="Übersicht" />
+          <NavItem href={`/dashboard/org/${slug}`} icon={<LayoutDashboard size={20} />} label={t("nav.overview")} />
 
-          {canNav("nav:map") && <NavItem href={`/dashboard/org/${slug}/map`} icon={<MapIcon size={20} />} label="Karte" />}
+          {canNav("nav:map") && <NavItem href={`/dashboard/org/${slug}/map`} icon={<MapIcon size={20} />} label={t("nav.map")} />}
 
-          {canNav("nav:tasks") && <NavItem href={`/dashboard/org/${slug}/tasks`} icon={<ClipboardList size={20} />} label="Aufgaben & Planung" />}
+          {canNav("nav:tasks") && <NavItem href={`/dashboard/org/${slug}/tasks`} icon={<ClipboardList size={20} />} label={t("nav.tasks")} />}
 
-          {canNav("nav:calendar") && <NavItem href={`/dashboard/org/${slug}/calendar`} icon={<CalendarDays size={20} />} label="Kalender" />}
+          {canNav("nav:calendar") && <NavItem href={`/dashboard/org/${slug}/calendar`} icon={<CalendarDays size={20} />} label={t("nav.calendar")} />}
 
-          {canNav("nav:biomass") && <NavItem href={`/dashboard/org/${slug}/biomass`} icon={<Leaf size={20} />} label="Biomasse-Monitoring" />}
+          {canNav("nav:biomass") && <NavItem href={`/dashboard/org/${slug}/biomass`} icon={<Leaf size={20} />} label={t("nav.biomass")} />}
 
-          {canNav("nav:operations") && <NavItem href={`/dashboard/org/${slug}/operations`} icon={<PackageOpen size={20} />} label="Maßnahmen & Holzverkauf" />}
+          {canNav("nav:operations") && <NavItem href={`/dashboard/org/${slug}/operations`} icon={<PackageOpen size={20} />} label={t("nav.operations")} />}
 
-          {canNav("nav:map") && <NavItem href={`/dashboard/org/${slug}/forsteinrichtung`} icon={<Grid3x3 size={20} />} label="Forsteinrichtung" />}
+          {canNav("nav:map") && <NavItem href={`/dashboard/org/${slug}/forsteinrichtung`} icon={<Grid3x3 size={20} />} label={t("nav.forestSetup")} />}
 
-          {canNav("nav:controlling") && <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label="Zeitcontrolling" />}
+          {canNav("nav:controlling") && <NavItem href={`/dashboard/org/${slug}/controlling`} icon={<BarChart2 size={20} />} label={t("nav.timeControl")} />}
 
-          <NavItem href={`/dashboard/org/${slug}/kostencontrolling`} icon={<Euro size={20} />} label="Rechnungen & Berichte" soon />
+          <NavItem href={`/dashboard/org/${slug}/kostencontrolling`} icon={<Euro size={20} />} label={t("nav.invoices")} soon soonLabel={t("nav.soon")} />
 
           {/* Spacer, damit Kontakte, Abrechnungen & Administration unten klebt */}
           <div className="mt-auto pb-4">
              <div className="my-2 border-t border-slate-800" />
-             {canNav("nav:contacts") && <NavItem href={`/dashboard/org/${slug}/contacts`} icon={<BookUser size={20} />} label="Kontakte" />}
-             {canNav("nav:billing") && <NavItem href={`/dashboard/org/${slug}/billing`} icon={<CreditCard size={20} />} label="Abrechnungen" />}
-             <NavItem href={`/dashboard/org/${slug}/settings`} icon={<Settings size={20} />} label="Administration" />
+             {canNav("nav:contacts") && <NavItem href={`/dashboard/org/${slug}/contacts`} icon={<BookUser size={20} />} label={t("nav.contacts")} />}
+             {canNav("nav:billing") && <NavItem href={`/dashboard/org/${slug}/billing`} icon={<CreditCard size={20} />} label={t("nav.billing")} />}
+             <NavItem href={`/dashboard/org/${slug}/settings`} icon={<Settings size={20} />} label={t("nav.administration")} />
           </div>
         </nav>
 
@@ -159,7 +164,7 @@ export default async function OrgLayout({
                         {membership.role.name}
                     </p>
                 </div>
-                <Link href="/api/auth/signout" title="Abmelden"
+                <Link href="/api/auth/signout" title={t("signOut")}
                   className="text-slate-600 hover:text-red-400 transition shrink-0">
                   <LogOut size={16} />
                 </Link>
@@ -202,6 +207,8 @@ async function TrialExpiredGate({
     return <>{children}</>;
   }
 
+  const t = await getTranslations("Dashboard");
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50 h-full w-full flex items-center justify-center p-8">
       <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center space-y-5">
@@ -209,20 +216,19 @@ async function TrialExpiredGate({
           <CreditCard size={24} className="text-amber-600" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Testzeitraum abgelaufen</h2>
+          <h2 className="text-xl font-bold text-slate-900">{t("trialExpired.title")}</h2>
           <p className="text-slate-500 text-sm mt-2 leading-relaxed">
-            Ihr kostenloser Testzeitraum ist abgelaufen. Wählen Sie ein Paket, um ForestManager
-            weiter zu nutzen. Ihre Daten bleiben erhalten.
+            {t("trialExpired.description")}
           </p>
         </div>
         <Link
           href={`/dashboard/org/${slug}/billing`}
           className="inline-flex items-center gap-2 px-6 py-3 bg-green-700 text-white rounded-xl font-semibold hover:bg-green-800 transition text-sm"
         >
-          <CreditCard size={16} /> Paket wählen &amp; weitermachen
+          <CreditCard size={16} /> {t("trialExpired.choosePlan")}
         </Link>
         <p className="text-xs text-slate-400">
-          Fragen? <a href="mailto:info@forest-manager.eu" className="text-green-700 hover:underline">info@forest-manager.eu</a>
+          {t("trialExpired.questions")} <a href="mailto:info@forest-manager.eu" className="text-green-700 hover:underline">info@forest-manager.eu</a>
         </p>
       </div>
     </div>
@@ -230,13 +236,13 @@ async function TrialExpiredGate({
 }
 
 // ── NavItem ───────────────────────────────────────────────────────────────────
-function NavItem({ href, icon, label, soon }: { href: string; icon: React.ReactNode; label: string; soon?: boolean }) {
+function NavItem({ href, icon, label, soon, soonLabel }: { href: string; icon: React.ReactNode; label: string; soon?: boolean; soonLabel?: string }) {
   if (soon) {
     return (
       <div className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium opacity-40 cursor-not-allowed select-none">
         <span className="text-slate-500">{icon}</span>
         <span className="text-slate-500">{label}</span>
-        <span className="ml-auto text-[10px] font-bold uppercase tracking-wide bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded">Bald</span>
+        <span className="ml-auto text-[10px] font-bold uppercase tracking-wide bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded">{soonLabel ?? "Bald"}</span>
       </div>
     );
   }

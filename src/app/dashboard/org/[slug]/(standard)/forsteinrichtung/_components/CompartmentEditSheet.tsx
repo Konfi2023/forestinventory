@@ -9,6 +9,7 @@ import { Loader2, PlusCircle, Search, X } from 'lucide-react';
 import { updateCompartment } from '@/actions/polygons';
 import { toast } from 'sonner';
 import { TREE_SPECIES, getSpeciesLabel, getSpeciesColor } from '@/lib/tree-species';
+import { useTranslations } from 'next-intl';
 
 // ─── Konstanten ───────────────────────────────────────────────────────────────
 const EXPOSITION_OPTIONS = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW', 'eben'];
@@ -223,6 +224,7 @@ interface Props {
 }
 
 export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange, onSaved }: Props) {
+  const t = useTranslations('ForestSetup');
   const [saving, setSaving] = useState(false);
 
   const [name,              setName]              = useState(compartment.name ?? '');
@@ -283,7 +285,7 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
         standTypeCode,
       }, orgSlug);
       if (!res.success) throw new Error(res.error);
-      toast.success('Abteilung gespeichert');
+      toast.success(t('compartmentSaved'));
       onSaved();
       onOpenChange(false);
     } catch (e: any) {
@@ -293,7 +295,7 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
     }
   };
 
-  const displayName = `${number ? `[${number}] ` : ''}${name || 'Abteilung'}`;
+  const displayName = `${number ? `[${number}] ` : ''}${name || t('general')}`;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -308,126 +310,126 @@ export function CompartmentEditSheet({ compartment, orgSlug, open, onOpenChange,
         <div className="px-6 py-5 space-y-4">
 
           {/* Basis */}
-          <Section title="Allgemein">
-            <TField label="Abteilungsnummer" value={number} onChange={setNumber} placeholder="z. B. 101a" />
-            <TField label="Name" value={name} onChange={setName} placeholder="z. B. Nordabhang" />
+          <Section title={t('general')}>
+            <TField label={t('compartmentNumber')} value={number} onChange={setNumber} placeholder={t('compartmentNumPlaceholder')} />
+            <TField label={t('name')} value={name} onChange={setName} placeholder={t('namePlaceholder')} />
           </Section>
 
           {/* Standort */}
-          <Section title="Standort">
-            <TField label="Bodentyp" value={soilType} onChange={setSoilType} placeholder="z. B. Braunerde" />
-            <NField label="Höhenlage" value={altitude} onChange={setAltitude} unit="m ü. NN" step="1" />
-            <TField label="Standorteinheit" value={siteUnit} onChange={setSiteUnit} placeholder="z. B. TZ2, M2f" />
-            <SField label="Wasserhaushalt" value={waterBalance} onChange={setWaterBalance} options={WATER_OPTIONS} />
-            <SField label="Nährstoffstufe" value={nutrientLevel} onChange={setNutrientLevel} options={NUTRIENT_OPTIONS} />
-            <SField label="Exposition" value={exposition} onChange={setExposition} options={EXPOSITION_OPTIONS} />
-            <SField label="Hangneigung" value={slopeClass} onChange={setSlopeClass} options={SLOPE_OPTIONS} />
-            <SField label="Waldfunktion" value={forestFunction} onChange={setForestFunction} options={FOREST_FUNCTION_OPTIONS} />
-            <TField label="Schutzstatus" value={protectionStatus} onChange={setProtectionStatus} placeholder="z. B. FFH, NSG" />
+          <Section title={t('site')}>
+            <TField label={t('soilType')} value={soilType} onChange={setSoilType} placeholder={t('soilTypePlaceholder')} />
+            <NField label={t('altitude')} value={altitude} onChange={setAltitude} unit={t('altitudeUnit')} step="1" />
+            <TField label={t('siteUnit')} value={siteUnit} onChange={setSiteUnit} placeholder={t('siteUnitPlaceholder')} />
+            <SField label={t('waterBalance')} value={waterBalance} onChange={setWaterBalance} options={WATER_OPTIONS} />
+            <SField label={t('nutrientLevel')} value={nutrientLevel} onChange={setNutrientLevel} options={NUTRIENT_OPTIONS} />
+            <SField label={t('exposition')} value={exposition} onChange={setExposition} options={EXPOSITION_OPTIONS} />
+            <SField label={t('slope')} value={slopeClass} onChange={setSlopeClass} options={SLOPE_OPTIONS} />
+            <SField label={t('forestFunction')} value={forestFunction} onChange={setForestFunction} options={FOREST_FUNCTION_OPTIONS} />
+            <TField label={t('protectionStatus')} value={protectionStatus} onChange={setProtectionStatus} placeholder={t('protectionStatusPlaceholder')} />
             <div className="col-span-2">
-              <TField label="Restriktionen / Auflagen" value={restrictions} onChange={setRestrictions} placeholder="z. B. kein Kahlschlag" />
+              <TField label={t('restrictions')} value={restrictions} onChange={setRestrictions} placeholder={t('restrictionsPlaceholder')} />
             </div>
           </Section>
 
           {/* Bestand */}
-          <Section title="Bestand">
-            <NField label="Bestandesalter" value={standAge} onChange={setStandAge} unit="Jahre" step="1" />
-            <TField label="Bestandestyp-Kürzel" value={standTypeCode} onChange={setStandTypeCode} placeholder="z. B. Fi70b" />
-            <SField label="Entwicklungsstufe" value={developmentStage} onChange={setDevelopmentStage} options={DEVELOP_OPTIONS} />
-            <SField label="Struktur" value={structure} onChange={setStructure} options={STRUCTURE_OPTIONS} />
-            <SField label="Mischungsform" value={mixingForm} onChange={setMixingForm} options={MIXING_OPTIONS} />
+          <Section title={t('stand')}>
+            <NField label={t('standAge')} value={standAge} onChange={setStandAge} unit={t('standAgeUnit')} step="1" />
+            <TField label={t('standTypeCode')} value={standTypeCode} onChange={setStandTypeCode} placeholder={t('standTypeCodePlaceholder')} />
+            <SField label={t('developmentStage')} value={developmentStage} onChange={setDevelopmentStage} options={DEVELOP_OPTIONS} />
+            <SField label={t('structure')} value={structure} onChange={setStructure} options={STRUCTURE_OPTIONS} />
+            <SField label={t('mixingForm')} value={mixingForm} onChange={setMixingForm} options={MIXING_OPTIONS} />
             <div className="col-span-2">
-              <SpeciesEditor label="Hauptbaumarten" entries={mainSpecies} onChange={setMainSpecies} />
+              <SpeciesEditor label={t('mainSpecies')} entries={mainSpecies} onChange={setMainSpecies} />
             </div>
             <div className="col-span-2">
-              <SpeciesEditor label="Nebenbaumarten" entries={sideSpecies} onChange={setSideSpecies} />
+              <SpeciesEditor label={t('sideSpecies')} entries={sideSpecies} onChange={setSideSpecies} />
             </div>
           </Section>
 
           {/* Kennzahlen */}
-          <Section title="Kennzahlen">
-            <NField label="Vorrat" value={volumePerHa} onChange={setVolumePerHa} unit="m³/ha" />
-            <NField label="Zuwachs" value={incrementPerHa} onChange={setIncrementPerHa} unit="m³/ha/a" />
-            <NField label="Bestockungsgrad" value={stockingDegree} onChange={setStockingDegree} step="0.05" />
-            <NField label="Totholz" value={deadwoodPerHa} onChange={setDeadwoodPerHa} unit="m³/ha" />
-            <NField label="Bonität (EKL)" value={yieldClass} onChange={setYieldClass} step="0.5" />
-            <SField label="Wuchsleistung" value={siteProductivity} onChange={setSiteProductivity} options={PRODUCTIVITY_OPTIONS} />
+          <Section title={t('metrics')}>
+            <NField label={t('volume')} value={volumePerHa} onChange={setVolumePerHa} unit={t('volumeUnit')} />
+            <NField label={t('increment')} value={incrementPerHa} onChange={setIncrementPerHa} unit={t('incrementUnit')} />
+            <NField label={t('stockingDegree')} value={stockingDegree} onChange={setStockingDegree} step="0.05" />
+            <NField label={t('deadwood')} value={deadwoodPerHa} onChange={setDeadwoodPerHa} unit={t('deadwoodUnit')} />
+            <NField label={t('yieldClass')} value={yieldClass} onChange={setYieldClass} step="0.5" />
+            <SField label={t('productivity')} value={siteProductivity} onChange={setSiteProductivity} options={PRODUCTIVITY_OPTIONS} />
           </Section>
 
           {/* Verjüngung */}
-          <SectionFull title="Verjüngung">
+          <SectionFull title={t('rejuvenation')}>
             <RejuvEditor entries={rejuvenation} onChange={setRejuvenation} />
           </SectionFull>
 
           {/* Zustand */}
-          <SectionFull title="Zustand">
+          <SectionFull title={t('condition')}>
             <div>
-              <Label>Vitalität / Kronenzustand</Label>
+              <Label>{t('vitalityCrownLabel')}</Label>
               <Textarea value={vitalityNote} onChange={e => setVitalityNote(e.target.value)}
-                placeholder="Beschreibung Kronenzustand, Vitalitätsstufe..." className="text-sm min-h-[72px]" />
+                placeholder={t('vitalityPlaceholder')} className="text-sm min-h-[72px]" />
             </div>
             <div>
-              <Label>Schäden (biotisch / abiotisch)</Label>
+              <Label>{t('damageLabel')}</Label>
               <Textarea value={damageNote} onChange={e => setDamageNote(e.target.value)}
-                placeholder="Art und Ausmaß der Schäden..." className="text-sm min-h-[72px]" />
+                placeholder={t('damagePlaceholder')} className="text-sm min-h-[72px]" />
             </div>
             <div>
-              <Label>Stabilität / Risiko</Label>
+              <Label>{t('stabilityLabel')}</Label>
               <Textarea value={stabilityNote} onChange={e => setStabilityNote(e.target.value)}
-                placeholder="Standfestigkeit, Sturm- und Schneebruchrisiko..." className="text-sm min-h-[72px]" />
+                placeholder={t('stabilityPlaceholder')} className="text-sm min-h-[72px]" />
             </div>
           </SectionFull>
 
           {/* Bewirtschaftung */}
-          <Section title="Bewirtschaftung">
-            <TField label="Letzte Maßnahme (Datum)" value={lastMeasureDate} onChange={setLastMeasureDate} placeholder="z. B. 03/2024" />
-            <TField label="Art der Maßnahme" value={lastMeasureType} onChange={setLastMeasureType} placeholder="z. B. Durchforstung" />
-            <SField label="Pflegezustand" value={maintenanceStatus} onChange={setMaintenanceStatus} options={MAINTENANCE_OPTIONS} />
-            <SField label="Befahrbarkeit" value={accessibility} onChange={setAccessibility} options={ACCESSIBILITY_OPTIONS} />
+          <Section title={t('mgmt')}>
+            <TField label={t('lastMeasureDate')} value={lastMeasureDate} onChange={setLastMeasureDate} placeholder={t('lastMeasureDatePlaceholder')} />
+            <TField label={t('measureType')} value={lastMeasureType} onChange={setLastMeasureType} placeholder={t('measureTypePlaceholder')} />
+            <SField label={t('maintenanceStatus')} value={maintenanceStatus} onChange={setMaintenanceStatus} options={MAINTENANCE_OPTIONS} />
+            <SField label={t('accessibility')} value={accessibility} onChange={setAccessibility} options={ACCESSIBILITY_OPTIONS} />
           </Section>
 
           {/* Planung */}
-          <SectionFull title="Planung (Forsteinrichtungszeitraum)">
-            <NField label="Geplanter Einschlag" value={plannedHarvestVolume} onChange={setPlannedHarvestVolume} unit="Vfm gesamt" />
+          <SectionFull title={t('planning')}>
+            <NField label={t('plannedHarvest')} value={plannedHarvestVolume} onChange={setPlannedHarvestVolume} unit={t('plannedHarvestUnit')} />
             <div>
-              <Label>Geplante Maßnahmen</Label>
+              <Label>{t('plannedMeasures')}</Label>
               <div className="space-y-1.5">
                 {plannedMeasures.map((m, i) => (
                   <div key={i} className="flex gap-2 items-center">
                     <select value={m.type} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, type: e.target.value } : pm))}
                       className="flex-1 border border-slate-200 rounded-md text-sm px-3 py-1.5 bg-white">
-                      <option value="">– Art –</option>
+                      <option value="">{t('measureTypeSelect')}</option>
                       {MEASURE_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                     <Input type="number" value={m.year || ''} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, year: parseInt(e.target.value) || 0 } : pm))}
-                      placeholder="Jahr" className="w-20 border-slate-200 text-sm" />
+                      placeholder={t('yearLabel')} className="w-20 border-slate-200 text-sm" />
                     <Input value={m.note} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, note: e.target.value } : pm))}
-                      placeholder="Bemerkung" className="flex-1 border-slate-200 text-sm" />
+                      placeholder={t('remarkLabel')} className="flex-1 border-slate-200 text-sm" />
                     <button onClick={() => setPlannedMeasures(plannedMeasures.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400">×</button>
                   </div>
                 ))}
                 <button onClick={() => setPlannedMeasures([...plannedMeasures, { type: '', year: 0, note: '' }])}
                   className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
-                  <PlusCircle size={13} /> Maßnahme hinzufügen
+                  <PlusCircle size={13} /> {t('addMeasure')}
                 </button>
               </div>
             </div>
           </SectionFull>
 
           {/* Notiz */}
-          <SectionFull title="Notiz">
+          <SectionFull title={t('notes')}>
             <Textarea value={note} onChange={e => setNote(e.target.value)}
-              placeholder="Allgemeine Notizen..." className="text-sm min-h-[80px]" />
+              placeholder={t('notesPlaceholder')} className="text-sm min-h-[80px]" />
           </SectionFull>
 
         </div>
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('cancel')}</Button>
           <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Speichern
+            {t('save')}
           </Button>
         </div>
       </SheetContent>

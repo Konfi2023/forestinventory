@@ -28,6 +28,7 @@ import {
   editTaskComment, deleteTask, toggleWatcher, getForestObjects,
 } from "@/actions/tasks";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
 import { useMapStore } from "@/components/map/stores/useMapStores";
@@ -41,18 +42,18 @@ const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap')
 
 // ─── Hilfskonstanten ──────────────────────────────────────────────────────────
 
-const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string }[] = [
-  { value: "OPEN",        label: "Offen",       color: "bg-slate-100 text-slate-700 border-slate-200" },
-  { value: "IN_PROGRESS", label: "In Arbeit",   color: "bg-blue-50   text-blue-700  border-blue-200"  },
-  { value: "BLOCKED",     label: "Blockiert",   color: "bg-red-50    text-red-700   border-red-200"   },
-  { value: "DONE",        label: "Erledigt",    color: "bg-green-50  text-green-700 border-green-200" },
+const STATUS_OPTIONS: { value: TaskStatus; key: string; color: string }[] = [
+  { value: "OPEN",        key: "statusOpen",       color: "bg-slate-100 text-slate-700 border-slate-200" },
+  { value: "IN_PROGRESS", key: "statusInProgress", color: "bg-blue-50   text-blue-700  border-blue-200"  },
+  { value: "BLOCKED",     key: "statusBlocked",    color: "bg-red-50    text-red-700   border-red-200"   },
+  { value: "DONE",        key: "statusDone",       color: "bg-green-50  text-green-700 border-green-200" },
 ];
 
-const PRIORITY_OPTIONS: { value: TaskPriority; label: string; dot: string }[] = [
-  { value: "LOW",    label: "Niedrig",  dot: "bg-slate-400"  },
-  { value: "MEDIUM", label: "Mittel",   dot: "bg-yellow-400" },
-  { value: "HIGH",   label: "Hoch",     dot: "bg-orange-500" },
-  { value: "URGENT", label: "Dringend", dot: "bg-red-600"    },
+const PRIORITY_OPTIONS: { value: TaskPriority; key: string; dot: string }[] = [
+  { value: "LOW",    key: "priorityLow",    dot: "bg-slate-400"  },
+  { value: "MEDIUM", key: "priorityMedium", dot: "bg-yellow-400" },
+  { value: "HIGH",   key: "priorityHigh",   dot: "bg-orange-500" },
+  { value: "URGENT", key: "priorityUrgent", dot: "bg-red-600"    },
 ];
 
 interface Props {
@@ -70,6 +71,7 @@ interface Props {
 export function TaskDetailSheet({
   task, open, onClose, orgSlug, members, currentUserId, onUnschedule,
 }: Props) {
+  const t = useTranslations("Tasks");
   // Basis-State
   const [title, setTitle]         = useState("");
   const [description, setDescription] = useState("");
@@ -178,14 +180,14 @@ export function TaskDetailSheet({
 
   const handleStatusChange = async (val: TaskStatus) => {
     setStatus(val);
-    try { await updateTaskStatus(orgSlug, task.id, val); toast.success("Status geändert"); }
-    catch { setStatus(task.status); toast.error("Fehler"); }
+    try { await updateTaskStatus(orgSlug, task.id, val); toast.success(t("statusChanged")); }
+    catch { setStatus(task.status); toast.error(t("errorGeneric")); }
   };
 
   const handleAssigneeChange = async (val: string) => {
     setAssigneeId(val);
-    try { await assignTask(orgSlug, task.id, val === "unassigned" ? null : val); toast.success("Zuweisung geändert"); }
-    catch { setAssigneeId(task.assigneeId || "unassigned"); toast.error("Fehler"); }
+    try { await assignTask(orgSlug, task.id, val === "unassigned" ? null : val); toast.success(t("assignmentChanged")); }
+    catch { setAssigneeId(task.assigneeId || "unassigned"); toast.error(t("errorGeneric")); }
   };
 
   const handleToggleWatcher = async () => {
@@ -196,14 +198,14 @@ export function TaskDetailSheet({
       : watchers.filter((w: any) => w.id !== currentUserId),
     );
     try { await toggleWatcher(orgSlug, task.id); }
-    catch { fetchLatestData(); toast.error("Fehler"); } // bei Fehler: Server-Stand wiederherstellen
+    catch { fetchLatestData(); toast.error(t("errorGeneric")); } // bei Fehler: Server-Stand wiederherstellen
   };
 
   const handleLoadObjects = async () => {
     if (forestObjects) return;
     setIsLoadingObjects(true);
     try { setForestObjects(await getForestObjects(orgSlug, task.forestId)); }
-    catch { toast.error("Fehler beim Laden der Objekte"); }
+    catch { toast.error(t("errorLoadingObjects")); }
     finally { setIsLoadingObjects(false); }
   };
 
@@ -228,11 +230,11 @@ export function TaskDetailSheet({
       } else {
         await updateTaskContent(orgSlug, task.id, { linkedPolygonId: id, linkedPolygonType: type, poiId: null, lat: null, lng: null });
       }
-      toast.success("Verknüpfung gespeichert");
+      toast.success(t("linkSaved"));
     } catch {
       // Revert bei Fehler
       setLinkedPoi(prevPoi); setLinkedPolygon(prevPolygon);
-      toast.error("Fehler beim Verknüpfen");
+      toast.error(t("linkError"));
     }
   };
 
@@ -244,10 +246,10 @@ export function TaskDetailSheet({
 
     try {
       await updateTaskContent(orgSlug, task.id, { poiId: null, linkedPolygonId: null, linkedPolygonType: null });
-      toast.success("Verknüpfung entfernt");
+      toast.success(t("unlinkSaved"));
     } catch {
       setLinkedPoi(prevPoi); setLinkedPolygon(prevPolygon);
-      toast.error("Fehler");
+      toast.error(t("errorGeneric"));
     }
   };
 
@@ -265,8 +267,8 @@ export function TaskDetailSheet({
       }
       await updateTaskContent(orgSlug, task.id, { title, description, priority, dueDate: dueDate ?? null, estimatedTime: minutes });
       setHasUnsavedChanges(false);
-      toast.success("Gespeichert");
-    } catch { toast.error("Fehler beim Speichern"); }
+      toast.success(t("saved"));
+    } catch { toast.error(t("errorSaving")); }
     finally { setIsSaving(false); }
   };
 
@@ -293,7 +295,7 @@ export function TaskDetailSheet({
       // Revert: Platzhalter entfernen, Text wiederherstellen
       setComments(prev => prev.filter(c => c.id !== tempId));
       setNewComment(text);
-      toast.error("Fehler");
+      toast.error(t("errorGeneric"));
     }
     finally { setIsCommentLoading(false); }
   };
@@ -318,8 +320,8 @@ export function TaskDetailSheet({
         {/* ── Header ────────────────────────────────────────────────────────── */}
         <div className="shrink-0 bg-white border-b px-5 pt-4 pb-3">
           <SheetHeader>
-            <SheetTitle className="sr-only">Aufgabe bearbeiten</SheetTitle>
-            <SheetDescription className="sr-only">Details</SheetDescription>
+            <SheetTitle className="sr-only">{t("editTask")}</SheetTitle>
+            <SheetDescription className="sr-only">{t("details")}</SheetDescription>
           </SheetHeader>
 
           {/* Meta-Zeile */}
@@ -330,7 +332,7 @@ export function TaskDetailSheet({
               </Badge>
               {task.scheduleId && (
                 <Badge className="text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-50 font-normal">
-                  Serie
+                  {t("series")}
                 </Badge>
               )}
             </div>
@@ -344,7 +346,7 @@ export function TaskDetailSheet({
               )}
             >
               {isWatching ? <Eye size={12} /> : <EyeOff size={12} />}
-              {isWatching ? "Abonniert" : "Beobachten"}
+              {isWatching ? t("subscribed") : t("watch")}
             </button>
           </div>
 
@@ -352,12 +354,12 @@ export function TaskDetailSheet({
           <Input
             className="text-xl font-bold border-none shadow-none px-0 h-auto rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-slate-300 bg-transparent"
             value={title}
-            placeholder="Aufgabentitel…"
+            placeholder={t("taskTitlePlaceholder")}
             onChange={e => mark(setTitle, e.target.value)}
           />
           <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
             <RefreshCw size={9} className="opacity-40" />
-            Erstellt {format(new Date(task.createdAt), "dd. MMM yyyy", { locale: de })}
+            {t("createdOn", { date: format(new Date(task.createdAt), "dd. MMM yyyy", { locale: de }) })}
           </p>
         </div>
 
@@ -370,7 +372,7 @@ export function TaskDetailSheet({
             {/* Status + Priorität */}
             <div className="grid grid-cols-2 divide-x divide-slate-100">
               <div className="p-3 space-y-1.5">
-                <FieldLabel>Status</FieldLabel>
+                <FieldLabel>{t("status")}</FieldLabel>
                 <Select value={status} onValueChange={handleStatusChange}>
                   <SelectTrigger className="h-8 text-sm border-slate-200 bg-slate-50 focus:ring-0">
                     <SelectValue />
@@ -378,14 +380,14 @@ export function TaskDetailSheet({
                   <SelectContent>
                     {STATUS_OPTIONS.map(o => (
                       <SelectItem key={o.value} value={o.value}>
-                        <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium border", o.color)}>{o.label}</span>
+                        <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium border", o.color)}>{t(o.key)}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="p-3 space-y-1.5">
-                <FieldLabel>Priorität</FieldLabel>
+                <FieldLabel>{t("priority")}</FieldLabel>
                 <Select value={priority} onValueChange={v => mark(setPriority, v)}>
                   <SelectTrigger className="h-8 text-sm border-slate-200 bg-slate-50 focus:ring-0">
                     <SelectValue />
@@ -395,7 +397,7 @@ export function TaskDetailSheet({
                       <SelectItem key={o.value} value={o.value}>
                         <span className="flex items-center gap-2">
                           <span className={cn("w-2 h-2 rounded-full shrink-0", o.dot)} />
-                          {o.label}
+                          {t(o.key)}
                         </span>
                       </SelectItem>
                     ))}
@@ -407,13 +409,13 @@ export function TaskDetailSheet({
             {/* Zuständig + Fälligkeit */}
             <div className="grid grid-cols-2 divide-x divide-slate-100">
               <div className="p-3 space-y-1.5">
-                <FieldLabel icon={<User size={10} />}>Zuständig</FieldLabel>
+                <FieldLabel icon={<User size={10} />}>{t("responsible")}</FieldLabel>
                 <Select value={assigneeId} onValueChange={handleAssigneeChange}>
                   <SelectTrigger className="h-8 text-sm border-slate-200 bg-slate-50 focus:ring-0">
                     <SelectValue placeholder="Niemand" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unassigned">— Offen —</SelectItem>
+                    <SelectItem value="unassigned">{t("openAssignee")}</SelectItem>
                     {members.map((m: any) => (
                       <SelectItem key={m.id} value={m.id}>
                         {m.firstName} {m.lastName}
@@ -423,7 +425,7 @@ export function TaskDetailSheet({
                 </Select>
               </div>
               <div className="p-3 space-y-1.5">
-                <FieldLabel icon={<CalendarIcon size={10} />}>Fälligkeit</FieldLabel>
+                <FieldLabel icon={<CalendarIcon size={10} />}>{t("dueLabel")}</FieldLabel>
                 <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -433,7 +435,7 @@ export function TaskDetailSheet({
                         !dueDate && "text-slate-400",
                       )}
                     >
-                      {dueDate ? format(dueDate, "dd. MMM yyyy", { locale: de }) : "Kein Datum"}
+                      {dueDate ? format(dueDate, "dd. MMM yyyy", { locale: de }) : t("noDueDate")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -449,7 +451,7 @@ export function TaskDetailSheet({
 
             {/* Aufwand */}
             <div className="p-3 space-y-1.5">
-              <FieldLabel icon={<Timer size={10} />}>Geplanter Aufwand</FieldLabel>
+              <FieldLabel icon={<Timer size={10} />}>{t("estimatedEffort")}</FieldLabel>
               <div className="flex items-center gap-2">
                 <Input
                   type="number" step="0.5" placeholder="0"
@@ -462,9 +464,9 @@ export function TaskDetailSheet({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HOURS">Stunden</SelectItem>
-                    <SelectItem value="DAYS">Tage (8h)</SelectItem>
-                    <SelectItem value="WEEKS">Wochen</SelectItem>
+                    <SelectItem value="HOURS">{t("hours")}</SelectItem>
+                    <SelectItem value="DAYS">{t("daysUnit")}</SelectItem>
+                    <SelectItem value="WEEKS">{t("weeksUnit")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -474,20 +476,20 @@ export function TaskDetailSheet({
           {/* 2 · Zuordnung */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <FieldLabel icon={<MapPin size={10} />}>Objekt / Standort</FieldLabel>
+              <FieldLabel icon={<MapPin size={10} />}>{t("objectLocation")}</FieldLabel>
               <Popover
                 open={isLinkPopoverOpen}
                 onOpenChange={open => { setIsLinkPopoverOpen(open); if (open) handleLoadObjects(); }}
               >
                 <PopoverTrigger asChild>
                   <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1 text-slate-400 hover:text-slate-700">
-                    <Link2 size={11} /> Verknüpfen
+                    <Link2 size={11} /> {t("link")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-0 shadow-lg" align="end">
                   <div className="p-3 border-b">
-                    <p className="text-xs font-semibold">Objekt wählen</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Waldobjekt mit dieser Aufgabe verknüpfen</p>
+                    <p className="text-xs font-semibold">{t("selectObject")}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{t("linkToForestObject")}</p>
                   </div>
                   <div className="max-h-64 overflow-y-auto p-1">
                     {isLoadingObjects ? (
@@ -501,35 +503,35 @@ export function TaskDetailSheet({
                             onClick={handleUnlinkObject}
                             className="w-full flex items-center gap-2 text-xs text-red-500 hover:bg-red-50 px-3 py-2 rounded-md text-left"
                           >
-                            <Unlink size={12} /> Verknüpfung aufheben
+                            <Unlink size={12} /> {t("unlinkConnection")}
                           </button>
                         )}
-                        <ObjectGroup label="Objekte (POI)"   icon={<Box size={12} className="text-indigo-500 shrink-0" />}
+                        <ObjectGroup label={t("objectsPoi")}   icon={<Box size={12} className="text-indigo-500 shrink-0" />}
                           items={forestObjects.pois}       getLabel={(p: any) => p.name || "POI"}
                           type="POI"      onSelect={handleLinkObject} />
-                        <ObjectGroup label="Kulturflächen"   icon={<Sprout size={12} className="text-green-600 shrink-0" />}
+                        <ObjectGroup label={t("plantingAreas")}   icon={<Sprout size={12} className="text-green-600 shrink-0" />}
                           items={forestObjects.plantings}  getLabel={(p: any) => p.description || p.treeSpecies}
                           type="PLANTING" onSelect={handleLinkObject} />
-                        <ObjectGroup label="Kalamitäten"     icon={<AlertTriangle size={12} className="text-orange-500 shrink-0" />}
-                          items={forestObjects.calamities} getLabel={(c: any) => c.description || c.cause || "Kalamität"}
+                        <ObjectGroup label={t("calamities")}     icon={<AlertTriangle size={12} className="text-orange-500 shrink-0" />}
+                          items={forestObjects.calamities} getLabel={(c: any) => c.description || c.cause || t("calamityFallback")}
                           type="CALAMITY" onSelect={handleLinkObject} />
-                        <ObjectGroup label="Jagdreviere"     icon={<Fence size={12} className="text-yellow-600 shrink-0" />}
-                          items={forestObjects.hunting}    getLabel={(h: any) => h.name || "Jagdrevier"}
+                        <ObjectGroup label={t("huntingDistricts")}     icon={<Fence size={12} className="text-yellow-600 shrink-0" />}
+                          items={forestObjects.hunting}    getLabel={(h: any) => h.name || t("huntingFallback")}
                           type="HUNTING"  onSelect={handleLinkObject} />
-                        <ObjectGroup label="LKW-Wege"       icon={<Route   size={12} className="text-slate-500  shrink-0" />}
-                          items={forestObjects.roads}      getLabel={(p: any) => p.name || 'LKW-Weg'}
+                        <ObjectGroup label={t("truckRoads")}       icon={<Route   size={12} className="text-slate-500  shrink-0" />}
+                          items={forestObjects.roads}      getLabel={(p: any) => p.name || t("truckRoadFallback")}
                           type="ROAD"       onSelect={handleLinkObject} />
-                        <ObjectGroup label="Rückegassen"    icon={<Tractor size={12} className="text-yellow-500 shrink-0" />}
-                          items={forestObjects.skidTrails} getLabel={(p: any) => p.name || 'Rückegasse'}
+                        <ObjectGroup label={t("skidTrails")}    icon={<Tractor size={12} className="text-yellow-500 shrink-0" />}
+                          items={forestObjects.skidTrails} getLabel={(p: any) => p.name || t("skidTrailFallback")}
                           type="SKID_TRAIL" onSelect={handleLinkObject} />
-                        <ObjectGroup label="Gewässer"       icon={<Waves   size={12} className="text-blue-500   shrink-0" />}
-                          items={forestObjects.waters}     getLabel={(p: any) => p.name || 'Gewässer'}
+                        <ObjectGroup label={t("waters")}       icon={<Waves   size={12} className="text-blue-500   shrink-0" />}
+                          items={forestObjects.waters}     getLabel={(p: any) => p.name || t("waterFallback")}
                           type="WATER"      onSelect={handleLinkObject} />
                         {!forestObjects.pois?.length && !forestObjects.plantings?.length &&
                          !forestObjects.calamities?.length && !forestObjects.hunting?.length &&
                          !forestObjects.roads?.length && !forestObjects.skidTrails?.length &&
                          !forestObjects.waters?.length && (
-                          <p className="text-xs text-slate-400 p-4 text-center">Keine Objekte vorhanden</p>
+                          <p className="text-xs text-slate-400 p-4 text-center">{t("noObjectsAvailable")}</p>
                         )}
                       </>
                     ) : null}
@@ -574,7 +576,7 @@ export function TaskDetailSheet({
                     />
                     {!linkedPoi && task.lat != null && (
                       <Button size="sm" variant="ghost" className="h-7 text-xs text-slate-400 hover:text-red-500 px-2 shrink-0" onClick={async () => {
-                        try { await updateTaskContent(orgSlug, task.id, { lat: null, lng: null }); toast.success('Standort entfernt'); fetchLatestData(); } catch { toast.error('Fehler'); }
+                        try { await updateTaskContent(orgSlug, task.id, { lat: null, lng: null }); toast.success(t('locationRemoved')); fetchLatestData(); } catch { toast.error(t('errorGeneric')); }
                       }}>
                         <X size={12} />
                       </Button>
@@ -589,13 +591,13 @@ export function TaskDetailSheet({
                       try {
                         await updateTaskContent(orgSlug, task.id, { lat: newLat, lng: newLng });
                         fetchLatestData();
-                      } catch { toast.error('Fehler beim Speichern'); }
+                      } catch { toast.error(t('errorSaving')); }
                     }}
                     height="180px"
                   />
                 )}
                 {!hasCoords && !linkedPoi && (
-                  <p className="text-[11px] text-slate-400 text-center">Klicke auf die Karte um einen Standort zu setzen. Pin ist verschiebbar.</p>
+                  <p className="text-[11px] text-slate-400 text-center">{t("clickMapToSetLocation")}</p>
                 )}
               </div>
             )}
@@ -603,17 +605,17 @@ export function TaskDetailSheet({
 
           {/* 3 · Beschreibung */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 space-y-2">
-            <FieldLabel>Beschreibung</FieldLabel>
+            <FieldLabel>{t("description")}</FieldLabel>
             <Textarea
               className="min-h-[90px] resize-none text-sm bg-slate-50 border-slate-200 focus-visible:ring-1 placeholder:text-slate-400"
-              placeholder="Details zur Aufgabe…"
+              placeholder={t("descriptionDetailPlaceholder")}
               value={description}
               onChange={e => mark(setDescription, e.target.value)}
             />
           </div>
 
           {/* 4 · Anhänge */}
-          <SectionBlock icon={<Paperclip size={13} />} label="Anhänge" count={images.length + documents.length}>
+          <SectionBlock icon={<Paperclip size={13} />} label={t("attachments")} count={images.length + documents.length}>
             <AttachmentsSection
               orgSlug={orgSlug} taskId={task.id}
               images={images} documents={documents}
@@ -622,7 +624,7 @@ export function TaskDetailSheet({
           </SectionBlock>
 
           {/* 5 · Zeiterfassung */}
-          <SectionBlock icon={<Clock size={13} />} label="Zeiterfassung" count={timeEntries.length}>
+          <SectionBlock icon={<Clock size={13} />} label={t("timeTracking")} count={timeEntries.length}>
             <TimeTrackingSection
               taskId={task.id}
               estimatedTime={task.estimatedTime ?? null}
@@ -633,15 +635,15 @@ export function TaskDetailSheet({
           </SectionBlock>
 
           {/* 6 · Kommentare */}
-          <SectionBlock icon={<MessageSquare size={13} />} label="Kommentare" count={comments.length}>
+          <SectionBlock icon={<MessageSquare size={13} />} label={t("comments")} count={comments.length}>
             <div className="space-y-4">
               <div className="flex gap-3">
                 <Avatar className="w-7 h-7 shrink-0 mt-0.5 border border-slate-200">
-                  <AvatarFallback className="bg-slate-100 text-slate-500 text-[10px]">ICH</AvatarFallback>
+                  <AvatarFallback className="bg-slate-100 text-slate-500 text-[10px]">{t("me")}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-2">
                   <Textarea
-                    placeholder="Kommentar schreiben…"
+                    placeholder={t("writeComment")}
                     className="min-h-[72px] resize-none text-sm bg-slate-50 border-slate-200 focus-visible:ring-1"
                     value={newComment}
                     onChange={e => setNewComment(e.target.value)}
@@ -653,7 +655,7 @@ export function TaskDetailSheet({
                     onClick={handleSendComment}
                   >
                     {isCommentLoading && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                    Senden
+                    {t("send")}
                   </Button>
                 </div>
               </div>
@@ -682,9 +684,9 @@ export function TaskDetailSheet({
                   <Trash2 size={16} />
                 </Button>
               }
-              title="Aufgabe löschen?"
-              description="Die Aufgabe wird unwiderruflich gelöscht, inklusive Kommentare und Zeitbuchungen."
-              confirmString="LÖSCHEN"
+              title={t("deleteTask")}
+              description={t("deleteTaskDescription")}
+              confirmString={t("deleteConfirmString")}
               onConfirm={async () => { await deleteTask(orgSlug, task.id); onClose(); }}
             />
             {onUnschedule && (
@@ -696,12 +698,12 @@ export function TaskDetailSheet({
 
           <div className="flex items-center gap-2">
             {hasUnsavedChanges && (
-              <span className="text-xs text-amber-600 hidden sm:block">Ungespeicherte Änderungen</span>
+              <span className="text-xs text-amber-600 hidden sm:block">{t("unsavedChanges")}</span>
             )}
-            <Button variant="outline" size="sm" onClick={onClose}>Schließen</Button>
+            <Button variant="outline" size="sm" onClick={onClose}>{t("close")}</Button>
             <Button size="sm" onClick={handleSaveChanges} disabled={!hasUnsavedChanges || isSaving} className="min-w-[100px]">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Save className="w-4 h-4 mr-1.5" />}
-              Speichern
+              {t("save")}
             </Button>
           </div>
         </SheetFooter>

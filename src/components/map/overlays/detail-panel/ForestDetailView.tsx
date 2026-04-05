@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useMapStore } from '@/components/map/stores/useMapStores';
+import { useTranslations } from 'next-intl';
 
 // Import des Dialogs und des Sicherheits-Modals
 import { CreateTaskDialog } from '@/app/dashboard/org/[slug]/(standard)/tasks/_components/CreateTaskDialog';
@@ -44,6 +45,7 @@ export function ForestDetailView({
     forest, tasks, owners, onClose, onRefresh, onDeleteSuccess,
     canEdit, canDelete, userId, members, orgSlug
 }: Props) {
+    const t = useTranslations('Map');
     const setInteractionMode = useMapStore(s => s.setInteractionMode);
     const setEditingFeature = useMapStore(s => s.setEditingFeature);
     const interactionMode = useMapStore(s => s.interactionMode);
@@ -69,19 +71,19 @@ export function ForestDetailView({
     const deletionItems: DeletionRow[] = [];
 
     (forest.pois ?? []).forEach((poi: any) => {
-      deletionItems.push({ category: 'POI', name: poi.name || 'Unbenannt' });
+      deletionItems.push({ category: 'POI', name: poi.name || t('unnamed') });
       allForestTasks
         .filter((t: any) => t.poiId === poi.id)
-        .forEach((t: any) => deletionItems.push({ category: 'Aufgabe', name: t.title || 'Unbenannt', indent: true }));
+        .forEach((tk: any) => deletionItems.push({ category: t('taskLabel'), name: tk.title || t('unnamed'), indent: true }));
     });
 
     (forest.paths ?? []).forEach((x: any) => {
-      const cat = x.type === 'SKID_TRAIL' ? 'Rückegasse' : x.type === 'WATER' ? 'Gewässer' : 'Weg';
-      deletionItems.push({ category: cat, name: x.name || 'Unbenannt' });
+      const cat = x.type === 'SKID_TRAIL' ? t('layerSkidTrail') : x.type === 'WATER' ? t('layerWater') : t('layerPath');
+      deletionItems.push({ category: cat, name: x.name || t('unnamed') });
     });
-    (forest.plantings  ?? []).forEach((x: any) => deletionItems.push({ category: 'Pflanzfläche', name: x.name || 'Unbenannt' }));
-    (forest.calamities ?? []).forEach((x: any) => deletionItems.push({ category: 'Kalamität',    name: x.name || x.cause || 'Unbenannt' }));
-    (forest.hunting    ?? []).forEach((x: any) => deletionItems.push({ category: 'Jagdfläche',   name: x.name || 'Unbenannt' }));
+    (forest.plantings  ?? []).forEach((x: any) => deletionItems.push({ category: t('layerPlanting'), name: x.name || t('unnamed') }));
+    (forest.calamities ?? []).forEach((x: any) => deletionItems.push({ category: t('layerCalamity'),    name: x.name || x.cause || t('unnamed') }));
+    (forest.hunting    ?? []).forEach((x: any) => deletionItems.push({ category: t('layerHunting'),   name: x.name || t('unnamed') }));
 
     // Aufgaben ohne POI-Bezug (separat angezeigt, nicht in der Hierarchie-Liste)
     const standaloneTasks = allForestTasks.filter((t: any) => !t.poiId);
@@ -100,11 +102,11 @@ export function ForestDetailView({
             });
             // Eigentümer separat setzen (null wenn leer)
             await assignOwnerToForest(forest.id, ownerId || null);
-            toast.success("Wald aktualisiert");
+            toast.success(t('forestUpdated'));
             setIsEditing(false);
             onRefresh();
         } catch (e) {
-            toast.error("Fehler beim Speichern");
+            toast.error(t('errorSaving'));
         } finally {
             setIsSaving(false);
         }
@@ -122,7 +124,7 @@ export function ForestDetailView({
                 name: forest.name
             });
             onClose(); 
-            toast.info("Ziehpunkte verschieben um Grenzen zu ändern");
+            toast.info(t('editGeometryDragHint'));
         }
     };
 
@@ -144,7 +146,7 @@ export function ForestDetailView({
         >
             {/* 1. FAKTEN */}
             <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase text-gray-500 font-bold mb-1"><Ruler size={12} /> Fläche</div>
+                <div className="flex items-center gap-1.5 text-[10px] uppercase text-gray-500 font-bold mb-1"><Ruler size={12} /> {t('area')}</div>
                 <div className="text-lg text-white font-mono font-medium">{forest.areaHa?.toFixed(2) || 0} <span className="text-sm text-gray-500 ml-1">ha</span></div>
             </div>
 
@@ -152,7 +154,7 @@ export function ForestDetailView({
             {isEditing && (
                 <div className="space-y-2 bg-white/5 p-3 rounded-lg border border-white/5">
                     <label className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-2">
-                        <Palette size={12}/> Flächenfarbe
+                        <Palette size={12}/> {t('color')}
                     </label>
                     <div className="flex flex-wrap gap-2">
                         {FOREST_COLORS.map(c => (
@@ -174,14 +176,14 @@ export function ForestDetailView({
             {isEditing && (
                 <div className="space-y-2 bg-white/5 p-3 rounded-lg border border-white/5">
                     <label className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-2">
-                        <User size={12}/> Waldbesitzer
+                        <User size={12}/> {t('owner')}
                     </label>
                     <select
                         value={ownerId}
                         onChange={(e) => setOwnerId(e.target.value)}
                         className="w-full bg-black/40 border border-white/10 text-white text-sm rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/20"
                     >
-                        <option value="">— Kein Besitzer —</option>
+                        <option value="">{t('noOwner')}</option>
                         {owners.map((o) => (
                             <option key={o.id} value={o.id}>{o.name}</option>
                         ))}
@@ -191,24 +193,24 @@ export function ForestDetailView({
             {!isEditing && forest.owner && (
                 <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex items-center gap-2">
                     <User size={12} className="text-gray-500" />
-                    <span className="text-[10px] uppercase text-gray-500 font-bold">Eigentümer</span>
+                    <span className="text-[10px] uppercase text-gray-500 font-bold">{t('ownerLabel')}</span>
                     <span className="text-sm text-white ml-auto">{forest.owner.name}</span>
                 </div>
             )}
 
             {/* 3. BESCHREIBUNG */}
             <div>
-                <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">Beschreibung</h4>
+                <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">{t('description')}</h4>
                 {isEditing ? (
                     <Textarea 
                         value={desc}
                         onChange={(e) => setDesc(e.target.value)}
                         className="bg-black/50 border-white/20 text-white min-h-[100px]"
-                        placeholder="Bestandsdaten, Baumarten..."
+                        placeholder={t('descPlaceholder')}
                     />
                 ) : (
                     <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[60px] whitespace-pre-wrap">
-                        {desc || "Keine Beschreibung."}
+                        {desc || t('noDescription')}
                     </p>
                 )}
             </div>
@@ -217,7 +219,7 @@ export function ForestDetailView({
             {isEditing && (
                 <div className="pt-2 border-t border-white/10 mt-2">
                     <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">
-                        Geometrie
+                        {t('geometry')}
                     </label>
                     <Button 
                         variant="outline" 
@@ -228,7 +230,7 @@ export function ForestDetailView({
                         onClick={handleToggleGeometry}
                     >
                         {isGeometryEditing ? <Check className="w-4 h-4 mr-2"/> : <ScanLine className="w-4 h-4 mr-2" />}
-                        {isGeometryEditing ? "Bearbeiten beenden" : "Grenzen auf Karte ändern"}
+                        {isGeometryEditing ? t('editGeometryDone') : t('editGeometryStart')}
                     </Button>
                 </div>
             )}
@@ -237,13 +239,13 @@ export function ForestDetailView({
             {!isEditing && (
                 <div className="space-y-3 pt-4 border-t border-white/10">
                     <div className="flex justify-between items-center">
-                         <h4 className="text-[10px] uppercase text-gray-500 font-bold">Aktive Aufgaben</h4>
+                         <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('activeTasks')}</h4>
                          <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-300">{forestTasks.length}</span>
                     </div>
                     <div className="space-y-2">
                         {forestTasks.length === 0 ? (
                             <div className="text-center py-6 text-xs text-gray-600 border border-dashed border-white/10 rounded-lg">
-                                Keine offenen Aufgaben.
+                                {t('noOpenTasks')}
                             </div>
                         ) : (
                             forestTasks.map((task: any) => (
@@ -263,7 +265,7 @@ export function ForestDetailView({
                             ))
                         )}
                         <Button onClick={() => setShowCreateTask(true)} variant="outline" className="w-full border-dashed border-white/20 text-gray-400 hover:text-white hover:bg-white/5 h-9 text-xs">
-                            <Plus className="w-3 h-3 mr-2"/> Aufgabe hinzufügen
+                            <Plus className="w-3 h-3 mr-2"/> {t('addTask')}
                         </Button>
                     </div>
                 </div>
@@ -278,11 +280,11 @@ export function ForestDetailView({
                          <DeleteConfirmDialog
                             trigger={
                                 <Button variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-950/30 px-3">
-                                    <Trash2 className="w-4 h-4 mr-2" /> Löschen
+                                    <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
                                 </Button>
                             }
-                            title={`Wald "${forest.name}" löschen?`}
-                            description="Dieser Vorgang ist unwiderruflich. Folgende Daten werden dabei permanent gelöscht:"
+                            title={t('deleteForestTitle', { name: forest.name })}
+                            description={t('deleteForestDesc')}
                             confirmString={forest.name}
                             onConfirm={async () => {
                                 const res = await deleteForest(forest.id, orgSlug);
@@ -311,14 +313,14 @@ export function ForestDetailView({
                                             className="text-xs text-red-500 hover:text-red-700 underline pt-1"
                                         >
                                             {showAllDeletion
-                                                ? 'Weniger anzeigen'
-                                                : `+${deletionItems.length - 4} weitere anzeigen`}
+                                                ? t('showLess')
+                                                : t('showMore', { count: deletionItems.length - 4 })}
                                         </button>
                                     )}
                                 </div>
                             ) : (
                                 <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
-                                    Keine verknüpften Geodaten vorhanden.
+                                    {t('noGeoData')}
                                 </div>
                             )}
 
@@ -326,17 +328,17 @@ export function ForestDetailView({
                             {allForestTasks.length > 0 && (
                                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
                                     <p className="text-xs font-semibold text-amber-800">
-                                        Verknüpfte Aufgaben ({allForestTasks.length})
+                                        {t('linkedTasks', { count: allForestTasks.length })}
                                     </p>
                                     <div className="space-y-1">
                                         {allForestTasks.slice(0, 3).map((t: any) => (
                                             <div key={t.id} className="flex items-baseline gap-2 text-sm">
-                                                <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">Aufgabe</span>
+                                                <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">{t('taskLabel')}</span>
                                                 <span className="text-slate-700 truncate">{t.title}</span>
                                             </div>
                                         ))}
                                         {allForestTasks.length > 3 && (
-                                            <p className="text-xs text-amber-600">+{allForestTasks.length - 3} weitere…</p>
+                                            <p className="text-xs text-amber-600">{t('moreItems', { count: allForestTasks.length - 3 })}</p>
                                         )}
                                     </div>
                                     <label className="flex items-center gap-2 pt-1 border-t border-amber-200 cursor-not-allowed">
@@ -347,8 +349,8 @@ export function ForestDetailView({
                                             className="rounded border-amber-400 text-red-600 opacity-60"
                                         />
                                         <span className="text-sm text-slate-600">
-                                            Aufgaben ebenfalls löschen
-                                            <span className="block text-[11px] text-slate-400">Aufgaben können ohne Wald nicht existieren.</span>
+                                            {t('deleteTasksToo')}
+                                            <span className="block text-[11px] text-slate-400">{t('tasksCannotExist')}</span>
                                         </span>
                                     </label>
                                 </div>
@@ -358,9 +360,9 @@ export function ForestDetailView({
 
                     {/* RECHTS: Abbrechen & Speichern */}
                     <div className="flex gap-2">
-                        <Button variant="ghost" onClick={() => setIsEditing(false)} className="text-gray-400">Abbrechen</Button>
+                        <Button variant="ghost" onClick={() => setIsEditing(false)} className="text-gray-400">{t('cancel')}</Button>
                         <Button onClick={handleSave} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : "Speichern"}
+                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : t('save')}
                         </Button>
                     </div>
                 </div>

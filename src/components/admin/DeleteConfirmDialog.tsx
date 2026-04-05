@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
-import { toast } from "sonner"; // oder alert nutzen
+import { toast } from "sonner";
 
 interface Props {
   trigger: React.ReactNode;
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function DeleteConfirmDialog({ trigger, title, description, confirmString, onConfirm, children }: Props) {
+  const t = useTranslations("TeamAdmin");
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -30,9 +32,9 @@ export function DeleteConfirmDialog({ trigger, title, description, confirmString
     try {
       await onConfirm();
       setOpen(false);
-      toast.success("Erfolgreich gelöscht");
+      toast.success(t("deleteSuccess"));
     } catch (e) {
-      toast.error("Fehler beim Löschen");
+      toast.error(t("deleteError"));
     } finally {
       setIsLoading(false);
       setInput("");
@@ -46,7 +48,7 @@ export function DeleteConfirmDialog({ trigger, title, description, confirmString
         <DialogHeader>
           <div className="flex items-center gap-2 text-red-600 mb-2">
             <AlertTriangle className="h-6 w-6" />
-            <DialogTitle className="text-xl">Achtung: Unwiderruflich!</DialogTitle>
+            <DialogTitle className="text-xl">{t("deleteIrreversible")}</DialogTitle>
           </div>
           <DialogDescription className="pt-2">
             {title}
@@ -57,7 +59,7 @@ export function DeleteConfirmDialog({ trigger, title, description, confirmString
 
         <div className="py-4 space-y-3">
           {children}
-          <Label>Zur Bestätigung bitte den Namen eingeben:</Label>
+          <Label>{t("deleteConfirmLabel")}</Label>
           <div className="p-2 bg-slate-100 rounded text-sm font-mono text-center select-all">
             {confirmString}
           </div>
@@ -70,14 +72,14 @@ export function DeleteConfirmDialog({ trigger, title, description, confirmString
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)} disabled={isLoading}>Abbrechen</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={isLoading}>{t("deleteCancel")}</Button>
           <Button 
             variant="destructive" 
             onClick={handleConfirm} 
             disabled={!isMatch || isLoading}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Endgültig löschen
+            {t("deleteFinal")}
           </Button>
         </DialogFooter>
       </DialogContent>

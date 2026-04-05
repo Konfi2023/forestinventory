@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ChevronsUpDown, Check, Plus } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ interface Props {
 
 export function OrgSwitcher({ currentOrg, allMemberships }: Props) {
   const router = useRouter();
+  const t = useTranslations("Dashboard");
 
   const handleSwitch = (slug: string) => {
     router.push(`/dashboard/org/${slug}`);
@@ -43,7 +45,7 @@ export function OrgSwitcher({ currentOrg, allMemberships }: Props) {
                     {currentOrg.name}
                 </span>
                 <span className="text-[10px] text-slate-400">
-                    Mandant wechseln
+                    {t("orgSwitcher.switchTenant")}
                 </span>
             </div>
           </div>
@@ -51,7 +53,7 @@ export function OrgSwitcher({ currentOrg, allMemberships }: Props) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64" align="start" side="right">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">Organisationen</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">{t("orgSwitcher.organizations")}</DropdownMenuLabel>
         
         {allMemberships.map((m) => (
           <DropdownMenuItem
@@ -77,7 +79,7 @@ export function OrgSwitcher({ currentOrg, allMemberships }: Props) {
           className="flex items-center gap-2 cursor-pointer py-2.5 text-emerald-700 font-medium hover:text-emerald-800"
         >
           <Plus className="h-4 w-4" />
-          Neuen Betrieb anlegen
+          {t("orgSwitcher.createNew")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

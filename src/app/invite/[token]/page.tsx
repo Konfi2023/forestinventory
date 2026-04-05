@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { SignInButton } from "./SignInButton";
+import { getTranslations } from "next-intl/server";
 
 export default async function InvitePage({
   params,
@@ -17,6 +18,7 @@ export default async function InvitePage({
 }) {
   const { token } = await params;
   const session = await getServerSession(authOptions);
+  const t = await getTranslations("Invite");
 
   const invite = await prisma.invite.findUnique({
     where: { token },
@@ -29,14 +31,14 @@ export default async function InvitePage({
         <Card className="w-[400px]">
           <CardHeader className="text-center">
             <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <CardTitle>Einladung ungültig</CardTitle>
+            <CardTitle>{t("invalidTitle")}</CardTitle>
             <CardDescription>
-              Dieser Link ist abgelaufen oder existiert nicht mehr.
+              {t("invalidDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
             <Link href="/">
-              <Button variant="outline">Zur Startseite</Button>
+              <Button variant="outline">{t("backHome")}</Button>
             </Link>
           </CardContent>
         </Card>
@@ -84,14 +86,12 @@ export default async function InvitePage({
       <Card className="w-[450px]">
         <CardHeader className="text-center">
           <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-4" />
-          <CardTitle>Einladung zu {invite.organization.name}</CardTitle>
-          <CardDescription>
-            Sie wurden als <strong>{invite.role.name}</strong> eingeladen.
-          </CardDescription>
+          <CardTitle>{t("inviteTo", { orgName: invite.organization.name })}</CardTitle>
+          <CardDescription dangerouslySetInnerHTML={{ __html: t("invitedAs", { roleName: invite.role.name }) }} />
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-slate-100 p-3 rounded-md text-sm text-center text-slate-600">
-            Einladung für:{" "}
+            {t("inviteFor")}{" "}
             <span className="font-semibold text-slate-900">{invite.email}</span>
           </div>
 
@@ -99,33 +99,17 @@ export default async function InvitePage({
             <div className="text-center space-y-3">
               <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded">
                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>
-                  Sie sind als <strong>{session!.user.email}</strong> eingeloggt. Diese
-                  Einladung gilt nur für <strong>{invite.email}</strong>. Bitte melden Sie
-                  sich ab und loggen Sie sich mit der richtigen Adresse ein.
-                </span>
+                <span dangerouslySetInnerHTML={{ __html: t("emailMismatchWarning", { currentEmail: session!.user.email!, inviteEmail: invite.email }) }} />
               </div>
               <Link href={`/signout?callbackUrl=/invite/${token}`}>
                 <Button variant="outline" className="w-full">
-                  Abmelden &amp; neu einloggen
+                  {t("signOutAndRelogin")}
                 </Button>
               </Link>
             </div>
           ) : (
             <div className="text-center space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {isNewUser ? (
-                  <>
-                    Erstellen Sie einen Account mit <strong>{invite.email}</strong>, um der
-                    Einladung beizutreten.
-                  </>
-                ) : (
-                  <>
-                    Bitte loggen Sie sich mit <strong>{invite.email}</strong> ein. Die
-                    Einladung wird danach automatisch angenommen.
-                  </>
-                )}
-              </p>
+              <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: isNewUser ? t("newUserHint", { email: invite.email }) : t("existingUserHint", { email: invite.email }) }} />
               <SignInButton
                 callbackUrl={`/invite/${token}`}
                 email={invite.email}

@@ -18,6 +18,7 @@ import { de } from "date-fns/locale";
 import { createTask, createTaskSchedule, getForestObjects } from "@/actions/tasks";
 import { TaskPriority, RecurrenceUnit } from "@prisma/client";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 function getNextDates(startDate: string, interval: string, unit: string, count = 4): Date[] {
   if (!startDate) return [];
@@ -37,19 +38,19 @@ function getNextDates(startDate: string, interval: string, unit: string, count =
   return dates;
 }
 
-const PRIORITY_OPTIONS = [
-  { value: "LOW",    label: "Niedrig" },
-  { value: "MEDIUM", label: "Mittel" },
-  { value: "HIGH",   label: "Hoch" },
-  { value: "URGENT", label: "Dringend" },
-];
+const PRIORITY_KEYS = [
+  { value: "LOW",    key: "priorityLow" },
+  { value: "MEDIUM", key: "priorityMedium" },
+  { value: "HIGH",   key: "priorityHigh" },
+  { value: "URGENT", key: "priorityUrgent" },
+] as const;
 
-const UNIT_OPTIONS = [
-  { value: "DAYS",   label: "Tage" },
-  { value: "WEEKS",  label: "Wochen" },
-  { value: "MONTHS", label: "Monate" },
-  { value: "YEARS",  label: "Jahre" },
-];
+const UNIT_KEYS = [
+  { value: "DAYS",   key: "unitDays" },
+  { value: "WEEKS",  key: "unitWeeks" },
+  { value: "MONTHS", key: "unitMonths" },
+  { value: "YEARS",  key: "unitYears" },
+] as const;
 
 interface Props {
   orgSlug: string;
@@ -76,6 +77,7 @@ export function CreateTaskDialog({
   defaultTitle, defaultForestId, defaultLat, defaultLng,
   defaultPoiId, defaultLinkedPolygonId, defaultLinkedPolygonType,
 }: Props) {
+  const t = useTranslations("Tasks");
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen   = openProp !== undefined ? openProp : internalOpen;
   const setOpen  = onOpenChangeProp ?? setInternalOpen;
@@ -141,7 +143,7 @@ export function CreateTaskDialog({
     setIsLoadingObjects(true);
     try {
       setForestObjects(await getForestObjects(orgSlug, forestId));
-    } catch { toast.error("Objekte konnten nicht geladen werden"); }
+    } catch { toast.error(t("objectsCouldNotLoad")); }
     finally   { setIsLoadingObjects(false); }
   };
 
@@ -156,12 +158,12 @@ export function CreateTaskDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orgSlug) { toast.error("Systemfehler: Organisations-ID fehlt."); return; }
-    if (!forestId) { toast.error("Bitte einen Waldbestand auswählen."); return; }
+    if (!orgSlug) { toast.error(t("systemErrorOrgMissing")); return; }
+    if (!forestId) { toast.error(t("pleaseSelectForest")); return; }
     setIsLoading(true);
     try {
       if (isRecurring) {
-        if (!startDate) { toast.error("Startdatum erforderlich"); return; }
+        if (!startDate) { toast.error(t("startDateRequired")); return; }
         await createTaskSchedule(orgSlug, {
           title, description, priority, forestId,
           assigneeId: assigneeId === "unassigned" ? undefined : assigneeId,
@@ -169,7 +171,7 @@ export function CreateTaskDialog({
           endDate: endDate ? new Date(endDate) : undefined,
           interval: parseInt(interval), unit,
         });
-        toast.success("Serie gestartet");
+        toast.success(t("seriesStarted"));
       } else {
         let scheduledStart: Date | undefined;
         let scheduledEnd:   Date | undefined;
@@ -191,12 +193,12 @@ export function CreateTaskDialog({
           lat: linkedObjectId ? undefined : (defaultPoiId || defaultLinkedPolygonId) ? undefined : defaultLat,
           lng: linkedObjectId ? undefined : (defaultPoiId || defaultLinkedPolygonId) ? undefined : defaultLng,
         });
-        toast.success("Aufgabe erstellt");
+        toast.success(t("taskCreated"));
       }
       setOpen(false);
       resetForm();
     } catch (err: any) {
-      toast.error("Fehler: " + (err.message || "Unbekannt"));
+      toast.error(t("error", { message: err.message || t("errorUnknown") }));
     } finally {
       setIsLoading(false);
     }
@@ -218,7 +220,7 @@ export function CreateTaskDialog({
       <DialogTrigger asChild>
         {trigger ?? (
           <Button>
-            <Plus className="mr-2 h-4 w-4" /> Neue Aufgabe
+            <Plus className="mr-2 h-4 w-4" /> {t("newTask")}
           </Button>
         )}
       </DialogTrigger>
@@ -229,7 +231,7 @@ export function CreateTaskDialog({
           {/* ── Header ── */}
           <div className="px-6 pt-5 pb-4 border-b border-slate-100">
             <DialogTitle className="text-base font-semibold text-slate-800">
-              {defaultDate ? "Aufgabe planen" : isRecurring ? "Wiederkehrende Serie" : "Neue Aufgabe"}
+              {defaultDate ? t("planTask") : isRecurring ? t("recurringSeries") : t("newTask")}
             </DialogTitle>
           </div>
 
@@ -243,13 +245,13 @@ export function CreateTaskDialog({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
-                placeholder="Was ist zu tun?"
+                placeholder={t("placeholder")}
                 className="h-10 text-sm font-medium placeholder:font-normal border-slate-200 focus-visible:ring-1"
               />
               <Textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Beschreibung (optional)…"
+                placeholder={t("descriptionPlaceholder")}
                 rows={2}
                 className="resize-none text-sm border-slate-200 focus-visible:ring-1 placeholder:text-slate-400"
               />
@@ -266,7 +268,7 @@ export function CreateTaskDialog({
                     !isRecurring ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-700",
                   )}
                 >
-                  Einmalig
+                  {t("oneTime")}
                 </button>
                 <button
                   type="button"
@@ -276,7 +278,7 @@ export function CreateTaskDialog({
                     isRecurring ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-700",
                   )}
                 >
-                  <Repeat size={13} /> Wiederkehrend
+                  <Repeat size={13} /> {t("recurring")}
                 </button>
               </div>
             )}
@@ -284,18 +286,18 @@ export function CreateTaskDialog({
             {/* 3 · Zeitplanung */}
             {isRecurring ? (
               <div className="space-y-3">
-                <SectionLabel>Zeitplan</SectionLabel>
+                <SectionLabel>{t("schedule")}</SectionLabel>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Startdatum">
+                  <Field label={t("startDate")}>
                     <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
                   </Field>
-                  <Field label="Priorität">
-                    <PrioritySelect value={priority} onChange={v => setPriority(v as TaskPriority)} />
+                  <Field label={t("priority")}>
+                    <PrioritySelect value={priority} onChange={v => setPriority(v as TaskPriority)} t={t} />
                   </Field>
                 </div>
-                <Field label="Wiederholung">
+                <Field label={t("recurrence")}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-500 shrink-0 w-8">Alle</span>
+                    <span className="text-sm text-slate-500 shrink-0 w-8">{t("every")}</span>
                     <Input
                       type="number" min="1"
                       className="w-20 shrink-0"
@@ -305,12 +307,12 @@ export function CreateTaskDialog({
                     <Select value={unit} onValueChange={v => setUnit(v as RecurrenceUnit)}>
                       <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {UNIT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                        {UNIT_KEYS.map(o => <SelectItem key={o.value} value={o.value}>{t(o.key)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                 </Field>
-                <Field label={<>Enddatum <span className="font-normal text-slate-400">(optional)</span></>}>
+                <Field label={<>{t("endDateOptional")}</>}>
                   <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate || undefined} />
                 </Field>
 
@@ -320,39 +322,39 @@ export function CreateTaskDialog({
                   return (
                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-1.5">
                       <p className="text-[10px] font-semibold uppercase text-blue-500 flex items-center gap-1.5">
-                        <Calendar size={11} /> Nächste Termine
+                        <Calendar size={11} /> {t("nextDates")}
                       </p>
                       {dates.map((d, i) => (
                         <div key={i} className="flex items-center gap-2 text-sm text-blue-800">
                           <span className="text-[10px] text-blue-400 w-4">{i + 1}.</span>
                           {format(d, "EEEE, dd. MMMM yyyy", { locale: de })}
                           {endDate && d > new Date(endDate) && (
-                            <span className="text-[10px] text-slate-400 ml-1">(nach Enddatum)</span>
+                            <span className="text-[10px] text-slate-400 ml-1">{t("afterEndDate")}</span>
                           )}
                         </div>
                       ))}
-                      <p className="text-[10px] text-blue-400">… und so weiter</p>
+                      <p className="text-[10px] text-blue-400">{t("andSoOn")}</p>
                     </div>
                   );
                 })()}
               </div>
             ) : (
               <div className="space-y-3">
-                <SectionLabel>Zeitplanung</SectionLabel>
+                <SectionLabel>{t("scheduling")}</SectionLabel>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Priorität">
-                    <PrioritySelect value={priority} onChange={v => setPriority(v as TaskPriority)} />
+                  <Field label={t("priority")}>
+                    <PrioritySelect value={priority} onChange={v => setPriority(v as TaskPriority)} t={t} />
                   </Field>
-                  <Field label="Frist">
+                  <Field label={t("dueDate")}>
                     <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
                   </Field>
                 </div>
                 {defaultDate && (
                   <div className="grid grid-cols-2 gap-3 bg-blue-50 border border-blue-100 p-3 rounded-lg">
-                    <Field label={<span className="flex items-center gap-1 text-blue-800"><Clock size={11} /> Startzeit</span>}>
+                    <Field label={<span className="flex items-center gap-1 text-blue-800"><Clock size={11} /> {t("startTime")}</span>}>
                       <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="bg-white" />
                     </Field>
-                    <Field label={<span className="flex items-center gap-1 text-blue-800"><Clock size={11} /> Endzeit</span>}>
+                    <Field label={<span className="flex items-center gap-1 text-blue-800"><Clock size={11} /> {t("endTime")}</span>}>
                       <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="bg-white" />
                     </Field>
                   </div>
@@ -362,9 +364,9 @@ export function CreateTaskDialog({
 
             {/* 4 · Zuordnung */}
             <div className="space-y-3">
-              <SectionLabel>Zuordnung</SectionLabel>
+              <SectionLabel>{t("assignment")}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Waldbestand">
+                <Field label={t("forest")}>
                   {forests.length > 0 ? (
                     <Select value={forestId} onValueChange={setForestId}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
@@ -374,15 +376,15 @@ export function CreateTaskDialog({
                     </Select>
                   ) : (
                     <div className="text-xs text-red-500 border border-red-200 bg-red-50 p-2 rounded-md">
-                      Keine Wälder gefunden.
+                      {t("noForests")}
                     </div>
                   )}
                 </Field>
-                <Field label="Verantwortlich">
+                <Field label={t("assignee")}>
                   <Select value={assigneeId} onValueChange={setAssigneeId}>
-                    <SelectTrigger><SelectValue placeholder="Niemand" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("nobody")} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="unassigned">— Offen lassen —</SelectItem>
+                      <SelectItem value="unassigned">{t("leaveOpen")}</SelectItem>
                       {members.map(m => (
                         <SelectItem key={m.id} value={m.id}>
                           {m.firstName ? `${m.firstName} ${m.lastName}` : m.email}
@@ -397,11 +399,11 @@ export function CreateTaskDialog({
               {!isRecurring && (
                 <Field label={
                   <div className="flex items-center justify-between w-full">
-                    <span>Objekt verknüpfen <span className="font-normal text-slate-400 text-xs">(optional)</span></span>
+                    <span>{t("linkObject")} <span className="font-normal text-slate-400 text-xs">({t("linkObjectOptional")})</span></span>
                     {linkedObjectId && (
                       <button type="button" onClick={handleUnlinkObject}
                         className="text-xs text-red-400 hover:text-red-600 flex items-center gap-1 font-normal">
-                        <Unlink size={11} /> aufheben
+                        <Unlink size={11} /> {t("unlinkObject")}
                       </button>
                     )}
                   </div>
@@ -416,15 +418,15 @@ export function CreateTaskDialog({
                           </span>
                         ) : (
                           <span className="text-slate-400 flex items-center gap-2">
-                            <Link2 size={13} /> POI, Fläche oder Weg…
+                            <Link2 size={13} /> {t("poiAreaOrPath")}
                           </span>
                         )}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-72 p-0 shadow-lg" align="start">
                       <div className="p-3 border-b">
-                        <p className="text-xs font-semibold text-slate-700">Objekt wählen</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Waldobjekt mit dieser Aufgabe verknüpfen</p>
+                        <p className="text-xs font-semibold text-slate-700">{t("selectObject")}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{t("linkToForestObject")}</p>
                       </div>
                       <div className="max-h-60 overflow-y-auto p-1">
                         {isLoadingObjects ? (
@@ -433,35 +435,35 @@ export function CreateTaskDialog({
                           </div>
                         ) : forestObjects ? (
                           <>
-                            <ObjectGroup label="Objekte (POI)" icon={<Box size={12} className="text-indigo-500 shrink-0" />}
+                            <ObjectGroup label={t("objectsPoi")} icon={<Box size={12} className="text-indigo-500 shrink-0" />}
                               items={forestObjects.pois} getLabel={(p: any) => p.name || "POI"}
                               type="POI" onSelect={handleSelectObject} />
-                            <ObjectGroup label="Kulturflächen" icon={<Sprout size={12} className="text-green-600 shrink-0" />}
+                            <ObjectGroup label={t("plantingAreas")} icon={<Sprout size={12} className="text-green-600 shrink-0" />}
                               items={forestObjects.plantings} getLabel={(p: any) => p.description || p.treeSpecies}
                               type="PLANTING" onSelect={handleSelectObject} />
-                            <ObjectGroup label="Kalamitäten" icon={<AlertTriangle size={12} className="text-orange-500 shrink-0" />}
-                              items={forestObjects.calamities} getLabel={(c: any) => c.description || c.cause || "Kalamität"}
+                            <ObjectGroup label={t("calamities")} icon={<AlertTriangle size={12} className="text-orange-500 shrink-0" />}
+                              items={forestObjects.calamities} getLabel={(c: any) => c.description || c.cause || t("calamityFallback")}
                               type="CALAMITY" onSelect={handleSelectObject} />
-                            <ObjectGroup label="Jagdreviere" icon={<Fence size={12} className="text-yellow-600 shrink-0" />}
-                              items={forestObjects.hunting} getLabel={(h: any) => h.name || "Jagdrevier"}
+                            <ObjectGroup label={t("huntingDistricts")} icon={<Fence size={12} className="text-yellow-600 shrink-0" />}
+                              items={forestObjects.hunting} getLabel={(h: any) => h.name || t("huntingFallback")}
                               type="HUNTING" onSelect={handleSelectObject} />
-                            <ObjectGroup label="LKW-Wege" icon={<Route size={12} className="text-slate-500 shrink-0" />}
-                              items={forestObjects.roads} getLabel={(p: any) => p.name || 'LKW-Weg'}
+                            <ObjectGroup label={t("truckRoads")} icon={<Route size={12} className="text-slate-500 shrink-0" />}
+                              items={forestObjects.roads} getLabel={(p: any) => p.name || t("truckRoadFallback")}
                               type="ROAD" onSelect={handleSelectObject} />
-                            <ObjectGroup label="Rückegassen" icon={<Tractor size={12} className="text-yellow-500 shrink-0" />}
-                              items={forestObjects.skidTrails} getLabel={(p: any) => p.name || 'Rückegasse'}
+                            <ObjectGroup label={t("skidTrails")} icon={<Tractor size={12} className="text-yellow-500 shrink-0" />}
+                              items={forestObjects.skidTrails} getLabel={(p: any) => p.name || t("skidTrailFallback")}
                               type="SKID_TRAIL" onSelect={handleSelectObject} />
-                            <ObjectGroup label="Gewässer" icon={<Waves size={12} className="text-blue-500 shrink-0" />}
-                              items={forestObjects.waters} getLabel={(p: any) => p.name || 'Gewässer'}
+                            <ObjectGroup label={t("waters")} icon={<Waves size={12} className="text-blue-500 shrink-0" />}
+                              items={forestObjects.waters} getLabel={(p: any) => p.name || t("waterFallback")}
                               type="WATER" onSelect={handleSelectObject} />
                             {!forestObjects.pois?.length && !forestObjects.plantings?.length &&
                              !forestObjects.calamities?.length && !forestObjects.hunting?.length &&
                              !forestObjects.roads?.length && !forestObjects.skidTrails?.length && !forestObjects.waters?.length && (
-                              <p className="text-xs text-slate-400 p-4 text-center">Keine Objekte in diesem Wald</p>
+                              <p className="text-xs text-slate-400 p-4 text-center">{t("noObjectsInForest")}</p>
                             )}
                           </>
                         ) : (
-                          <p className="text-xs text-slate-400 p-4 text-center">Waldbestand wählen, um Objekte zu laden</p>
+                          <p className="text-xs text-slate-400 p-4 text-center">{t("selectForestToLoad")}</p>
                         )}
                       </div>
                     </PopoverContent>
@@ -473,9 +475,9 @@ export function CreateTaskDialog({
               {!linkedObjectId && (defaultLat || defaultPoiId || defaultLinkedPolygonId) && (
                 <div className="text-[11px] text-blue-600 bg-blue-50 border border-blue-100 px-3 py-2 rounded-md flex items-center gap-2">
                   <MapPinIcon className="w-3 h-3 shrink-0" />
-                  {defaultPoiId ? "Wird automatisch mit Objekt verknüpft" :
-                   defaultLinkedPolygonId ? "Wird automatisch mit Fläche verknüpft" :
-                   "Standort wird gespeichert"}
+                  {defaultPoiId ? t("autoLinkPoi") :
+                   defaultLinkedPolygonId ? t("autoLinkPolygon") :
+                   t("locationSaved")}
                 </div>
               )}
             </div>
@@ -484,11 +486,11 @@ export function CreateTaskDialog({
           {/* ── Footer ── */}
           <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/60">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Abbrechen
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={isLoading || forests.length === 0}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isRecurring ? "Serie starten" : "Aufgabe erstellen"}
+              {isRecurring ? t("startSeries") : t("createTask")}
             </Button>
           </div>
         </form>
@@ -514,12 +516,12 @@ function Field({ label, children }: { label: React.ReactNode; children: React.Re
   );
 }
 
-function PrioritySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function PrioritySelect({ value, onChange, t }: { value: string; onChange: (v: string) => void; t: any }) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger><SelectValue /></SelectTrigger>
       <SelectContent>
-        {PRIORITY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+        {PRIORITY_KEYS.map(o => <SelectItem key={o.value} value={o.value}>{t(o.key)}</SelectItem>)}
       </SelectContent>
     </Select>
   );

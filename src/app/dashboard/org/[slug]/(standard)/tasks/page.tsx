@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 // UI Components
 import { CreateTaskDialog } from "./_components/CreateTaskDialog"; 
@@ -49,10 +50,12 @@ export default async function TasksPage({
   const canView = isAdmin || permissions.includes("tasks:view");
   const canManageSchedules = isAdmin || permissions.includes("schedules:manage");
 
+  const t = await getTranslations("Tasks");
+
   if (!canView) {
     return (
         <div className="flex h-[50vh] items-center justify-center text-muted-foreground">
-            Keine Berechtigung, Aufgaben zu sehen.
+            {t("noPermission")}
         </div>
     );
   }
@@ -97,7 +100,7 @@ export default async function TasksPage({
     <div className="space-y-6 h-[calc(100vh-140px)] flex flex-col">
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Aufgaben & Planung</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t("pageTitle")}</h2>
         </div>
         
         <div className="flex items-center gap-2">

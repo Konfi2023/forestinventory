@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
 import {
   TreePine,
@@ -21,6 +22,16 @@ import { PlanCards, ALL_FEATURES } from "@/components/billing/PlanCards";
 import { getDefaultCountry, getCountryOptions } from "@/lib/countries";
 
 const dateFnsLocales: Record<string, DateFnsLocale> = { de, en: enUS, es, fr };
+
+const slideVariants = {
+  enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
+};
+
+const INPUT_CLS = "w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900 transition-colors";
+const inputCls = (hasError: boolean) =>
+  `${INPUT_CLS} ${hasError ? "border-red-400 bg-red-50/50" : "border-slate-300"}`;
 
 type PlanData = {
   id: string;
@@ -46,7 +57,9 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
   const tp = useTranslations("PlanCards");
   const locale = useLocale();
   const [step, setStep] = useState(initialStep);
+  const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [tried, setTried] = useState(false); // tracks if user tried to advance with missing fields
 
   // Form state
   const [accountType, setAccountType] = useState<"PRIVATE" | "BUSINESS" | null>(null);
@@ -69,6 +82,25 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
     locale: dateFnsLocales[locale] ?? de,
   });
 
+  const goTo = useCallback((target: number) => {
+    setDirection(target > step ? 1 : -1);
+    setTried(false);
+    setStep(target);
+  }, [step]);
+
+  // Keyboard navigation: Enter → next step
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Enter") return;
+      if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+      if (step === 1 || step === 3 || step === 4) return; // only for step 2
+      e.preventDefault();
+      handleStep2Next();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
   function getSelectedPrice() {
     if (!selectedPlan) return null;
     if (billingInterval === "monthly") return selectedPlan.monthlyPrice;
@@ -79,6 +111,14 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
     if (!selectedPlan) return null;
     if (billingInterval === "monthly") return selectedPlan.monthlyPriceId;
     return selectedPlan.yearlyPriceId;
+  }
+
+  function handleStep2Next() {
+    setTried(true);
+    if (!orgName.trim() || !street.trim() || !zip.trim() || !city.trim() || !country) {
+      return;
+    }
+    goTo(3);
   }
 
   async function handleStartTrial() {
@@ -172,8 +212,18 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
         </div>
       </header>
 
-      <main className={`flex-1 flex items-center justify-center px-4 ${step === 3 ? 'py-6' : 'py-12'}`}>
-        <div className={`w-full ${step === 3 ? 'max-w-6xl' : 'max-w-2xl'}`}>
+      <main className={`flex-1 flex items-center justify-center px-4 ${step === 3 ? 'py-6' : 'py-12'} overflow-hidden`}>
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className={`w-full ${step === 3 ? 'max-w-6xl' : 'max-w-2xl'}`}
+          >
           {/* STEP 1: Account type */}
           {step === 1 && (
             <div className="space-y-8">
@@ -183,7 +233,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
-                  onClick={() => { setAccountType("PRIVATE"); setStep(2); }}
+                  onClick={() => { setAccountType("PRIVATE"); goTo(2); }}
                   className={`group p-8 rounded-2xl border-2 text-left transition-all hover:border-green-600 hover:bg-green-50 ${
                     accountType === "PRIVATE" ? "border-green-600 bg-green-50" : "border-slate-200"
                   }`}
@@ -196,7 +246,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                   </div>
                 </button>
                 <button
-                  onClick={() => { setAccountType("BUSINESS"); setStep(2); }}
+                  onClick={() => { setAccountType("BUSINESS"); goTo(2); }}
                   className={`group p-8 rounded-2xl border-2 text-left transition-all hover:border-green-600 hover:bg-green-50 ${
                     accountType === "BUSINESS" ? "border-green-600 bg-green-50" : "border-slate-200"
                   }`}
@@ -234,7 +284,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder={accountType === "PRIVATE" ? t("step2.placeholderPrivate") : t("step2.placeholderBusiness")}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                    className={inputCls(tried && !orgName.trim())}
                   />
                 </div>
 
@@ -251,7 +301,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                           value={vatId}
                           onChange={(e) => setVatId(e.target.value)}
                           placeholder="DE123456789"
-                          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                          className={INPUT_CLS + " border-slate-300"}
                         />
                       </div>
                       <div>
@@ -263,7 +313,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                           value={eoriNumber}
                           onChange={(e) => setEoriNumber(e.target.value)}
                           placeholder={t("step2.eoriPlaceholder")}
-                          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                          className={INPUT_CLS + " border-slate-300"}
                         />
                       </div>
                     </div>
@@ -275,7 +325,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                         type="email"
                         value={billingEmail}
                         onChange={(e) => setBillingEmail(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                        className={INPUT_CLS + " border-slate-300"}
                       />
                     </div>
                   </>
@@ -292,7 +342,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                       value={street}
                       onChange={(e) => setStreet(e.target.value)}
                       placeholder={t("step2.street")}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                      className={inputCls(tried && !street.trim())}
                     />
                     <div className="grid grid-cols-3 gap-3">
                       <input
@@ -300,20 +350,20 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                         value={zip}
                         onChange={(e) => setZip(e.target.value)}
                         placeholder={t("step2.zip")}
-                        className="px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                        className={inputCls(tried && !zip.trim())}
                       />
                       <input
                         type="text"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         placeholder={t("step2.city")}
-                        className="col-span-2 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900"
+                        className={`col-span-2 ${inputCls(tried && !city.trim())}`}
                       />
                     </div>
                     <select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-slate-900 bg-white"
+                      className={`${inputCls(tried && !country)} bg-white`}
                     >
                       <option value="" disabled>{t("step2.selectCountry")}</option>
                       {countryOptions.map(({ code, name }) => (
@@ -326,19 +376,13 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
 
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => setStep(1)}
+                  onClick={() => goTo(1)}
                   className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
                 >
                   <ChevronLeft size={16} /> {t("back")}
                 </button>
                 <button
-                  onClick={() => {
-                    if (!orgName.trim() || !street.trim() || !zip.trim() || !city.trim() || !country) {
-                      toast.error(t("fillRequired"));
-                      return;
-                    }
-                    setStep(3);
-                  }}
+                  onClick={handleStep2Next}
                   className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium"
                 >
                   {t("next")} <ChevronRight size={16} />
@@ -372,7 +416,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
 
                 <div className="pt-2">
                   <button
-                    onClick={() => setStep(2)}
+                    onClick={() => goTo(2)}
                     className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition"
                   >
                     <ChevronLeft size={15} /> {t("back")}
@@ -412,7 +456,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
                 <button
                   onClick={() => {
                     if (!selectedPlan) { toast.error(t("selectPlan")); return; }
-                    setStep(4);
+                    goTo(4);
                   }}
                   disabled={!selectedPlan}
                   className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition font-medium disabled:opacity-50"
@@ -472,7 +516,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => setStep(3)}
+                  onClick={() => goTo(3)}
                   className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
                 >
                   <ChevronLeft size={16} /> {t("back")}
@@ -498,7 +542,8 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
               </p>
             </div>
           )}
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

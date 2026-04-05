@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { NewOrgWizard } from "./NewOrgWizard";
 
-export const metadata = { title: "Neuen Betrieb anlegen – Forest Inventory" };
+export const metadata = { title: "Neuen Betrieb anlegen – ForestManager" };
 
 export default async function NewOrgPage() {
   const session = await getServerSession(authOptions);

@@ -1,7 +1,7 @@
 {
   "realm": "forest-realm",
   "enabled": true,
-  "displayName": "Forest Inventory",
+  "displayName": "ForestManager",
   "sslRequired": "none",
   "loginTheme": "forest-dark",
   "registrationAllowed": true,
@@ -12,10 +12,13 @@
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["de", "en", "es", "fr"],
+  "defaultLocale": "de",
   "clients": [
     {
       "clientId": "forest-app",
-      "name": "Forest Inventory App",
+      "name": "ForestManager App",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,

@@ -146,7 +146,7 @@ export function OnboardingWizard({ userEmail, initialStep, plans }: Props) {
       <header className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TreePine className="text-green-700" size={24} />
-          <span className="font-bold text-slate-900 text-lg">Forest Inventory</span>
+          <span className="font-bold text-lg tracking-tight"><span className="text-slate-900">Forest</span><span className="text-green-600">Manager</span></span>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-500">
           {[1, 2, 3, 4].map((s) => (

@@ -211,7 +211,7 @@ async function TrialExpiredGate({
         <div>
           <h2 className="text-xl font-bold text-slate-900">Testzeitraum abgelaufen</h2>
           <p className="text-slate-500 text-sm mt-2 leading-relaxed">
-            Ihr kostenloser Testzeitraum ist abgelaufen. Wählen Sie ein Paket, um Forest Inventory
+            Ihr kostenloser Testzeitraum ist abgelaufen. Wählen Sie ein Paket, um ForestManager
             weiter zu nutzen. Ihre Daten bleiben erhalten.
           </p>
         </div>

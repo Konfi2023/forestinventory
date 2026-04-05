@@ -19,7 +19,7 @@
     </div>
 
     <p style="font-size:13px;color:#94a3b8;text-align:center;margin:0 0 24px;">
-        ${msg("linkExpirationText", ((linkExpiration!300)?number / 60)?string["0"])}
+        ${msg("linkExpirationText", "24")}
     </p>
 
     <!-- Divider -->

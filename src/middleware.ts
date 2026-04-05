@@ -99,7 +99,17 @@ export function middleware(req: NextRequest) {
       req.cookies.get('__Secure-next-auth.session-token') ??
       req.cookies.get('next-auth.session-token');
     if (sessionCookie) {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
+      const redirectRes = NextResponse.redirect(new URL('/dashboard', req.url));
+      // Persist locale from URL before redirecting to dashboard
+      const rootLocaleMatch = pathname.match(/^\/(de|en|es|fr)/);
+      if (rootLocaleMatch) {
+        redirectRes.cookies.set('NEXT_LOCALE', rootLocaleMatch[1], {
+          path: '/',
+          maxAge: 365 * 24 * 60 * 60,
+          sameSite: 'lax',
+        });
+      }
+      return redirectRes;
     }
   }
 

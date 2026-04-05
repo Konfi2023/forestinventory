@@ -76,6 +76,7 @@
                         <input type="password" id="password-confirm" class="np-input" name="password-confirm" autocomplete="new-password" />
                     </div>
 
+                    <input type="hidden" name="user.attributes.locale" value="${locale.currentLanguageTag!'de'}" />
                     <button class="np-primary-button" type="submit">${msg("doRegisterBtn")}</button>
                 </form>
 

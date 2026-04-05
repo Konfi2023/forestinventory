@@ -103,21 +103,23 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // ── Marketing routes: next-intl locale handling ────────────────────
-  const response = intlMiddleware(req);
+  // ── Marketing routes: detect locale from URL ────────────────────────
+  const localeMatch = pathname.match(/^\/(de|en|es|fr)(\/|$)/);
+  const detectedLocale = localeMatch?.[1];
 
-  // Persist the detected locale as NEXT_LOCALE cookie so internal routes
+  // Persist locale as NEXT_LOCALE cookie so internal routes
   // (dashboard, onboarding, etc.) that skip intl middleware can read it.
-  const detectedLocale = response.headers.get('x-next-intl-locale');
   if (detectedLocale) {
+    const response = intlMiddleware(req);
     response.cookies.set('NEXT_LOCALE', detectedLocale, {
       path: '/',
       maxAge: 365 * 24 * 60 * 60,
       sameSite: 'lax',
     });
+    return response;
   }
 
-  return response;
+  return intlMiddleware(req);
 }
 
 export const config = {

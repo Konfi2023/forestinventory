@@ -3,6 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { Trees, User, Users, Calendar, RotateCcw } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Props {
   forests: { id: string; name: string }[];
@@ -16,15 +17,6 @@ interface Props {
   to: string;
 }
 
-const PRESETS = [
-  { label: "Dieser Monat",    key: "thisMonth" },
-  { label: "Letzter Monat",   key: "lastMonth" },
-  { label: "Dieses Quartal",  key: "thisQuarter" },
-  { label: "Letztes Quartal", key: "lastQuarter" },
-  { label: "Dieses Jahr",     key: "thisYear" },
-  { label: "Alle",            key: "all" },
-];
-
 function getPresetDates(key: string): { from: string; to: string } {
   const now = new Date();
   const y = now.getFullYear();
@@ -37,20 +29,32 @@ function getPresetDates(key: string): { from: string; to: string } {
   return { from: "", to: "" };
 }
 
+const PRESET_KEYS = ["thisMonth", "lastMonth", "thisQuarter", "lastQuarter", "thisYear", "all"] as const;
+
 function detectActivePreset(from: string, to: string): string | null {
-  for (const preset of PRESETS.filter(p => p.key !== "all")) {
-    const { from: pf, to: pt } = getPresetDates(preset.key);
-    if (pf === from && pt === to) return preset.key;
+  for (const key of PRESET_KEYS.filter(k => k !== "all")) {
+    const { from: pf, to: pt } = getPresetDates(key);
+    if (pf === from && pt === to) return key;
   }
   if (!from && !to) return "all";
   return null;
 }
+
+const PRESET_TKEYS: Record<string, string> = {
+  thisMonth:    "presetThisMonth",
+  lastMonth:    "presetLastMonth",
+  thisQuarter:  "presetThisQuarter",
+  lastQuarter:  "presetLastQuarter",
+  thisYear:     "presetThisYear",
+  all:          "presetAll",
+};
 
 export function ControllingFilters({
   forests, owners, members,
   selectedForestId, selectedOwnerId, selectedMemberId,
   showAll, from, to,
 }: Props) {
+  const t = useTranslations("CostControl");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -95,20 +99,20 @@ export function ControllingFilters({
       {/* Zeile 1: Zeitraum */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 w-20 shrink-0">
-          <Calendar className="w-3.5 h-3.5" /> Zeitraum
+          <Calendar className="w-3.5 h-3.5" /> {t("filterTimeRange")}
         </span>
         <div className="flex items-center gap-1 flex-wrap">
-          {PRESETS.map((p) => (
+          {PRESET_KEYS.map((key) => (
             <button
-              key={p.key}
-              onClick={() => applyPreset(p.key)}
+              key={key}
+              onClick={() => applyPreset(key)}
               className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                activePreset === p.key
+                activePreset === key
                   ? "bg-slate-900 text-white border-slate-900"
                   : "bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-400"
               }`}
             >
-              {p.label}
+              {t(PRESET_TKEYS[key])}
             </button>
           ))}
           <span className="text-slate-300 text-xs mx-1">|</span>
@@ -133,13 +137,13 @@ export function ControllingFilters({
 
       {/* Zeile 2: Dropdowns + Status + Reset */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-medium text-slate-500 w-20 shrink-0">Filter</span>
+        <span className="text-xs font-medium text-slate-500 w-20 shrink-0">{t("filterLabel")}</span>
 
         {/* Wald */}
         <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50">
           <Trees className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <select value={selectedForestId} onChange={(e) => updateParam("forest", e.target.value)} className="text-xs text-slate-700 bg-transparent focus:outline-none">
-            <option value="">Alle Wälder</option>
+            <option value="">{t("allForests")}</option>
             {forests.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
         </div>
@@ -148,7 +152,7 @@ export function ControllingFilters({
         <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50">
           <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <select value={selectedOwnerId} onChange={(e) => updateParam("owner", e.target.value)} className="text-xs text-slate-700 bg-transparent focus:outline-none">
-            <option value="">Alle Waldbesitzer</option>
+            <option value="">{t("allOwners")}</option>
             {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
         </div>
@@ -157,7 +161,7 @@ export function ControllingFilters({
         <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50">
           <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <select value={selectedMemberId} onChange={(e) => updateParam("member", e.target.value)} className="text-xs text-slate-700 bg-transparent focus:outline-none">
-            <option value="">Alle Mitglieder</option>
+            <option value="">{t("allMembers")}</option>
             {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </div>
@@ -172,7 +176,7 @@ export function ControllingFilters({
           }`}
         >
           <span className={`w-1.5 h-1.5 rounded-full ${showAll ? "bg-amber-400" : "bg-slate-300"}`} />
-          {showAll ? "Inkl. offene Aufgaben" : "Nur erledigte"}
+          {showAll ? t("inclOpenTasks") : t("onlyCompleted")}
         </button>
 
         {/* Reset */}
@@ -181,7 +185,7 @@ export function ControllingFilters({
             onClick={() => setParams({ forest: "", owner: "", member: "", from: "", to: "", showAll: "" })}
             className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700 transition-colors ml-auto"
           >
-            <RotateCcw className="w-3 h-3" /> Zurücksetzen
+            <RotateCcw className="w-3 h-3" /> {t("resetFilters")}
           </button>
         )}
       </div>

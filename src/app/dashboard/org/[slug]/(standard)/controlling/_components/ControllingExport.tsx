@@ -1,6 +1,7 @@
 "use client";
 
 import { Download } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type TimeEntry = {
   id: string;
@@ -23,14 +24,6 @@ type Task = {
   timeEntries: TimeEntry[];
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  MANUAL_WORK:  "Handarbeit",
-  MACHINE_WORK: "Maschine",
-  PLANNING:     "Planung",
-  TRAVEL:       "Anfahrt",
-  INSPECTION:   "Begehung",
-};
-
 function resolveRate(entry: TimeEntry): number | null {
   if (entry.hourlyRateOverride !== null && entry.hourlyRateOverride !== undefined) {
     return Number(entry.hourlyRateOverride);
@@ -46,11 +39,6 @@ function entryCost(entry: TimeEntry): number | null {
   if (rate === null) return null;
   return ((entry.durationMinutes ?? 0) / 60) * rate;
 }
-
-const STATUS_LABELS: Record<string, string> = {
-  OPEN: "Offen", IN_PROGRESS: "In Arbeit", REVIEW: "Prüfung",
-  BLOCKED: "Blockiert", DONE: "Erledigt",
-};
 
 function fmtMins(mins: number): string {
   if (mins === 0) return "0h";
@@ -69,12 +57,32 @@ function escapeCsv(val: string | number | null | undefined): string {
 }
 
 export function ControllingExport({ tasks }: { tasks: Task[] }) {
+  const t = useTranslations("CostControl");
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    MANUAL_WORK:  t("categoryManual"),
+    MACHINE_WORK: t("categoryMachine"),
+    PLANNING:     t("categoryPlanning"),
+    TRAVEL:       t("categoryTravel"),
+    INSPECTION:   t("categoryInspection"),
+  };
+
+  const STATUS_LABELS: Record<string, string> = {
+    OPEN:        t("csvStatusOpen"),
+    IN_PROGRESS: t("csvStatusInProgress"),
+    REVIEW:      t("csvStatusReview"),
+    BLOCKED:     t("csvStatusBlocked"),
+    DONE:        t("csvStatusDone"),
+  };
+
   function download() {
     const BOM = "\uFEFF";
     const header = [
-      "Aufgabe", "Status", "Wald", "Maßnahme", "Zugewiesen",
-      "Geschätzt (Min)", "Gebucht (Min)", "Datum", "Kategorie", "Bearbeiter",
-      "Stundensatz (€)", "Kosten (€)",
+      t("csvHeaderTask"), t("csvHeaderStatus"), t("csvHeaderForest"),
+      t("csvHeaderOperation"), t("csvHeaderAssigned"),
+      t("csvHeaderEstimatedMin"), t("csvHeaderBookedMin"),
+      t("csvHeaderDate"), t("csvHeaderCategory"), t("csvHeaderWorker"),
+      t("csvHeaderRate"), t("csvHeaderCost"),
     ].join(";");
 
     const rows: string[] = [];
@@ -139,7 +147,7 @@ export function ControllingExport({ tasks }: { tasks: Task[] }) {
       className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-800 transition-colors shadow-sm"
     >
       <Download className="w-3.5 h-3.5" />
-      CSV exportieren ({tasks.length})
+      {t("csvExport", { count: tasks.length })}
     </button>
   );
 }

@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   AreaChart, Area,
 } from "recharts";
+import { useTranslations } from "next-intl";
 
 type CategoryRow = { name: string; minutes: number };
 type ForestRow   = { name: string; minutes: number };
@@ -34,8 +35,8 @@ function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
 }
 
 // ── Donut: Zeitaufwand nach Kategorie ────────────────────────────────────────
-function CategoryDonut({ data }: { data: CategoryRow[] }) {
-  if (data.length === 0) return <EmptyState />;
+function CategoryDonut({ data, emptyLabel }: { data: CategoryRow[]; emptyLabel: string }) {
+  if (data.length === 0) return <EmptyState label={emptyLabel} />;
 
   const total = data.reduce((s, d) => s + d.minutes, 0);
 
@@ -78,8 +79,8 @@ function CategoryDonut({ data }: { data: CategoryRow[] }) {
 }
 
 // ── Balken: Zeit nach Wald ────────────────────────────────────────────────────
-function ForestBars({ data }: { data: ForestRow[] }) {
-  if (data.length === 0) return <EmptyState />;
+function ForestBars({ data, emptyLabel }: { data: ForestRow[]; emptyLabel: string }) {
+  if (data.length === 0) return <EmptyState label={emptyLabel} />;
 
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
     if (!active || !payload?.[0]) return null;
@@ -119,9 +120,9 @@ function ForestBars({ data }: { data: ForestRow[] }) {
 }
 
 // ── Area: Monatlicher Verlauf ────────────────────────────────────────────────
-function MonthlyTrend({ data }: { data: MonthRow[] }) {
+function MonthlyTrend({ data, emptyLabel }: { data: MonthRow[]; emptyLabel: string }) {
   const hasData = data.some(d => d.stunden > 0);
-  if (!hasData) return <EmptyState />;
+  if (!hasData) return <EmptyState label={emptyLabel} />;
 
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number }[]; label?: string }) => {
     if (!active || !payload?.length) return null;
@@ -156,40 +157,42 @@ function MonthlyTrend({ data }: { data: MonthRow[] }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ label }: { label: string }) {
   return (
     <div className="h-[220px] flex items-center justify-center text-sm text-slate-400">
-      Keine Daten im gewählten Zeitraum
+      {label}
     </div>
   );
 }
 
 // ── Hauptkomponente ───────────────────────────────────────────────────────────
 export function ControllingCharts({ categoryData, forestData, monthlyData }: Props) {
+  const t = useTranslations("CostControl");
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
       {/* Donut */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <CardHeader title="Zeitaufwand nach Kategorie" subtitle="Anteil der Tätigkeiten" />
+        <CardHeader title={t("chartCategoryTitle")} subtitle={t("chartCategorySubtitle")} />
         <div className="p-4">
-          <CategoryDonut data={categoryData} />
+          <CategoryDonut data={categoryData} emptyLabel={t("noDataInPeriod")} />
         </div>
       </div>
 
       {/* Balken */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <CardHeader title="Zeitaufwand nach Wald" subtitle="Top 10 · Stunden gebucht" />
+        <CardHeader title={t("chartForestTitle")} subtitle={t("chartForestSubtitle")} />
         <div className="p-4">
-          <ForestBars data={forestData} />
+          <ForestBars data={forestData} emptyLabel={t("noDataInPeriod")} />
         </div>
       </div>
 
       {/* Trend */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <CardHeader title="Monatlicher Verlauf" subtitle="Stunden & Kosten · letzte 12 Monate" />
+        <CardHeader title={t("chartMonthlyTitle")} subtitle={t("chartMonthlySubtitle")} />
         <div className="p-4">
-          <MonthlyTrend data={monthlyData} />
+          <MonthlyTrend data={monthlyData} emptyLabel={t("noDataInPeriod")} />
         </div>
       </div>
 

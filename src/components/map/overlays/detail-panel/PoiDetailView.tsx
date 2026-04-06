@@ -874,7 +874,7 @@ function VehicleSection({
           >
             {imageUploading
               ? <Loader2 className="w-5 h-5 animate-spin" />
-              : <><Camera className="w-5 h-5" /><span className="text-xs">Foto hochladen</span><span className="text-[10px] opacity-60">JPEG, PNG, WebP · max. 10 MB</span></>
+              : <><Camera className="w-5 h-5" /><span className="text-xs">{t('uploadPhoto')}</span><span className="text-[10px] opacity-60">JPEG, PNG, WebP · max. 10 MB</span></>
             }
           </button>
         ) : null}
@@ -940,19 +940,19 @@ function VehicleSection({
             ) : (
               <p className={cn('text-sm flex-1', inspectionWarning ? 'text-yellow-400 font-semibold' : 'text-gray-300')}>
                 {nextInspection ? format(new Date(nextInspection), 'dd.MM.yyyy') : '—'}
-                {daysUntilInsp !== null && daysUntilInsp > 0 && ` (in ${daysUntilInsp} Tagen)`}
-                {daysUntilInsp !== null && daysUntilInsp <= 0 && ' (überfällig!)'}
+                {daysUntilInsp !== null && daysUntilInsp > 0 && ` (${t('inspectionInDays', { days: daysUntilInsp })})`}
+                {daysUntilInsp !== null && daysUntilInsp <= 0 && ` (${t('inspectionOverdue')})`}
               </p>
             )}
             {nextInspection && !isEditing && (
               <Button variant="outline" size="sm" onClick={onCreateInspectionTask} className="text-xs border-white/20 text-gray-400 hover:text-white h-7 shrink-0">
-                <Wrench className="w-3 h-3 mr-1" /> Als Aufgabe
+                <Wrench className="w-3 h-3 mr-1" /> {t('createInspectionTask')}
               </Button>
             )}
           </div>
           {inspectionWarning && daysUntilInsp !== null && daysUntilInsp > 0 && (
             <p className="text-[10px] text-yellow-400/80 mt-1 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> Inspektion in {daysUntilInsp} Tagen fällig
+              <AlertCircle className="w-3 h-3" /> {t('inspectionDueDays', { days: daysUntilInsp })}
             </p>
           )}
         </div>
@@ -960,12 +960,12 @@ function VehicleSection({
 
       {/* Fahrzeug-Notizen */}
       <div>
-        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Notizen</label>
+        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('vehicleNotes')}</label>
         {isEditing ? (
-          <Textarea value={vehicleNotes} onChange={e => setVehicleNotes(e.target.value)} className="bg-black/50 border-white/20 text-white min-h-[80px]" placeholder="z.B. Ölwechsel fällig..." />
+          <Textarea value={vehicleNotes} onChange={e => setVehicleNotes(e.target.value)} className="bg-black/50 border-white/20 text-white min-h-[80px]" placeholder={t('vehicleNotesPlaceholder')} />
         ) : (
           <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[50px] whitespace-pre-wrap">
-            {vehicleNotes || 'Keine Notizen.'}
+            {vehicleNotes || t('vehicleNoNotes')}
           </p>
         )}
       </div>
@@ -977,12 +977,8 @@ function VehicleSection({
 // Polter-Sektion
 // ---------------------------------------------------------------------------
 
-const WOOD_TYPE_LABELS_POI: Record<string, string> = {
-  LOG: 'Stammholz', INDUSTRIAL: 'Industrieholz', ENERGY: 'Energieholz', PULP: 'Papierholz',
-};
-
-
 function AssignOperationWidget({ poi, orgSlug }: { poi: any; orgSlug: string }) {
+  const t = useTranslations('Map');
   const [open, setOpen]             = useState(false);
   const [operations, setOps]        = useState<any[]>([]);
   const [loadError, setLoadError]   = useState<string | null>(null);
@@ -1015,10 +1011,10 @@ function AssignOperationWidget({ poi, orgSlug }: { poi: any; orgSlug: string }) 
     });
     setSaving(false);
     if (res?.success) {
-      toast.success('Polter der Maßnahme zugewiesen');
+      toast.success(t('pileAssigned'));
       setOpen(false);
     } else {
-      toast.error(res?.error ?? 'Fehler beim Zuweisen');
+      toast.error(res?.error ?? t('assignError'));
     }
   };
 
@@ -1028,27 +1024,27 @@ function AssignOperationWidget({ poi, orgSlug }: { poi: any; orgSlug: string }) 
         onClick={handleOpen}
         className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-white/20 text-xs text-gray-500 hover:text-white hover:border-white/40 hover:bg-white/5 transition"
       >
-        <LinkIcon className="w-3 h-3" /> Maßnahme zuweisen
+        <LinkIcon className="w-3 h-3" /> {t('assignOperation')}
       </button>
     );
   }
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2">
-      <p className="text-[10px] uppercase text-gray-500 font-bold">Maßnahme zuweisen</p>
+      <p className="text-[10px] uppercase text-gray-500 font-bold">{t('assignOperationHeading')}</p>
       {loading ? (
         <div className="flex items-center gap-2 text-xs text-gray-500">
-          <Loader2 className="w-3 h-3 animate-spin" /> Lade Maßnahmen…
+          <Loader2 className="w-3 h-3 animate-spin" /> {t('loadingOperations')}
         </div>
       ) : loadError ? (
         <p className="text-xs text-red-400">{loadError}</p>
       ) : operations.length === 0 ? (
         <p className="text-xs text-gray-500">
-          Keine aktiven Maßnahmen gefunden. Bitte zuerst unter{' '}
+          {t('noActiveOperations')}{' '}
           <a href={`/dashboard/org/${orgSlug}/operations`} className="text-amber-400 hover:underline">
-            Maßnahmen & Holzverkauf
+            {t('operationsLinkLabel')}
           </a>{' '}
-          eine Maßnahme anlegen.
+          {t('createOperationFirst')}
         </p>
       ) : (
         <select
@@ -1056,7 +1052,7 @@ function AssignOperationWidget({ poi, orgSlug }: { poi: any; orgSlug: string }) 
           onChange={e => setSelectedOp(e.target.value)}
           className="w-full bg-black/50 border border-white/20 text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-emerald-500"
         >
-          <option value="">— Maßnahme wählen —</option>
+          <option value="">{t('selectOperation')}</option>
           {operations.map((op: any) => (
             <option key={op.id} value={op.id}>
               {op.year} · {op.forest?.name} · {op.title}
@@ -1065,14 +1061,14 @@ function AssignOperationWidget({ poi, orgSlug }: { poi: any; orgSlug: string }) 
         </select>
       )}
       <div className="flex gap-2 justify-end">
-        <button onClick={() => setOpen(false)} className="text-xs text-gray-500 hover:text-white">Abbrechen</button>
+        <button onClick={() => setOpen(false)} className="text-xs text-gray-500 hover:text-white">{t('cancelLabel')}</button>
         <Button
           size="sm"
           disabled={!selectedOp || saving}
           onClick={handleAssign}
           className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white"
         >
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Zuweisen'}
+          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : t('assignLabel')}
         </Button>
       </div>
     </div>
@@ -1087,10 +1083,14 @@ function LogPileSection({
   qualityClass, setQualityClass, notes, setNotes,
   imagePreview, imageUploading, fileInputRef, onFileSelect, onImageRemove,
 }: any) {
+  const t = useTranslations('Map');
+  const WOOD_TYPE_LABELS_POI: Record<string, string> = {
+    LOG: t('woodTypeLog'), INDUSTRIAL: t('woodTypeIndustrial'), ENERGY: t('woodTypeEnergy'), PULP: t('woodTypePulp'),
+  };
   return (
     <div className="mt-4 space-y-4">
       <h4 className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-1.5">
-        <Boxes className="w-3 h-3" /> Polterdaten
+        <Boxes className="w-3 h-3" /> {t('pileDataHeading')}
       </h4>
 
       {/* Bild */}
@@ -1098,7 +1098,7 @@ function LogPileSection({
         {imagePreview ? (
           <div className="relative rounded-lg overflow-hidden border border-white/10 aspect-video bg-black/30">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imagePreview} alt="Polterfoto" className="w-full h-full object-cover" />
+            <img src={imagePreview} alt={t('pilePhoto')} className="w-full h-full object-cover" />
             {isEditing && (
               <button
                 onClick={onImageRemove}
@@ -1116,7 +1116,7 @@ function LogPileSection({
           >
             {imageUploading
               ? <Loader2 className="w-5 h-5 animate-spin" />
-              : <><Camera className="w-5 h-5" /><span className="text-xs">Foto hochladen</span><span className="text-[10px] opacity-60">JPEG, PNG, WebP · max. 10 MB</span></>
+              : <><Camera className="w-5 h-5" /><span className="text-xs">{t('uploadPhoto')}</span><span className="text-[10px] opacity-60">JPEG, PNG, WebP · max. 10 MB</span></>
             }
           </button>
         ) : null}
@@ -1126,7 +1126,7 @@ function LogPileSection({
       <div className="grid grid-cols-2 gap-3">
         {/* Festmeter */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Festmeter (fm)</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelVolumeFm')}</label>
           {isEditing ? (
             <input type="number" value={volumeFm} onChange={e => setVolumeFm(e.target.value)}
               min="0" step="0.1" placeholder="z.B. 12.5"
@@ -1138,7 +1138,7 @@ function LogPileSection({
 
         {/* Stammlänge */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Stammlänge (m)</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelLogLength')}</label>
           {isEditing ? (
             <input type="number" value={logLength} onChange={e => setLogLength(e.target.value)}
               min="0" step="0.1" placeholder="z.B. 5.0"
@@ -1150,7 +1150,7 @@ function LogPileSection({
 
         {/* Anzahl Lagen */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Anzahl Lagen</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelLayerCount')}</label>
           {isEditing ? (
             <input type="number" value={layerCount} onChange={e => setLayerCount(e.target.value)}
               min="0" step="1" placeholder="z.B. 3"
@@ -1162,7 +1162,7 @@ function LogPileSection({
 
         {/* Qualitätsklasse */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Qualität</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelQuality')}</label>
           {isEditing ? (
             <select value={qualityClass} onChange={e => setQualityClass(e.target.value)}
               className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500">
@@ -1176,7 +1176,7 @@ function LogPileSection({
 
         {/* Baumart */}
         <div className="col-span-2">
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Baumart</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelTreeSpeciesPile')}</label>
           {isEditing ? (
             <select value={treeSpecies} onChange={e => setTreeSpecies(e.target.value)}
               className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500">
@@ -1190,7 +1190,7 @@ function LogPileSection({
 
         {/* Holzart */}
         <div className="col-span-2">
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Holzart</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelWoodTypePoi')}</label>
           {isEditing ? (
             <select value={woodType} onChange={e => setWoodType(e.target.value)}
               className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500">
@@ -1206,14 +1206,14 @@ function LogPileSection({
 
       {/* Notizen */}
       <div>
-        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Notizen</label>
+        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelNotes')}</label>
         {isEditing ? (
           <Textarea value={notes} onChange={e => setNotes(e.target.value)}
             className="bg-black/50 border-white/20 text-white min-h-[60px]"
             placeholder="Hinweise zum Polter…" />
         ) : (
           <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[40px] whitespace-pre-wrap">
-            {notes || 'Keine Notizen.'}
+            {notes || t('noNotesMsg')}
           </p>
         )}
       </div>

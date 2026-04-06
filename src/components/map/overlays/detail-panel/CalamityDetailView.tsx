@@ -131,7 +131,7 @@ export function CalamityDetailView({
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(t('error', { message: e.message }));
     } finally {
       setIsSaving(false);
     }
@@ -143,10 +143,10 @@ export function CalamityDetailView({
       const res = await togglePolygonBiomass(calamity.id, 'CALAMITY', enabled, orgSlug);
       if (!res.success) throw new Error(res.error);
       setTrackBiomass(enabled);
-      toast.success(enabled ? 'Biomasse-Tracking aktiviert' : 'Biomasse-Tracking deaktiviert');
+      toast.success(enabled ? t('biomassEnabled') : t('biomassDisabled'));
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(t('error', { message: e.message }));
     } finally {
       setIsTogglingBio(false);
     }
@@ -159,10 +159,10 @@ export function CalamityDetailView({
       if (!res.success) throw new Error(res.error);
       const opTitle = title; // gleicher Titel wie Kalamität
       setLinkedOp({ id: res.operationId!, title: opTitle });
-      toast.success(`Maßnahme "${opTitle}" erstellt`);
+      toast.success(t('operationCreated', { title: opTitle }));
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(t('error', { message: e.message }));
     } finally {
       setIsCreatingOp(false);
     }
@@ -176,7 +176,7 @@ export function CalamityDetailView({
       setInteractionMode('EDIT_GEOMETRY');
       setEditingFeature({ id: calamity.id, geoJson: calamity.geoJson, featureType: 'CALAMITY', name: title, orgSlug });
       onClose();
-      toast.info('Ziehpunkte verschieben um Fläche zu ändern');
+      toast.info(t('editAreaDragHint'));
     }
   };
 
@@ -227,7 +227,7 @@ export function CalamityDetailView({
         <div className="space-y-3">
           {linkedOp && (
             <p className="text-[10px] text-orange-400/80 bg-orange-950/30 border border-orange-900/40 rounded px-2 py-1.5">
-              Name wird synchron mit Maßnahme &ldquo;{linkedOp.title}&rdquo; gehalten.
+              {t('opSyncNote', { title: linkedOp.title })}
             </p>
           )}
           <div>
@@ -371,7 +371,7 @@ export function CalamityDetailView({
           onClick={() => handleToggleBiomass(!trackBiomass)}
           disabled={isTogglingBio}
           className={`relative w-10 h-5 rounded-full transition-colors ${trackBiomass ? 'bg-orange-600' : 'bg-white/10'} ${isTogglingBio ? 'opacity-50' : ''}`}
-          title={trackBiomass ? 'Tracking deaktivieren' : 'Tracking aktivieren'}
+          title={trackBiomass ? t('trackingDisable') : t('trackingEnable')}
         >
           <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${trackBiomass ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
@@ -492,7 +492,7 @@ export function CalamityDetailView({
         orgSlug={orgSlug}
         members={members}
         forests={forests}
-        defaultTitle={`Aufgabe: ${title}`}
+        defaultTitle={t('defaultTaskTitle', { name: title })}
         defaultForestId={calamity.forestId}
         defaultLinkedPolygonId={calamity.id}
         defaultLinkedPolygonType="CALAMITY"

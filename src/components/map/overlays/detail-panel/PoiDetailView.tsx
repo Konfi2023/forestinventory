@@ -191,7 +191,7 @@ export function PoiDetailView({
   const [logImageUploading,  setLogImageUploading]  = useState(false);
   const logFileInputRef = useRef<HTMLInputElement>(null);
 
-  const config = POI_CONFIG[poi.type] ?? { icon: MapPin, color: 'text-gray-400', label: 'Objekt' };
+  const config = POI_CONFIG[poi.type] ?? { icon: MapPin, color: 'text-gray-400', tKey: 'poiHuntingStand' };
   const Icon   = config.icon;
 
   const activeData = (interactionMode === 'MOVE_POI' && editingFeatureData?.id === poi.id)
@@ -254,7 +254,7 @@ export function PoiDetailView({
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? 'Upload-URL konnte nicht erstellt werden');
+        throw new Error(err.error ?? t('uploadUrlError'));
       }
 
       const { uploadUrl, key } = await res.json();
@@ -266,14 +266,14 @@ export function PoiDetailView({
         body: file,
       });
 
-      if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
+      if (!uploadRes.ok) throw new Error(t('uploadS3Failed'));
 
       // 3. Key merken; URL für Vorschau generieren
       setImageKey(key);
       setImagePreview(URL.createObjectURL(file));
       toast.success(t('imageUploaded'));
     } catch (err: any) {
-      toast.error(err.message ?? 'Fehler beim Upload');
+      toast.error(err.message ?? t('uploadError'));
     } finally {
       setImageUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -302,7 +302,7 @@ export function PoiDetailView({
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? 'Upload-URL konnte nicht erstellt werden');
+        throw new Error(err.error ?? t('uploadUrlError'));
       }
       const { uploadUrl, key } = await res.json();
       const uploadRes = await fetch(uploadUrl, {
@@ -310,12 +310,12 @@ export function PoiDetailView({
         headers: { 'Content-Type': file.type },
         body: file,
       });
-      if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
+      if (!uploadRes.ok) throw new Error(t('uploadS3Failed'));
       setTreeImageKey(key);
       setTreeImagePreview(URL.createObjectURL(file));
       toast.success(t('imageUploaded'));
     } catch (err: any) {
-      toast.error(err.message ?? 'Fehler beim Upload');
+      toast.error(err.message ?? t('uploadError'));
     } finally {
       setTreeImageUploading(false);
       if (treeFileInputRef.current) treeFileInputRef.current.value = '';
@@ -344,7 +344,7 @@ export function PoiDetailView({
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? 'Upload-URL konnte nicht erstellt werden');
+        throw new Error(err.error ?? t('uploadUrlError'));
       }
       const { uploadUrl, key } = await res.json();
       const uploadRes = await fetch(uploadUrl, {
@@ -352,12 +352,12 @@ export function PoiDetailView({
         headers: { 'Content-Type': file.type },
         body: file,
       });
-      if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
+      if (!uploadRes.ok) throw new Error(t('uploadS3Failed'));
       setTreeCrownImageKey(key);
       setTreeCrownImagePreview(URL.createObjectURL(file));
       toast.success(t('crownPhotoUploaded'));
     } catch (err: any) {
-      toast.error(err.message ?? 'Fehler beim Upload');
+      toast.error(err.message ?? t('uploadError'));
     } finally {
       setTreeCrownImageUploading(false);
       if (treeCrownFileInputRef.current) treeCrownFileInputRef.current.value = '';
@@ -387,14 +387,14 @@ export function PoiDetailView({
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? 'Upload fehlgeschlagen');
+        throw new Error(err.error ?? t('uploadFailed'));
       }
       const { imageKey: key } = await res.json();
       setLogImageKey(key);
       setLogImagePreview(URL.createObjectURL(file));
       toast.success(t('imageUploaded'));
     } catch (err: any) {
-      toast.error(err.message ?? 'Fehler beim Upload');
+      toast.error(err.message ?? t('uploadError'));
     } finally {
       setLogImageUploading(false);
       if (logFileInputRef.current) logFileInputRef.current.value = '';
@@ -637,7 +637,7 @@ export function PoiDetailView({
               value={note}
               onChange={e => setNote(e.target.value)}
               className="bg-black/50 border-white/20 text-white min-h-[100px]"
-              placeholder="Z.B. Dach undicht..."
+              placeholder={t('notePlaceholderGeneric')}
             />
           ) : (
             <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[60px] whitespace-pre-wrap">
@@ -795,8 +795,8 @@ export function PoiDetailView({
         forests={forests}
         defaultTitle={
           poi.type === 'VEHICLE' && nextInspection
-            ? `Inspektion: ${name}`
-            : `Arbeit an: ${name}`
+            ? t('inspectionAt', { name })
+            : t('workAt', { name })
         }
         defaultForestId={determinedForestId}
         defaultPoiId={poi.id}
@@ -808,17 +808,17 @@ export function PoiDetailView({
     <Dialog open={pendingImageRemove !== null} onOpenChange={open => { if (!open) setPendingImageRemove(null); }}>
       <DialogContent className="bg-[#1a1a1a] border-white/10 text-white sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-red-400">Bild löschen?</DialogTitle>
+          <DialogTitle className="text-red-400">{t('deleteImageTitle')}</DialogTitle>
           <DialogDescription className="text-gray-400">
-            Das Bild wird beim Speichern unwiderruflich aus dem Speicher entfernt.
+            {t('deleteImageDesc')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="ghost" className="text-gray-400 hover:text-white" onClick={() => setPendingImageRemove(null)}>
-            Abbrechen
+            {t('cancel')}
           </Button>
           <Button variant="destructive" onClick={() => { pendingImageRemove?.(); setPendingImageRemove(null); }}>
-            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Löschen
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> {t('delete')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -856,7 +856,7 @@ function VehicleSection({
         {imagePreview ? (
           <div className="relative rounded-lg overflow-hidden border border-white/10 aspect-video bg-black/30">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imagePreview} alt="Fahrzeugfoto" className="w-full h-full object-cover" />
+            <img src={imagePreview} alt={t('vehiclePhotoAlt')} className="w-full h-full object-cover" />
             {isEditing && (
               <button
                 onClick={onImageRemove}
@@ -885,7 +885,7 @@ function VehicleSection({
       <div className="grid grid-cols-2 gap-3">
         {/* Fahrzeugtyp */}
         <div className="col-span-2">
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Fahrzeugtyp</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('vehicleTypeLabel')}</label>
           {isEditing ? (
             <select
               value={vehicleType}
@@ -903,9 +903,9 @@ function VehicleSection({
 
         {/* Seriennummer */}
         <div className="col-span-2">
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Kennzeichen / Seriennr.</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('serialNumberLabel')}</label>
           {isEditing ? (
-            <input value={serialNumber} onChange={e => setSerialNumber(e.target.value)} placeholder="z.B. MN-BY 1234" className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
+            <input value={serialNumber} onChange={e => setSerialNumber(e.target.value)} placeholder={t('serialNumberPlaceholder')} className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
             <p className="text-sm text-gray-300">{serialNumber || '—'}</p>
           )}
@@ -913,9 +913,9 @@ function VehicleSection({
 
         {/* Baujahr */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Baujahr</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('yearBuiltLabel')}</label>
           {isEditing ? (
-            <input type="number" value={yearBuilt} onChange={e => setYearBuilt(e.target.value)} placeholder="z.B. 2018" min="1950" max={new Date().getFullYear()} className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
+            <input type="number" value={yearBuilt} onChange={e => setYearBuilt(e.target.value)} placeholder={t('yearBuiltPlaceholder')} min="1950" max={new Date().getFullYear()} className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
             <p className="text-sm text-gray-300">{yearBuilt || '—'}</p>
           )}
@@ -923,7 +923,7 @@ function VehicleSection({
 
         {/* Letzte Inspektion */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Letzte Inspektion</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('lastInspectionLabel')}</label>
           {isEditing ? (
             <input type="date" value={lastInspection} onChange={e => setLastInspection(e.target.value)} className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
@@ -933,7 +933,7 @@ function VehicleSection({
 
         {/* Nächste Inspektion */}
         <div className="col-span-2">
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Nächste Inspektion</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('nextInspectionLabel')}</label>
           <div className="flex gap-2 items-center">
             {isEditing ? (
               <input type="date" value={nextInspection} onChange={e => setNextInspection(e.target.value)} className="flex-1 bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
@@ -1129,7 +1129,7 @@ function LogPileSection({
           <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelVolumeFm')}</label>
           {isEditing ? (
             <input type="number" value={volumeFm} onChange={e => setVolumeFm(e.target.value)}
-              min="0" step="0.1" placeholder="z.B. 12.5"
+              min="0" step="0.1" placeholder={t('logVolumePlaceholder')}
               className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
             <p className="text-sm text-gray-300">{volumeFm ? `${parseFloat(volumeFm).toLocaleString('de-DE')} fm` : '—'}</p>
@@ -1141,7 +1141,7 @@ function LogPileSection({
           <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelLogLength')}</label>
           {isEditing ? (
             <input type="number" value={logLength} onChange={e => setLogLength(e.target.value)}
-              min="0" step="0.1" placeholder="z.B. 5.0"
+              min="0" step="0.1" placeholder={t('logLengthPlaceholder')}
               className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
             <p className="text-sm text-gray-300">{logLength ? `${parseFloat(logLength).toLocaleString('de-DE')} m` : '—'}</p>
@@ -1153,7 +1153,7 @@ function LogPileSection({
           <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('labelLayerCount')}</label>
           {isEditing ? (
             <input type="number" value={layerCount} onChange={e => setLayerCount(e.target.value)}
-              min="0" step="1" placeholder="z.B. 3"
+              min="0" step="1" placeholder={t('logLayerPlaceholder')}
               className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
             <p className="text-sm text-gray-300">{layerCount || '—'}</p>
@@ -1180,7 +1180,7 @@ function LogPileSection({
           {isEditing ? (
             <select value={treeSpecies} onChange={e => setTreeSpecies(e.target.value)}
               className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500">
-              <option value="">— wählen —</option>
+              <option value="">{t('selectWood')}</option>
               {TREE_SPECIES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           ) : (
@@ -1210,7 +1210,7 @@ function LogPileSection({
         {isEditing ? (
           <Textarea value={notes} onChange={e => setNotes(e.target.value)}
             className="bg-black/50 border-white/20 text-white min-h-[60px]"
-            placeholder="Hinweise zum Polter…" />
+            placeholder={t('logPileNotesPlaceholder')} />
         ) : (
           <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[40px] whitespace-pre-wrap">
             {notes || t('noNotesMsg')}
@@ -1230,44 +1230,44 @@ function LogPileSection({
 // Baum-Sektion
 // ---------------------------------------------------------------------------
 
-const COMMON_SPECIES = [
-  'Fichte', 'Kiefer', 'Buche', 'Eiche', 'Douglasie', 'Lärche',
-  'Tanne', 'Birke', 'Erle', 'Esche', 'Ahorn', 'Pappel',
+const COMMON_SPECIES_KEYS = [
+  'speciesFichte', 'speciesKiefer', 'speciesBuche', 'speciesEiche', 'speciesDouglasie', 'speciesLaerche',
+  'speciesTanne', 'speciesBirke', 'speciesErle', 'speciesEsche', 'speciesAhorn', 'speciesPappel',
 ];
 
-const SOIL_COND_OPTS = [
-  { id: 'SANDY', label: 'Sandig' }, { id: 'LOAMY', label: 'Lehmig' },
-  { id: 'CLAY',  label: 'Tonig'  }, { id: 'HUMUS', label: 'Humos'  },
-  { id: 'ROCKY', label: 'Steinig'}, { id: 'MIXED', label: 'Gemischt'},
+const SOIL_COND_TKEYS = [
+  { id: 'SANDY', tKey: 'soilSandy' }, { id: 'LOAMY', tKey: 'soilLoamy' },
+  { id: 'CLAY',  tKey: 'soilClay'  }, { id: 'HUMUS', tKey: 'soilHumus'  },
+  { id: 'ROCKY', tKey: 'soilRocky' }, { id: 'MIXED', tKey: 'soilMixed' },
 ];
-const SOIL_MOIST_OPTS = [
-  { id: 'DRY',         label: 'Trocken'  }, { id: 'FRESH', label: 'Frisch' },
-  { id: 'MOIST',       label: 'Feucht'   }, { id: 'WET',   label: 'Nass'   },
-  { id: 'WATERLOGGED', label: 'Staunass' },
+const SOIL_MOIST_TKEYS = [
+  { id: 'DRY',         tKey: 'moistDry'  }, { id: 'FRESH', tKey: 'moistFresh' },
+  { id: 'MOIST',       tKey: 'moistMoist'   }, { id: 'WET',   tKey: 'moistWet'   },
+  { id: 'WATERLOGGED', tKey: 'moistWaterlogged' },
 ];
-const EXPOSITION_OPTS = [
-  { id: 'N',  label: 'N'  }, { id: 'NE', label: 'NO' }, { id: 'E',    label: 'O'    },
-  { id: 'SE', label: 'SO' }, { id: 'S',  label: 'S'  }, { id: 'SW',   label: 'SW'   },
-  { id: 'W',  label: 'W'  }, { id: 'NW', label: 'NW' }, { id: 'FLAT', label: 'Eben' },
+const EXPOSITION_TKEYS_POI = [
+  { id: 'N',  tKey: 'expN'  }, { id: 'NE', tKey: 'expNE' }, { id: 'E',    tKey: 'expE'    },
+  { id: 'SE', tKey: 'expSE' }, { id: 'S',  tKey: 'expS'  }, { id: 'SW',   tKey: 'expSW'   },
+  { id: 'W',  tKey: 'expW'  }, { id: 'NW', tKey: 'expNW' }, { id: 'FLAT', tKey: 'expFlat' },
 ];
-const SLOPE_CLASS_OPTS = [
-  { id: 'FLAT',       label: 'Flach (<5°)'  }, { id: 'MODERATE', label: 'Mäßig (5–15°)' },
-  { id: 'STEEP',      label: 'Steil (15–30°)'}, { id: 'VERY_STEEP',label: 'Sehr steil'  },
+const SLOPE_CLASS_TKEYS = [
+  { id: 'FLAT',       tKey: 'poiSlopeFlat'  }, { id: 'MODERATE', tKey: 'poiSlopeModerate' },
+  { id: 'STEEP',      tKey: 'poiSlopeSteep' }, { id: 'VERY_STEEP', tKey: 'poiSlopeVerySteep'  },
 ];
-const SLOPE_POS_OPTS = [
-  { id: 'SUMMIT',      label: 'Kuppe'     }, { id: 'UPPER_SLOPE', label: 'Oberhang'  },
-  { id: 'MID_SLOPE',   label: 'Mittelhang'}, { id: 'LOWER_SLOPE', label: 'Unterhang' },
-  { id: 'VALLEY',      label: 'Talboden'  },
+const SLOPE_POS_TKEYS = [
+  { id: 'SUMMIT',      tKey: 'posSummit'     }, { id: 'UPPER_SLOPE', tKey: 'posUpperSlope'  },
+  { id: 'MID_SLOPE',   tKey: 'posMidSlope' }, { id: 'LOWER_SLOPE', tKey: 'posLowerSlope' },
+  { id: 'VALLEY',      tKey: 'posValley'  },
 ];
-const STAND_TYPE_OPTS = [
-  { id: 'PURE_CONIFER',   label: 'Rein Nadel'  }, { id: 'PURE_DECIDUOUS', label: 'Rein Laub'   },
-  { id: 'MIXED',          label: 'Mischbestand'}, { id: 'EDGE',           label: 'Waldrand'    },
-  { id: 'CLEARCUT',       label: 'Freifläche'  }, { id: 'YOUNG_GROWTH',   label: 'Jungwuchs'  },
+const STAND_TYPE_TKEYS = [
+  { id: 'PURE_CONIFER',   tKey: 'standPureConifer'  }, { id: 'PURE_DECIDUOUS', tKey: 'standPureDeciduous'   },
+  { id: 'MIXED',          tKey: 'standMixed' }, { id: 'EDGE',           tKey: 'standEdge'    },
+  { id: 'CLEARCUT',       tKey: 'standClearcut'  }, { id: 'YOUNG_GROWTH',   tKey: 'standYoungGrowth'  },
 ];
-const STOCKING_OPTS = [
-  { id: 'OPEN',  label: 'Locker' }, { id: 'SPARSE',     label: 'Licht'      },
-  { id: 'MEDIUM',label: 'Mittel' }, { id: 'DENSE',      label: 'Dicht'      },
-  { id: 'VERY_DENSE', label: 'Sehr dicht' },
+const STOCKING_TKEYS = [
+  { id: 'OPEN',  tKey: 'stockingOpen' }, { id: 'SPARSE',     tKey: 'stockingSparse'      },
+  { id: 'MEDIUM', tKey: 'stockingMedium' }, { id: 'DENSE',      tKey: 'stockingDense'      },
+  { id: 'VERY_DENSE', tKey: 'stockingVeryDense' },
 ];
 
 function ToggleGroup({ opts, value, onChange, cols = 3, color = 'emerald' }: {
@@ -1346,42 +1346,51 @@ function TreeSection({
   const healthTKeyCfg = TREE_HEALTH_TKEYS[treeHealth] ?? { tKey: treeHealth, color: 'text-gray-400' };
   const healthCfg = { label: TREE_HEALTH_TKEYS[treeHealth] ? t(healthTKeyCfg.tKey as any) : treeHealth, color: healthTKeyCfg.color };
 
+  const soilCondOpts = SOIL_COND_TKEYS.map(o => ({ id: o.id, label: t(o.tKey as any) }));
+  const soilMoistOpts = SOIL_MOIST_TKEYS.map(o => ({ id: o.id, label: t(o.tKey as any) }));
+  const expOpts = EXPOSITION_TKEYS_POI.map(o => ({ id: o.id, label: t(o.tKey as any) }));
+  const slopeClassOpts = SLOPE_CLASS_TKEYS.map(o => ({ id: o.id, label: t(o.tKey as any) }));
+  const slopePosOpts = SLOPE_POS_TKEYS.map(o => ({ id: o.id, label: t(o.tKey as any) }));
+  const standTypeOpts = STAND_TYPE_TKEYS.map(o => ({ id: o.id, label: t(o.tKey as any) }));
+  const stockingOpts = STOCKING_TKEYS.map(o => ({ id: o.id, label: t(o.tKey as any) }));
+  const commonSpecies = COMMON_SPECIES_KEYS.map(k => t(k as any));
+
   return (
     <div className="mt-4 space-y-4">
       <h4 className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-1.5">
-        <TreePine className="w-3 h-3" /> Baumdaten
+        <TreePine className="w-3 h-3" /> {t('treeDataHeading')}
       </h4>
 
       {/* Wald & Abteilung */}
       <div className="bg-white/5 rounded-lg border border-white/10 p-3 space-y-2">
-        <p className="text-[10px] uppercase text-gray-500 font-bold">Wald & Abteilung</p>
+        <p className="text-[10px] uppercase text-gray-500 font-bold">{t('forestAndCompartment')}</p>
         {isEditing ? (
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-gray-500 block mb-1">Wald</label>
+              <label className="text-[10px] text-gray-500 block mb-1">{t('forestSelectLabel')}</label>
               <select
                 value={selectedForestId}
                 onChange={e => handleForestChange(e.target.value)}
                 className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-2 py-1.5 focus:outline-none focus:border-emerald-500"
               >
-                <option value="">– kein –</option>
+                <option value="">{t('forestSelectNone')}</option>
                 {(forests || []).map((f: any) => (
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-[10px] text-gray-500 block mb-1">Abteilung</label>
+              <label className="text-[10px] text-gray-500 block mb-1">{t('compartmentSelectLabel')}</label>
               <select
                 value={compartmentId}
                 onChange={e => setCompartmentId(e.target.value)}
                 className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-2 py-1.5 focus:outline-none focus:border-emerald-500"
                 disabled={!selectedForestId}
               >
-                <option value="">– keine –</option>
+                <option value="">{t('compartmentSelectNone')}</option>
                 {forestCompartments.map((c: any) => (
                   <option key={c.id} value={c.id}>
-                    {c.number ? `[${c.number}] ` : ''}{c.name || 'Abteilung'}
+                    {c.number ? `[${c.number}] ` : ''}{c.name || t('compartment')}
                   </option>
                 ))}
               </select>
@@ -1396,11 +1405,11 @@ function TreeSection({
                   {selectedForest?.name ?? ''}
                   {selectedForest && selectedCompartment ? ' · ' : ''}
                   {selectedCompartment.number ? `[${selectedCompartment.number}] ` : ''}
-                  {selectedCompartment.name || 'Abteilung'}
+                  {selectedCompartment.name || t('compartment')}
                 </span>
               </>
             ) : (
-              <span className="text-gray-600 italic text-xs">Keine Abteilung zugewiesen</span>
+              <span className="text-gray-600 italic text-xs">{t('noCompartmentAssigned')}</span>
             )}
           </div>
         )}
@@ -1410,12 +1419,12 @@ function TreeSection({
       <div className="grid grid-cols-2 gap-2">
         {/* Stammfoto */}
         <div>
-          <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Stammfoto</p>
+          <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">{t('trunkPhotoLabel')}</p>
           <div className="relative w-full h-32 bg-black/30 rounded-lg overflow-hidden flex items-center justify-center border border-white/10">
             {imagePreview ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imagePreview} alt="Stammfoto" className="w-full h-full object-cover" />
+                <img src={imagePreview} alt={t('trunkPhotoAlt')} className="w-full h-full object-cover" />
                 {isEditing && (
                   <button
                     onClick={onImageRemove}
@@ -1433,7 +1442,7 @@ function TreeSection({
               >
                 {imageUploading
                   ? <Loader2 className="w-5 h-5 animate-spin" />
-                  : <><Camera className="w-5 h-5" /><span className="text-[10px] text-center">Stammfoto</span></>
+                  : <><Camera className="w-5 h-5" /><span className="text-[10px] text-center">{t('trunkPhotoLabel')}</span></>
                 }
               </button>
             )}
@@ -1443,12 +1452,12 @@ function TreeSection({
 
         {/* Kronenfoto */}
         <div>
-          <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Kronenfoto</p>
+          <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">{t('crownPhotoLabel')}</p>
           <div className="relative w-full h-32 bg-black/30 rounded-lg overflow-hidden flex items-center justify-center border border-white/10">
             {crownImagePreview ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={crownImagePreview} alt="Kronenfoto" className="w-full h-full object-cover" />
+                <img src={crownImagePreview} alt={t('crownPhotoAlt')} className="w-full h-full object-cover" />
                 {isEditing && (
                   <button
                     onClick={onCrownImageRemove}
@@ -1466,7 +1475,7 @@ function TreeSection({
               >
                 {crownImageUploading
                   ? <Loader2 className="w-5 h-5 animate-spin" />
-                  : <><Camera className="w-5 h-5" /><span className="text-[10px] text-center">Kronenfoto</span></>
+                  : <><Camera className="w-5 h-5" /><span className="text-[10px] text-center">{t('crownPhotoLabel')}</span></>
                 }
               </button>
             )}
@@ -1478,18 +1487,18 @@ function TreeSection({
       <div className="grid grid-cols-2 gap-3">
         {/* Baumart */}
         <div className="col-span-2">
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Baumart</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('treeSpeciesFieldLabel')}</label>
           {isEditing ? (
             <div className="space-y-1.5">
               <input
                 value={treeSpecies}
                 onChange={e => setTreeSpecies(e.target.value)}
                 list="tree-species-list"
-                placeholder="z.B. Fichte, Buche ..."
+                placeholder={t('treeSpeciesPlaceholder')}
                 className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500"
               />
               <datalist id="tree-species-list">
-                {COMMON_SPECIES.map(s => <option key={s} value={s} />)}
+                {commonSpecies.map(s => <option key={s} value={s} />)}
               </datalist>
             </div>
           ) : (
@@ -1499,7 +1508,7 @@ function TreeSection({
 
         {/* Alter */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Alter (Jahre)</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('treeAgeLabel')}</label>
           {isEditing ? (
             <input type="number" value={treeAge} onChange={e => setTreeAge(e.target.value)} min="0" max="1000" className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
@@ -1509,9 +1518,9 @@ function TreeSection({
 
         {/* BHD */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">BHD (cm)</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('treeDbhLabel')}</label>
           {isEditing ? (
-            <input type="number" value={treeDiameter} onChange={e => setTreeDiameter(e.target.value)} min="0" step="0.1" placeholder="∅ bei 1,3m" className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
+            <input type="number" value={treeDiameter} onChange={e => setTreeDiameter(e.target.value)} min="0" step="0.1" placeholder={t('treeDbhPlaceholder')} className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
             <p className="text-sm text-gray-300">{treeDiameter ? `${treeDiameter} cm` : '—'}</p>
           )}
@@ -1519,7 +1528,7 @@ function TreeSection({
 
         {/* Höhe */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Höhe (m)</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('treeHeightLabel')}</label>
           {isEditing ? (
             <input type="number" value={treeHeight} onChange={e => setTreeHeight(e.target.value)} min="0" step="0.5" className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
           ) : (
@@ -1547,9 +1556,9 @@ function TreeSection({
         <div className="bg-green-950/30 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
           <Info className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
           <div>
-            <p className="text-xs text-green-400 font-semibold">Geschätzte CO₂-Speicherleistung</p>
+            <p className="text-xs text-green-400 font-semibold">{t('co2Heading')}</p>
             <p className="text-lg font-bold text-white">{co2Estimate.toLocaleString('de-DE')} kg CO₂</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Berechnet aus BHD, Höhe und artspezifischer Holzdichte</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">{t('co2Calculated')}</p>
           </div>
         </div>
       )}
@@ -1557,18 +1566,18 @@ function TreeSection({
       {/* Vitalität (Schaden) */}
       {(isEditing || treeDamageType || treeDamageSeverity || treeCrownCondition) && (
         <div className="space-y-3 pt-3 border-t border-white/5">
-          <h4 className="text-[10px] uppercase text-gray-500 font-bold">Vitalität & Schaden</h4>
+          <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('vitalityAndDamage')}</h4>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Schadursache</label>
+              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('damageCauseLabel')}</label>
               {isEditing ? (
                 <input value={treeDamageType} onChange={e => setTreeDamageType(e.target.value)}
-                  placeholder="z.B. Borkenkäfer, Trocken …"
+                  placeholder={t('damageCausePlaceholder')}
                   className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500" />
               ) : <p className="text-sm text-gray-300">{treeDamageType || '—'}</p>}
             </div>
             <div>
-              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Schadausmaß (%)</label>
+              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('damageSeverityLabel')}</label>
               {isEditing ? (
                 <input type="number" value={treeDamageSeverity} onChange={e => setTreeDamageSeverity(e.target.value)}
                   min="0" max="100" placeholder="0–100"
@@ -1576,7 +1585,7 @@ function TreeSection({
               ) : <p className="text-sm text-gray-300">{treeDamageSeverity ? `${treeDamageSeverity} %` : '—'}</p>}
             </div>
             <div className="col-span-2">
-              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Kronenanteil vital (%)</label>
+              <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('crownVitalPercent')}</label>
               {isEditing ? (
                 <input type="number" value={treeCrownCondition} onChange={e => setTreeCrownCondition(e.target.value)}
                   min="0" max="100" placeholder="0–100"
@@ -1589,73 +1598,73 @@ function TreeSection({
 
       {/* Bodenfelder */}
       <div className="space-y-3 pt-3 border-t border-white/5">
-        <h4 className="text-[10px] uppercase text-gray-500 font-bold">Boden</h4>
+        <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('soilHeading')}</h4>
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Bodenbeschaffenheit</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">{t('soilConditionLabel')}</label>
           {isEditing
-            ? <ToggleGroup opts={SOIL_COND_OPTS} value={treeSoilCondition} onChange={setTreeSoilCondition} cols={3} />
-            : <p className="text-sm text-gray-300">{SOIL_COND_OPTS.find(o=>o.id===treeSoilCondition)?.label ?? (treeSoilCondition || '—')}</p>
+            ? <ToggleGroup opts={soilCondOpts} value={treeSoilCondition} onChange={setTreeSoilCondition} cols={3} />
+            : <p className="text-sm text-gray-300">{soilCondOpts.find(o=>o.id===treeSoilCondition)?.label ?? (treeSoilCondition || '—')}</p>
           }
         </div>
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Bodenfeuchtigkeit</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">{t('soilMoistureLabel')}</label>
           {isEditing
-            ? <ToggleGroup opts={SOIL_MOIST_OPTS} value={treeSoilMoisture} onChange={setTreeSoilMoisture} cols={3} color="blue" />
-            : <p className="text-sm text-gray-300">{SOIL_MOIST_OPTS.find(o=>o.id===treeSoilMoisture)?.label ?? (treeSoilMoisture || '—')}</p>
+            ? <ToggleGroup opts={soilMoistOpts} value={treeSoilMoisture} onChange={setTreeSoilMoisture} cols={3} color="blue" />
+            : <p className="text-sm text-gray-300">{soilMoistOpts.find(o=>o.id===treeSoilMoisture)?.label ?? (treeSoilMoisture || '—')}</p>
           }
         </div>
       </div>
 
       {/* Standort */}
       <div className="space-y-3 pt-3 border-t border-white/5">
-        <h4 className="text-[10px] uppercase text-gray-500 font-bold">Standort</h4>
+        <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('siteHeading')}</h4>
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Exposition</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">{t('expositionLabel')}</label>
           {isEditing
-            ? <ToggleGroup opts={EXPOSITION_OPTS} value={treeExposition} onChange={setTreeExposition} cols={3} color="amber" />
-            : <p className="text-sm text-gray-300">{EXPOSITION_OPTS.find(o=>o.id===treeExposition)?.label ?? (treeExposition || '—')}</p>
+            ? <ToggleGroup opts={expOpts} value={treeExposition} onChange={setTreeExposition} cols={3} color="amber" />
+            : <p className="text-sm text-gray-300">{expOpts.find(o=>o.id===treeExposition)?.label ?? (treeExposition || '—')}</p>
           }
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Hangneigung</label>
+            <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">{t('slopeInclinationLabel')}</label>
             {isEditing
-              ? <ToggleGroup opts={SLOPE_CLASS_OPTS} value={treeSlopeClass} onChange={setTreeSlopeClass} cols={2} color="amber" />
-              : <p className="text-sm text-gray-300">{SLOPE_CLASS_OPTS.find(o=>o.id===treeSlopeClass)?.label ?? (treeSlopeClass || '—')}</p>
+              ? <ToggleGroup opts={slopeClassOpts} value={treeSlopeClass} onChange={setTreeSlopeClass} cols={2} color="amber" />
+              : <p className="text-sm text-gray-300">{slopeClassOpts.find(o=>o.id===treeSlopeClass)?.label ?? (treeSlopeClass || '—')}</p>
             }
           </div>
           <div>
-            <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Hangposition</label>
+            <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">{t('slopePositionLabel')}</label>
             {isEditing
-              ? <ToggleGroup opts={SLOPE_POS_OPTS} value={treeSlopePosition} onChange={setTreeSlopePosition} cols={2} color="amber" />
-              : <p className="text-sm text-gray-300">{SLOPE_POS_OPTS.find(o=>o.id===treeSlopePosition)?.label ?? (treeSlopePosition || '—')}</p>
+              ? <ToggleGroup opts={slopePosOpts} value={treeSlopePosition} onChange={setTreeSlopePosition} cols={2} color="amber" />
+              : <p className="text-sm text-gray-300">{slopePosOpts.find(o=>o.id===treeSlopePosition)?.label ?? (treeSlopePosition || '—')}</p>
             }
           </div>
         </div>
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Bestandstyp</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">{t('standTypeLabel')}</label>
           {isEditing
-            ? <ToggleGroup opts={STAND_TYPE_OPTS} value={treeStandType} onChange={setTreeStandType} cols={3} color="violet" />
-            : <p className="text-sm text-gray-300">{STAND_TYPE_OPTS.find(o=>o.id===treeStandType)?.label ?? (treeStandType || '—')}</p>
+            ? <ToggleGroup opts={standTypeOpts} value={treeStandType} onChange={setTreeStandType} cols={3} color="violet" />
+            : <p className="text-sm text-gray-300">{standTypeOpts.find(o=>o.id===treeStandType)?.label ?? (treeStandType || '—')}</p>
           }
         </div>
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">Bestockungsgrad</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1.5">{t('stockingDegreeLabel')}</label>
           {isEditing
-            ? <ToggleGroup opts={STOCKING_OPTS} value={treeStockingDegree} onChange={setTreeStockingDegree} cols={3} color="violet" />
-            : <p className="text-sm text-gray-300">{STOCKING_OPTS.find(o=>o.id===treeStockingDegree)?.label ?? (treeStockingDegree || '—')}</p>
+            ? <ToggleGroup opts={stockingOpts} value={treeStockingDegree} onChange={setTreeStockingDegree} cols={3} color="violet" />
+            : <p className="text-sm text-gray-300">{stockingOpts.find(o=>o.id===treeStockingDegree)?.label ?? (treeStockingDegree || '—')}</p>
           }
         </div>
       </div>
 
       {/* Baum-Notizen */}
       <div>
-        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Notizen</label>
+        <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('treeNotesLabel')}</label>
         {isEditing ? (
-          <Textarea value={treeNotes} onChange={e => setTreeNotes(e.target.value)} className="bg-black/50 border-white/20 text-white min-h-[80px]" placeholder="z.B. Höhlenwildling, Horst ..." />
+          <Textarea value={treeNotes} onChange={e => setTreeNotes(e.target.value)} className="bg-black/50 border-white/20 text-white min-h-[80px]" placeholder={t('treeNotesPlaceholder')} />
         ) : (
           <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[50px] whitespace-pre-wrap">
-            {treeNotes || 'Keine Notizen.'}
+            {treeNotes || t('noTreeNotes')}
           </p>
         )}
       </div>

@@ -16,13 +16,14 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { getUserColor, getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useTranslations } from 'next-intl';
 
 // ---------------------------------------------------------------------------
 
-const PATH_CONFIG: Record<string, { label: string; defaultColor: string; bgClass: string }> = {
-  ROAD:       { label: 'LKW-Weg',    defaultColor: '#94a3b8', bgClass: 'bg-slate-500/20'  },
-  SKID_TRAIL: { label: 'Rückegasse', defaultColor: '#eab308', bgClass: 'bg-yellow-500/20' },
-  WATER:      { label: 'Gewässer',   defaultColor: '#3b82f6', bgClass: 'bg-blue-500/20'   },
+const PATH_CONFIG: Record<string, { tKey: string; defaultColor: string; bgClass: string }> = {
+  ROAD:       { tKey: 'pathRoadLabel',      defaultColor: '#94a3b8', bgClass: 'bg-slate-500/20'  },
+  SKID_TRAIL: { tKey: 'pathSkidTrailLabel', defaultColor: '#eab308', bgClass: 'bg-yellow-500/20' },
+  WATER:      { tKey: 'pathWaterLabel',     defaultColor: '#3b82f6', bgClass: 'bg-blue-500/20'   },
 };
 
 const PATH_COLORS = [
@@ -53,12 +54,14 @@ interface Props {
 export function PathDetailView({
   path, forest, orgSlug, tasks, members, forests, onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
 }: Props) {
+  const t = useTranslations('Map');
   const setInteractionMode = useMapStore(s => s.setInteractionMode);
   const setEditingFeature  = useMapStore(s => s.setEditingFeature);
   const interactionMode    = useMapStore(s => s.interactionMode);
   const selectFeature      = useMapStore(s => s.selectFeature);
 
   const cfg     = PATH_CONFIG[path.type] ?? PATH_CONFIG.ROAD;
+  const cfgLabel = t(cfg.tKey as any);
   const lengthM = path.lengthM ?? calculatePathLengthM(path.geoJson);
 
   const [isEditing,      setIsEditing]      = useState(false);
@@ -70,7 +73,7 @@ export function PathDetailView({
     return tasks.filter(t => t.linkedPolygonId === path.id && t.status !== 'DONE');
   }, [tasks, path.id]);
 
-  const [name,  setName]  = useState(path.name  ?? cfg.label);
+  const [name,  setName]  = useState(path.name  ?? cfgLabel);
   const [note,  setNote]  = useState(path.note  ?? '');
   const [color, setColor] = useState(path.color ?? cfg.defaultColor);
 
@@ -80,12 +83,12 @@ export function PathDetailView({
     setIsSaving(true);
     try {
       const res = await updatePath(path.id, { name, note, color, orgSlug });
-      if (!res.success) throw new Error(res.error ?? 'Unbekannter Fehler');
-      toast.success('Weg aktualisiert');
+      if (!res.success) throw new Error(res.error ?? t('unknownError'));
+      toast.success(t('pathUpdated'));
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(t('error', { message: e.message }));
     } finally {
       setIsSaving(false);
     }
@@ -105,7 +108,7 @@ export function PathDetailView({
         name: path.name,
       });
       onClose();
-      toast.info('Ziehpunkte verschieben um Linie zu ändern');
+      toast.info(t('editLineDragHint'));
     }
   };
 
@@ -131,7 +134,7 @@ export function PathDetailView({
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <div className="flex items-center gap-1.5 text-[10px] uppercase text-gray-500 font-bold mb-1">
-            <Ruler size={12} /> Länge
+            <Ruler size={12} /> {t('pathLength')}
           </div>
           <div className="text-lg text-white font-mono font-medium">
             {formatLength(lengthM)}
@@ -139,16 +142,16 @@ export function PathDetailView({
         </div>
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <div className="flex items-center gap-1.5 text-[10px] uppercase text-gray-500 font-bold mb-1">
-            <PathIcon size={12} /> Typ
+            <PathIcon size={12} /> {t('pathType')}
           </div>
-          <div className="text-sm text-white">{cfg.label}</div>
+          <div className="text-sm text-white">{cfgLabel}</div>
         </div>
       </div>
 
       {/* 2. WALD */}
       {forest && (
         <div className="text-xs text-gray-500">
-          <span className="font-semibold text-gray-400">Wald:</span> {forest.name}
+          <span className="font-semibold text-gray-400">{t('forestLabel')}</span> {forest.name}
         </div>
       )}
 
@@ -156,7 +159,7 @@ export function PathDetailView({
       {isEditing && (
         <div className="space-y-2 bg-white/5 p-3 rounded-lg border border-white/5">
           <label className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-2">
-            <Palette size={12} /> Linienfarbe
+            <Palette size={12} /> {t('lineColor')}
           </label>
           <div className="flex flex-wrap gap-2">
             {PATH_COLORS.map(c => (
@@ -178,17 +181,17 @@ export function PathDetailView({
 
       {/* 4. NOTIZ */}
       <div>
-        <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">Notiz</h4>
+        <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">{t('note')}</h4>
         {isEditing ? (
           <Textarea
             value={note}
             onChange={e => setNote(e.target.value)}
             className="bg-black/50 border-white/20 text-white min-h-[80px]"
-            placeholder="Notizen zum Weg..."
+            placeholder={t('notePlaceholderPath')}
           />
         ) : (
           <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[48px] whitespace-pre-wrap">
-            {note || 'Keine Notiz.'}
+            {note || t('noNote')}
           </p>
         )}
       </div>
@@ -197,13 +200,13 @@ export function PathDetailView({
       {!isEditing && (
         <div className="space-y-3 pt-4 border-t border-white/10 mt-4">
           <div className="flex justify-between items-center">
-            <h4 className="text-[10px] uppercase text-gray-500 font-bold">Aufgaben</h4>
+            <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('tasks')}</h4>
             <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-300">{linkedTasks.length}</span>
           </div>
           <div className="space-y-2">
             {linkedTasks.length === 0 ? (
               <div className="text-center py-4 text-xs text-gray-600 border border-dashed border-white/10 rounded-lg">
-                Alles erledigt.
+                {t('allDone')}
               </div>
             ) : (
               linkedTasks.map((task: any) => (
@@ -244,7 +247,7 @@ export function PathDetailView({
               variant="outline"
               onClick={() => setShowCreateTask(true)}
             >
-              <PlusCircle className="w-3 h-3 mr-2" /> Neue Aufgabe hier
+              <PlusCircle className="w-3 h-3 mr-2" /> {t('newTaskHere')}
             </Button>
           </div>
         </div>
@@ -254,7 +257,7 @@ export function PathDetailView({
       {isEditing && (
         <div className="pt-2 border-t border-white/10 mt-2">
           <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">
-            Geometrie
+            {t('geometry')}
           </label>
           <Button
             variant="outline"
@@ -265,8 +268,8 @@ export function PathDetailView({
             onClick={handleToggleGeometry}
           >
             {isGeometryEditing
-              ? <><Check className="w-4 h-4 mr-2" /> Bearbeiten beenden</>
-              : <><ScanLine className="w-4 h-4 mr-2" /> Linie auf Karte ändern</>
+              ? <><Check className="w-4 h-4 mr-2" /> {t('editLineDone')}</>
+              : <><ScanLine className="w-4 h-4 mr-2" /> {t('editLineStart')}</>
             }
           </Button>
         </div>
@@ -281,12 +284,12 @@ export function PathDetailView({
             <DeleteConfirmDialog
               trigger={
                 <Button variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-950/30 px-3">
-                  <Trash2 className="w-4 h-4 mr-2" /> Löschen
+                  <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
                 </Button>
               }
-              title={`Weg "${path.name ?? cfg.label}" löschen?`}
-              description="Der Weg wird unwiderruflich von der Karte entfernt."
-              confirmString={path.name ?? cfg.label}
+              title={t('deletePathTitle', { name: path.name ?? cfgLabel })}
+              description={t('deletePathDesc')}
+              confirmString={path.name ?? cfgLabel}
               onConfirm={async () => {
                 const res = await deletePath(path.id);
                 if (res.success) {
@@ -304,21 +307,21 @@ export function PathDetailView({
             <Button
               variant="ghost"
               onClick={() => {
-                setName(path.name ?? cfg.label);
+                setName(path.name ?? cfgLabel);
                 setNote(path.note ?? '');
                 setColor(path.color ?? cfg.defaultColor);
                 setIsEditing(false);
               }}
               className="text-gray-400"
             >
-              Abbrechen
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleSave}
               disabled={isSaving}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Speichern'}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
             </Button>
           </div>
         </div>
@@ -329,7 +332,7 @@ export function PathDetailView({
         orgSlug={orgSlug}
         members={members}
         forests={forests}
-        defaultTitle={`Aufgabe: ${name}`}
+        defaultTitle={t('defaultTaskTitle', { name })}
         defaultForestId={path.forestId}
         defaultLinkedPolygonId={path.id}
         defaultLinkedPolygonType={path.type}

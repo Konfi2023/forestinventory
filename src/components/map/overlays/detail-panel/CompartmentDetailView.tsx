@@ -209,6 +209,7 @@ function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; 
 function SpeciesEditor({ label, entries, onChange }: {
   label: string; entries: SpeciesEntry[]; onChange: (e: SpeciesEntry[]) => void;
 }) {
+  const t = useTranslations('Map');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
@@ -232,7 +233,7 @@ function SpeciesEditor({ label, entries, onChange }: {
       <div className="space-y-1.5">
         {entries.map((e, i) => {
           const color = getSpeciesColor(e.species);
-          const lbl   = e.species ? getSpeciesLabel(e.species) : '– Baumart wählen –';
+          const lbl   = e.species ? getSpeciesLabel(e.species) : t('selectSpecies');
           return (
             <div key={i} className="flex gap-1.5 items-center relative">
               <button
@@ -263,7 +264,7 @@ function SpeciesEditor({ label, entries, onChange }: {
             onClick={() => setPickerOpen(p => !p)}
             className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
           >
-            <PlusCircle size={11} /> Baumart hinzufügen
+            <PlusCircle size={11} /> {t('addSpecies')}
           </button>
           {pickerOpen && (
             <div className="absolute top-full left-0 right-0 mt-1 z-50">
@@ -303,6 +304,7 @@ function SpeciesBar({ entries }: { entries: SpeciesEntry[] }) {
 function RejuvEditor({ entries, onChange }: {
   entries: RejuvEntry[]; onChange: (e: RejuvEntry[]) => void;
 }) {
+  const t = useTranslations('Map');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
@@ -325,7 +327,7 @@ function RejuvEditor({ entries, onChange }: {
     <div className="space-y-1.5">
       {entries.map((e, i) => {
         const color = getSpeciesColor(e.species);
-        const lbl   = e.species ? getSpeciesLabel(e.species) : '– Baumart wählen –';
+        const lbl   = e.species ? getSpeciesLabel(e.species) : t('selectSpecies');
         return (
           <div key={i} className="flex gap-1.5 items-start relative">
             <div className="flex-1 relative">
@@ -345,7 +347,7 @@ function RejuvEditor({ entries, onChange }: {
             <Input type="number" value={e.heightCm || ''} onChange={ev => update(i, 'heightCm', ev.target.value)}
               placeholder="cm" className="bg-black/50 border-white/20 text-white text-xs h-7 w-16" />
             <Input value={e.density} onChange={ev => update(i, 'density', ev.target.value)}
-              placeholder="Dichte" className="bg-black/50 border-white/20 text-white text-xs h-7 w-20" />
+              placeholder={t('densityPlaceholder')} className="bg-black/50 border-white/20 text-white text-xs h-7 w-20" />
             <button onClick={() => remove(i)} className="text-gray-600 hover:text-red-400 text-xs px-1 mt-1">×</button>
           </div>
         );
@@ -481,12 +483,12 @@ export function CompartmentDetailView({
         vitalityNote, damageNote, stabilityNote,
         lastMeasureDate, lastMeasureType, maintenanceStatus, accessibility,
       }, orgSlug);
-      if (!res.success) throw new Error(res.error ?? 'Unbekannter Fehler');
+      if (!res.success) throw new Error(res.error ?? t('unknownError'));
       toast.success(t('compartmentSaved'));
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(t('error', { message: e.message }));
     } finally {
       setIsSaving(false);
     }
@@ -501,7 +503,7 @@ export function CompartmentDetailView({
       toast.success(enabled ? t('biomassEnabled') : t('biomassDisabled'));
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(t('error', { message: e.message }));
     } finally {
       setIsTogglingBio(false);
     }
@@ -594,7 +596,7 @@ export function CompartmentDetailView({
         <div className="grid grid-cols-2 gap-3">
           <TextField label={t('compartmentNumber')} value={number} onChange={setNumber} placeholder="z. B. 101a" />
           <div>
-            <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">Farbe</label>
+            <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">{t('colorLabel')}</label>
             <div className="flex flex-wrap gap-1.5">
               {PRESET_COLORS.map(c => (
                 <button
@@ -651,7 +653,7 @@ export function CompartmentDetailView({
         {isEditing ? (
           <>
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label={t('standAge')} value={standAge} onChange={setStandAge} unit="Jahre" step="1" />
+              <NumberField label={t('standAge')} value={standAge} onChange={setStandAge} unit={t('yearUnit')} step="1" />
               <SelectField label={t('developmentStage')} value={developmentStage} onChange={setDevelopmentStage} options={opts(DEVELOP_TKEYS)} placeholder={t('selectPlaceholder')} />
             </div>
             <SpeciesEditor label={t('mainSpecies')} entries={mainSpecies} onChange={setMainSpecies} />
@@ -676,13 +678,13 @@ export function CompartmentDetailView({
             </div>
             {(compartment.mainSpecies?.length > 0) && (
               <div>
-                <p className="text-[10px] uppercase text-gray-500 font-bold mb-1.5">Hauptbaumarten</p>
+                <p className="text-[10px] uppercase text-gray-500 font-bold mb-1.5">{t('mainSpeciesLabel')}</p>
                 <SpeciesBar entries={compartment.mainSpecies} />
               </div>
             )}
             {(compartment.sideSpecies?.length > 0) && (
               <div>
-                <p className="text-[10px] uppercase text-gray-500 font-bold mb-1.5">Nebenbaumarten</p>
+                <p className="text-[10px] uppercase text-gray-500 font-bold mb-1.5">{t('sideSpeciesLabel')}</p>
                 <SpeciesBar entries={compartment.sideSpecies} />
               </div>
             )}
@@ -695,15 +697,15 @@ export function CompartmentDetailView({
         {treeStats && (
           <div className="bg-blue-950/30 border border-blue-500/20 rounded-lg p-2.5 space-y-1.5 mb-2">
             <p className="text-[10px] text-blue-400 font-bold uppercase flex items-center gap-1">
-              <Trees size={10} /> Berechnet aus {treeStats.count} Baum-POIs
+              <Trees size={10} /> {t('calculatedFromTreePois', { count: treeStats.count })}
             </p>
-            {treeStats.avgDiameter !== null && <FieldRow label="Ø BHD" value={treeStats.avgDiameter?.toFixed(1)} unit="cm" />}
-            {treeStats.avgHeight !== null && <FieldRow label="Ø Baumhöhe" value={treeStats.avgHeight?.toFixed(1)} unit="m" />}
+            {treeStats.avgDiameter !== null && <FieldRow label={t('avgDbh')} value={treeStats.avgDiameter?.toFixed(1)} unit="cm" />}
+            {treeStats.avgHeight !== null && <FieldRow label={t('avgTreeHeight')} value={treeStats.avgHeight?.toFixed(1)} unit="m" />}
             {treeStats.maxHeight !== null && <FieldRow label={t('topHeight')} value={treeStats.maxHeight?.toFixed(1)} unit="m" />}
             {treeStats.stemCount !== null && <FieldRow label={t('stemCount')} value={treeStats.stemCount} unit="N/ha" />}
             {treeStats.speciesDist.length > 0 && (
               <div className="pt-1">
-                <p className="text-[10px] text-gray-500 mb-1">Artenverteilung</p>
+                <p className="text-[10px] text-gray-500 mb-1">{t('speciesDistLabel')}</p>
                 <SpeciesBar entries={treeStats.speciesDist} />
               </div>
             )}
@@ -740,14 +742,14 @@ export function CompartmentDetailView({
       <Section icon={<Sprout size={13} />} title={t('rejuvenation')}>
         {isEditing ? (
           <>
-            <p className="text-[10px] text-gray-500">Vorhandene Verjüngungsarten mit Höhe und Dichte</p>
+            <p className="text-[10px] text-gray-500">{t('rejuvExisting')}</p>
             <RejuvEditor entries={rejuvenation} onChange={setRejuvenation} />
           </>
         ) : (
           rejuvenation?.length > 0 ? (
             <div className="space-y-1">
               <div className="grid grid-cols-3 text-[9px] uppercase text-gray-600 font-bold mb-1">
-                <span>Baumart</span><span className="text-center">Höhe</span><span className="text-right">Dichte</span>
+                <span>{t('rejuvSpeciesLabel')}</span><span className="text-center">{t('rejuvHeightLabel')}</span><span className="text-right">{t('rejuvDensityLabel')}</span>
               </div>
               {rejuvenation.map((e: RejuvEntry, i: number) => (
                 <div key={i} className="grid grid-cols-3 text-xs text-gray-300">
@@ -768,38 +770,38 @@ export function CompartmentDetailView({
         {isEditing ? (
           <>
             <div>
-              <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">Vitalität</label>
+              <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">{t('vitalityLabel')}</label>
               <Textarea value={vitalityNote} onChange={e => setVitalityNote(e.target.value)}
-                className="bg-black/50 border-white/20 text-white min-h-[56px] text-xs" placeholder="Beschreibung..." />
+                className="bg-black/50 border-white/20 text-white min-h-[56px] text-xs" placeholder={t('vitalityPlaceholder')} />
             </div>
             <div>
-              <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">Schäden</label>
+              <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">{t('damagesLabel')}</label>
               <Textarea value={damageNote} onChange={e => setDamageNote(e.target.value)}
-                className="bg-black/50 border-white/20 text-white min-h-[56px] text-xs" placeholder="Art und Ausmaß der Schäden..." />
+                className="bg-black/50 border-white/20 text-white min-h-[56px] text-xs" placeholder={t('damagesPlaceholder')} />
             </div>
             <div>
-              <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">Stabilität</label>
+              <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">{t('stabilityLabel')}</label>
               <Textarea value={stabilityNote} onChange={e => setStabilityNote(e.target.value)}
-                className="bg-black/50 border-white/20 text-white min-h-[56px] text-xs" placeholder="Standfestigkeit, Sturm- und Schneebruchrisiko..." />
+                className="bg-black/50 border-white/20 text-white min-h-[56px] text-xs" placeholder={t('stabilityPlaceholder')} />
             </div>
           </>
         ) : (
           <div className="space-y-2">
             {compartment.vitalityNote && (
               <div>
-                <p className="text-[10px] uppercase text-gray-600 font-bold mb-0.5">Vitalität</p>
+                <p className="text-[10px] uppercase text-gray-600 font-bold mb-0.5">{t('vitalityLabel')}</p>
                 <p className="text-xs text-gray-300 whitespace-pre-wrap">{compartment.vitalityNote}</p>
               </div>
             )}
             {compartment.damageNote && (
               <div>
-                <p className="text-[10px] uppercase text-gray-600 font-bold mb-0.5">Schäden</p>
+                <p className="text-[10px] uppercase text-gray-600 font-bold mb-0.5">{t('damagesLabel')}</p>
                 <p className="text-xs text-gray-300 whitespace-pre-wrap">{compartment.damageNote}</p>
               </div>
             )}
             {compartment.stabilityNote && (
               <div>
-                <p className="text-[10px] uppercase text-gray-600 font-bold mb-0.5">Stabilität</p>
+                <p className="text-[10px] uppercase text-gray-600 font-bold mb-0.5">{t('stabilityLabel')}</p>
                 <p className="text-xs text-gray-300 whitespace-pre-wrap">{compartment.stabilityNote}</p>
               </div>
             )}
@@ -917,7 +919,7 @@ export function CompartmentDetailView({
           onClick={() => handleToggleBiomass(!trackBiomass)}
           disabled={isTogglingBio}
           className={`relative w-10 h-5 rounded-full transition-colors ${trackBiomass ? 'bg-emerald-600' : 'bg-white/10'} ${isTogglingBio ? 'opacity-50' : ''}`}
-          title={trackBiomass ? 'Tracking deaktivieren' : 'Tracking aktivieren'}
+          title={trackBiomass ? t('trackingDisable') : t('trackingEnable')}
         >
           <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${trackBiomass ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
@@ -988,7 +990,7 @@ export function CompartmentDetailView({
         orgSlug={orgSlug}
         members={members}
         forests={forests}
-        defaultTitle={`Aufgabe: ${displayName}`}
+        defaultTitle={t('defaultTaskTitle', { name: displayName })}
         defaultForestId={compartment.forestId}
         defaultLinkedPolygonId={compartment.id}
         defaultLinkedPolygonType="COMPARTMENT"

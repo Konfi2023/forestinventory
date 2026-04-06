@@ -149,7 +149,7 @@ export function PlantingDetailView({
 
   const totalCount = content.reduce((s, e) => s + e.count, 0);
   const dominant   = getDominantSpecies(content) ?? planting.treeSpecies;
-  const dominantLabel = (dominant && dominant !== 'Unbekannt') ? getSpeciesLabel(dominant) : t('plantingArea');
+  const dominantLabel = (dominant && dominant !== 'Unbekannt' && dominant !== 'Unknown') ? getSpeciesLabel(dominant) : t('plantingArea');
   const dominantColor = getSpeciesColor(dominant ?? '');
 
   const title = (description && description.trim()) ? description.trim() : dominantLabel;
@@ -211,7 +211,7 @@ export function PlantingDetailView({
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(t('error', { message: e.message }));
     } finally {
       setIsSaving(false);
     }
@@ -240,7 +240,7 @@ export function PlantingDetailView({
       setInteractionMode('EDIT_GEOMETRY');
       setEditingFeature({ id: planting.id, geoJson: planting.geoJson, featureType: 'PLANTING', name: dominantLabel, orgSlug });
       onClose();
-      toast.info('Ziehpunkte verschieben um Fläche zu ändern');
+      toast.info(t('editAreaDragHint'));
     }
   };
 
@@ -464,7 +464,7 @@ export function PlantingDetailView({
           onClick={() => handleToggleBiomass(!trackBiomass)}
           disabled={isTogglingBio}
           className={`relative w-10 h-5 rounded-full transition-colors ${trackBiomass ? 'bg-emerald-600' : 'bg-white/10'} ${isTogglingBio ? 'opacity-50' : ''}`}
-          title={trackBiomass ? 'Tracking deaktivieren' : 'Tracking aktivieren'}
+          title={trackBiomass ? t('trackingDisable') : t('trackingEnable')}
         >
           <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${trackBiomass ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
@@ -548,7 +548,7 @@ export function PlantingDetailView({
         orgSlug={orgSlug}
         members={members}
         forests={forests}
-        defaultTitle={`Aufgabe: ${title}`}
+        defaultTitle={t('defaultTaskTitle', { name: title })}
         defaultForestId={planting.forestId}
         defaultLinkedPolygonId={planting.id}
         defaultLinkedPolygonType="PLANTING"

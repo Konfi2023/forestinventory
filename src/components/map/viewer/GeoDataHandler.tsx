@@ -16,6 +16,7 @@ import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTranslations } from 'next-intl';
 
 // Ab diesem Zoom-Level werden POIs angezeigt.
 const POI_VISIBILITY_THRESHOLD = 14;
@@ -181,19 +182,20 @@ function ForestAssignDialog({ forests, onConfirm, onCancel }: {
   onConfirm: (forestId: string) => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations('Map');
   const [selectedForestId, setSelectedForestId] = useState('');
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 space-y-4">
         <div>
-          <h3 className="font-semibold text-slate-900 text-base">Objekt außerhalb eines Waldes</h3>
+          <h3 className="font-semibold text-slate-900 text-base">{t('objectOutsideForest')}</h3>
           <p className="text-sm text-slate-500 mt-1">
-            Dieses Objekt liegt außerhalb aller eingezeichneten Waldflächen. Bitte weisen Sie es einem Wald zu.
+            {t('objectOutsideForestDesc')}
           </p>
         </div>
         <Select onValueChange={setSelectedForestId} value={selectedForestId}>
           <SelectTrigger>
-            <SelectValue placeholder="Wald auswählen…" />
+            <SelectValue placeholder={t('selectForest')} />
           </SelectTrigger>
           <SelectContent>
             {forests.map((f: any) => (
@@ -202,9 +204,9 @@ function ForestAssignDialog({ forests, onConfirm, onCancel }: {
           </SelectContent>
         </Select>
         <div className="flex gap-2 justify-end">
-          <Button variant="ghost" size="sm" onClick={onCancel}>Abbrechen</Button>
+          <Button variant="ghost" size="sm" onClick={onCancel}>{t('cancel')}</Button>
           <Button size="sm" disabled={!selectedForestId} onClick={() => onConfirm(selectedForestId)}>
-            Zuweisen & Speichern
+            {t('assignAndSave')}
           </Button>
         </div>
       </div>
@@ -213,24 +215,26 @@ function ForestAssignDialog({ forests, onConfirm, onCancel }: {
 }
 
 function TaskMoveBar({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  const t = useTranslations('Map');
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (ref.current) L.DomEvent.disableClickPropagation(ref.current);
   }, []);
   return (
     <div ref={ref} className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-xl shadow-2xl border border-slate-200 px-5 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-2 fade-in">
-      <span className="text-sm font-medium text-slate-700">Pin ziehen, dann bestätigen</span>
+      <span className="text-sm font-medium text-slate-700">{t('dragPinConfirm')}</span>
       <button onClick={onConfirm} className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors">
-        Bestätigen
+        {t('confirm')}
       </button>
       <button onClick={onCancel} className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700">
-        Abbrechen
+        {t('cancel')}
       </button>
     </div>
   );
 }
 
 export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
+  const t = useTranslations('Map');
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
   const [pendingPoi, setPendingPoi] = useState<{ lat: number; lng: number; type: string } | null>(null);
@@ -553,9 +557,9 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
         toast.promise(
             createPoi({ lat, lng, type: activePoiType, orgSlug: data.orgSlug, userId: data.currentUserId, forestId }),
             {
-                loading: 'Platziere Objekt...',
-                success: () => { setInteractionMode('VIEW'); onRefresh(); return 'Objekt erstellt!'; },
-                error: (err) => `Fehler: ${err.message}`
+                loading: t('placingObject'),
+                success: () => { setInteractionMode('VIEW'); onRefresh(); return t('objectCreated'); },
+                error: (err) => t('error', { message: err.message }),
             }
         );
       }
@@ -569,7 +573,7 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
           forestId = containing?.id;
         } catch { forestId = undefined; }
         if (!forestId) forestId = data.forests[0]?.id;
-        if (!forestId) { toast.error('Kein Wald vorhanden'); return; }
+        if (!forestId) { toast.error(t('noForestAvailable')); return; }
 
         toast.promise(
           fetch('/api/app/tasks', {
@@ -577,16 +581,16 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ orgSlug: data.orgSlug, title: 'Neue Aufgabe', forestId, lat, lng }),
           }).then(async (res) => {
-            if (!res.ok) throw new Error('Fehler');
+            if (!res.ok) throw new Error('Error');
             const { task } = await res.json();
             setInteractionMode('VIEW');
             selectFeature(task.id, 'TASK');
             await onRefresh();
           }),
           {
-            loading: 'Erstelle Aufgabe…',
-            success: 'Aufgabe erstellt — bitte Titel anpassen',
-            error: (err) => `Fehler: ${err.message}`,
+            loading: t('creatingTask'),
+            success: t('taskCreated'),
+            error: (err) => t('error', { message: err.message }),
           }
         );
       }
@@ -600,9 +604,9 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
     toast.promise(
       createPoi({ lat, lng, type, orgSlug: data.orgSlug, userId: data.currentUserId, forestId }),
       {
-        loading: 'Platziere Objekt...',
-        success: () => { setInteractionMode('VIEW'); onRefresh(); return 'Objekt erstellt!'; },
-        error: (err) => `Fehler: ${err.message}`,
+        loading: t('placingObject'),
+        success: () => { setInteractionMode('VIEW'); onRefresh(); return t('objectCreated'); },
+        error: (err) => t('error', { message: err.message }),
       }
     );
   };
@@ -678,7 +682,7 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
                   }}
                 >
                   <Tooltip sticky direction="top" opacity={0.9} className="!pointer-events-none">
-                    <span className="font-bold text-xs">{c.name || 'Abteilung'}</span>
+                    <span className="font-bold text-xs">{c.name || t('tooltipCompartment')}</span>
                     {c.areaHa && <span className="text-gray-500 ml-1 text-xs">· {c.areaHa.toFixed(2)} ha</span>}
                   </Tooltip>
                 </Polygon>
@@ -711,7 +715,7 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
                   }}
                 >
                   <Tooltip sticky direction="top" opacity={0.9} className="!pointer-events-none">
-                    <span className="font-bold text-xs">{h.name || 'Jagdfläche'}</span>
+                    <span className="font-bold text-xs">{h.name || t('tooltipHuntingArea')}</span>
                     {h.areaHa && <span className="text-gray-500 ml-1 text-xs">· {h.areaHa.toFixed(2)} ha</span>}
                   </Tooltip>
                 </Polygon>
@@ -724,7 +728,8 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
               if (!coords.length) return null;
               const isSel = selectedId === c.id;
               const isHov = hoveredId === c.id;
-              const label = c.cause === 'WIND' ? 'Windwurf' : c.cause === 'BARK_BEETLE' ? 'Borkenkäfer' : c.cause === 'FIRE' ? 'Brand' : c.cause === 'SNOW' ? 'Schneebruch' : c.cause === 'DROUGHT' ? 'Trockenheit' : 'Kalamität';
+              const CAUSE_TKEYS_GEO: Record<string, string> = { WIND: 'causeWind', BARK_BEETLE: 'causeBarkBeetle', FIRE: 'causeFire', SNOW: 'causeSnow', DROUGHT: 'causeDrought' };
+              const label = CAUSE_TKEYS_GEO[c.cause] ? t(CAUSE_TKEYS_GEO[c.cause] as any) : t('tooltipCalamity');
               return (
                 <Polygon
                   key={c.id}
@@ -765,7 +770,7 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
               const dominant = getDominantSpecies(content) ?? p.treeSpecies;
               const baseColor = getSpeciesColor(dominant ?? 'OAK');
               const patternId = `planting-pattern-${p.id}`;
-              const label = p.description?.trim() || getSpeciesLabel(dominant ?? p.treeSpecies) || 'Pflanzfläche';
+              const label = p.description?.trim() || getSpeciesLabel(dominant ?? p.treeSpecies) || t('tooltipPlantingArea');
 
               const size = 50; let cx = 0;
 
@@ -875,9 +880,9 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
           const lengthLabel  = storedLength >= 1000
             ? `${(storedLength / 1000).toFixed(2)} km`
             : `${Math.round(storedLength)} m`;
-          const typeLabel = path.type === 'SKID_TRAIL' ? 'Rückegasse'
-                          : path.type === 'WATER'      ? 'Gewässer'
-                          :                              'LKW-Weg';
+          const typeLabel = path.type === 'SKID_TRAIL' ? t('pathSkidTrailLabel')
+                          : path.type === 'WATER'      ? t('pathWaterLabel')
+                          :                              t('pathRoadLabel');
 
           const pathEventHandlers = {
             click: (e: any) => {
@@ -1004,8 +1009,8 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
             try {
               await updateTaskContent(data.orgSlug, movingTaskId, { lat: movingTaskPos[0], lng: movingTaskPos[1] });
               onRefresh();
-              toast.success('Position gespeichert');
-            } catch { toast.error('Fehler'); }
+              toast.success(t('positionSaved'));
+            } catch { toast.error(t('errorSaving')); }
             setMovingTaskId(null);
             setMovingTaskPos(null);
           }}

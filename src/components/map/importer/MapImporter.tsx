@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { createForest } from '@/actions/forest';
+import { useTranslations } from 'next-intl';
 // @ts-ignore
 import { kml } from '@mapbox/togeojson';
 import area from '@turf/area';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function MapImporter({ orgSlug, onImportComplete, keycloakId }: Props) {
+  const t = useTranslations('Map');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -23,7 +25,7 @@ export function MapImporter({ orgSlug, onImportComplete, keycloakId }: Props) {
     if (!file) return;
 
     setIsUploading(true);
-    const toastId = toast.loading('Verarbeite Geodaten...');
+    const toastId = toast.loading(t('processingGeodata'));
 
     try {
       const fileBaseName = file.name.replace(/\.[^/.]+$/, '');

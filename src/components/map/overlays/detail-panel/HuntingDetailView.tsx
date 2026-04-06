@@ -97,7 +97,7 @@ export function HuntingDetailView({
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(t('error', { message: e.message }));
     } finally {
       setIsSaving(false);
     }
@@ -111,7 +111,7 @@ export function HuntingDetailView({
       setInteractionMode('EDIT_GEOMETRY');
       setEditingFeature({ id: hunting.id, geoJson: hunting.geoJson, featureType: 'HUNTING', name, orgSlug });
       onClose();
-      toast.info('Ziehpunkte verschieben um Fläche zu ändern');
+      toast.info(t('editAreaDragHint'));
     }
   };
 

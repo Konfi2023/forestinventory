@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getAccessibleForests } from '@/lib/forest-access';
 import { Clock, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { ControllingFilters } from './_components/ControllingFilters';
 import { ControllingExport } from './_components/ControllingExport';
 import { ControllingCharts } from './_components/ControllingCharts';
@@ -16,12 +17,12 @@ function fmtMins(mins: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-function Delta({ estimated, actual }: { estimated: number; actual: number }) {
+function Delta({ estimated, actual, bookedText, exactText }: { estimated: number; actual: number; bookedText: string; exactText: string }) {
   if (estimated === 0 && actual === 0) return <span className="text-slate-400">—</span>;
-  if (estimated === 0) return <span className="text-slate-400">{fmtMins(actual)} gebucht</span>;
+  if (estimated === 0) return <span className="text-slate-400">{bookedText}</span>;
   const delta = actual - estimated;
   const pct   = Math.round((actual / estimated) * 100);
-  if (delta === 0) return <span className="text-emerald-600 font-medium">genau</span>;
+  if (delta === 0) return <span className="text-emerald-600 font-medium">{exactText}</span>;
   return (
     <span className={`font-medium flex items-center gap-1 ${delta > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
       {delta > 0
@@ -47,6 +48,8 @@ export default async function ControllingPage({
 
   const session = await getServerSession(authOptions);
   if (!session?.user) return redirect('/api/auth/signin/keycloak');
+
+  const t = await getTranslations('CostControl');
 
   const org = await prisma.organization.findUnique({ where: { slug } });
   if (!org) return notFound();
@@ -133,7 +136,7 @@ export default async function ControllingPage({
       ? (task.assignee.firstName && task.assignee.lastName
           ? `${task.assignee.firstName} ${task.assignee.lastName}`
           : task.assignee.email)
-      : 'Nicht zugewiesen';
+      : t('unassigned');
     if (!memberMap.has(key)) memberMap.set(key, { name, estimated: 0, actual: 0, taskCount: 0 });
     const row = memberMap.get(key)!;
     row.estimated  += task.estimatedTime ?? 0;
@@ -143,11 +146,11 @@ export default async function ControllingPage({
   const memberRows = [...memberMap.values()].sort((a, b) => b.actual - a.actual);
 
   const CATEGORY_LABELS: Record<string, string> = {
-    MANUAL_WORK:  'Handarbeit',
-    MACHINE_WORK: 'Maschine',
-    PLANNING:     'Planung',
-    TRAVEL:       'Anfahrt',
-    INSPECTION:   'Begehung',
+    MANUAL_WORK:  t('categoryManual'),
+    MACHINE_WORK: t('categoryMachine'),
+    PLANNING:     t('categoryPlanning'),
+    TRAVEL:       t('categoryTravel'),
+    INSPECTION:   t('categoryInspection'),
   };
 
   // ── Chart-Daten ──────────────────────────────────────────────────────────
@@ -198,8 +201,8 @@ export default async function ControllingPage({
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Zeitcontrolling</h2>
-            <p className="text-slate-500 mt-1 text-sm">Schätzung vs. tatsächlicher Aufwand · {serializedTasks.length} Aufgaben</p>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">{t('timeControlTitle')}</h2>
+            <p className="text-slate-500 mt-1 text-sm">{t('timeControlSubtitle', { count: serializedTasks.length })}</p>
           </div>
           <ControllingExport tasks={serializedTasks} />
         </div>
@@ -224,15 +227,15 @@ export default async function ControllingPage({
         {/* KPI */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white border border-slate-200 rounded-xl p-5">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Gesamtschätzung</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">{t('kpiEstimated')}</p>
             <p className="text-2xl font-bold text-slate-900">{fmtMins(totalEstimated)}</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-5">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Gebucht</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">{t('kpiBooked')}</p>
             <p className="text-2xl font-bold text-slate-900">{fmtMins(totalActual)}</p>
           </div>
           <div className={`border rounded-xl p-5 ${delta > 0 ? 'bg-red-50 border-red-200' : delta < 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'}`}>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Abweichung</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">{t('kpiDeviation')}</p>
             <p className={`text-2xl font-bold ${delta > 0 ? 'text-red-700' : delta < 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
               {delta === 0 ? '0h' : (delta > 0 ? '+' : '') + fmtMins(Math.abs(delta))}
             </p>
@@ -240,7 +243,7 @@ export default async function ControllingPage({
           <div className={`border rounded-xl p-5 ${tasksNoEstimate > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-3">
               {tasksNoEstimate > 0 && <AlertCircle size={14} className="text-amber-500" />}
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Ohne Schätzung</p>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{t('kpiNoEstimate')}</p>
             </div>
             <p className="text-2xl font-bold text-slate-900">{tasksNoEstimate}</p>
           </div>
@@ -257,7 +260,7 @@ export default async function ControllingPage({
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-3.5 border-b border-slate-100">
             <Clock size={16} className="text-slate-400" />
-            <h3 className="font-semibold text-slate-800 text-sm">Nach Teammitglied</h3>
+            <h3 className="font-semibold text-slate-800 text-sm">{t('byTeamMember')}</h3>
           </div>
           <div className="divide-y divide-slate-50">
             {memberRows.map((row, i) => {
@@ -267,7 +270,7 @@ export default async function ControllingPage({
                 <div key={i} className="px-5 py-3 flex items-center gap-4">
                   <div className="w-40 shrink-0">
                     <p className="text-sm font-medium text-slate-800 truncate">{row.name}</p>
-                    <p className="text-xs text-slate-400">{row.taskCount} Aufgaben</p>
+                    <p className="text-xs text-slate-400">{t('tasksCount', { count: row.taskCount })}</p>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -278,11 +281,11 @@ export default async function ControllingPage({
                     </div>
                   </div>
                   <div className="text-right shrink-0 space-y-0.5">
-                    <p className="text-xs text-slate-500">Geschätzt: <span className="font-mono">{row.estimated > 0 ? fmtMins(row.estimated) : '—'}</span></p>
-                    <p className="text-xs text-slate-700 font-medium">Gebucht: <span className="font-mono">{fmtMins(row.actual)}</span></p>
+                    <p className="text-xs text-slate-500">{t('estimatedLabel')} <span className="font-mono">{row.estimated > 0 ? fmtMins(row.estimated) : '—'}</span></p>
+                    <p className="text-xs text-slate-700 font-medium">{t('bookedLabel')} <span className="font-mono">{fmtMins(row.actual)}</span></p>
                   </div>
                   <div className="w-28 text-right shrink-0">
-                    <Delta estimated={row.estimated} actual={row.actual} />
+                    <Delta estimated={row.estimated} actual={row.actual} bookedText={t('bookedText', { value: fmtMins(row.actual) })} exactText={t('exact')} />
                   </div>
                 </div>
               );
@@ -294,19 +297,19 @@ export default async function ControllingPage({
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-3.5 border-b border-slate-100">
             <Clock size={16} className="text-slate-400" />
-            <h3 className="font-semibold text-slate-800 text-sm">Alle Aufgaben</h3>
+            <h3 className="font-semibold text-slate-800 text-sm">{t('allTasks')}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                  <th className="text-left px-5 py-2.5 font-medium">Aufgabe</th>
-                  <th className="text-left px-3 py-2.5 font-medium">Wald</th>
-                  <th className="text-left px-3 py-2.5 font-medium">Zugewiesen</th>
-                  <th className="text-right px-3 py-2.5 font-medium">Geschätzt</th>
-                  <th className="text-right px-3 py-2.5 font-medium">Gebucht</th>
-                  <th className="text-right px-3 py-2.5 font-medium">Abweichung</th>
-                  <th className="text-left px-5 py-2.5 font-medium">Status</th>
+                  <th className="text-left px-5 py-2.5 font-medium">{t('thTask')}</th>
+                  <th className="text-left px-3 py-2.5 font-medium">{t('thForest')}</th>
+                  <th className="text-left px-3 py-2.5 font-medium">{t('thAssigned')}</th>
+                  <th className="text-right px-3 py-2.5 font-medium">{t('thEstimated')}</th>
+                  <th className="text-right px-3 py-2.5 font-medium">{t('thBooked')}</th>
+                  <th className="text-right px-3 py-2.5 font-medium">{t('thDeviation')}</th>
+                  <th className="text-left px-5 py-2.5 font-medium">{t('thStatus')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -316,8 +319,8 @@ export default async function ControllingPage({
                     ? (task.assignee.firstName ?? task.assignee.email.split('@')[0])
                     : '—';
                   const STATUS_LABEL: Record<string, string> = {
-                    OPEN: 'Offen', IN_PROGRESS: 'In Arbeit', REVIEW: 'Prüfung',
-                    BLOCKED: 'Blockiert', DONE: 'Erledigt',
+                    OPEN: t('taskStatusOpen'), IN_PROGRESS: t('taskStatusInProgress'), REVIEW: t('taskStatusReview'),
+                    BLOCKED: t('taskStatusBlocked'), DONE: t('taskStatusDone'),
                   };
                   const STATUS_COLOR: Record<string, string> = {
                     OPEN: 'bg-slate-100 text-slate-600',
@@ -356,7 +359,7 @@ export default async function ControllingPage({
                         {actual > 0 ? fmtMins(actual) : <span className="text-slate-300">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                        <Delta estimated={task.estimatedTime ?? 0} actual={actual} />
+                        <Delta estimated={task.estimatedTime ?? 0} actual={actual} bookedText={t('bookedText', { value: fmtMins(actual) })} exactText={t('exact')} />
                       </td>
                       <td className="px-5 py-2.5">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLOR[task.status] ?? STATUS_COLOR.OPEN}`}>

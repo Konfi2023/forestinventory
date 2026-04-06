@@ -21,39 +21,40 @@ import { point } from '@turf/helpers';
 import { format } from 'date-fns';
 import { TREE_SPECIES, getSpeciesLabel } from '@/lib/tree-species';
 import { de } from 'date-fns/locale';
+import { useTranslations } from 'next-intl';
 import { useMapStore } from '@/components/map/stores/useMapStores';
 
 // ---------------------------------------------------------------------------
 // Konfiguration pro POI-Typ
 // ---------------------------------------------------------------------------
 
-const POI_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
-  HUNTING_STAND: { icon: Tent,     color: 'text-yellow-500', label: 'Hochsitz'   },
-  LOG_PILE:      { icon: Boxes,    color: 'text-blue-500',   label: 'Polter'     },
-  HUT:           { icon: Home,     color: 'text-orange-500', label: 'Hütte'      },
-  BARRIER:       { icon: Ban,      color: 'text-red-500',    label: 'Schranke'   },
-  VEHICLE:       { icon: Truck,    color: 'text-gray-400',   label: 'Fahrzeug'   },
-  TREE:          { icon: TreePine, color: 'text-green-500',  label: 'Einzelbaum' },
+const POI_CONFIG: Record<string, { icon: any; color: string; tKey: string }> = {
+  HUNTING_STAND: { icon: Tent,     color: 'text-yellow-500', tKey: 'poiHuntingStand' },
+  LOG_PILE:      { icon: Boxes,    color: 'text-blue-500',   tKey: 'poiLogPile'     },
+  HUT:           { icon: Home,     color: 'text-orange-500', tKey: 'poiHut'         },
+  BARRIER:       { icon: Ban,      color: 'text-red-500',    tKey: 'poiBarrier'     },
+  VEHICLE:       { icon: Truck,    color: 'text-gray-400',   tKey: 'poiVehicle'     },
+  TREE:          { icon: TreePine, color: 'text-green-500',  tKey: 'poiTree'        },
 };
 
-const VEHICLE_TYPE_LABELS: Record<string, string> = {
-  EXCAVATOR:   'Bagger',
-  HARVESTER:   'Harvester / Vollernter',
-  FORWARDER:   'Forwarder / Rückefahrzeug',
-  TRACTOR:     'Traktor / Schlepper',
-  SKIDDER:     'Seilschlepper / Rückezug',
-  CRANE_TRUCK: 'LKW mit Ladekran',
-  MULCHER:     'Mulcher',
-  CHAINSAW:    'Motorsäge',
-  TRAILER:     'Anhänger',
-  OTHER:       'Sonstiges',
+const VEHICLE_TYPE_TKEYS: Record<string, string> = {
+  EXCAVATOR:   'vehicleExcavator',
+  HARVESTER:   'vehicleHarvester',
+  FORWARDER:   'vehicleForwarder',
+  TRACTOR:     'vehicleTractor',
+  SKIDDER:     'vehicleSkidder',
+  CRANE_TRUCK: 'vehicleCraneTruck',
+  MULCHER:     'vehicleMulcher',
+  CHAINSAW:    'vehicleChainsaw',
+  TRAILER:     'vehicleTrailer',
+  OTHER:       'vehicleOther',
 };
 
-const TREE_HEALTH_LABELS: Record<string, { label: string; color: string }> = {
-  HEALTHY:             { label: 'Gesund',               color: 'text-green-400'  },
-  DAMAGED:             { label: 'Geschädigt',            color: 'text-orange-400' },
-  DEAD:                { label: 'Abgestorben',           color: 'text-red-400'    },
-  MARKED_FOR_FELLING:  { label: 'Zum Fällen markiert',  color: 'text-blue-400'   },
+const TREE_HEALTH_TKEYS: Record<string, { tKey: string; color: string }> = {
+  HEALTHY:             { tKey: 'healthHealthy',          color: 'text-green-400'  },
+  DAMAGED:             { tKey: 'healthDamaged',           color: 'text-orange-400' },
+  DEAD:                { tKey: 'healthDead',              color: 'text-red-400'    },
+  MARKED_FOR_FELLING:  { tKey: 'healthMarkedForFelling', color: 'text-blue-400'   },
 };
 
 // ---------------------------------------------------------------------------
@@ -79,6 +80,7 @@ interface Props {
 export function PoiDetailView({
   poi, tasks, onClose, onRefresh, canEdit, canDelete, members, orgSlug, forests,
 }: Props) {
+  const t = useTranslations('Map');
   const selectFeature       = useMapStore(s => s.selectFeature);
   const setInteractionMode  = useMapStore(s => s.setInteractionMode);
   const interactionMode     = useMapStore(s => s.interactionMode);
@@ -229,11 +231,11 @@ export function PoiDetailView({
     if (!file) return;
 
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
-      toast.error('Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP');
+      toast.error(t('invalidFileType'));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Datei zu groß. Maximum: 10 MB');
+      toast.error(t('fileTooLarge'));
       return;
     }
 
@@ -269,7 +271,7 @@ export function PoiDetailView({
       // 3. Key merken; URL für Vorschau generieren
       setImageKey(key);
       setImagePreview(URL.createObjectURL(file));
-      toast.success('Bild hochgeladen');
+      toast.success(t('imageUploaded'));
     } catch (err: any) {
       toast.error(err.message ?? 'Fehler beim Upload');
     } finally {
@@ -283,11 +285,11 @@ export function PoiDetailView({
     if (!file) return;
 
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
-      toast.error('Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP');
+      toast.error(t('invalidFileType'));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Datei zu groß. Maximum: 10 MB');
+      toast.error(t('fileTooLarge'));
       return;
     }
 
@@ -311,7 +313,7 @@ export function PoiDetailView({
       if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
       setTreeImageKey(key);
       setTreeImagePreview(URL.createObjectURL(file));
-      toast.success('Bild hochgeladen');
+      toast.success(t('imageUploaded'));
     } catch (err: any) {
       toast.error(err.message ?? 'Fehler beim Upload');
     } finally {
@@ -325,11 +327,11 @@ export function PoiDetailView({
     if (!file) return;
 
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
-      toast.error('Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP');
+      toast.error(t('invalidFileType'));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Datei zu groß. Maximum: 10 MB');
+      toast.error(t('fileTooLarge'));
       return;
     }
 
@@ -353,7 +355,7 @@ export function PoiDetailView({
       if (!uploadRes.ok) throw new Error('Upload zu S3 fehlgeschlagen');
       setTreeCrownImageKey(key);
       setTreeCrownImagePreview(URL.createObjectURL(file));
-      toast.success('Kronenfoto hochgeladen');
+      toast.success(t('crownPhotoUploaded'));
     } catch (err: any) {
       toast.error(err.message ?? 'Fehler beim Upload');
     } finally {
@@ -367,11 +369,11 @@ export function PoiDetailView({
     if (!file) return;
 
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
-      toast.error('Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP');
+      toast.error(t('invalidFileType'));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Datei zu groß. Maximum: 10 MB');
+      toast.error(t('fileTooLarge'));
       return;
     }
 
@@ -390,7 +392,7 @@ export function PoiDetailView({
       const { imageKey: key } = await res.json();
       setLogImageKey(key);
       setLogImagePreview(URL.createObjectURL(file));
-      toast.success('Bild hochgeladen');
+      toast.success(t('imageUploaded'));
     } catch (err: any) {
       toast.error(err.message ?? 'Fehler beim Upload');
     } finally {
@@ -464,16 +466,16 @@ export function PoiDetailView({
       const failed = results.filter(r => r && !r.success);
       if (failed.length > 0) {
         const msg = (failed as any[]).map(r => r.error).filter(Boolean).join(' | ');
-        throw new Error(msg || 'Speichern teilweise fehlgeschlagen');
+        throw new Error(msg || t('savingPartiallyFailed'));
       }
 
-      toast.success('Objekt gespeichert');
+      toast.success(t('objectSaved'));
       setInteractionMode('VIEW');
       setEditingFeature(null);
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
-      toast.error(e.message ?? 'Fehler beim Speichern');
+      toast.error(e.message ?? t('errorSaving'));
     } finally {
       setIsSaving(false);
       savingRef.current = false;
@@ -483,21 +485,21 @@ export function PoiDetailView({
   const handleMoveStart = () => {
     setInteractionMode('MOVE_POI');
     setEditingFeature({ ...poi });
-    toast.info('Marker auf der Karte verschieben...');
+    toast.info(t('moveMarker'));
   };
 
   const copyMapsLink = async () => {
     const link = `https://www.google.com/maps?q=${activeData.lat},${activeData.lng}`;
     try {
       await navigator.clipboard.writeText(link);
-      toast.success('Maps Link kopiert!');
+      toast.success(t('mapsLinkCopied'));
     } catch {
       const ta = document.createElement('textarea');
       ta.value = link;
       ta.style.position = 'fixed'; ta.style.left = '-9999px';
       document.body.appendChild(ta); ta.focus(); ta.select();
       document.execCommand('copy'); document.body.removeChild(ta);
-      toast.success('Maps Link kopiert!');
+      toast.success(t('mapsLinkCopied'));
     }
   };
 
@@ -546,7 +548,7 @@ export function PoiDetailView({
             )}
           >
             <Move className="w-3 h-3 mr-2" />
-            {interactionMode === 'MOVE_POI' ? 'Position wird angepasst...' : 'Position auf Karte verschieben'}
+            {interactionMode === 'MOVE_POI' ? t('positionAdjusting') : t('movePosition')}
           </Button>
         </div>
       )}
@@ -629,7 +631,7 @@ export function PoiDetailView({
       {/* 3. NOTIZEN (nur für nicht-spezifische Typen oder zusätzlich) */}
       {poi.type !== 'VEHICLE' && poi.type !== 'TREE' && (
         <div className="mt-4">
-          <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">Notizen & Zustand</h4>
+          <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">{t('notesAndCondition')}</h4>
           {isEditing ? (
             <Textarea
               value={note}
@@ -639,7 +641,7 @@ export function PoiDetailView({
             />
           ) : (
             <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[60px] whitespace-pre-wrap">
-              {note || 'Keine Notizen.'}
+              {note || t('noNotes')}
             </p>
           )}
         </div>
@@ -649,13 +651,13 @@ export function PoiDetailView({
       {!isEditing && (
         <div className="space-y-3 pt-4 border-t border-white/10 mt-4">
           <div className="flex justify-between items-center">
-            <h4 className="text-[10px] uppercase text-gray-500 font-bold">Aufgaben am Objekt</h4>
+            <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('tasksAtObject')}</h4>
             <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-300">{linkedTasks.length}</span>
           </div>
           <div className="space-y-2">
             {linkedTasks.length === 0 ? (
               <div className="text-center py-4 text-xs text-gray-600 border border-dashed border-white/10 rounded-lg">
-                Alles erledigt.
+                {t('allDone')}
               </div>
             ) : (
               linkedTasks.map((task: any) => (
@@ -696,7 +698,7 @@ export function PoiDetailView({
               variant="outline"
               onClick={() => setShowCreateTask(true)}
             >
-              <PlusCircle className="w-3 h-3 mr-2" /> Neue Aufgabe hier
+              <PlusCircle className="w-3 h-3 mr-2" /> {t('newTaskHere')}
             </Button>
           </div>
         </div>
@@ -712,11 +714,11 @@ export function PoiDetailView({
               <DeleteConfirmDialog
                 trigger={
                   <Button variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-950/30 px-3">
-                    <Trash2 className="w-4 h-4 mr-2" /> Löschen
+                    <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
                   </Button>
                 }
-                title={`Objekt "${poi.name}" löschen?`}
-                description="Diese Aktion ist unwiderruflich."
+                title={t('deleteObjectTitle', { name: poi.name })}
+                description={t('deleteIrreversible')}
                 confirmString={poi.name}
                 onConfirm={async () => {
                   await deletePoi(poi.id, deleteTasksToo, orgSlug);
@@ -727,13 +729,13 @@ export function PoiDetailView({
                 {poiTasks.length > 0 && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
                     <p className="text-xs font-semibold text-amber-800">
-                      Verknüpfte Aufgaben ({poiTasks.length})
+                      {t('linkedTasks', { count: poiTasks.length })}
                     </p>
                     <div className="space-y-1">
-                      {poiTasks.map((t: any) => (
-                        <div key={t.id} className="flex items-baseline gap-2 text-sm">
-                          <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">Aufgabe</span>
-                          <span className="text-slate-700 truncate">{t.title}</span>
+                      {poiTasks.map((task: any) => (
+                        <div key={task.id} className="flex items-baseline gap-2 text-sm">
+                          <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">{t('taskLabel')}</span>
+                          <span className="text-slate-700 truncate">{task.title}</span>
                         </div>
                       ))}
                     </div>
@@ -744,25 +746,25 @@ export function PoiDetailView({
                         onChange={e => setDeleteTasksToo(e.target.checked)}
                         className="rounded border-amber-400 text-red-600 focus:ring-red-500"
                       />
-                      <span className="text-sm text-slate-700">Aufgaben ebenfalls löschen</span>
+                      <span className="text-sm text-slate-700">{t('deleteTasksToo')}</span>
                     </label>
                   </div>
                 )}
                 {linkedOps.length > 0 && (
                   <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
                     <p className="text-xs font-semibold text-blue-800">
-                      Verknüpfte Maßnahmen ({linkedOps.length})
+                      {t('linkedOpsLabel', { count: linkedOps.length })}
                     </p>
                     <div className="space-y-1">
                       {linkedOps.map((lp: any) => (
                         <div key={lp.id} className="flex items-baseline gap-2 text-sm">
-                          <span className="text-[10px] font-semibold uppercase text-blue-400 shrink-0 w-16">Maßnahme</span>
+                          <span className="text-[10px] font-semibold uppercase text-blue-400 shrink-0 w-16">{t('createOperation')}</span>
                           <span className="text-slate-700 truncate">{lp.operation?.title ?? '—'}</span>
                         </div>
                       ))}
                     </div>
                     <p className="text-[11px] text-blue-600 pt-1 border-t border-blue-200">
-                      Die Maßnahmen bleiben erhalten — nur der Bezug zum Polter wird entfernt.
+                      {t('opsKeepReference')}
                     </p>
                   </div>
                 )}
@@ -775,10 +777,10 @@ export function PoiDetailView({
               onClick={() => { setIsEditing(false); setInteractionMode('VIEW'); setEditingFeature(null); }}
               className="text-gray-400"
             >
-              Abbrechen
+              {t('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Speichern'}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
             </Button>
           </div>
         </div>
@@ -836,6 +838,7 @@ function VehicleSection({
   imagePreview, imageUploading, fileInputRef, onFileSelect, onImageRemove,
   onCreateInspectionTask, poiName,
 }: any) {
+  const t = useTranslations('Map');
   const nextInspDate = nextInspection ? new Date(nextInspection) : null;
   const daysUntilInsp = nextInspDate
     ? Math.ceil((nextInspDate.getTime() - Date.now()) / 86400000)
@@ -845,7 +848,7 @@ function VehicleSection({
   return (
     <div className="mt-4 space-y-4">
       <h4 className="text-[10px] uppercase text-gray-500 font-bold flex items-center gap-1.5">
-        <Truck className="w-3 h-3" /> Fahrzeugdaten
+        <Truck className="w-3 h-3" /> {t('poiVehicle')}
       </h4>
 
       {/* Bild */}
@@ -889,12 +892,12 @@ function VehicleSection({
               onChange={e => setVehicleType(e.target.value)}
               className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500"
             >
-              {Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
+              {Object.entries(VEHICLE_TYPE_TKEYS).map(([k, tKey]) => (
+                <option key={k} value={k}>{t(tKey as any)}</option>
               ))}
             </select>
           ) : (
-            <p className="text-sm text-white">{VEHICLE_TYPE_LABELS[vehicleType] ?? vehicleType}</p>
+            <p className="text-sm text-white">{VEHICLE_TYPE_TKEYS[vehicleType] ? t(VEHICLE_TYPE_TKEYS[vehicleType] as any) : vehicleType}</p>
           )}
         </div>
 
@@ -1311,6 +1314,7 @@ function TreeSection({
   crownImagePreview, crownImageUploading, crownFileInputRef, onCrownFileSelect, onCrownImageRemove,
   forests, compartmentId, setCompartmentId, selectedForestId, setSelectedForestId,
 }: any) {
+  const t = useTranslations('Map');
   // Derive labels for view mode
   const selectedForest      = (forests || []).find((f: any) => f.id === selectedForestId);
   const forestCompartments  = selectedForest?.compartments || [];
@@ -1339,7 +1343,8 @@ function TreeSection({
     return Math.round(vol * density * 0.5 * (44 / 12) * 10) / 10;
   }, [treeDiameter, treeHeight, treeSpecies]);
 
-  const healthCfg = TREE_HEALTH_LABELS[treeHealth] ?? { label: treeHealth, color: 'text-gray-400' };
+  const healthTKeyCfg = TREE_HEALTH_TKEYS[treeHealth] ?? { tKey: treeHealth, color: 'text-gray-400' };
+  const healthCfg = { label: TREE_HEALTH_TKEYS[treeHealth] ? t(healthTKeyCfg.tKey as any) : treeHealth, color: healthTKeyCfg.color };
 
   return (
     <div className="mt-4 space-y-4">
@@ -1524,11 +1529,11 @@ function TreeSection({
 
         {/* Gesundheitszustand */}
         <div>
-          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Zustand</label>
+          <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">{t('condition')}</label>
           {isEditing ? (
             <select value={treeHealth} onChange={e => setTreeHealth(e.target.value)} className="w-full bg-black/50 border border-white/20 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-emerald-500">
-              {Object.entries(TREE_HEALTH_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v.label}</option>
+              {Object.entries(TREE_HEALTH_TKEYS).map(([k, v]) => (
+                <option key={k} value={k}>{t(v.tKey as any)}</option>
               ))}
             </select>
           ) : (

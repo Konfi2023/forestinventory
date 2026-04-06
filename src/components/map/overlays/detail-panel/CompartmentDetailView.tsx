@@ -45,14 +45,15 @@ const PRESET_COLORS = [
   '#a855f7', '#eab308', '#ec4899', '#64748b',
 ];
 
-const EXPOSITION_OPTIONS = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW', 'eben'];
-const SLOPE_OPTIONS = ['eben', 'schwach (<15°)', 'mittel (15–25°)', 'steil (25–35°)', 'sehr steil (>35°)'];
-const DEVELOP_OPTIONS = ['Blöße', 'Verjüngung', 'Dickung', 'Stangenholz', 'Baumholz I', 'Baumholz II', 'Baumholz III', 'Altholz', 'Plenterwald'];
-const MIXING_OPTIONS = ['rein', 'truppweise', 'horst', 'gruppen', 'einzeln', 'gemischt'];
-const STRUCTURE_OPTIONS = ['einschichtig', 'zweischichtig', 'mehrschichtig', 'plenterartig'];
-const PRODUCTIVITY_OPTIONS = ['sehr gering', 'gering', 'mittel', 'hoch', 'sehr hoch'];
-const MAINTENANCE_OPTIONS = ['vernachlässigt', 'mangelhaft', 'ausreichend', 'gut', 'sehr gut'];
-const ACCESSIBILITY_OPTIONS = ['nicht befahrbar', 'bedingt befahrbar', 'befahrbar', 'gut befahrbar'];
+// Translation-key arrays — at render time, resolved via t(key) from Map namespace
+const EXPOSITION_TKEYS = ['expN', 'expNE', 'expE', 'expSE', 'expS', 'expSW', 'expW', 'expNW', 'expositionFlat'] as const;
+const SLOPE_TKEYS = ['slopeFlat', 'slopeWeak', 'slopeMedium', 'slopeSteep', 'slopeVerySteep'] as const;
+const DEVELOP_TKEYS = ['devClearing', 'devRegeneration', 'devThicket', 'devPoleStage', 'devTimber1', 'devTimber2', 'devTimber3', 'devMatureStand', 'devSelectionForest'] as const;
+const MIXING_TKEYS = ['mixPure', 'mixGroupwise', 'mixCluster', 'mixGroups', 'mixSingle', 'mixMixed'] as const;
+const STRUCTURE_TKEYS = ['structSingleLayer', 'structTwoLayer', 'structMultiLayer', 'structSelectionType'] as const;
+const PRODUCTIVITY_TKEYS = ['prodVeryLow', 'prodLow', 'prodMedium', 'prodHigh', 'prodVeryHigh'] as const;
+const MAINTENANCE_TKEYS = ['maintNeglected', 'maintPoor', 'maintSufficient', 'maintGood', 'maintVeryGood'] as const;
+const ACCESSIBILITY_TKEYS = ['accessNone', 'accessConditional', 'accessPassable', 'accessGood'] as const;
 
 interface SpeciesEntry { species: string; percent: number; }
 interface RejuvEntry { species: string; heightCm: number; density: string; }
@@ -108,7 +109,7 @@ function FieldRow({ label, value, unit }: { label: string; value?: string | numb
 // ─── Select Input ─────────────────────────────────────────────────────────────
 function SelectField({ label, value, onChange, options, placeholder }: {
   label: string; value: string; onChange: (v: string) => void;
-  options: string[]; placeholder?: string;
+  options: { value: string; label: string }[]; placeholder?: string;
 }) {
   return (
     <div>
@@ -118,8 +119,8 @@ function SelectField({ label, value, onChange, options, placeholder }: {
         onChange={e => onChange(e.target.value)}
         className="w-full bg-black/50 border border-white/20 text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
-        <option value="">{placeholder ?? '– wählen –'}</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
+        <option value="">{placeholder}</option>
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
   );
@@ -164,6 +165,7 @@ function TextField({ label, value, onChange, placeholder }: {
 
 // ─── Species Picker Dropdown ──────────────────────────────────────────────────
 function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; onClose: () => void }) {
+  const t = useTranslations('Map');
   const [query, setQuery] = useState('');
   const filtered = useMemo(
     () => TREE_SPECIES.filter(s => s.label.toLowerCase().includes(query.toLowerCase())),
@@ -176,7 +178,7 @@ function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; 
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Baumart suchen…"
+          placeholder={t('searchSpecies')}
           className="bg-transparent text-xs text-white placeholder-gray-600 outline-none flex-1"
           autoFocus
         />
@@ -196,7 +198,7 @@ function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; 
           </button>
         ))}
         {filtered.length === 0 && (
-          <p className="text-xs text-gray-600 px-3 py-2">Keine Treffer</p>
+          <p className="text-xs text-gray-600 px-3 py-2">{t('noMatch')}</p>
         )}
       </div>
     </div>
@@ -369,6 +371,7 @@ export function CompartmentDetailView({
   onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
 }: Props) {
   const t = useTranslations('Map');
+  const opts = (keys: readonly string[]) => keys.map(k => ({ value: t(k as any), label: t(k as any) }));
   const setInteractionMode = useMapStore(s => s.setInteractionMode);
   const setEditingFeature  = useMapStore(s => s.setEditingFeature);
   const interactionMode    = useMapStore(s => s.interactionMode);
@@ -589,7 +592,7 @@ export function CompartmentDetailView({
 
       {isEditing && (
         <div className="grid grid-cols-2 gap-3">
-          <TextField label="Abteilungsnummer" value={number} onChange={setNumber} placeholder="z. B. 101a" />
+          <TextField label={t('compartmentNumber')} value={number} onChange={setNumber} placeholder="z. B. 101a" />
           <div>
             <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">Farbe</label>
             <div className="flex flex-wrap gap-1.5">
@@ -618,27 +621,27 @@ export function CompartmentDetailView({
       <Section icon={<Mountain size={13} />} title={t('site')}>
         {isEditing ? (
           <>
-            <TextField label="Bodentyp" value={soilType} onChange={setSoilType} placeholder="z. B. Braunerde" />
+            <TextField label={t('soilType')} value={soilType} onChange={setSoilType} placeholder={t('soilTypePlaceholder')} />
             <div className="grid grid-cols-2 gap-3">
-              <TextField label="Wasserhaushalt" value={waterBalance} onChange={setWaterBalance} placeholder="z. B. frisch" />
-              <TextField label="Nährstoffstufe" value={nutrientLevel} onChange={setNutrientLevel} placeholder="z. B. mittel" />
+              <TextField label={t('waterBalance')} value={waterBalance} onChange={setWaterBalance} placeholder={t('waterBalancePlaceholder')} />
+              <TextField label={t('nutrientLevel')} value={nutrientLevel} onChange={setNutrientLevel} placeholder={t('nutrientLevelPlaceholder')} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <SelectField label="Exposition" value={exposition} onChange={setExposition} options={EXPOSITION_OPTIONS} />
-              <SelectField label="Hangneigung" value={slopeClass} onChange={setSlopeClass} options={SLOPE_OPTIONS} />
+              <SelectField label={t('exposition')} value={exposition} onChange={setExposition} options={opts(EXPOSITION_TKEYS)} placeholder={t('selectPlaceholder')} />
+              <SelectField label={t('slope')} value={slopeClass} onChange={setSlopeClass} options={opts(SLOPE_TKEYS)} placeholder={t('selectPlaceholder')} />
             </div>
-            <TextField label="Schutzstatus" value={protectionStatus} onChange={setProtectionStatus} placeholder="z. B. FFH, NSG" />
-            <TextField label="Restriktionen / Auflagen" value={restrictions} onChange={setRestrictions} placeholder="z. B. kein Kahlschlag" />
+            <TextField label={t('protectionStatus')} value={protectionStatus} onChange={setProtectionStatus} placeholder={t('protectionStatusPlaceholder')} />
+            <TextField label={t('restrictionsLong')} value={restrictions} onChange={setRestrictions} placeholder={t('restrictionsPlaceholder')} />
           </>
         ) : (
           <div className="space-y-1.5">
-            <FieldRow label="Bodentyp" value={compartment.soilType} />
-            <FieldRow label="Wasserhaushalt" value={compartment.waterBalance} />
-            <FieldRow label="Nährstoffstufe" value={compartment.nutrientLevel} />
-            <FieldRow label="Exposition" value={compartment.exposition} />
-            <FieldRow label="Hangneigung" value={compartment.slopeClass} />
-            <FieldRow label="Schutzstatus" value={compartment.protectionStatus} />
-            <FieldRow label="Restriktionen" value={compartment.restrictions} />
+            <FieldRow label={t('soilType')} value={compartment.soilType} />
+            <FieldRow label={t('waterBalance')} value={compartment.waterBalance} />
+            <FieldRow label={t('nutrientLevel')} value={compartment.nutrientLevel} />
+            <FieldRow label={t('exposition')} value={compartment.exposition} />
+            <FieldRow label={t('slope')} value={compartment.slopeClass} />
+            <FieldRow label={t('protectionStatus')} value={compartment.protectionStatus} />
+            <FieldRow label={t('restrictions')} value={compartment.restrictions} />
           </div>
         )}
       </Section>
@@ -648,27 +651,27 @@ export function CompartmentDetailView({
         {isEditing ? (
           <>
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Bestandesalter" value={standAge} onChange={setStandAge} unit="Jahre" step="1" />
-              <SelectField label="Entwicklungsstufe" value={developmentStage} onChange={setDevelopmentStage} options={DEVELOP_OPTIONS} />
+              <NumberField label={t('standAge')} value={standAge} onChange={setStandAge} unit="Jahre" step="1" />
+              <SelectField label={t('developmentStage')} value={developmentStage} onChange={setDevelopmentStage} options={opts(DEVELOP_TKEYS)} placeholder={t('selectPlaceholder')} />
             </div>
-            <SpeciesEditor label="Hauptbaumarten" entries={mainSpecies} onChange={setMainSpecies} />
-            <SpeciesEditor label="Nebenbaumarten" entries={sideSpecies} onChange={setSideSpecies} />
+            <SpeciesEditor label={t('mainSpecies')} entries={mainSpecies} onChange={setMainSpecies} />
+            <SpeciesEditor label={t('sideSpecies')} entries={sideSpecies} onChange={setSideSpecies} />
             <div className="grid grid-cols-2 gap-3">
-              <SelectField label="Mischungsform" value={mixingForm} onChange={setMixingForm} options={MIXING_OPTIONS} />
-              <SelectField label="Struktur" value={structure} onChange={setStructure} options={STRUCTURE_OPTIONS} />
+              <SelectField label={t('mixingForm')} value={mixingForm} onChange={setMixingForm} options={opts(MIXING_TKEYS)} placeholder={t('selectPlaceholder')} />
+              <SelectField label={t('structure')} value={structure} onChange={setStructure} options={opts(STRUCTURE_TKEYS)} placeholder={t('selectPlaceholder')} />
             </div>
           </>
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <FieldRow label="Alter" value={compartment.standAge} unit="J." />
-                <FieldRow label="Altersklasse" value={ageClass(compartment.standAge)} />
+                <FieldRow label={t('standAge')} value={compartment.standAge} unit="J." />
+                <FieldRow label={t('ageClassLabel')} value={ageClass(compartment.standAge)} />
               </div>
               <div>
-                <FieldRow label="Entwicklungsstufe" value={compartment.developmentStage} />
-                <FieldRow label="Mischungsform" value={compartment.mixingForm} />
-                <FieldRow label="Struktur" value={compartment.structure} />
+                <FieldRow label={t('developmentStage')} value={compartment.developmentStage} />
+                <FieldRow label={t('mixingForm')} value={compartment.mixingForm} />
+                <FieldRow label={t('structure')} value={compartment.structure} />
               </div>
             </div>
             {(compartment.mainSpecies?.length > 0) && (
@@ -696,8 +699,8 @@ export function CompartmentDetailView({
             </p>
             {treeStats.avgDiameter !== null && <FieldRow label="Ø BHD" value={treeStats.avgDiameter?.toFixed(1)} unit="cm" />}
             {treeStats.avgHeight !== null && <FieldRow label="Ø Baumhöhe" value={treeStats.avgHeight?.toFixed(1)} unit="m" />}
-            {treeStats.maxHeight !== null && <FieldRow label="Oberhöhe (max.)" value={treeStats.maxHeight?.toFixed(1)} unit="m" />}
-            {treeStats.stemCount !== null && <FieldRow label="Stammzahl" value={treeStats.stemCount} unit="N/ha" />}
+            {treeStats.maxHeight !== null && <FieldRow label={t('topHeight')} value={treeStats.maxHeight?.toFixed(1)} unit="m" />}
+            {treeStats.stemCount !== null && <FieldRow label={t('stemCount')} value={treeStats.stemCount} unit="N/ha" />}
             {treeStats.speciesDist.length > 0 && (
               <div className="pt-1">
                 <p className="text-[10px] text-gray-500 mb-1">Artenverteilung</p>
@@ -709,26 +712,26 @@ export function CompartmentDetailView({
         {isEditing ? (
           <>
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Vorrat" value={volumePerHa} onChange={setVolumePerHa} unit="m³/ha" />
-              <NumberField label="Zuwachs" value={incrementPerHa} onChange={setIncrementPerHa} unit="m³/ha/a" />
+              <NumberField label={t('volume')} value={volumePerHa} onChange={setVolumePerHa} unit="m³/ha" />
+              <NumberField label={t('increment')} value={incrementPerHa} onChange={setIncrementPerHa} unit="m³/ha/a" />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Bestockungsgrad" value={stockingDegree} onChange={setStockingDegree} placeholder="0.0–1.0" step="0.05" />
-              <NumberField label="Totholz" value={deadwoodPerHa} onChange={setDeadwoodPerHa} unit="m³/ha" />
+              <NumberField label={t('stockingDegree')} value={stockingDegree} onChange={setStockingDegree} placeholder={t('stockingDegreePlaceholder')} step="0.05" />
+              <NumberField label={t('deadwood')} value={deadwoodPerHa} onChange={setDeadwoodPerHa} unit="m³/ha" />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Bonität (EKL)" value={yieldClass} onChange={setYieldClass} step="0.5" />
-              <SelectField label="Wuchsleistung" value={siteProductivity} onChange={setSiteProductivity} options={PRODUCTIVITY_OPTIONS} />
+              <NumberField label={t('yieldClass')} value={yieldClass} onChange={setYieldClass} step="0.5" />
+              <SelectField label={t('productivity')} value={siteProductivity} onChange={setSiteProductivity} options={opts(PRODUCTIVITY_TKEYS)} placeholder={t('selectPlaceholder')} />
             </div>
           </>
         ) : (
           <div className="space-y-1.5">
-            <FieldRow label="Vorrat" value={compartment.volumePerHa} unit="m³/ha" />
-            <FieldRow label="Zuwachs" value={compartment.incrementPerHa} unit="m³/ha/a" />
-            <FieldRow label="Bestockungsgrad" value={compartment.stockingDegree} />
-            <FieldRow label="Totholz" value={compartment.deadwoodPerHa} unit="m³/ha" />
-            <FieldRow label="Bonität (EKL)" value={compartment.yieldClass} />
-            <FieldRow label="Wuchsleistung" value={compartment.siteProductivity} />
+            <FieldRow label={t('volume')} value={compartment.volumePerHa} unit="m³/ha" />
+            <FieldRow label={t('increment')} value={compartment.incrementPerHa} unit="m³/ha/a" />
+            <FieldRow label={t('stockingDegree')} value={compartment.stockingDegree} />
+            <FieldRow label={t('deadwood')} value={compartment.deadwoodPerHa} unit="m³/ha" />
+            <FieldRow label={t('yieldClass')} value={compartment.yieldClass} />
+            <FieldRow label={t('productivity')} value={compartment.siteProductivity} />
           </div>
         )}
       </Section>
@@ -812,20 +815,20 @@ export function CompartmentDetailView({
         {isEditing ? (
           <>
             <div className="grid grid-cols-2 gap-3">
-              <TextField label="Letzte Maßnahme (Datum)" value={lastMeasureDate} onChange={setLastMeasureDate} placeholder="z. B. 03/2024" />
-              <TextField label="Art der Maßnahme" value={lastMeasureType} onChange={setLastMeasureType} placeholder="z. B. Durchforstung" />
+              <TextField label={t('lastMeasureDate')} value={lastMeasureDate} onChange={setLastMeasureDate} placeholder={t('lastMeasureDatePlaceholder')} />
+              <TextField label={t('measureType')} value={lastMeasureType} onChange={setLastMeasureType} placeholder={t('measureTypePlaceholder')} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <SelectField label="Pflegezustand" value={maintenanceStatus} onChange={setMaintenanceStatus} options={MAINTENANCE_OPTIONS} />
-              <SelectField label="Befahrbarkeit" value={accessibility} onChange={setAccessibility} options={ACCESSIBILITY_OPTIONS} />
+              <SelectField label={t('maintenanceStatus')} value={maintenanceStatus} onChange={setMaintenanceStatus} options={opts(MAINTENANCE_TKEYS)} placeholder={t('selectPlaceholder')} />
+              <SelectField label={t('accessibility')} value={accessibility} onChange={setAccessibility} options={opts(ACCESSIBILITY_TKEYS)} placeholder={t('selectPlaceholder')} />
             </div>
           </>
         ) : (
           <div className="space-y-1.5">
-            <FieldRow label="Letzte Maßnahme" value={compartment.lastMeasureDate
+            <FieldRow label={t('lastMeasure')} value={compartment.lastMeasureDate
               ? `${compartment.lastMeasureDate}${compartment.lastMeasureType ? ` – ${compartment.lastMeasureType}` : ''}` : null} />
-            <FieldRow label="Pflegezustand" value={compartment.maintenanceStatus} />
-            <FieldRow label="Befahrbarkeit" value={compartment.accessibility} />
+            <FieldRow label={t('maintenanceStatus')} value={compartment.maintenanceStatus} />
+            <FieldRow label={t('accessibility')} value={compartment.accessibility} />
           </div>
         )}
       </Section>

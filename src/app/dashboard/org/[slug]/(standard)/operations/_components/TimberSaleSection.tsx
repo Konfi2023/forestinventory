@@ -11,14 +11,18 @@ import { createTimberSale, deleteTimberSale, updateTimberSale } from "@/actions/
 import { TimberSaleStatus } from "@prisma/client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { TransportTicketSection } from "./TransportTicketSection";
+import { useTranslations } from "next-intl";
 
-const SALE_STATUS: Record<TimberSaleStatus, { label: string; bg: string; text: string }> = {
-  DRAFT:           { label: "Entwurf",       bg: "bg-slate-100",    text: "text-slate-600"    },
-  NEGOTIATION:     { label: "Verhandlung",   bg: "bg-blue-50",      text: "text-blue-700"     },
-  CONTRACT_SIGNED: { label: "Kontrakt",      bg: "bg-amber-50",     text: "text-amber-700"    },
-  COMPLETED:       { label: "Abgeschl.",     bg: "bg-emerald-50",   text: "text-emerald-700"  },
-  CANCELLED:       { label: "Storniert",     bg: "bg-red-50",       text: "text-red-700"      },
-};
+function useSaleStatus() {
+  const t = useTranslations("Operations");
+  return {
+    DRAFT:           { label: t("saleStatusDraft"),       bg: "bg-slate-100",    text: "text-slate-600"    },
+    NEGOTIATION:     { label: t("saleStatusNegotiation"), bg: "bg-blue-50",      text: "text-blue-700"     },
+    CONTRACT_SIGNED: { label: t("saleStatusContract"),    bg: "bg-amber-50",     text: "text-amber-700"    },
+    COMPLETED:       { label: t("saleStatusCompleted"),   bg: "bg-emerald-50",   text: "text-emerald-700"  },
+    CANCELLED:       { label: t("saleStatusCancelled"),   bg: "bg-red-50",       text: "text-red-700"      },
+  } as Record<TimberSaleStatus, { label: string; bg: string; text: string }>;
+}
 const STATUS_ORDER: TimberSaleStatus[] = ["DRAFT", "NEGOTIATION", "CONTRACT_SIGNED", "COMPLETED", "CANCELLED"];
 
 interface Props {
@@ -32,6 +36,7 @@ interface Props {
 }
 
 function NewSaleDialog({ logPiles, operationId, orgSlug }: { logPiles: any[]; operationId: string; orgSlug: string }) {
+  const t = useTranslations("Operations");
   const [open,    setOpen]    = useState(false);
   const [saving,  setSaving]  = useState(false);
   const [buyer,   setBuyer]   = useState("");
@@ -50,7 +55,7 @@ function NewSaleDialog({ logPiles, operationId, orgSlug }: { logPiles: any[]; op
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!buyer) { toast.error("Käufer ist ein Pflichtfeld"); return; }
+    if (!buyer) { toast.error(t("buyerRequired")); return; }
     setSaving(true);
     try {
       await createTimberSale(orgSlug, {
@@ -60,7 +65,7 @@ function NewSaleDialog({ logPiles, operationId, orgSlug }: { logPiles: any[]; op
         operationId,
         logPileIds: selected.length ? selected : undefined,
       });
-      toast.success("Holzverkauf angelegt");
+      toast.success(t("saleCreated"));
       setOpen(false);
       setBuyer(""); setContract(""); setPrice(""); setSelected([]);
     } catch (e: any) {
@@ -74,33 +79,33 @@ function NewSaleDialog({ logPiles, operationId, orgSlug }: { logPiles: any[]; op
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 border-dashed border-slate-300 text-slate-600 hover:border-emerald-400 hover:text-emerald-700">
-          <Plus size={12} /> Verkauf anlegen
+          <Plus size={12} /> {t("createSale")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Holzverkauf erstellen</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("createSaleTitle")}</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Käufer / Sägewerk *</Label>
-              <Input value={buyer} onChange={e => setBuyer(e.target.value)} placeholder="z.B. Sägewerk Müller" required className="h-8 text-sm" />
+              <Label>{t("labelBuyer")}</Label>
+              <Input value={buyer} onChange={e => setBuyer(e.target.value)} placeholder={t("placeholderBuyer")} required className="h-8 text-sm" />
             </div>
             <div className="space-y-1.5">
-              <Label>Vertragsnummer</Label>
+              <Label>{t("labelContractNumber")}</Label>
               <Input value={contract} onChange={e => setContract(e.target.value)} placeholder="optional" className="h-8 text-sm" />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Preis pro fm (€)</Label>
+            <Label>{t("labelPricePerFm")}</Label>
             <Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="z.B. 85.00" className="h-8 text-sm" />
           </div>
 
           {availablePiles.length > 0 && (
             <div className="space-y-1.5">
               <Label className="flex items-center justify-between">
-                Polter zuordnen
-                {totalM3 > 0 && <span className="text-xs font-mono text-amber-600">{totalM3.toFixed(1)} fm ausgewählt</span>}
+                {t("assignPiles")}
+                {totalM3 > 0 && <span className="text-xs font-mono text-amber-600">{t("fmSelected", { value: totalM3.toFixed(1) })}</span>}
               </Label>
               <div className="space-y-1 max-h-36 overflow-y-auto border border-slate-200 rounded-lg p-2">
                 {availablePiles.map((p: any) => (
@@ -120,16 +125,13 @@ function NewSaleDialog({ logPiles, operationId, orgSlug }: { logPiles: any[]; op
 
           <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 text-xs text-emerald-800">
             <FileText size={13} className="shrink-0 mt-0.5 text-emerald-600" />
-            <span>
-              Nach dem Anlegen können Sie im <strong>Biomasse-Monitor → EUDR</strong> eine
-              Sorgfaltserklärung (DDS) für diesen Verkauf erstellen.
-            </span>
+            <span dangerouslySetInnerHTML={{ __html: t("eudrInfoText") }} />
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>Abbrechen</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>{t("cancel")}</Button>
             <Button type="submit" size="sm" disabled={saving} className="bg-amber-600 hover:bg-amber-700 text-white">
-              {saving && <Loader2 size={13} className="animate-spin mr-1" />} Anlegen
+              {saving && <Loader2 size={13} className="animate-spin mr-1" />} {t("create")}
             </Button>
           </div>
         </form>
@@ -145,6 +147,7 @@ function EudrSaleRow({ saleId, eudrReference: initial, orgSlug }: {
   eudrReference: string | null;
   orgSlug: string;
 }) {
+  const t = useTranslations("Operations");
   const [editing, setEditing] = useState(false);
   const [value, setValue]     = useState(initial ?? "");
   const [saving, setSaving]   = useState(false);
@@ -153,7 +156,7 @@ function EudrSaleRow({ saleId, eudrReference: initial, orgSlug }: {
     setSaving(true);
     try {
       await updateTimberSale(orgSlug, saleId, { eudrReference: value || null });
-      toast.success("EUDR-Referenz gespeichert");
+      toast.success(t("eudrSaved"));
       setEditing(false);
     } catch (e: any) {
       toast.error(e.message);
@@ -171,7 +174,7 @@ function EudrSaleRow({ saleId, eudrReference: initial, orgSlug }: {
         : <ShieldAlert size={11} className="text-amber-500 shrink-0" />
       }
       <span className={`text-[10px] font-medium shrink-0 ${hasRef ? "text-emerald-700" : "text-amber-600"}`}>
-        EUDR-Referenz (EU 2023/1115)
+        {t("eudrReference")}
       </span>
 
       {editing ? (
@@ -180,7 +183,7 @@ function EudrSaleRow({ saleId, eudrReference: initial, orgSlug }: {
             autoFocus
             value={value}
             onChange={e => setValue(e.target.value)}
-            placeholder="z.B. DE-DE-20261234567890"
+            placeholder={t("eudrPlaceholder")}
             className="flex-1 text-[11px] font-mono border border-slate-200 rounded px-2 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-0"
           />
           <button onClick={handleSave} disabled={saving}
@@ -196,7 +199,7 @@ function EudrSaleRow({ saleId, eudrReference: initial, orgSlug }: {
         <>
           {hasRef
             ? <span className="font-mono text-[11px] text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">{initial}</span>
-            : <span className="text-[10px] text-amber-500 italic">Noch nicht eingetragen — für alle Lieferscheine dieses Verkaufs erforderlich</span>
+            : <span className="text-[10px] text-amber-500 italic">{t("eudrNotEntered")}</span>
           }
           <button onClick={() => setEditing(true)}
             className="ml-auto p-1 rounded text-slate-300 hover:text-slate-600 hover:bg-slate-100 shrink-0">
@@ -209,6 +212,8 @@ function EudrSaleRow({ saleId, eudrReference: initial, orgSlug }: {
 }
 
 export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug, forestName, operationTitle, operationYear }: Props) {
+  const t = useTranslations("Operations");
+  const SALE_STATUS = useSaleStatus();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; buyer: string } | null>(null);
@@ -217,7 +222,7 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
     setDeleting(id);
     try {
       await deleteTimberSale(orgSlug, id);
-      toast.success("Verkauf gelöscht");
+      toast.success(t("saleDeleted"));
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -252,7 +257,7 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2">
           <ShoppingCart size={13} className="text-emerald-600" />
-          <span className="text-xs font-semibold text-slate-700">Holzverkäufe</span>
+          <span className="text-xs font-semibold text-slate-700">{t("timberSales")}</span>
           {timberSales.length > 0 && (
             <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">
               {timberSales.length}
@@ -268,12 +273,12 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
       </div>
 
       {timberSales.length === 0 ? (
-        <p className="text-xs text-slate-400 italic py-1 text-center">Noch keine Holzverkäufe erfasst.</p>
+        <p className="text-xs text-slate-400 italic py-1 text-center">{t("noSalesYet")}</p>
       ) : (
         <div className="border border-slate-200 rounded-lg overflow-hidden">
           {/* Tabellen-Header */}
           <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1fr_1.5fr_auto] gap-0 bg-slate-50 border-b border-slate-200 px-3 py-1.5">
-            {["Käufer / Vertrag", "Polter", "fm", "€/fm", "Gesamt", "Status", ""].map((h, i) => (
+            {[t("tableHeaderBuyer"), t("tableHeaderPiles"), t("tableHeaderFm"), t("tableHeaderPriceFm"), t("tableHeaderTotal"), t("tableHeaderStatus"), ""].map((h, i) => (
               <span key={i} className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{h}</span>
             ))}
           </div>
@@ -303,7 +308,7 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
                   {/* Polter-Anzahl */}
                   <span className="text-slate-600">
                     {(sale.logPiles ?? []).length > 0
-                      ? `${(sale.logPiles ?? []).length} Polter`
+                      ? t("pileCountLabel", { count: (sale.logPiles ?? []).length })
                       : <span className="text-slate-300">—</span>}
                   </span>
 
@@ -347,7 +352,7 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
                       onClick={() => setDeleteTarget({ id: sale.id, buyer: sale.buyerName })}
                       disabled={deleting === sale.id}
                       className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Löschen"
+                      title={t("delete")}
                     >
                       {deleting === sale.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                     </button>
@@ -381,7 +386,7 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
           {/* Summenzeile */}
           {timberSales.length > 1 && totalRevenue > 0 && (
             <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1fr_1.5fr_auto] gap-0 px-3 py-1.5 bg-emerald-50/60 border-t border-emerald-100 items-center">
-              <span className="text-[10px] font-semibold text-slate-500 col-span-4">Gesamt</span>
+              <span className="text-[10px] font-semibold text-slate-500 col-span-4">{t("totalLabel")}</span>
               <span className="text-xs font-bold text-emerald-700 col-span-2">
                 {totalRevenue.toLocaleString("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}
               </span>
@@ -394,9 +399,9 @@ export function TimberSaleSection({ timberSales, logPiles, operationId, orgSlug,
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
-        title={`Verkauf an "${deleteTarget?.buyer}" löschen?`}
-        description="Die zugeordneten Polter werden wieder freigegeben."
-        confirmLabel="Löschen"
+        title={t("deleteSale", { buyer: deleteTarget?.buyer ?? "" })}
+        description={t("deleteSaleDesc")}
+        confirmLabel={t("delete")}
         destructive
         onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
       />

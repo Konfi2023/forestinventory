@@ -9,6 +9,7 @@ import {
   Thermometer, TreePine,
 } from 'lucide-react';
 import type { HealthReport, ForestFreshness } from '@/lib/health-check';
+import { useTranslations } from 'next-intl';
 
 // ---------------------------------------------------------------------------
 // Typen
@@ -37,20 +38,20 @@ function StatusIcon({ ok, warn }: { ok: boolean; warn?: boolean }) {
   return          <XCircle        size={18} className="text-red-500 shrink-0" />;
 }
 
-function OverallBadge({ status }: { status: string }) {
+function OverallBadge({ status, t }: { status: string; t: ReturnType<typeof useTranslations<'Health'>> }) {
   const cls =
     status === 'OK'    ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
     status === 'WARN'  ? 'bg-amber-100 text-amber-800 border-amber-200' :
                          'bg-red-100 text-red-800 border-red-200';
   return (
     <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${cls}`}>
-      {status === 'OK' ? 'Alles OK' : status === 'WARN' ? 'Warnung' : 'Fehler'}
+      {status === 'OK' ? t('allOk') : status === 'WARN' ? t('warning') : t('error')}
     </span>
   );
 }
 
 function ServiceCard({
-  icon, label, ok, latencyMs, info, error,
+  icon, label, ok, latencyMs, info, error, t,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -58,6 +59,7 @@ function ServiceCard({
   latencyMs?: number;
   info?: string;
   error?: string;
+  t: ReturnType<typeof useTranslations<'Health'>>;
 }) {
   return (
     <div className={`bg-white border rounded-lg p-4 flex flex-col gap-2 ${ok ? 'border-slate-200' : 'border-red-200 bg-red-50/30'}`}>
@@ -69,7 +71,7 @@ function ServiceCard({
         <StatusIcon ok={ok} />
       </div>
       {latencyMs != null && (
-        <p className="text-xs text-slate-400">{latencyMs} ms Latenz</p>
+        <p className="text-xs text-slate-400">{t('msLatency', { ms: latencyMs })}</p>
       )}
       {info && <p className="text-xs text-slate-500 truncate">{info}</p>}
       {error && <p className="text-xs text-red-600 truncate" title={error}>{error}</p>}
@@ -82,6 +84,7 @@ function ServiceCard({
 // ---------------------------------------------------------------------------
 
 export function HealthDashboard({ slug, history }: { slug: string; history: HealthEntry[] }) {
+  const t = useTranslations('Health');
   const [isPending, startTransition] = useTransition();
   const [localHistory, setLocalHistory] = useState<HealthEntry[]>(history);
 
@@ -92,11 +95,11 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
     startTransition(async () => {
       try {
         const result = await triggerHealthCheck(slug);
-        toast.success(`Health-Check abgeschlossen: ${result.overall}`);
+        toast.success(t('healthCheckDone', { status: result.overall }));
         // Seite neu laden um frische Daten zu zeigen
         window.location.reload();
       } catch (e: any) {
-        toast.error(e?.message ?? 'Fehler beim Health-Check');
+        toast.error(e?.message ?? t('healthCheckError'));
       }
     });
   }
@@ -109,14 +112,14 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
         <div className="flex items-center gap-3">
           {latest ? (
             <>
-              <OverallBadge status={latest.overall} />
+              <OverallBadge status={latest.overall} t={t} />
               <span className="text-sm text-slate-500 flex items-center gap-1">
                 <Clock size={13} />
-                Letzter Check: {new Date(latest.runAt).toLocaleString('de-DE')}
+                {t('lastCheck', { date: new Date(latest.runAt).toLocaleString('de-DE') })}
               </span>
             </>
           ) : (
-            <span className="text-sm text-slate-400">Noch kein Health-Check durchgeführt</span>
+            <span className="text-sm text-slate-400">{t('noCheckYet')}</span>
           )}
         </div>
         <button
@@ -125,7 +128,7 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
           className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg transition"
         >
           <RefreshCw size={15} className={isPending ? 'animate-spin' : ''} />
-          {isPending ? 'Wird geprüft …' : 'Jetzt Health-Check ausführen'}
+          {isPending ? t('checking') : t('runHealthCheck')}
         </button>
       </div>
 
@@ -134,34 +137,38 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <ServiceCard
             icon={<Database size={16} />}
-            label="Datenbank"
+            label={t('database')}
             ok={latest.dbOk}
             latencyMs={report.db?.latencyMs}
             error={report.db?.error}
             info="PostgreSQL"
+            t={t}
           />
           <ServiceCard
             icon={<Cloud size={16} />}
-            label="Open-Meteo"
+            label={t('openMeteo')}
             ok={latest.openMeteoOk}
             latencyMs={report.openMeteo?.latencyMs}
             info={report.openMeteo?.info}
             error={report.openMeteo?.error}
+            t={t}
           />
           <ServiceCard
             icon={<Satellite size={16} />}
-            label="Sentinel Hub"
+            label={t('sentinelHub')}
             ok={latest.sentinelOk}
             latencyMs={report.sentinel?.latencyMs}
             info={report.sentinel?.info}
             error={report.sentinel?.error}
+            t={t}
           />
           <ServiceCard
             icon={<HardDrive size={16} />}
-            label="S3 Storage"
+            label={t('s3Storage')}
             ok={latest.s3Ok}
-            info={report.s3?.info ?? (latest.s3Ok ? 'Konfiguriert' : 'Nicht konfiguriert')}
+            info={report.s3?.info ?? (latest.s3Ok ? t('configured') : t('notConfigured'))}
             error={report.s3?.error}
+            t={t}
           />
         </div>
       )}
@@ -171,8 +178,8 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-3 text-sm text-amber-800 flex items-start gap-3">
           <Activity size={16} className="mt-0.5 shrink-0 text-amber-600" />
           <div>
-            <strong>Probe-Alarm aktiv</strong> — Test-Daten für Wald <em>{report.testAlert.forestName}</em>:
-            {' '}SAR-Anomalie (changeDb = −3.7 dB) + Sturmereignis (78 km/h) wurden erfolgreich erstellt.
+            <strong>{t('probeAlertActive')}</strong> — {t('probeAlertTestData')} <em>{report.testAlert.forestName}</em>:
+            {' '}{t('probeAlertDesc')}
             <br />
             <span className="text-amber-600 text-xs">S1-ID: {latest.testAlertS1Id} · Wetter-ID: {latest.testAlertWxId}</span>
           </div>
@@ -184,16 +191,16 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
         <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2 text-sm font-semibold text-slate-700">
             <TreePine size={16} className="text-emerald-600" />
-            Datenfreshness pro Wald
+            {t('dataFreshness')}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
-                  <th className="text-left px-4 py-2.5">Wald</th>
-                  <th className="text-left px-4 py-2.5">GeoJSON</th>
-                  <th className="text-left px-4 py-2.5">Letzter Wetter-Snapshot</th>
-                  <th className="text-left px-4 py-2.5">Letzter SAR-Snapshot</th>
+                  <th className="text-left px-4 py-2.5">{t('thForest')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thGeoJson')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thLastWeather')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thLastSar')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -206,10 +213,10 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
                         : <XCircle size={15} className="text-red-400" />}
                     </td>
                     <td className="px-4 py-2.5">
-                      <FreshnessCell date={f.lastWeatherAt} ageDays={f.weatherAgeDays} stale={f.weatherStale} maxDays={2} />
+                      <FreshnessCell date={f.lastWeatherAt} ageDays={f.weatherAgeDays} stale={f.weatherStale} maxDays={2} t={t} />
                     </td>
                     <td className="px-4 py-2.5">
-                      <FreshnessCell date={f.lastS1At} ageDays={f.s1AgeDays} stale={f.s1Stale} maxDays={12} />
+                      <FreshnessCell date={f.lastS1At} ageDays={f.s1AgeDays} stale={f.s1Stale} maxDays={12} t={t} />
                     </td>
                   </tr>
                 ))}
@@ -224,19 +231,19 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
         <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2 text-sm font-semibold text-slate-700">
             <Clock size={16} className="text-slate-400" />
-            Verlauf (letzte {localHistory.length} Checks)
+            {t('history', { count: localHistory.length })}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
-                  <th className="text-left px-4 py-2.5">Zeitpunkt</th>
-                  <th className="text-left px-4 py-2.5">Status</th>
-                  <th className="text-left px-4 py-2.5">DB</th>
-                  <th className="text-left px-4 py-2.5">Wetter-API</th>
-                  <th className="text-left px-4 py-2.5">Sentinel</th>
-                  <th className="text-left px-4 py-2.5">S3</th>
-                  <th className="text-left px-4 py-2.5">Probe-Alarm</th>
+                  <th className="text-left px-4 py-2.5">{t('thTimestamp')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thStatus')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thDb')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thWeatherApi')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thSentinel')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thS3')}</th>
+                  <th className="text-left px-4 py-2.5">{t('thProbeAlarm')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -245,7 +252,7 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
                     <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">
                       {new Date(h.runAt).toLocaleString('de-DE')}
                     </td>
-                    <td className="px-4 py-2.5"><OverallBadge status={h.overall} /></td>
+                    <td className="px-4 py-2.5"><OverallBadge status={h.overall} t={t} /></td>
                     <td className="px-4 py-2.5"><StatusIcon ok={h.dbOk} /></td>
                     <td className="px-4 py-2.5"><StatusIcon ok={h.openMeteoOk} /></td>
                     <td className="px-4 py-2.5"><StatusIcon ok={h.sentinelOk} /></td>
@@ -265,16 +272,16 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
 
       {/* Cron-Info */}
       <div className="bg-slate-100 rounded-lg px-5 py-3 text-xs text-slate-500 space-y-1">
-        <p className="font-semibold text-slate-600">Automatisierung (täglicher Cron)</p>
+        <p className="font-semibold text-slate-600">{t('cronTitle')}</p>
         <p>
-          Täglich ausführen via: <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono">
+          {t('cronDesc')} <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono">
             GET /api/cron/health
           </code>{' '}
-          mit <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono">
+          {t('cronAuth')} <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono">
             Authorization: Bearer {'<CRON_SECRET>'}
           </code>
         </p>
-        <p>Test-Alarme werden nach 7 Tagen automatisch gelöscht.</p>
+        <p>{t('cronCleanup')}</p>
       </div>
 
     </div>
@@ -282,9 +289,9 @@ export function HealthDashboard({ slug, history }: { slug: string; history: Heal
 }
 
 function FreshnessCell({
-  date, ageDays, stale, maxDays,
-}: { date: string | null; ageDays: number | null; stale: boolean; maxDays: number }) {
-  if (!date) return <span className="text-slate-300 text-xs">Keine Daten</span>;
+  date, ageDays, stale, maxDays, t,
+}: { date: string | null; ageDays: number | null; stale: boolean; maxDays: number; t: ReturnType<typeof useTranslations<'Health'>> }) {
+  if (!date) return <span className="text-slate-300 text-xs">{t('noData')}</span>;
   return (
     <div className="flex items-center gap-1.5">
       {stale

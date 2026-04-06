@@ -3,6 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { User, Calendar, RotateCcw } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Props {
   owners: { id: string; name: string }[];
@@ -12,14 +13,16 @@ interface Props {
   showBilled: boolean;
 }
 
-const PRESETS = [
-  { label: "Dieser Monat",    key: "thisMonth" },
-  { label: "Letzter Monat",   key: "lastMonth" },
-  { label: "Dieses Quartal",  key: "thisQuarter" },
-  { label: "Letztes Quartal", key: "lastQuarter" },
-  { label: "Dieses Jahr",     key: "thisYear" },
-  { label: "Alle",            key: "all" },
-];
+const PRESET_KEYS = ["thisMonth", "lastMonth", "thisQuarter", "lastQuarter", "thisYear", "all"] as const;
+
+const PRESET_I18N: Record<string, string> = {
+  thisMonth: "presetThisMonth",
+  lastMonth: "presetLastMonth",
+  thisQuarter: "presetThisQuarter",
+  lastQuarter: "presetLastQuarter",
+  thisYear: "presetThisYear",
+  all: "presetAll",
+};
 
 function getPresetDates(key: string): { from: string; to: string } {
   const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
@@ -32,14 +35,15 @@ function getPresetDates(key: string): { from: string; to: string } {
 }
 
 function detectActivePreset(from: string, to: string): string | null {
-  for (const p of PRESETS.filter(p => p.key !== "all")) {
-    const { from: pf, to: pt } = getPresetDates(p.key);
-    if (pf === from && pt === to) return p.key;
+  for (const key of PRESET_KEYS.filter(k => k !== "all")) {
+    const { from: pf, to: pt } = getPresetDates(key);
+    if (pf === from && pt === to) return key;
   }
   return !from && !to ? "all" : null;
 }
 
 export function KostenFilters({ owners, selectedOwnerId, from, to, showBilled }: Props) {
+  const t = useTranslations("CostControl");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -60,13 +64,13 @@ export function KostenFilters({ owners, selectedOwnerId, from, to, showBilled }:
       {/* Zeitraum */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 w-20 shrink-0">
-          <Calendar className="w-3.5 h-3.5" /> Zeitraum
+          <Calendar className="w-3.5 h-3.5" /> {t("filterTimeRange")}
         </span>
         <div className="flex items-center gap-1 flex-wrap">
-          {PRESETS.map(p => (
-            <button key={p.key} onClick={() => setParams(getPresetDates(p.key))}
-              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${activePreset === p.key ? "bg-slate-900 text-white border-slate-900" : "bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-400"}`}>
-              {p.label}
+          {PRESET_KEYS.map(key => (
+            <button key={key} onClick={() => setParams(getPresetDates(key))}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${activePreset === key ? "bg-slate-900 text-white border-slate-900" : "bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-400"}`}>
+              {t(PRESET_I18N[key])}
             </button>
           ))}
           <span className="text-slate-300 text-xs mx-1">|</span>
@@ -82,24 +86,24 @@ export function KostenFilters({ owners, selectedOwnerId, from, to, showBilled }:
 
       {/* Filter */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-medium text-slate-500 w-20 shrink-0">Filter</span>
+        <span className="text-xs font-medium text-slate-500 w-20 shrink-0">{t("filterLabel")}</span>
         <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50">
           <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <select value={selectedOwnerId} onChange={e => setParams({ owner: e.target.value })} className="text-xs text-slate-700 bg-transparent focus:outline-none">
-            <option value="">Alle Waldbesitzer</option>
+            <option value="">{t("allOwners")}</option>
             {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
         </div>
 
         <button onClick={() => setParams({ showBilled: showBilled ? "" : "1" })}
           className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${showBilled ? "bg-slate-900 text-white border-slate-900" : "bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700"}`}>
-          Abgerechnete einblenden
+          {t("showBilled")}
         </button>
 
         {hasFilters && (
           <button onClick={() => setParams({ owner: "", from: "", to: "" })}
             className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700 transition-colors ml-auto">
-            <RotateCcw className="w-3 h-3" /> Zurücksetzen
+            <RotateCcw className="w-3 h-3" /> {t("resetFilters")}
           </button>
         )}
       </div>

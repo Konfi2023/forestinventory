@@ -7,6 +7,7 @@ import { ensureDbUser } from "@/lib/ensure-user";
 import { ROLE_TEMPLATES } from "@/lib/permissions";
 import { OrgType, SubscriptionStatus } from "@prisma/client";
 import { TRIAL_DAYS } from "@/lib/pricing-config";
+import { cookies } from "next/headers";
 
 export type OnboardingData = {
   accountType: "PRIVATE" | "BUSINESS";
@@ -137,11 +138,14 @@ export async function createAdditionalOrg(
   if (data.selectedPriceId && data.planInterval) {
     const org = await prisma.organization.findUnique({ where: { slug } });
     if (org) {
+      const cookieStore = await cookies();
+      const locale = cookieStore.get('NEXT_LOCALE')?.value || 'de';
       const { createCheckoutSession } = await import("./stripe-actions");
       const result = await createCheckoutSession(
         data.selectedPriceId,
         org.id,
-        data.planInterval
+        data.planInterval,
+        locale
       );
       return { slug, checkoutUrl: result.url || undefined };
     }
@@ -166,12 +170,15 @@ export async function completeOnboarding(
   if (data.selectedPriceId && data.planInterval) {
     const org = await prisma.organization.findUnique({ where: { slug } });
     if (org) {
+      const cookieStore = await cookies();
+      const locale = cookieStore.get('NEXT_LOCALE')?.value || 'de';
       // Dynamically import to avoid circular deps
       const { createCheckoutSession } = await import("./stripe-actions");
       const result = await createCheckoutSession(
         data.selectedPriceId,
         org.id,
-        data.planInterval
+        data.planInterval,
+        locale
       );
       return { slug, checkoutUrl: result.url || undefined };
     }

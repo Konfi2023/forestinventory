@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { X, Loader2, ChevronRight, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { createCheckoutSession } from '@/actions/stripe-actions';
@@ -16,6 +16,7 @@ interface Props {
 
 export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }: Props) {
   const t = useTranslations('Billing');
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanData | null>(null);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('yearly');
@@ -32,7 +33,7 @@ export function UpgradeModal({ orgId, plans, currentUsedHa, currentMemberCount }
     }
     setLoading(true);
     try {
-      const { url } = await createCheckoutSession(priceId, orgId, billingInterval);
+      const { url } = await createCheckoutSession(priceId, orgId, billingInterval, locale);
       if (url) window.location.href = url;
     } catch (err: any) {
       toast.error(err.message || t('checkoutError'));

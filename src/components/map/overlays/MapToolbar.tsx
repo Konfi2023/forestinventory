@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { MapImporter } from '../importer/MapImporter';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Props {
     canCreate: boolean;
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Props) {
+  const t = useTranslations('Map');
   const mode              = useMapStore(s => s.interactionMode);
   const setMode           = useMapStore(s => s.setInteractionMode);
   const activePoi         = useMapStore(s => s.activePoiType);
@@ -50,19 +52,19 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
   const [showPolygonMenu, setShowPolygonMenu] = useState(false);
 
   const poiTools = [
-      { id: 'HUNTING_STAND', icon: Tent,     label: 'Hochsitz',   color: 'text-yellow-500' },
-      { id: 'LOG_PILE',      icon: Boxes,    label: 'Polter',     color: 'text-blue-500'   },
-      { id: 'HUT',           icon: Home,     label: 'Hütte',      color: 'text-orange-500' },
-      { id: 'BARRIER',       icon: Ban,      label: 'Schranke',   color: 'text-red-500'    },
-      { id: 'VEHICLE',       icon: Truck,    label: 'Fahrzeug',   color: 'text-gray-400'   },
-      { id: 'TREE',          icon: TreePine, label: 'Einzelbaum', color: 'text-green-500'  },
-  ] as const;
+      { id: 'HUNTING_STAND', icon: Tent,     tKey: 'poiHuntingStand' as const, color: 'text-yellow-500' },
+      { id: 'LOG_PILE',      icon: Boxes,    tKey: 'poiLogPile' as const,      color: 'text-blue-500'   },
+      { id: 'HUT',           icon: Home,     tKey: 'poiHut' as const,          color: 'text-orange-500' },
+      { id: 'BARRIER',       icon: Ban,      tKey: 'poiBarrier' as const,      color: 'text-red-500'    },
+      { id: 'VEHICLE',       icon: Truck,    tKey: 'poiVehicle' as const,      color: 'text-gray-400'   },
+      { id: 'TREE',          icon: TreePine, tKey: 'poiTree' as const,         color: 'text-green-500'  },
+  ];
 
   const pathTools = [
-      { id: 'ROAD',       icon: Route,  label: 'LKW-Weg',    color: 'text-gray-400'   },
-      { id: 'SKID_TRAIL', icon: Route,  label: 'Rückegasse', color: 'text-yellow-400' },
-      { id: 'WATER',      icon: Waves,  label: 'Gewässer',   color: 'text-blue-400'   },
-  ] as const;
+      { id: 'ROAD',       icon: Route,  tKey: 'pathRoad' as const,      color: 'text-gray-400'   },
+      { id: 'SKID_TRAIL', icon: Route,  tKey: 'pathSkidTrail' as const, color: 'text-yellow-400' },
+      { id: 'WATER',      icon: Waves,  tKey: 'pathWater' as const,     color: 'text-blue-400'   },
+  ];
 
   const handlePrintMap = () => {
     const styleEl = document.createElement('style');
@@ -123,7 +125,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
              
              {/* Tooltip (fährt nach rechts aus) */}
              <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                Auswählen
+                {t('toolSelect')}
             </span>
         </button>
 
@@ -141,7 +143,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
             >
                 <ClipboardList size={20} />
                 <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                    Aufgabe erstellen
+                    {t('toolCreateTask')}
                 </span>
             </button>
 
@@ -159,7 +161,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
 
                 {!showPoiMenu && (
                     <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                        Objekt hinzufügen
+                        {t('toolAddObject')}
                     </span>
                 )}
             </button>
@@ -177,7 +179,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                 <Route size={20} />
                 {!showPathMenu && (
                     <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                        Weg einzeichnen
+                        {t('toolDrawPath')}
                     </span>
                 )}
             </button>
@@ -195,7 +197,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                 <Layers size={20} />
                 {!showPolygonMenu && (
                     <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                        Fläche einzeichnen
+                        {t('toolDrawPolygon')}
                     </span>
                 )}
             </button>
@@ -231,7 +233,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
         >
             <Ruler size={20} />
             <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                Strecke messen
+                {t('toolMeasureDistance')}
             </span>
         </button>
 
@@ -247,7 +249,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
         >
             <SquareDashed size={20} />
             <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                Fläche messen
+                {t('toolMeasureArea')}
             </span>
         </button>
 
@@ -258,7 +260,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
         >
             <Printer size={20} />
             <span className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-white/10 z-50 transition-opacity">
-                Karte drucken / PDF
+                {t('toolPrintMap')}
             </span>
         </button>
 
@@ -279,7 +281,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                     )}
                   >
                       <tool.icon size={16} className={tool.color} />
-                      {tool.label}
+                      {t(tool.tKey)}
                   </button>
               ))}
               <div className="h-px bg-white/10 w-full my-1" />
@@ -293,7 +295,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                 )}
               >
                   <Trees size={16} className="text-emerald-400" />
-                  Wald zeichnen
+                  {t('drawForest')}
               </button>
           </div>
       )}
@@ -313,7 +315,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                     )}
                   >
                       <tool.icon size={16} className={tool.color} />
-                      {tool.label}
+                      {t(tool.tKey)}
                   </button>
               ))}
           </div>
@@ -326,25 +328,25 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
                 onClick={() => handlePolygonSelect('DRAW_PLANTING')}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider w-full text-left hover:bg-white/10 text-gray-400 hover:text-white"
               >
-                <Sprout size={16} className="text-green-400" /> Pflanzfläche
+                <Sprout size={16} className="text-green-400" /> {t('layerPlanting')}
               </button>
               <button
                 onClick={() => handlePolygonSelect('DRAW_HUNTING')}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider w-full text-left hover:bg-white/10 text-gray-400 hover:text-white"
               >
-                <Crosshair size={16} className="text-lime-400" /> Jagdfläche
+                <Crosshair size={16} className="text-lime-400" /> {t('layerHunting')}
               </button>
               <button
                 onClick={() => handlePolygonSelect('DRAW_CALAMITY')}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider w-full text-left hover:bg-white/10 text-gray-400 hover:text-white"
               >
-                <AlertTriangle size={16} className="text-orange-400" /> Kalamität
+                <AlertTriangle size={16} className="text-orange-400" /> {t('layerCalamity')}
               </button>
               <button
                 onClick={() => handlePolygonSelect('DRAW_COMPARTMENT')}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider w-full text-left hover:bg-white/10 text-gray-400 hover:text-white"
               >
-                <Grid3x3 size={16} className="text-blue-400" /> Abteilung
+                <Grid3x3 size={16} className="text-blue-400" /> {t('layerCompartment')}
               </button>
           </div>
       )}
@@ -352,26 +354,26 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
       {/* --- 3. HILFE-BUBBLE (Wenn Modus aktiv ist) --- */}
       {mode === 'DRAW_POI' && activePoi && (
          <div className="ml-14 absolute top-24 bg-blue-600 text-white font-bold px-4 py-3 rounded-xl shadow-2xl text-xs whitespace-nowrap animate-in slide-in-from-left-2 fade-in border border-blue-400 z-50">
-             <p>Klicke auf die Karte,</p>
-             <p className="font-normal opacity-90">um das Objekt zu platzieren.</p>
-             <button 
-                onClick={() => { setMode('VIEW'); setPoi(null); }} 
+             <p>{t('clickOnMap')}</p>
+             <p className="font-normal opacity-90">{t('toPlaceObject')}</p>
+             <button
+                onClick={() => { setMode('VIEW'); setPoi(null); }}
                 className="mt-2 bg-black/20 hover:bg-black/30 w-full py-1 rounded text-[10px] uppercase transition-colors"
              >
-                Abbrechen
+                {t('cancel')}
              </button>
          </div>
       )}
 
       {mode === 'PLACE_TASK' && (
          <div className="ml-14 absolute top-24 bg-cyan-600 text-white font-bold px-4 py-3 rounded-xl shadow-2xl text-xs whitespace-nowrap animate-in slide-in-from-left-2 fade-in border border-cyan-400 z-50">
-             <p>Klicke auf die Karte,</p>
-             <p className="font-normal opacity-90">um eine Aufgabe zu platzieren.</p>
+             <p>{t('clickOnMap')}</p>
+             <p className="font-normal opacity-90">{t('toPlaceTask')}</p>
              <button
                 onClick={() => setMode('VIEW')}
                 className="mt-2 bg-black/20 hover:bg-black/30 w-full py-1 rounded text-[10px] uppercase transition-colors"
              >
-                Abbrechen
+                {t('cancel')}
              </button>
          </div>
       )}
@@ -379,25 +381,25 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
       {mode === 'DRAW_PATH' && activePathType && (
         !lastForestId ? (
           <div className="ml-14 absolute top-36 bg-red-700 text-white font-bold px-4 py-3 rounded-xl shadow-2xl text-xs whitespace-nowrap animate-in slide-in-from-left-2 fade-in border border-red-500 z-50">
-            <p>Zuerst einen Wald</p>
-            <p className="font-normal opacity-90">auf der Karte auswählen.</p>
+            <p>{t('selectForestFirst')}</p>
+            <p className="font-normal opacity-90">{t('onTheMap')}</p>
             <button
               onClick={() => { setMode('VIEW'); setPathType(null); }}
               className="mt-2 bg-black/20 hover:bg-black/30 w-full py-1 rounded text-[10px] uppercase transition-colors"
             >
-              Abbrechen
+              {t('cancel')}
             </button>
           </div>
         ) : (
           <div className="ml-14 absolute top-36 bg-amber-600 text-black font-bold px-4 py-3 rounded-xl shadow-2xl text-xs whitespace-nowrap animate-in slide-in-from-left-2 fade-in border border-amber-400 z-50">
-            <p>Klicke auf die Karte,</p>
-            <p className="font-normal opacity-90">um Punkte zu setzen.</p>
-            <p className="mt-1 text-[10px] opacity-75 uppercase tracking-wider">Doppelklick zum Beenden</p>
+            <p>{t('clickOnMap')}</p>
+            <p className="font-normal opacity-90">{t('toSetPoints')}</p>
+            <p className="mt-1 text-[10px] opacity-75 uppercase tracking-wider">{t('doubleClickFinish')}</p>
             <button
               onClick={() => { setMode('VIEW'); setPathType(null); }}
               className="mt-2 bg-black/10 hover:bg-black/20 w-full py-1 rounded text-[10px] uppercase transition-colors font-bold"
             >
-              Abbrechen
+              {t('cancel')}
             </button>
           </div>
         )
@@ -411,31 +413,31 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
           mode === 'DRAW_COMPARTMENT'? "bg-blue-700 text-white border-blue-500" :
           "bg-orange-700 text-white border-orange-500"
         )}>
-          <p>Klicke auf die Karte,</p>
-          <p className="font-normal opacity-90">um Eckpunkte zu setzen.</p>
+          <p>{t('clickOnMap')}</p>
+          <p className="font-normal opacity-90">{t('toSetCorners')}</p>
           {mode === 'DRAW_COMPARTMENT' && (
-            <p className="font-normal opacity-75 text-[10px] mt-0.5">Nur innerhalb des Waldes</p>
+            <p className="font-normal opacity-75 text-[10px] mt-0.5">{t('onlyInsideForest')}</p>
           )}
-          <p className="mt-1 text-[10px] opacity-75 uppercase tracking-wider">Doppelklick zum Beenden</p>
+          <p className="mt-1 text-[10px] opacity-75 uppercase tracking-wider">{t('doubleClickFinish')}</p>
           <button
             onClick={() => { setMode('VIEW'); setEditingFeature(null); }}
             className="mt-2 bg-black/10 hover:bg-black/20 w-full py-1 rounded text-[10px] uppercase transition-colors font-bold"
           >
-            Abbrechen
+            {t('cancel')}
           </button>
         </div>
       )}
 
       {mode === 'DRAW_FOREST' && (
         <div className="ml-14 absolute top-12 bg-[#10b981] text-black font-bold px-4 py-3 rounded-xl shadow-2xl text-xs whitespace-nowrap animate-in slide-in-from-left-2 fade-in border border-emerald-400 z-50">
-          <p>Klicke auf die Karte,</p>
-          <p className="font-normal opacity-90">um Eckpunkte zu setzen.</p>
-          <p className="mt-1 text-[10px] opacity-75 uppercase tracking-wider">Doppelklick zum Beenden</p>
-          <button 
-                onClick={() => setMode('VIEW')} 
+          <p>{t('clickOnMap')}</p>
+          <p className="font-normal opacity-90">{t('toSetCorners')}</p>
+          <p className="mt-1 text-[10px] opacity-75 uppercase tracking-wider">{t('doubleClickFinish')}</p>
+          <button
+                onClick={() => setMode('VIEW')}
                 className="mt-2 bg-black/10 hover:bg-black/20 w-full py-1 rounded text-[10px] uppercase transition-colors text-black font-bold"
              >
-                Abbrechen
+                {t('cancel')}
              </button>
         </div>
       )}

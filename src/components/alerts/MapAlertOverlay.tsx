@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Wind, X, FlaskConical, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ActiveAlert } from '@/lib/active-alerts';
 import { acknowledgeAlert } from '@/actions/alerts';
+import { useTranslations } from 'next-intl';
 
 const LS_KEY = 'fi_dismissed_alert_groups';
 
@@ -19,11 +20,10 @@ function addDismissed(key: string) {
   localStorage.setItem(LS_KEY, JSON.stringify([...c]));
 }
 
-function windDir(deg?: number | null) {
-  if (deg == null) return '';
-  const d = ['N','NO','O','SO','S','SW','W','NW'];
-  return d[Math.round(deg / 45) % 8];
-}
+const WIND_DIR_SHORT_KEYS = [
+  'windDirN', 'windDirNE', 'windDirE', 'windDirSE',
+  'windDirS', 'windDirSW', 'windDirW', 'windDirNW',
+] as const;
 
 // ── Gruppierung ─────────────────────────────────────────────────────────────
 
@@ -62,6 +62,7 @@ function groupAlerts(alerts: ActiveAlert[]): AlertGroup[] {
 interface Props { alerts: ActiveAlert[]; orgSlug: string; }
 
 export function MapAlertOverlay({ alerts, orgSlug }: Props) {
+  const t = useTranslations('Alerts');
   // Direkt aus localStorage initialisieren → kein Flash beim Remount
   const [dismissed, setDismissed] = useState<Set<string>>(() => getStoredDismissed());
   const [expanded,  setExpanded]  = useState<Set<string>>(() => new Set());
@@ -88,6 +89,11 @@ export function MapAlertOverlay({ alerts, orgSlug }: Props) {
     });
   };
 
+  function windDirShort(deg?: number | null) {
+    if (deg == null) return '';
+    return t(WIND_DIR_SHORT_KEYS[Math.round(deg / 45) % 8]);
+  }
+
   const groups  = groupAlerts(alerts);
   const visible = groups.filter(g => !dismissed.has(g.key));
   if (!visible.length) return null;
@@ -104,10 +110,11 @@ export function MapAlertOverlay({ alerts, orgSlug }: Props) {
         const textSub   = isStorm ? 'text-amber-300'  : 'text-red-300';
         const ping      = isStorm ? 'bg-amber-400'    : 'bg-red-400';
 
-        const title = isStorm ? 'Sturmwarnung' : 'Waldschaden-Warnung';
+        const title = isStorm ? t('stormWarning') : t('forestDamageWarning');
+        const dirStr = group.windDirDeg != null ? ` ${t('fromDirection', { dir: windDirShort(group.windDirDeg) })}` : '';
         const body  = isStorm
-          ? `Windböen bis ${group.maxWindKmh ?? '?'} km/h${group.windDirDeg != null ? ` aus ${windDir(group.windDirDeg)}` : ''}. Bitte auf Windwurfschäden prüfen.`
-          : 'Sentinel-1 Radar zeigt ungewöhnliche Veränderungen. Bitte Bestand begehen und Schäden dokumentieren.';
+          ? t('mapOverlayWindBody', { kmh: group.maxWindKmh ?? '?', dir: dirStr })
+          : t('mapOverlaySarBody');
 
         return (
           <div key={group.key} className={`backdrop-blur-sm rounded-xl shadow-2xl border overflow-hidden ${colorBody} ${colorHead}`}>
@@ -124,13 +131,13 @@ export function MapAlertOverlay({ alerts, orgSlug }: Props) {
               <span className={`text-xs ${textSub}`}>
                 {count === 1
                   ? group.alerts[0].forestName
-                  : `${count} Wälder betroffen`}
+                  : t('forestsAffected', { count })}
               </span>
               {count > 1 && (
                 <button
                   onClick={() => toggleExpand(group.key)}
                   className={`p-0.5 transition ${textSub} hover:text-white`}
-                  title={isExpanded ? 'Liste einklappen' : 'Betroffene Wälder anzeigen'}
+                  title={isExpanded ? t('collapseList') : t('showAffectedForests')}
                 >
                   {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
@@ -138,7 +145,7 @@ export function MapAlertOverlay({ alerts, orgSlug }: Props) {
               <button
                 onClick={() => dismiss(group)}
                 className="text-slate-400 hover:text-white transition p-0.5 shrink-0"
-                title="Warnung schließen"
+                title={t('closeWarning')}
               >
                 <X size={15} />
               </button>

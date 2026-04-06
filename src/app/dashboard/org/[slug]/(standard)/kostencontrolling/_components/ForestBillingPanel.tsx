@@ -9,6 +9,7 @@ import { updateInvoiceStatus, deleteInvoice } from "@/actions/invoices";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
 import type { InvoiceLineItem } from "@/lib/pdf/types";
 import type { ForestBillingData } from "@/actions/reports";
+import { useTranslations } from "next-intl";
 
 function fmtEur(n: number) {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
@@ -18,9 +19,6 @@ function fmtH(mins: number) {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Entwurf", SENT: "Versendet", PAID: "Bezahlt", CANCELLED: "Storniert",
-};
 const STATUS_COLOR: Record<string, string> = {
   DRAFT: "bg-slate-100 text-slate-600",
   SENT:  "bg-blue-100 text-blue-700",
@@ -28,7 +26,12 @@ const STATUS_COLOR: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-600",
 };
 
-const UNITS = ["Pauschal", "Stunden", "Meter", "m²", "Stück", "km", "t", "fm", "rm"];
+// Internal unit keys (stable, used in logic/storage)
+const UNIT_INTERNAL = ["Pauschal", "Stunden", "Meter", "m²", "Stück", "km", "t", "fm", "rm"];
+const UNIT_I18N_KEY: Record<string, string> = {
+  "Pauschal": "unitFlatRate", "Stunden": "unitHours", "Meter": "unitMeters",
+  "m²": "unitSqm", "Stück": "unitPieces", "km": "unitKm", "t": "unitTons", "fm": "unitFm", "rm": "unitRm",
+};
 
 type LineItem = {
   id: string;
@@ -60,15 +63,16 @@ function lineItemAmount(item: LineItem): number {
   return Math.round(item.qty * item.unitPrice * 100) / 100;
 }
 
-function toPreviewItems(items: LineItem[]): InvoiceLineItem[] {
+function toPreviewItems(items: LineItem[], tUnit: (key: string) => string): InvoiceLineItem[] {
   return items.map((item, i) => {
     const amount = lineItemAmount(item);
+    const unitLabel = UNIT_I18N_KEY[item.unit] ? tUnit(UNIT_I18N_KEY[item.unit]) : item.unit;
     const qtyStr = item.unit === "Stunden"
       ? fmtH(Math.round(item.qty * 60))
-      : `${item.qty.toLocaleString("de-DE")} ${item.unit}`;
+      : `${item.qty.toLocaleString("de-DE")} ${unitLabel}`;
     const rateStr = item.unit === "Pauschal"
-      ? "pauschal"
-      : `${item.unitPrice.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €/${item.unit}`;
+      ? tUnit("flatRateLabel")
+      : `${item.unitPrice.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €/${unitLabel}`;
     const desc = item.description
       ? `${item.title}\n${item.description}`
       : item.title;
@@ -108,6 +112,7 @@ function loadDraft(forestId: string, data: ForestBillingData, defaultVatId: stri
 }
 
 export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
+  const t = useTranslations("CostControl");
   const router = useRouter();
   const [showPreview, setPreview]    = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -142,7 +147,7 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
   const vatAmount      = Math.round(netTotal * vatRate * 100) / 100;
   const grossTotal     = Math.round((netTotal + vatAmount) * 100) / 100;
   const allEntryIds    = items.flatMap((i) => i.timeEntryIds);
-  const previewItems   = toPreviewItems(items);
+  const previewItems   = toPreviewItems(items, t);
 
   const now  = new Date();
   const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -160,7 +165,7 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
       {
         id: `custom-${Date.now()}`,
         timeEntryIds: [],
-        title: "Neue Position",
+        title: t("newPosition"),
         description: "",
         unit: "Pauschal",
         qty: 1,
@@ -176,9 +181,9 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
   // ── Create invoice ─────────────────────────────────────────────────────────
 
   function handleCreate() {
-    if (items.length === 0) { toast.error("Mindestens eine Position erforderlich."); return; }
+    if (items.length === 0) { toast.error(t("minOnePosition")); return; }
     if (!data.ownerId) {
-      toast.error("Kein Waldbesitzer dem Wald zugeordnet. Bitte in den Waldeinstellungen hinterlegen.");
+      toast.error(t("noOwnerError"));
       return;
     }
     startTransition(async () => {
@@ -196,15 +201,19 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
       if (result.success) {
         try { localStorage.removeItem(DRAFT_KEY(data.forestId)); } catch { /* ignore */ }
         setSubmitted(true);
-        toast.success("Rechnung erfolgreich erstellt");
+        toast.success(t("invoiceCreatedSuccess"));
         router.refresh();
       } else {
-        toast.error(result.error ?? "Fehler");
+        toast.error(result.error ?? t("errorGeneric"));
       }
     });
   }
 
   // ── Invoice history row ────────────────────────────────────────────────────
+
+  const STATUS_LABEL: Record<string, string> = {
+    DRAFT: t("statusDraft"), SENT: t("statusSent"), PAID: t("statusPaid"), CANCELLED: t("statusCancelled"),
+  };
 
   function InvoiceRow({ inv }: { inv: ForestBillingData["invoices"][0] }) {
     const [busy, run] = useTransition();
@@ -226,27 +235,27 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
         <div className="flex items-center gap-1 shrink-0">
           {href && (
             <a href={href} download rel="noreferrer"
-              className="p-1.5 text-slate-400 hover:text-green-700 hover:bg-green-50 rounded transition" title="PDF herunterladen">
+              className="p-1.5 text-slate-400 hover:text-green-700 hover:bg-green-50 rounded transition" title={t("downloadPdf")}>
               <Download size={13} />
             </a>
           )}
           {inv.status === "DRAFT" && (
-            <button disabled={busy} title="Als versendet markieren"
-              onClick={() => run(async () => { try { await updateInvoiceStatus(inv.id, "SENT"); router.refresh(); } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Fehler"); } })}
+            <button disabled={busy} title={t("markAsSent")}
+              onClick={() => run(async () => { try { await updateInvoiceStatus(inv.id, "SENT"); router.refresh(); } catch (e: unknown) { toast.error(e instanceof Error ? e.message : t("errorGeneric")); } })}
               className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition">
               <Check size={13} />
             </button>
           )}
           {inv.status === "SENT" && (
-            <button disabled={busy} title="Als bezahlt markieren"
-              onClick={() => run(async () => { try { await updateInvoiceStatus(inv.id, "PAID"); router.refresh(); } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Fehler"); } })}
+            <button disabled={busy} title={t("markAsPaid")}
+              onClick={() => run(async () => { try { await updateInvoiceStatus(inv.id, "PAID"); router.refresh(); } catch (e: unknown) { toast.error(e instanceof Error ? e.message : t("errorGeneric")); } })}
               className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition">
               <CheckCircle size={13} />
             </button>
           )}
           {inv.status === "DRAFT" && (
-            <button disabled={busy} title="Löschen"
-              onClick={() => { if (!confirm("Rechnung löschen?")) return; run(async () => { try { await deleteInvoice(inv.id); router.refresh(); } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Fehler"); } }); }}
+            <button disabled={busy} title={t("deleteLabel")}
+              onClick={() => { if (!confirm(t("confirmDeleteInvoice"))) return; run(async () => { try { await deleteInvoice(inv.id); router.refresh(); } catch (e: unknown) { toast.error(e instanceof Error ? e.message : t("errorGeneric")); } }); }}
               className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition">
               <Trash2 size={13} />
             </button>
@@ -265,20 +274,20 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
         {/* Header */}
         <div className="px-6 py-4 bg-green-50 border-b border-green-200 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h3 className="font-bold text-green-900 text-base">Abrechnung: {data.forestName}</h3>
+            <h3 className="font-bold text-green-900 text-base">{t("billingTitle", { name: data.forestName })}</h3>
             <p className="text-xs text-green-700 mt-0.5">
               {data.ownerName
                 ? `${data.ownerName}${data.ownerEmail ? ` · ${data.ownerEmail}` : ""}`
-                : <span className="text-amber-600">Kein Waldbesitzer zugeordnet</span>}
+                : <span className="text-amber-600">{t("noOwnerAssigned")}</span>}
             </p>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <div>
-              <p className="text-xs text-amber-600 font-semibold uppercase tracking-wide">Abrechenbar</p>
+              <p className="text-xs text-amber-600 font-semibold uppercase tracking-wide">{t("billableLabel")}</p>
               <p className="font-bold text-amber-800">{fmtH(data.billableMinutes)} · {fmtEur(data.billableAmount)}</p>
             </div>
             <div>
-              <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wide">Abgerechnet</p>
+              <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wide">{t("billedLabel")}</p>
               <p className="font-bold text-emerald-800">{fmtH(data.billedMinutes)} · {fmtEur(data.billedAmount)}</p>
             </div>
           </div>
@@ -290,11 +299,11 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
           <div>
             {/* Column headers */}
             <div className="grid grid-cols-[2fr_2fr_120px_80px_110px_36px] gap-2 px-2 pb-1.5 border-b border-slate-200 mb-1">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Titel</span>
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Beschreibung</span>
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Einheit</span>
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide text-right">Menge</span>
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide text-right">Preis/Einh.</span>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{t("colTitle")}</span>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{t("colDescription")}</span>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{t("colUnit")}</span>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide text-right">{t("colQty")}</span>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide text-right">{t("colUnitPrice")}</span>
               <span />
             </div>
 
@@ -309,14 +318,14 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
                     type="text"
                     value={item.title}
                     onChange={(e) => update(item.id, "title", e.target.value)}
-                    placeholder="Titel"
+                    placeholder={t("titlePlaceholder")}
                     className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 bg-white"
                   />
                   <input
                     type="text"
                     value={item.description}
                     onChange={(e) => update(item.id, "description", e.target.value)}
-                    placeholder="Beschreibung (optional)"
+                    placeholder={t("descriptionOptionalPlaceholder")}
                     className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 bg-white text-slate-500"
                   />
                   <select
@@ -324,7 +333,7 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
                     onChange={(e) => update(item.id, "unit", e.target.value)}
                     className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 bg-white"
                   >
-                    {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                    {UNIT_INTERNAL.map((u) => <option key={u} value={u}>{UNIT_I18N_KEY[u] ? t(UNIT_I18N_KEY[u]) : u}</option>)}
                   </select>
                   <input
                     type="number"
@@ -345,7 +354,7 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
                   <button
                     onClick={() => removeItem(item.id)}
                     className="flex items-center justify-center w-8 h-8 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition opacity-0 group-hover:opacity-100"
-                    title="Position entfernen"
+                    title={t("removePosition")}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -359,20 +368,20 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
                 onClick={addItem}
                 className="flex items-center gap-1.5 text-sm text-green-700 hover:text-green-800 hover:bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 hover:border-green-300 transition shrink-0"
               >
-                <Plus size={14} /> Position hinzufügen
+                <Plus size={14} /> {t("addPosition")}
               </button>
 
               {/* VAT + totals */}
               <div className="flex flex-col items-end gap-1.5 text-sm">
                 {/* VAT selector */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">Mehrwertsteuer:</span>
+                  <span className="text-xs text-slate-500">{t("vatLabel")}</span>
                   <select
                     value={selectedVatId}
                     onChange={(e) => setSelectedVatId(e.target.value)}
                     className="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-green-500 bg-white"
                   >
-                    <option value="__none__">Keine MwSt. (Kleinunternehmer)</option>
+                    <option value="__none__">{t("noVat")}</option>
                     {vatRates.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.label} – {r.countryName}
@@ -383,22 +392,22 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
                 {/* Breakdown */}
                 <div className="w-64 space-y-0.5 text-right">
                   <div className="flex justify-between text-slate-500">
-                    <span>Nettobetrag</span>
+                    <span>{t("netAmount")}</span>
                     <span className="tabular-nums">{fmtEur(netTotal)}</span>
                   </div>
                   {selectedVat ? (
                     <div className="flex justify-between text-slate-500">
-                      <span>zzgl. {selectedVat.rate.toLocaleString("de-DE", { minimumFractionDigits: 1 })} % MwSt.</span>
+                      <span>{t("plusVat", { rate: selectedVat.rate.toLocaleString("de-DE", { minimumFractionDigits: 1 }) })}</span>
                       <span className="tabular-nums">{fmtEur(vatAmount)}</span>
                     </div>
                   ) : (
                     <div className="flex justify-between text-slate-400 text-xs">
-                      <span>Gem. § 19 UStG keine MwSt.</span>
+                      <span>{t("noVatNote")}</span>
                       <span>–</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-0.5 mt-0.5 text-base">
-                    <span>Gesamtbetrag</span>
+                    <span>{t("grossTotal")}</span>
                     <span className="tabular-nums">{fmtEur(grossTotal)}</span>
                   </div>
                 </div>
@@ -410,7 +419,7 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
           <div className="flex flex-wrap items-end gap-3 pt-3 border-t border-slate-200">
             <div className="flex-1 min-w-[180px]">
               <p className="text-xs text-slate-400">
-                Die Rechnungsnummer wird automatisch und fortlaufend vergeben (RE-{new Date().getFullYear()}-XXXX).
+                {t("invoiceNumberNote", { year: String(new Date().getFullYear()) })}
               </p>
             </div>
             <button
@@ -418,7 +427,7 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
               disabled={items.length === 0}
               className="flex items-center gap-2 px-4 py-2 border-2 border-green-600 text-green-700 rounded-xl font-semibold text-sm hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              <Eye size={15} /> Vorschau
+              <Eye size={15} /> {t("preview")}
             </button>
             <button
               onClick={handleCreate}
@@ -426,26 +435,26 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
               className="flex items-center gap-2 px-5 py-2 bg-green-700 text-white rounded-xl font-semibold text-sm hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {isPending
-                ? <><Loader2 size={15} className="animate-spin" /> Wird erstellt…</>
+                ? <><Loader2 size={15} className="animate-spin" /> {t("creatingInvoice")}</>
                 : submitted
-                  ? <><CheckCircle size={15} /> Rechnung erstellt</>
-                  : <><FileText size={15} /> Rechnung erstellen</>}
+                  ? <><CheckCircle size={15} /> {t("invoiceCreated")}</>
+                  : <><FileText size={15} /> {t("createInvoice")}</>}
             </button>
             {!data.ownerId && (
               <p className="text-xs text-amber-600 w-full">
-                Kein Waldbesitzer zugeordnet – Rechnungserstellung nicht möglich.
+                {t("noOwnerHint")}
               </p>
             )}
             <button
               onClick={() => {
-                if (!confirm("Entwurf zurücksetzen? Alle manuellen Änderungen gehen verloren.")) return;
+                if (!confirm(t("resetDraftConfirm"))) return;
                 try { localStorage.removeItem(DRAFT_KEY(data.forestId)); } catch { /* ignore */ }
                 setItems(buildInitialItems(data));
                 setSelectedVatId(defaultVatId);
               }}
               className="text-xs text-slate-400 hover:text-slate-600 transition ml-auto"
             >
-              Entwurf zurücksetzen
+              {t("resetDraft")}
             </button>
           </div>
         </div>
@@ -455,7 +464,7 @@ export function ForestBillingPanel({ data, orgId, vatRates }: Props) {
           <div className="border-t border-slate-200">
             <div className="px-5 py-2.5 bg-slate-50 border-b border-slate-100">
               <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Rechnungshistorie ({data.invoices.length})
+                {t("invoiceHistory", { count: data.invoices.length })}
               </h4>
             </div>
             {data.invoices.map((inv) => <InvoiceRow key={inv.id} inv={inv} />)}

@@ -14,6 +14,7 @@ import {
   BarChart2, GitCommitHorizontal, Grid3X3, Activity, LineChart as LineChartIcon,
   Flame, Snowflake, Zap, Info, CloudRain, Thermometer, Radio, Wind,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   type Snapshot, type WeatherMonth,
   buildRaceData, buildDeltaData, buildHeatmapData, buildRollingData,
@@ -24,7 +25,8 @@ import {
 // Konstanten
 // ---------------------------------------------------------------------------
 
-const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+// MONTHS resolved at render time via t('months').split(',')
+const MONTHS_FALLBACK = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const YEAR_COLORS: Record<number, string> = {
   2023: '#94a3b8',
@@ -37,14 +39,15 @@ function yearColor(yr: number) { return YEAR_COLORS[yr] ?? '#64748b'; }
 
 type ChartType = 'compare' | 'race' | 'delta' | 'heatmap' | 'rolling' | 'klima' | 'sar';
 
-const CHART_TABS: { id: ChartType; label: string; icon: React.ElementType; title: string }[] = [
-  { id: 'compare', label: 'Jahresvergleich', icon: LineChartIcon,        title: 'Gleicher Monat, verschiedene Jahre' },
-  { id: 'race',    label: 'Kumuliert',       icon: Activity,             title: '"The Race" — Wer führt aktuell?' },
-  { id: 'delta',   label: 'Abweichung',      icon: BarChart2,            title: 'Abweichung zum Vorjahr / 3-Jahres-Mittel' },
-  { id: 'heatmap', label: 'Heatmap',         icon: Grid3X3,              title: 'Musterverschiebungen erkennen' },
-  { id: 'rolling', label: 'Trendlinie',      icon: GitCommitHorizontal,  title: 'Gleitender 12-Monats-Durchschnitt' },
-  { id: 'klima',   label: 'Klima',           icon: CloudRain,            title: 'NDVI-Korrelation mit Temperatur & Niederschlag' },
-  { id: 'sar',     label: 'SAR (S1)',        icon: Radio,                title: 'Sentinel-1 Radarrückstreuung — wolkenunabhängig' },
+// CHART_TABS: labels/titles resolved via t() at render time
+const CHART_TAB_DEFS: { id: ChartType; labelKey: string; icon: React.ElementType; titleKey: string }[] = [
+  { id: 'compare', labelKey: 'tabCompare', icon: LineChartIcon,        titleKey: 'titleCompare' },
+  { id: 'race',    labelKey: 'tabRace',    icon: Activity,             titleKey: 'titleRace' },
+  { id: 'delta',   labelKey: 'tabDelta',   icon: BarChart2,            titleKey: 'titleDelta' },
+  { id: 'heatmap', labelKey: 'tabHeatmap', icon: Grid3X3,              titleKey: 'titleHeatmap' },
+  { id: 'rolling', labelKey: 'tabRolling', icon: GitCommitHorizontal,  titleKey: 'titleRolling' },
+  { id: 'klima',   labelKey: 'tabClima',   icon: CloudRain,            titleKey: 'titleClima' },
+  { id: 'sar',     labelKey: 'tabSar',     icon: Radio,                titleKey: 'titleSar' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -108,11 +111,12 @@ function NdviTooltip({ active, payload, label }: any) {
 // ---------------------------------------------------------------------------
 
 function InsightsPanel({ snapshots }: { snapshots: Snapshot[] }) {
+  const t = useTranslations('Biomass');
   const ins = useMemo(() => computeInsights(snapshots), [snapshots]);
   const currentYear = new Date().getFullYear();
 
   if (snapshots.filter(s => s.meanNdvi != null).length < 4) {
-    return <p className="text-xs text-slate-400 italic">Zu wenig Datenpunkte für Insights.</p>;
+    return <p className="text-xs text-slate-400 italic">{t('tooFewData')}</p>;
   }
 
   return (
@@ -122,24 +126,24 @@ function InsightsPanel({ snapshots }: { snapshots: Snapshot[] }) {
 
         {/* YoY Sommer */}
         <InsightCard
-          label={`Sommer-NDVI ${currentYear} vs. ${currentYear-1}`}
+          label={t('summerNdviLabel', { year: currentYear, prevYear: currentYear-1 })}
           value={ins.currentYearSummer != null ? ins.currentYearSummer.toFixed(3) : '–'}
           badge={<GrowthBadge pct={ins.yoySummerGrowth} />}
-          sub={ins.prevYearSummer != null ? `Vorjahr: ${ins.prevYearSummer.toFixed(3)}` : undefined}
+          sub={ins.prevYearSummer != null ? t('prevYear', { value: ins.prevYearSummer.toFixed(3) }) : undefined}
           icon={ins.yoySummerGrowth != null && ins.yoySummerGrowth < -10 ? <AlertTriangle size={14} className="text-red-500" /> : undefined}
         />
 
         {/* CAGR */}
         <InsightCard
-          label={`Ø jährl. Veränderung (${ins.cagrYears} J.)`}
+          label={t('cagrLabel', { years: ins.cagrYears })}
           value={ins.cagrSummer != null ? `${ins.cagrSummer > 0 ? '+' : ''}${ins.cagrSummer}%` : '–'}
-          sub="CAGR Sommer-NDVI"
+          sub={t('cagrSub')}
           valueColor={ins.cagrSummer == null ? undefined : ins.cagrSummer > 0 ? 'text-emerald-600' : 'text-red-500'}
         />
 
         {/* Peak-Monat */}
         <InsightCard
-          label="Stärkster Vegetationsmonat"
+          label={t('peakMonthLabel')}
           value={ins.peakMonth}
           sub={(() => {
             const peak = ins.seasonality.find(s => s.isBest);
@@ -280,6 +284,8 @@ function GrowthBadge({ pct }: { pct: number | null }) {
 // ---------------------------------------------------------------------------
 
 function HeatmapChart({ snapshots }: { snapshots: Snapshot[] }) {
+  const t = useTranslations('Biomass');
+  const MONTHS = t('months').split(',');
   const { cells, years, vmin, vmax } = useMemo(() => buildHeatmapData(snapshots), [snapshots]);
 
   function ndviToColor(norm: number | null): string {
@@ -329,7 +335,7 @@ function HeatmapChart({ snapshots }: { snapshots: Snapshot[] }) {
                         minWidth: '36px',
                         opacity: cell?.value == null ? 0.3 : 1,
                       }}
-                      title={cell?.value != null ? `${MONTHS[mi]} ${yr}: NDVI ${cell.value}` : 'Kein Wert'}
+                      title={cell?.value != null ? `${MONTHS[mi]} ${yr}: NDVI ${cell.value}` : t('noValue')}
                     >
                       {cell?.value != null ? cell.value.toFixed(2) : '–'}
                     </div>
@@ -357,6 +363,7 @@ function HeatmapChart({ snapshots }: { snapshots: Snapshot[] }) {
 // ---------------------------------------------------------------------------
 
 function KlimaChart({ snapshots, weatherMonths }: { snapshots: Snapshot[]; weatherMonths: WeatherMonth[] }) {
+  const t = useTranslations('Biomass');
   const data = useMemo(() => buildKlimaData(snapshots, weatherMonths), [snapshots, weatherMonths]);
   const hasWeather = data.some(d => d.temp != null || d.precip != null);
 
@@ -364,7 +371,7 @@ function KlimaChart({ snapshots, weatherMonths }: { snapshots: Snapshot[]; weath
     return (
       <div className="flex flex-col items-center justify-center py-10 gap-3 text-slate-400">
         <CloudRain size={28} className="text-slate-200" />
-        <p className="text-sm">Noch keine historischen Wetterdaten vorhanden.</p>
+        <p className="text-sm">{t('noWeatherData')}</p>
         <p className="text-xs text-slate-300">
           Cron ausführen: <code className="bg-slate-50 px-1.5 py-0.5 rounded text-slate-500">GET /api/cron/weather?days=365</code>
         </p>
@@ -528,6 +535,7 @@ function SarChart({ s1Snapshots, snapshots, stormEvents = [] }: {
   snapshots:   Snapshot[];
   stormEvents?: StormEvent[];
 }) {
+  const t = useTranslations('Biomass');
   const valid = s1Snapshots.filter(s => s.vhMeanDb != null);
 
   if (valid.length === 0) {
@@ -842,6 +850,9 @@ function SarChart({ s1Snapshots, snapshots, stormEvents = [] }: {
 // ---------------------------------------------------------------------------
 
 function ForestCard({ forest, autoSar }: { forest: ForestData; autoSar?: boolean }) {
+  const t = useTranslations('Biomass');
+  const MONTHS = t('months').split(',');
+  const CHART_TABS = CHART_TAB_DEFS.map(d => ({ ...d, label: t(d.labelKey as any), title: t(d.titleKey as any) }));
   const [chartType, setChartType] = useState<ChartType>(autoSar ? 'sar' : 'compare');
   const [deltaMode, setDeltaMode] = useState<'prev_year' | 'avg3'>('prev_year');
   const [showInsights, setShowInsights] = useState(true);

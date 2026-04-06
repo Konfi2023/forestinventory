@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
 import { createInvoice } from "@/actions/invoices";
 import type { OwnerRow } from "./OwnerCostTable";
+import { useTranslations } from "next-intl";
 
 interface Props {
   organizationId: string;
@@ -17,6 +18,7 @@ function fmtEur(n: number) {
 }
 
 export function CreateInvoicePanel({ organizationId, ownerRows }: Props) {
+  const t = useTranslations("CostControl");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedOwnerId, setSelectedOwnerId] = useState("");
@@ -61,19 +63,19 @@ export function CreateInvoicePanel({ organizationId, ownerRows }: Props) {
 
   function submit() {
     if (!selectedOwnerId || selectedEntryIds.size === 0) {
-      toast.error("Bitte Waldbesitzer und mindestens einen Eintrag wählen");
+      toast.error(t("selectOwnerAndEntry"));
       return;
     }
     startTransition(async () => {
       try {
         const inv = await createInvoice(organizationId, selectedOwnerId, [...selectedEntryIds], selectedTotal, note || undefined);
-        toast.success(`Rechnung ${inv.invoiceNumber} erstellt`);
+        toast.success(t("invoiceCreatedNum", { number: inv.invoiceNumber }));
         setSelectedOwnerId("");
         setSelectedEntryIds(new Set());
         setNote("");
         router.refresh();
       } catch (e: unknown) {
-        toast.error(e instanceof Error ? e.message : "Fehler");
+        toast.error(e instanceof Error ? e.message : t("errorGeneric"));
       }
     });
   }
@@ -82,22 +84,22 @@ export function CreateInvoicePanel({ organizationId, ownerRows }: Props) {
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden h-fit">
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
         <Plus size={16} className="text-slate-400" />
-        <h3 className="font-semibold text-slate-800 text-sm">Rechnung erstellen</h3>
+        <h3 className="font-semibold text-slate-800 text-sm">{t("createInvoiceTitle")}</h3>
       </div>
 
       <div className="p-4 space-y-4">
         {/* Waldbesitzer wählen */}
         <div>
-          <label className="text-xs font-medium text-slate-500 block mb-1.5">Waldbesitzer</label>
+          <label className="text-xs font-medium text-slate-500 block mb-1.5">{t("selectOwner")}</label>
           <select
             value={selectedOwnerId}
             onChange={e => changeOwner(e.target.value)}
             className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-slate-400"
           >
-            <option value="">Waldbesitzer wählen …</option>
+            <option value="">{t("selectOwnerPlaceholder")}</option>
             {unbilledOwners.map(r => (
               <option key={r.ownerId} value={r.ownerId}>
-                {r.ownerName} ({r.forests.flatMap(f => f.entries.filter(e => !e.billed)).length} Einträge)
+                {r.ownerName} ({t("entriesCount", { count: r.forests.flatMap(f => f.entries.filter(e => !e.billed)).length })})
               </option>
             ))}
           </select>
@@ -107,10 +109,10 @@ export function CreateInvoicePanel({ organizationId, ownerRows }: Props) {
         {selectedOwner && allUnbilledEntries.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium text-slate-500">Einträge ({allUnbilledEntries.length})</label>
+              <label className="text-xs font-medium text-slate-500">{t("entriesLabel", { count: allUnbilledEntries.length })}</label>
               <div className="flex gap-2 text-[11px] text-slate-400">
-                <button onClick={selectAll} className="hover:text-slate-600">Alle</button>
-                <button onClick={selectNone} className="hover:text-slate-600">Keine</button>
+                <button onClick={selectAll} className="hover:text-slate-600">{t("selectAll")}</button>
+                <button onClick={selectNone} className="hover:text-slate-600">{t("selectNone")}</button>
               </div>
             </div>
             <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-48 overflow-y-auto">
@@ -136,13 +138,13 @@ export function CreateInvoicePanel({ organizationId, ownerRows }: Props) {
         {/* Notiz */}
         {selectedOwnerId && (
           <div>
-            <label className="text-xs font-medium text-slate-500 block mb-1.5">Notiz (optional)</label>
+            <label className="text-xs font-medium text-slate-500 block mb-1.5">{t("noteOptional")}</label>
             <textarea
               value={note}
               onChange={e => setNote(e.target.value)}
               rows={2}
               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-slate-400 resize-none"
-              placeholder="z.B. Waldpflegearbeiten März 2025"
+              placeholder={t("notePlaceholder")}
             />
           </div>
         )}
@@ -150,7 +152,7 @@ export function CreateInvoicePanel({ organizationId, ownerRows }: Props) {
         {/* Summe + Button */}
         {selectedEntryIds.size > 0 && (
           <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between">
-            <span className="text-xs text-slate-500">{selectedEntryIds.size} Einträge</span>
+            <span className="text-xs text-slate-500">{t("entriesCount", { count: selectedEntryIds.size })}</span>
             <span className="text-sm font-bold text-slate-900">{fmtEur(selectedTotal)}</span>
           </div>
         )}
@@ -161,7 +163,7 @@ export function CreateInvoicePanel({ organizationId, ownerRows }: Props) {
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FileText size={15} />
-          {isPending ? "Wird erstellt …" : "Rechnung erstellen"}
+          {isPending ? t("creating") : t("createInvoice")}
         </button>
       </div>
     </div>

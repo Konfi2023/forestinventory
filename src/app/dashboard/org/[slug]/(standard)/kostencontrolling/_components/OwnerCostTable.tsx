@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Trees } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type EntryRow = {
   id: string;
@@ -29,9 +30,9 @@ export type OwnerRow = {
   unbilledCost: number;
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  MANUAL_WORK: "Handarbeit", MACHINE_WORK: "Maschine",
-  PLANNING: "Planung", TRAVEL: "Anfahrt", INSPECTION: "Begehung",
+const CATEGORY_I18N_KEYS: Record<string, string> = {
+  MANUAL_WORK: "categoryManual", MACHINE_WORK: "categoryMachine",
+  PLANNING: "categoryPlanning", TRAVEL: "categoryTravel", INSPECTION: "categoryInspection",
 };
 
 function fmtH(mins: number) {
@@ -44,6 +45,7 @@ function fmtEur(n: number) {
 }
 
 export function OwnerCostTable({ ownerRows }: { ownerRows: OwnerRow[] }) {
+  const t = useTranslations("CostControl");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   function toggle(id: string) {
@@ -57,7 +59,7 @@ export function OwnerCostTable({ ownerRows }: { ownerRows: OwnerRow[] }) {
   if (ownerRows.length === 0) {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">
-        Keine Zeiteinträge im gewählten Zeitraum
+        {t("noTimeEntries")}
       </div>
     );
   }
@@ -67,15 +69,15 @@ export function OwnerCostTable({ ownerRows }: { ownerRows: OwnerRow[] }) {
       {/* Header */}
       <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
         <Trees size={16} className="text-slate-400" />
-        <h3 className="font-semibold text-slate-800 text-sm">Kosten nach Waldbesitzer</h3>
+        <h3 className="font-semibold text-slate-800 text-sm">{t("costsByOwner")}</h3>
       </div>
 
       {/* Spaltenköpfe */}
       <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-2 bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500 uppercase tracking-wide">
-        <span>Waldbesitzer</span>
-        <span className="text-right">Stunden</span>
-        <span className="text-right">Nicht abgr.</span>
-        <span className="text-right">Gesamt</span>
+        <span>{t("colOwner")}</span>
+        <span className="text-right">{t("colHours")}</span>
+        <span className="text-right">{t("colUnbilled")}</span>
+        <span className="text-right">{t("colTotal")}</span>
       </div>
 
       <div className="divide-y divide-slate-50">
@@ -91,7 +93,7 @@ export function OwnerCostTable({ ownerRows }: { ownerRows: OwnerRow[] }) {
                 <span className="flex items-center gap-2">
                   {isOpen ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
                   <span className="font-medium text-slate-800 text-sm">{row.ownerName}</span>
-                  <span className="text-xs text-slate-400">{row.forests.length} Wald{row.forests.length !== 1 ? "·ungen" : ""}</span>
+                  <span className="text-xs text-slate-400">{row.forests.length !== 1 ? t("forestCountPlural", { count: row.forests.length }) : t("forestCount", { count: row.forests.length })}</span>
                 </span>
                 <span className="text-sm text-slate-600 text-right font-mono">{fmtH(row.totalMinutes)}</span>
                 <span className={`text-sm font-medium text-right font-mono ${row.unbilledCost > 0 ? "text-amber-700" : "text-slate-400"}`}>
@@ -113,11 +115,11 @@ export function OwnerCostTable({ ownerRows }: { ownerRows: OwnerRow[] }) {
                               {new Date(e.startTime).toLocaleDateString("de-DE", { day: "2-digit", month: "short" })}
                             </span>
                             <span className="font-mono w-12 text-right">{fmtH(e.durationMinutes ?? 0)}</span>
-                            <span className="text-slate-400">{CATEGORY_LABELS[e.category] ?? e.category}</span>
+                            <span className="text-slate-400">{CATEGORY_I18N_KEYS[e.category] ? t(CATEGORY_I18N_KEYS[e.category]) : e.category}</span>
                             <span className="text-slate-400">{e.userName}</span>
                             <span className="font-mono ml-auto">{fmtEur(e.cost)}</span>
                             {e.billed && (
-                              <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-medium">abgr.</span>
+                              <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-medium">{t("billedShort")}</span>
                             )}
                           </div>
                         ))}

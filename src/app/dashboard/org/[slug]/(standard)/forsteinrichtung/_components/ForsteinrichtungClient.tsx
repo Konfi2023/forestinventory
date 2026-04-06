@@ -18,6 +18,7 @@ import {
 } from '@/lib/yield-tables';
 import { calcPlotMetrics, averagePlotResults, validateStandMetrics, type PlotTree as MensPlotTree } from '@/lib/forest-mensuration';
 import { importCompartmentsFromAI } from '@/actions/polygons';
+import { useTranslations } from 'next-intl';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -144,18 +145,19 @@ const FORM_FACTORS: Record<string, number> = {
 };
 
 // ── Form Konstanten ───────────────────────────────────────────────────────────
-const EXPOSITION_OPTIONS  = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW', 'eben'];
-const SLOPE_OPTIONS       = ['eben', 'schwach (<15°)', 'mittel (15–25°)', 'steil (25–35°)', 'sehr steil (>35°)'];
-const DEVELOP_OPTIONS     = ['Blöße', 'Verjüngung', 'Dickung', 'Stangenholz', 'Baumholz I', 'Baumholz II', 'Baumholz III', 'Altholz', 'Plenterwald'];
-const MIXING_OPTIONS      = ['rein', 'truppweise', 'horst', 'gruppen', 'einzeln', 'gemischt'];
-const STRUCTURE_OPTIONS   = ['einschichtig', 'zweischichtig', 'mehrschichtig', 'plenterartig'];
-const PRODUCTIVITY_OPTIONS = ['sehr gering', 'gering', 'mittel', 'hoch', 'sehr hoch'];
-const MAINTENANCE_OPTIONS = ['vernachlässigt', 'mangelhaft', 'ausreichend', 'gut', 'sehr gut'];
-const ACCESSIBILITY_OPTIONS = ['nicht befahrbar', 'bedingt befahrbar', 'befahrbar', 'gut befahrbar'];
-const NUTRIENT_OPTIONS    = ['sehr arm', 'arm', 'mäßig', 'mittel', 'reich', 'sehr reich'];
-const WATER_OPTIONS       = ['trocken', 'mäßig trocken', 'frisch', 'mäßig feucht', 'feucht', 'nass', 'staunass'];
-const FOREST_FUNCTION_OPTIONS = ['Nutzwald', 'Schutzwald (Boden)', 'Schutzwald (Wasser)', 'Schutzwald (Lawinen)', 'Erholungswald', 'Biotopschutzwald', 'Klimaschutzwald', 'Sonstiger Schutzwald'];
-const MEASURE_TYPE_OPTIONS = ['Endnutzung', 'Vornutzung', 'Durchforstung', 'Pflanzung', 'Naturverjüngung', 'Jungbestandspflege', 'Wertästung', 'Waldschutz', 'Sonstiges'];
+// Translation-key arrays — resolved at render time via t(key) from ForestSetup namespace
+const EXPOSITION_TKEYS  = ['expN', 'expNE', 'expE', 'expSE', 'expS', 'expSW', 'expW', 'expNW', 'expositionFlat'] as const;
+const SLOPE_TKEYS       = ['slopeFlat', 'slopeWeak', 'slopeMedium', 'slopeSteep', 'slopeVerySteep'] as const;
+const DEVELOP_TKEYS     = ['devClearing', 'devRegeneration', 'devThicket', 'devPoleStage', 'devTimber1', 'devTimber2', 'devTimber3', 'devMatureStand', 'devSelectionForest'] as const;
+const MIXING_TKEYS      = ['mixPure', 'mixGroupwise', 'mixCluster', 'mixGroups', 'mixSingle', 'mixMixed'] as const;
+const STRUCTURE_TKEYS   = ['structSingleLayer', 'structTwoLayer', 'structMultiLayer', 'structSelectionType'] as const;
+const PRODUCTIVITY_TKEYS = ['prodVeryLow', 'prodLow', 'prodMedium', 'prodHigh', 'prodVeryHigh'] as const;
+const MAINTENANCE_TKEYS = ['maintNeglected', 'maintPoor', 'maintSufficient', 'maintGood', 'maintVeryGood'] as const;
+const ACCESSIBILITY_TKEYS = ['accessNone', 'accessConditional', 'accessPassable', 'accessGood'] as const;
+const NUTRIENT_TKEYS    = ['nutrientVeryPoor', 'nutrientPoor', 'nutrientModerate', 'nutrientMedium', 'nutrientRich', 'nutrientVeryRich'] as const;
+const WATER_TKEYS       = ['waterDry', 'waterModDry', 'waterFresh', 'waterModMoist', 'waterMoist', 'waterWet', 'waterWaterlogged'] as const;
+const FOREST_FUNCTION_TKEYS = ['funcTimber', 'funcProtSoil', 'funcProtWater', 'funcProtAvalanche', 'funcRecreation', 'funcBiotope', 'funcClimate', 'funcProtOther'] as const;
+const MEASURE_TYPE_TKEYS = ['measFinalFelling', 'measPrecommercial', 'measThinning', 'measPlanting', 'measNatRegen', 'measYoungStand', 'measPruning', 'measProtection', 'measOther'] as const;
 
 // ── Inventur-Berechnungen ─────────────────────────────────────────────────────
 
@@ -238,15 +240,15 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 function SField({ label, value, onChange, options, placeholder }: {
-  label: string; value: string; onChange: (v: string) => void; options: string[]; placeholder?: string;
+  label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; placeholder?: string;
 }) {
   return (
     <div>
       <Label>{label}</Label>
       <select value={value} onChange={e => onChange(e.target.value)}
         className="w-full border border-slate-200 rounded-md text-sm px-3 py-2 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        <option value="">{placeholder ?? '– wählen –'}</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
+        <option value="">{placeholder}</option>
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
   );
@@ -300,13 +302,14 @@ function SectionFull({ title, children }: { title: string; children: React.React
 
 // ── Species Picker ────────────────────────────────────────────────────────────
 function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; onClose: () => void }) {
+  const t = useTranslations('ForestSetup');
   const [query, setQuery] = useState('');
   const filtered = TREE_SPECIES.filter(s => s.label.toLowerCase().includes(query.toLowerCase()));
   return (
     <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
         <Search size={12} className="text-slate-400 shrink-0" />
-        <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Baumart suchen…" autoFocus
+        <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t('searchSpecies')} autoFocus
           className="text-sm text-slate-800 outline-none flex-1" />
         <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={12} /></button>
       </div>
@@ -318,7 +321,7 @@ function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; 
             {s.label}
           </button>
         ))}
-        {filtered.length === 0 && <p className="text-sm text-slate-400 px-3 py-2">Keine Treffer</p>}
+        {filtered.length === 0 && <p className="text-sm text-slate-400 px-3 py-2">{t('noMatch')}</p>}
       </div>
     </div>
   );
@@ -763,6 +766,8 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExpo
   compartment: Compartment; orgSlug: string; trees: TreePoi[]; onSaved: (updated: Compartment) => void;
   onOpenPdfExport: (preselect?: string[]) => void;
 }) {
+  const t = useTranslations('ForestSetup');
+  const opts = (keys: readonly string[]) => keys.map(k => ({ value: t(k as any), label: t(k as any) }));
   const [saving, setSaving] = useState(false);
 
   const [name,             setName]             = useState(compartment.name ?? '');
@@ -842,10 +847,10 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExpo
       };
       const res = await updateCompartment(compartment.id, data, orgSlug);
       if (!res.success) throw new Error((res as any).error);
-      toast.success('Abteilung gespeichert');
+      toast.success(t('compartmentSaved'));
       onSaved({ ...compartment, ...data, standAge: data.standAge });
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(`${t('errorPrefix')} ${e.message}`);
     } finally {
       setSaving(false);
     }
@@ -870,7 +875,7 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExpo
         </Button>
         <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-          Speichern
+          {t('save')}
         </Button>
       </div>
 
@@ -905,39 +910,39 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExpo
         )}
 
         {/* Allgemein */}
-        <Section title="Allgemein" cols={2}>
-          <TField label="Abteilungsnummer" value={number} onChange={setNumber} placeholder="z. B. 101a" />
-          <TField label="Name" value={name} onChange={setName} placeholder="z. B. Nordabhang" />
+        <Section title={t('general')} cols={2}>
+          <TField label={t('compartmentNumber')} value={number} onChange={setNumber} placeholder={t('compartmentNumPlaceholder')} />
+          <TField label={t('name')} value={name} onChange={setName} placeholder={t('namePlaceholder')} />
         </Section>
 
         {/* Standort */}
-        <Section title="Standort" cols={2}>
-          <TField label="Bodentyp" value={soilType} onChange={setSoilType} placeholder="z. B. Braunerde" />
-          <NField label="Höhenlage" value={altitude} onChange={setAltitude} unit="m ü. NN" step="1" />
-          <TField label="Standorteinheit" value={siteUnit} onChange={setSiteUnit} placeholder="z. B. TZ2, M2f" />
-          <SField label="Wasserhaushalt" value={waterBalance} onChange={setWaterBalance} options={WATER_OPTIONS} />
-          <SField label="Nährstoffstufe" value={nutrientLevel} onChange={setNutrientLevel} options={NUTRIENT_OPTIONS} />
-          <SField label="Exposition" value={exposition} onChange={setExposition} options={EXPOSITION_OPTIONS} />
-          <SField label="Hangneigung" value={slopeClass} onChange={setSlopeClass} options={SLOPE_OPTIONS} />
-          <SField label="Waldfunktion" value={forestFunction} onChange={setForestFunction} options={FOREST_FUNCTION_OPTIONS} />
-          <TField label="Schutzstatus" value={protectionStatus} onChange={setProtectionStatus} placeholder="z. B. FFH, NSG" />
+        <Section title={t('site')} cols={2}>
+          <TField label={t('soilType')} value={soilType} onChange={setSoilType} placeholder={t('soilTypePlaceholder')} />
+          <NField label={t('altitude')} value={altitude} onChange={setAltitude} unit={t('altitudeUnit')} step="1" />
+          <TField label={t('siteUnit')} value={siteUnit} onChange={setSiteUnit} placeholder={t('siteUnitPlaceholder')} />
+          <SField label={t('waterBalance')} value={waterBalance} onChange={setWaterBalance} options={opts(WATER_TKEYS)} placeholder={t('selectPlaceholder')} />
+          <SField label={t('nutrientLevel')} value={nutrientLevel} onChange={setNutrientLevel} options={opts(NUTRIENT_TKEYS)} placeholder={t('selectPlaceholder')} />
+          <SField label={t('exposition')} value={exposition} onChange={setExposition} options={opts(EXPOSITION_TKEYS)} placeholder={t('selectPlaceholder')} />
+          <SField label={t('slope')} value={slopeClass} onChange={setSlopeClass} options={opts(SLOPE_TKEYS)} placeholder={t('selectPlaceholder')} />
+          <SField label={t('forestFunction')} value={forestFunction} onChange={setForestFunction} options={opts(FOREST_FUNCTION_TKEYS)} placeholder={t('selectPlaceholder')} />
+          <TField label={t('protectionStatus')} value={protectionStatus} onChange={setProtectionStatus} placeholder={t('protectionStatusPlaceholder')} />
           <div className="col-span-2">
-            <TField label="Restriktionen / Auflagen" value={restrictions} onChange={setRestrictions} placeholder="z. B. kein Kahlschlag" />
+            <TField label={t('restrictions')} value={restrictions} onChange={setRestrictions} placeholder={t('restrictionsPlaceholder')} />
           </div>
         </Section>
 
         {/* Bestand */}
-        <Section title="Bestand" cols={2}>
-          <NField label="Bestandesalter" value={standAge} onChange={setStandAge} unit="Jahre" step="1" />
-          <TField label="Bestandestyp-Kürzel" value={standTypeCode} onChange={setStandTypeCode} placeholder="z. B. Fi70b" />
-          <SField label="Entwicklungsstufe" value={developmentStage} onChange={setDevelopmentStage} options={DEVELOP_OPTIONS} />
-          <SField label="Struktur" value={structure} onChange={setStructure} options={STRUCTURE_OPTIONS} />
-          <SField label="Mischungsform" value={mixingForm} onChange={setMixingForm} options={MIXING_OPTIONS} />
+        <Section title={t('stand')} cols={2}>
+          <NField label={t('standAge')} value={standAge} onChange={setStandAge} unit={t('standAgeUnit')} step="1" />
+          <TField label={t('standTypeCode')} value={standTypeCode} onChange={setStandTypeCode} placeholder={t('standTypeCodePlaceholder')} />
+          <SField label={t('developmentStage')} value={developmentStage} onChange={setDevelopmentStage} options={opts(DEVELOP_TKEYS)} placeholder={t('selectPlaceholder')} />
+          <SField label={t('structure')} value={structure} onChange={setStructure} options={opts(STRUCTURE_TKEYS)} placeholder={t('selectPlaceholder')} />
+          <SField label={t('mixingForm')} value={mixingForm} onChange={setMixingForm} options={opts(MIXING_TKEYS)} placeholder={t('selectPlaceholder')} />
           <div className="col-span-2">
-            <SpeciesEditor label="Hauptbaumarten" entries={mainSpecies} onChange={setMainSpecies} />
+            <SpeciesEditor label={t('mainSpecies')} entries={mainSpecies} onChange={setMainSpecies} />
           </div>
           <div className="col-span-2">
-            <SpeciesEditor label="Nebenbaumarten" entries={sideSpecies} onChange={setSideSpecies} />
+            <SpeciesEditor label={t('sideSpecies')} entries={sideSpecies} onChange={setSideSpecies} />
           </div>
         </Section>
 
@@ -1081,79 +1086,79 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExpo
           );
         })()}
 
-        <Section title="Kennzahlen" cols={3}>
-          <NField label="Vorrat" value={volumePerHa} onChange={setVolumePerHa} unit="m³/ha" />
-          <NField label="Zuwachs" value={incrementPerHa} onChange={setIncrementPerHa} unit="m³/ha/a" />
-          <NField label="Bestockungsgrad" value={stockingDegree} onChange={setStockingDegree} step="0.05" />
-          <NField label="Totholz" value={deadwoodPerHa} onChange={setDeadwoodPerHa} unit="m³/ha" />
-          <NField label="Bonität (EKL)" value={yieldClass} onChange={setYieldClass} step="0.5" />
-          <SField label="Wuchsleistung" value={siteProductivity} onChange={setSiteProductivity} options={PRODUCTIVITY_OPTIONS} />
+        <Section title={t('metrics')} cols={3}>
+          <NField label={t('volume')} value={volumePerHa} onChange={setVolumePerHa} unit={t('volumeUnit')} />
+          <NField label={t('increment')} value={incrementPerHa} onChange={setIncrementPerHa} unit={t('incrementUnit')} />
+          <NField label={t('stockingDegree')} value={stockingDegree} onChange={setStockingDegree} step="0.05" />
+          <NField label={t('deadwood')} value={deadwoodPerHa} onChange={setDeadwoodPerHa} unit={t('deadwoodUnit')} />
+          <NField label={t('yieldClass')} value={yieldClass} onChange={setYieldClass} step="0.5" />
+          <SField label={t('productivity')} value={siteProductivity} onChange={setSiteProductivity} options={opts(PRODUCTIVITY_TKEYS)} placeholder={t('selectPlaceholder')} />
         </Section>
 
         {/* Verjüngung */}
-        <SectionFull title="Verjüngung">
+        <SectionFull title={t('rejuvenation')}>
           <RejuvEditor entries={rejuvenation} onChange={setRejuvenation} />
         </SectionFull>
 
         {/* Zustand */}
-        <SectionFull title="Zustand">
+        <SectionFull title={t('condition')}>
           <div>
-            <Label>Vitalität / Kronenzustand</Label>
+            <Label>{t('vitalityCrownLabel')}</Label>
             <Textarea value={vitalityNote} onChange={e => setVitalityNote(e.target.value)}
-              placeholder="Beschreibung Kronenzustand, Vitalitätsstufe..." className="text-sm min-h-[72px]" />
+              placeholder={t('vitalityPlaceholder')} className="text-sm min-h-[72px]" />
           </div>
           <div>
-            <Label>Schäden (biotisch / abiotisch)</Label>
+            <Label>{t('damageLabel')}</Label>
             <Textarea value={damageNote} onChange={e => setDamageNote(e.target.value)}
-              placeholder="Art und Ausmaß der Schäden..." className="text-sm min-h-[72px]" />
+              placeholder={t('damagePlaceholder')} className="text-sm min-h-[72px]" />
           </div>
           <div>
-            <Label>Stabilität / Risiko</Label>
+            <Label>{t('stabilityLabel')}</Label>
             <Textarea value={stabilityNote} onChange={e => setStabilityNote(e.target.value)}
-              placeholder="Standfestigkeit, Sturm- und Schneebruchrisiko..." className="text-sm min-h-[72px]" />
+              placeholder={t('stabilityPlaceholder')} className="text-sm min-h-[72px]" />
           </div>
         </SectionFull>
 
         {/* Bewirtschaftung */}
-        <Section title="Bewirtschaftung" cols={2}>
-          <TField label="Letzte Maßnahme (Datum)" value={lastMeasureDate} onChange={setLastMeasureDate} placeholder="z. B. 03/2024" />
-          <TField label="Art der Maßnahme" value={lastMeasureType} onChange={setLastMeasureType} placeholder="z. B. Durchforstung" />
-          <SField label="Pflegezustand" value={maintenanceStatus} onChange={setMaintenanceStatus} options={MAINTENANCE_OPTIONS} />
-          <SField label="Befahrbarkeit" value={accessibility} onChange={setAccessibility} options={ACCESSIBILITY_OPTIONS} />
+        <Section title={t('mgmt')} cols={2}>
+          <TField label={t('lastMeasureDate')} value={lastMeasureDate} onChange={setLastMeasureDate} placeholder={t('lastMeasureDatePlaceholder')} />
+          <TField label={t('measureType')} value={lastMeasureType} onChange={setLastMeasureType} placeholder={t('measureTypePlaceholder')} />
+          <SField label={t('maintenanceStatus')} value={maintenanceStatus} onChange={setMaintenanceStatus} options={opts(MAINTENANCE_TKEYS)} placeholder={t('selectPlaceholder')} />
+          <SField label={t('accessibility')} value={accessibility} onChange={setAccessibility} options={opts(ACCESSIBILITY_TKEYS)} placeholder={t('selectPlaceholder')} />
         </Section>
 
         {/* Planung */}
-        <SectionFull title="Planung (Forsteinrichtungszeitraum)">
-          <NField label="Geplanter Einschlag" value={plannedHarvestVolume} onChange={setPlannedHarvestVolume} unit="Vfm gesamt" />
+        <SectionFull title={t('planning')}>
+          <NField label={t('plannedHarvest')} value={plannedHarvestVolume} onChange={setPlannedHarvestVolume} unit={t('plannedHarvestUnit')} />
           <div>
-            <Label>Geplante Maßnahmen</Label>
+            <Label>{t('plannedMeasures')}</Label>
             <div className="space-y-1.5">
               {plannedMeasures.map((m, i) => (
                 <div key={i} className="flex gap-2 items-center">
                   <select value={m.type} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, type: e.target.value } : pm))}
                     className="flex-1 border border-slate-200 rounded-md text-sm px-3 py-1.5 bg-white">
-                    <option value="">– Art –</option>
-                    {MEASURE_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    <option value="">{t('measureTypeSelect')}</option>
+                    {MEASURE_TYPE_TKEYS.map(k => <option key={k} value={t(k as any)}>{t(k as any)}</option>)}
                   </select>
                   <Input type="number" value={m.year || ''} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, year: parseInt(e.target.value) || 0 } : pm))}
-                    placeholder="Jahr" className="w-20 border-slate-200 text-sm" />
+                    placeholder={t('yearLabel')} className="w-20 border-slate-200 text-sm" />
                   <Input value={m.note} onChange={e => setPlannedMeasures(plannedMeasures.map((pm, idx) => idx === i ? { ...pm, note: e.target.value } : pm))}
-                    placeholder="Bemerkung" className="flex-1 border-slate-200 text-sm" />
+                    placeholder={t('remarkLabel')} className="flex-1 border-slate-200 text-sm" />
                   <button onClick={() => setPlannedMeasures(plannedMeasures.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400">×</button>
                 </div>
               ))}
               <button onClick={() => setPlannedMeasures([...plannedMeasures, { type: '', year: 0, note: '' }])}
                 className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
-                <PlusCircle size={13} /> Maßnahme hinzufügen
+                <PlusCircle size={13} /> {t('addMeasure')}
               </button>
             </div>
           </div>
         </SectionFull>
 
         {/* Notiz */}
-        <SectionFull title="Notiz">
+        <SectionFull title={t('notes')}>
           <Textarea value={note} onChange={e => setNote(e.target.value)}
-            placeholder="Allgemeine Notizen..." className="text-sm min-h-[80px]" />
+            placeholder={t('notesPlaceholder')} className="text-sm min-h-[80px]" />
         </SectionFull>
 
         {/* (Probekreise sind jetzt oben) */}
@@ -1783,6 +1788,8 @@ function getSpeciesColor(id: string): string {
 }
 
 export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { forests: Forest[]; orgSlug: string; speciesLookup?: SpeciesLookup }) {
+  const t = useTranslations('ForestSetup');
+  const opts = (keys: readonly string[]) => keys.map(k => ({ value: t(k as any), label: t(k as any) }));
   // Set module-level lookup so all helper functions can use it
   _speciesLookup = speciesLookup;
 

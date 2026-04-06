@@ -8,6 +8,7 @@ import { ForestList } from "./_components/ForestList";
 import { ForestBillingPanel } from "./_components/ForestBillingPanel";
 import { InvoiceList } from "./_components/InvoiceList";
 import { Euro, Clock, CheckCircle, TreePine } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 function fmtEur(n: number) {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
@@ -27,6 +28,7 @@ export default async function KostencontrollingPage({
   const session = await getServerSession(authOptions);
   if (!session?.user) return redirect("/api/auth/signin/keycloak");
 
+  const t = await getTranslations("CostControl");
   const { slug } = await params;
   const { forest: selectedForestId } = await searchParams;
 
@@ -166,8 +168,8 @@ export default async function KostencontrollingPage({
 
         {/* Header */}
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Kostencontrolling</h2>
-          <p className="text-slate-500 mt-1 text-sm">Abrechenbare Stunden, Rechnungen & Zahlungsstatus</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">{t("pageTitle")}</h2>
+          <p className="text-slate-500 mt-1 text-sm">{t("pageSubtitle")}</p>
         </div>
 
         {/* KPIs */}
@@ -175,7 +177,7 @@ export default async function KostencontrollingPage({
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-2">
               <Clock size={14} className="text-amber-500" />
-              <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Abrechenbar</p>
+              <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide">{t("kpiBillable")}</p>
             </div>
             <p className="text-2xl font-bold text-amber-800">{fmtH(totalBillableMinutes)}</p>
             <p className="text-sm text-amber-600 mt-0.5 font-medium">{fmtEur(totalBillableAmount)}</p>
@@ -183,7 +185,7 @@ export default async function KostencontrollingPage({
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle size={14} className="text-emerald-500" />
-              <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Abgerechnet</p>
+              <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">{t("kpiBilled")}</p>
             </div>
             <p className="text-2xl font-bold text-emerald-800">{fmtH(totalBilledMinutes)}</p>
             <p className="text-sm text-emerald-600 mt-0.5 font-medium">{fmtEur(totalBilledAmount)}</p>
@@ -191,21 +193,21 @@ export default async function KostencontrollingPage({
           <div className="bg-white border border-slate-200 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-2">
               <TreePine size={14} className="text-slate-400" />
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Wälder</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("kpiForests")}</p>
             </div>
             <p className="text-2xl font-bold text-slate-800">
               {forestSummaries.filter((f) => f.billableMinutes > 0).length}
             </p>
-            <p className="text-sm text-slate-400 mt-0.5">mit offenen Stunden</p>
+            <p className="text-sm text-slate-400 mt-0.5">{t("withOpenHours")}</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-2">
               <Euro size={14} className="text-slate-400" />
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Rechnungen</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("kpiInvoices")}</p>
             </div>
             <p className="text-2xl font-bold text-slate-800">{serializedInvoices.length}</p>
             <p className="text-sm text-slate-400 mt-0.5">
-              {serializedInvoices.filter((i) => i.status === "PAID").length} bezahlt
+              {serializedInvoices.filter((i) => i.status === "PAID").length} {t("paid")}
             </p>
           </div>
         </div>
@@ -222,7 +224,7 @@ export default async function KostencontrollingPage({
           <div className="lg:col-span-2">
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100">
-                <h3 className="font-semibold text-slate-800 text-sm">Alle Rechnungen</h3>
+                <h3 className="font-semibold text-slate-800 text-sm">{t("allInvoices")}</h3>
               </div>
               <InvoiceList invoices={serializedInvoices} />
             </div>

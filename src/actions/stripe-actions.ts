@@ -9,7 +9,8 @@ import { ANNUAL_DISCOUNT_COUPON_ID, TRIAL_DAYS } from "@/lib/pricing-config";
 export async function createCheckoutSession(
   priceId: string,
   orgId: string,
-  interval: "monthly" | "yearly"
+  interval: "monthly" | "yearly",
+  locale?: string
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Nicht eingeloggt");
@@ -36,6 +37,12 @@ export async function createCheckoutSession(
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+  // Map app locale to Stripe-supported locale
+  const stripeLocales = ['de', 'en', 'es', 'fr'] as const;
+  const stripeLocale = locale && stripeLocales.includes(locale as any)
+    ? (locale as typeof stripeLocales[number])
+    : undefined;
+
   const checkoutParams: any = {
     customer: customerId,
     mode: "subscription",
@@ -47,6 +54,7 @@ export async function createCheckoutSession(
     success_url: `${appUrl}/onboarding/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/onboarding?step=3`,
     metadata: { orgId: org.id, interval },
+    ...(stripeLocale ? { locale: stripeLocale } : {}),
   };
 
   // Add first-year annual discount coupon for yearly plans

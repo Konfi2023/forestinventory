@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Wind, X, FlaskConical, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ActiveAlert } from '@/lib/active-alerts';
 import { acknowledgeAlert } from '@/actions/alerts';
+import { useTranslations } from 'next-intl';
 
 const LS_KEY = 'fi_dismissed_alert_groups';
 
@@ -19,11 +20,10 @@ function addDismissed(key: string) {
   localStorage.setItem(LS_KEY, JSON.stringify([...c]));
 }
 
-function windDir(deg?: number | null): string {
-  if (deg == null) return '';
-  const dirs = ['Norden','Nordosten','Osten','Südosten','Süden','Südwesten','Westen','Nordwesten'];
-  return dirs[Math.round(deg / 45) % 8];
-}
+const WIND_DIR_FULL_KEYS = [
+  'windDirFullN', 'windDirFullNE', 'windDirFullE', 'windDirFullSE',
+  'windDirFullS', 'windDirFullSW', 'windDirFullW', 'windDirFullNW',
+] as const;
 
 interface AlertGroup {
   key:        string;
@@ -55,6 +55,7 @@ function groupAlerts(alerts: ActiveAlert[]): AlertGroup[] {
 interface Props { alerts: ActiveAlert[]; orgSlug: string; }
 
 export function AlertBanner({ alerts, orgSlug }: Props) {
+  const t = useTranslations('Alerts');
   const [dismissed, setDismissed] = useState<Set<string>>(() => getStoredDismissed());
   const [expanded,  setExpanded]  = useState<Set<string>>(() => new Set());
 
@@ -80,6 +81,11 @@ export function AlertBanner({ alerts, orgSlug }: Props) {
     });
   };
 
+  function windDir(deg?: number | null): string {
+    if (deg == null) return '';
+    return t(WIND_DIR_FULL_KEYS[Math.round(deg / 45) % 8]);
+  }
+
   const groups  = groupAlerts(alerts);
   const visible = groups.filter(g => !dismissed.has(g.key));
   if (!visible.length) return null;
@@ -91,17 +97,21 @@ export function AlertBanner({ alerts, orgSlug }: Props) {
         const isExpanded = expanded.has(group.key);
         const count      = group.alerts.length;
 
-        const title = isStorm
-          ? `Sturmereignis${count > 1 ? ` – ${count} Wälder betroffen` : ` in ${group.alerts[0].forestName}`}`
-          : `Möglicher Waldschaden${count > 1 ? ` – ${count} Wälder betroffen` : ` in ${group.alerts[0].forestName}`}`;
+        const titleBase = isStorm ? t('stormEvent') : t('possibleForestDamage');
+        const titleSuffix = count > 1
+          ? ` – ${t('forestsAffected', { count })}`
+          : ` ${t('inForest', { name: group.alerts[0].forestName })}`;
+        const title = titleBase + titleSuffix;
 
         const body = isStorm
           ? (() => {
-              const kmh = group.maxWindKmh != null ? `Windböen bis ${group.maxWindKmh} km/h` : 'Starke Windböen';
+              const kmh = group.maxWindKmh != null
+                ? t('windGustsUp', { kmh: group.maxWindKmh })
+                : t('strongWindGusts');
               const dir = windDir(group.windDirDeg);
-              return `${kmh}${dir ? ` aus ${dir}` : ''} wurden registriert. Bitte den Bestand auf Windwürfe und Bruchholz prüfen — gefallene Bäume auf Wegen bergen Gefahren.`;
+              return `${kmh}${dir ? ` ${t('fromDirection', { dir })}` : ''} ${t('stormBodySuffix')}`;
             })()
-          : 'Satellitenmessung (Sentinel-1 Radar) zeigt ungewöhnliche Veränderungen im Bestand. Ursachen können Windwurf, Borkenkäferbefall oder andere Schäden sein. Bitte die Wälder zeitnah begehen und den Zustand dokumentieren.';
+          : t('sarBody');
 
         return (
           <div key={group.key} className={`rounded-xl border-2 shadow-md overflow-hidden ${
@@ -126,7 +136,7 @@ export function AlertBanner({ alerts, orgSlug }: Props) {
                 <button
                   onClick={() => toggleExpand(group.key)}
                   className={`p-1 rounded transition ${isStorm ? 'text-amber-600 hover:bg-amber-200' : 'text-red-500 hover:bg-red-200'}`}
-                  title={isExpanded ? 'Einklappen' : 'Betroffene Wälder anzeigen'}
+                  title={isExpanded ? t('collapse') : t('showAffectedForests')}
                 >
                   {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                 </button>
@@ -136,7 +146,7 @@ export function AlertBanner({ alerts, orgSlug }: Props) {
                 className={`p-1 rounded-md transition shrink-0 ${
                   isStorm ? 'text-amber-500 hover:bg-amber-200 hover:text-amber-800' : 'text-red-400 hover:bg-red-200 hover:text-red-800'
                 }`}
-                title="Warnung quittieren"
+                title={t('acknowledgeWarning')}
               >
                 <X size={17} />
               </button>

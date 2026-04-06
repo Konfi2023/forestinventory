@@ -16,25 +16,26 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn, getUserColor, getInitials } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
 import centroid from '@turf/centroid';
 
 const ACCENT = '#f97316';
 
-const CAUSE_LABELS: Record<string, string> = {
-  WIND:       'Windwurf',
-  BARK_BEETLE: 'Borkenkäfer',
-  FIRE:       'Brand',
-  SNOW:       'Schneebruch',
-  DROUGHT:    'Trockenheit',
-  OTHER:      'Sonstiges',
+const CAUSE_TKEYS: Record<string, string> = {
+  WIND:       'causeWind',
+  BARK_BEETLE: 'causeBarkBeetle',
+  FIRE:       'causeFire',
+  SNOW:       'causeSnow',
+  DROUGHT:    'causeDrought',
+  OTHER:      'causeOther',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE:   'Aktiv',
-  CLEARED:  'Beräumt',
-  REPLANTED:'Wiederaufgeforstet',
+const STATUS_TKEYS: Record<string, string> = {
+  ACTIVE:   'statusActive',
+  CLEARED:  'statusCleared',
+  REPLANTED:'statusReplanted',
 };
 
 function formatArea(ha?: number | null): string {
@@ -59,6 +60,7 @@ interface Props {
 export function CalamityDetailView({
   calamity, forest, orgSlug, tasks, members, forests, onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
 }: Props) {
+  const t = useTranslations('Map');
   const setInteractionMode = useMapStore(s => s.setInteractionMode);
   const setEditingFeature  = useMapStore(s => s.setEditingFeature);
   const interactionMode    = useMapStore(s => s.interactionMode);
@@ -113,8 +115,8 @@ export function CalamityDetailView({
   const title = (description && description.trim())
     ? description.trim()
     : cause
-      ? (CAUSE_LABELS[cause] ?? cause)
-      : 'Kalamitätsfläche';
+      ? (CAUSE_TKEYS[cause] ? t(CAUSE_TKEYS[cause] as any) : cause)
+      : t('calamityArea');
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -124,8 +126,8 @@ export function CalamityDetailView({
         amount: amount ? parseFloat(amount) : undefined,
         description, note,
       }, orgSlug);
-      if (!res.success) throw new Error(res.error ?? 'Unbekannter Fehler');
-      toast.success('Kalamitätsfläche aktualisiert');
+      if (!res.success) throw new Error(res.error ?? t('unknownError'));
+      toast.success(t('calamityUpdated'));
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
@@ -201,22 +203,22 @@ export function CalamityDetailView({
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <div className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1.5">
-            <Ruler size={12} /> Fläche
+            <Ruler size={12} /> {t('area')}
           </div>
           <div className="text-lg text-white font-mono font-medium">{formatArea(calamity.areaHa)}</div>
         </div>
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <div className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1.5">
-            <AlertTriangle size={12} /> Status
+            <AlertTriangle size={12} /> {t('statusLabel')}
           </div>
-          <div className="text-sm text-white">{(STATUS_LABELS[status] ?? status) || '—'}</div>
+          <div className="text-sm text-white">{(STATUS_TKEYS[status] ? t(STATUS_TKEYS[status] as any) : status) || '—'}</div>
         </div>
       </div>
 
       {/* WALD */}
       {forest && (
         <div className="text-xs text-gray-500">
-          <span className="font-semibold text-gray-400">Wald:</span> {forest.name}
+          <span className="font-semibold text-gray-400">{t('forestLabel')}</span> {forest.name}
         </div>
       )}
 
@@ -229,39 +231,39 @@ export function CalamityDetailView({
             </p>
           )}
           <div>
-            <label className="text-[10px] uppercase text-gray-500 font-bold mb-1.5 block">Ursache</label>
+            <label className="text-[10px] uppercase text-gray-500 font-bold mb-1.5 block">{t('causeLabel')}</label>
             <select
               value={cause}
               onChange={e => setCause(e.target.value)}
               className="w-full bg-black/50 border border-white/20 text-white rounded-md px-3 py-2 text-sm"
             >
-              <option value="">— Ursache wählen —</option>
-              {Object.entries(CAUSE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
+              <option value="">{t('selectCause')}</option>
+              {Object.entries(CAUSE_TKEYS).map(([k, tKey]) => (
+                <option key={k} value={k}>{t(tKey as any)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="text-[10px] uppercase text-gray-500 font-bold mb-1.5 block">Status</label>
+            <label className="text-[10px] uppercase text-gray-500 font-bold mb-1.5 block">{t('statusLabel')}</label>
             <select
               value={status}
               onChange={e => setStatus(e.target.value)}
               className="w-full bg-black/50 border border-white/20 text-white rounded-md px-3 py-2 text-sm"
             >
-              <option value="">— Status wählen —</option>
-              {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
+              <option value="">{t('selectStatus')}</option>
+              {Object.entries(STATUS_TKEYS).map(([k, tKey]) => (
+                <option key={k} value={k}>{t(tKey as any)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="text-[10px] uppercase text-gray-500 font-bold mb-1.5 block">Menge (Fm)</label>
+            <label className="text-[10px] uppercase text-gray-500 font-bold mb-1.5 block">{t('amountFm')}</label>
             <Input
               type="number"
               value={amount}
               onChange={e => setAmount(e.target.value)}
               className="bg-black/50 border-white/20 text-white"
-              placeholder="Festmeter"
+              placeholder={t('solidCubicMeter')}
             />
           </div>
         </div>
@@ -269,13 +271,13 @@ export function CalamityDetailView({
         <div className="space-y-2">
           {cause && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-500 text-xs">Ursache:</span>
-              <span className="text-orange-400 font-medium">{CAUSE_LABELS[cause] ?? cause}</span>
+              <span className="text-gray-500 text-xs">{t('causeLabel')}:</span>
+              <span className="text-orange-400 font-medium">{CAUSE_TKEYS[cause] ? t(CAUSE_TKEYS[cause] as any) : cause}</span>
             </div>
           )}
           {calamity.amount && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-500 text-xs">Menge:</span>
+              <span className="text-gray-500 text-xs">{t('amountFm')}:</span>
               <span className="text-white">{calamity.amount} Fm</span>
             </div>
           )}
@@ -284,17 +286,17 @@ export function CalamityDetailView({
 
       {/* NOTIZ */}
       <div>
-        <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">Notiz</h4>
+        <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">{t('note')}</h4>
         {isEditing ? (
           <Textarea
             value={note}
             onChange={e => setNote(e.target.value)}
             className="bg-black/50 border-white/20 text-white min-h-[80px]"
-            placeholder="Notizen zur Kalamitätsfläche..."
+            placeholder={t('notePlaceholderCalamity')}
           />
         ) : (
           <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[48px] whitespace-pre-wrap">
-            {note || 'Keine Notiz.'}
+            {note || t('noNote')}
           </p>
         )}
       </div>
@@ -303,13 +305,13 @@ export function CalamityDetailView({
       {!isEditing && (
         <div className="space-y-3 pt-4 border-t border-white/10 mt-4">
           <div className="flex justify-between items-center">
-            <h4 className="text-[10px] uppercase text-gray-500 font-bold">Aufgaben</h4>
+            <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('tasks')}</h4>
             <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-300">{linkedTasks.length}</span>
           </div>
           <div className="space-y-2">
             {linkedTasks.length === 0 ? (
               <div className="text-center py-4 text-xs text-gray-600 border border-dashed border-white/10 rounded-lg">
-                Alles erledigt.
+                {t('allDone')}
               </div>
             ) : (
               linkedTasks.map((task: any) => (
@@ -350,7 +352,7 @@ export function CalamityDetailView({
               variant="outline"
               onClick={() => setShowCreateTask(true)}
             >
-              <PlusCircle className="w-3 h-3 mr-2" /> Neue Aufgabe hier
+              <PlusCircle className="w-3 h-3 mr-2" /> {t('newTaskHere')}
             </Button>
           </div>
         </div>
@@ -361,8 +363,8 @@ export function CalamityDetailView({
         <div className="flex items-center gap-2">
           <Radio size={13} className={trackBiomass ? 'text-orange-400' : 'text-gray-600'} />
           <div>
-            <p className="text-xs text-gray-300 font-medium">SAR-Monitoring</p>
-            <p className="text-[10px] text-gray-600">Sentinel-1 Tracking im Biomasse-Monitor</p>
+            <p className="text-xs text-gray-300 font-medium">{t('sarMonitoring')}</p>
+            <p className="text-[10px] text-gray-600">{t('sarDescription')}</p>
           </div>
         </div>
         <button
@@ -380,11 +382,11 @@ export function CalamityDetailView({
         <div className="flex items-center gap-2">
           <PackageOpen size={13} className={linkedOp ? 'text-emerald-400' : 'text-gray-600'} />
           <div>
-            <p className="text-xs text-gray-300 font-medium">Maßnahme & Holzverkauf</p>
+            <p className="text-xs text-gray-300 font-medium">{t('operationAndTimberSale')}</p>
             {linkedOp ? (
               <p className="text-[10px] text-emerald-400">{linkedOp.title}</p>
             ) : (
-              <p className="text-[10px] text-gray-600">Noch keine Maßnahme verknüpft</p>
+              <p className="text-[10px] text-gray-600">{t('noOperationLinked')}</p>
             )}
           </div>
         </div>
@@ -395,7 +397,7 @@ export function CalamityDetailView({
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors border border-emerald-800 rounded px-2 py-1"
           >
-            Öffnen <ArrowRight size={10} />
+            {t('openLabel')} <ArrowRight size={10} />
           </a>
         ) : (
           <Button
@@ -406,7 +408,7 @@ export function CalamityDetailView({
           >
             {isCreatingOp
               ? <Loader2 size={11} className="animate-spin" />
-              : <><PackageOpen size={11} className="mr-1" />Maßnahme erstellen</>
+              : <><PackageOpen size={11} className="mr-1" />{t('createOperation')}</>
             }
           </Button>
         )}
@@ -415,15 +417,15 @@ export function CalamityDetailView({
       {/* GEOMETRIE */}
       {isEditing && (
         <div className="pt-2 border-t border-white/10 mt-2">
-          <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">Geometrie</label>
+          <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">{t('geometry')}</label>
           <Button
             variant="outline"
             className={`w-full border-white/10 text-gray-300 hover:text-white hover:bg-white/10 h-10 font-bold ${isGeometryEditing ? 'bg-blue-900/20 border-blue-500 text-blue-400' : ''}`}
             onClick={handleToggleGeometry}
           >
             {isGeometryEditing
-              ? <><Check className="w-4 h-4 mr-2" /> Bearbeiten beenden</>
-              : <><ScanLine className="w-4 h-4 mr-2" /> Fläche auf Karte ändern</>}
+              ? <><Check className="w-4 h-4 mr-2" /> {t('editGeometryDone')}</>
+              : <><ScanLine className="w-4 h-4 mr-2" /> {t('editAreaStart')}</>}
           </Button>
         </div>
       )}
@@ -435,11 +437,11 @@ export function CalamityDetailView({
             <DeleteConfirmDialog
               trigger={
                 <Button variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-950/30 px-3">
-                  <Trash2 className="w-4 h-4 mr-2" /> Löschen
+                  <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
                 </Button>
               }
-              title={`Kalamitätsfläche löschen?`}
-              description="Die Kalamitätsfläche wird unwiderruflich von der Karte entfernt."
+              title={t('deleteCalamityTitle')}
+              description={t('deleteCalamityDesc')}
               confirmString={title}
               onConfirm={async () => {
                 const taskIds = deleteTasksToo ? linkedTasks.map((t: any) => t.id) : undefined;
@@ -451,13 +453,13 @@ export function CalamityDetailView({
               {linkedTasks.length > 0 && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
                   <p className="text-xs font-semibold text-amber-800">
-                    Verknüpfte Aufgaben ({linkedTasks.length})
+                    {t('linkedTasks', { count: linkedTasks.length })}
                   </p>
                   <div className="space-y-1">
-                    {linkedTasks.map((t: any) => (
-                      <div key={t.id} className="flex items-baseline gap-2 text-sm">
-                        <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">Aufgabe</span>
-                        <span className="text-slate-700 truncate">{t.title}</span>
+                    {linkedTasks.map((task: any) => (
+                      <div key={task.id} className="flex items-baseline gap-2 text-sm">
+                        <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">{t('taskLabel')}</span>
+                        <span className="text-slate-700 truncate">{task.title}</span>
                       </div>
                     ))}
                   </div>
@@ -468,7 +470,7 @@ export function CalamityDetailView({
                       onChange={e => setDeleteTasksToo(e.target.checked)}
                       className="rounded border-amber-400 text-red-600 focus:ring-red-500"
                     />
-                    <span className="text-sm text-slate-700">Aufgaben ebenfalls löschen</span>
+                    <span className="text-sm text-slate-700">{t('deleteTasksToo')}</span>
                   </label>
                 </div>
               )}
@@ -476,10 +478,10 @@ export function CalamityDetailView({
           ) : <div />}
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => { setCause(calamity.cause ?? ''); setStatus(calamity.status ?? ''); setAmount(calamity.amount?.toString() ?? ''); setDescription(calamity.description ?? ''); setNote(calamity.note ?? ''); setIsEditing(false); }} className="text-gray-400">
-              Abbrechen
+              {t('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Speichern'}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
             </Button>
           </div>
         </div>

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapStore } from '../stores/useMapStores';
+import { useTranslations } from 'next-intl';
 
 // ---------------------------------------------------------------------------
 // WMO helpers
@@ -26,19 +27,21 @@ function wmoIcon(code: number, size = 16, className?: string) {
   return <CloudLightning {...props} />;
 }
 
-function wmoLabel(code: number): string {
-  if (code <= 2)  return 'Klar';
-  if (code === 3) return 'Bewölkt';
-  if (code <= 48) return 'Nebel';
-  if (code <= 57) return 'Nieselregen';
-  if (code <= 67) return 'Regen';
-  if (code <= 77) return 'Schnee';
-  if (code <= 82) return 'Schauer';
-  if (code <= 86) return 'Schneeschauer';
-  return 'Gewitter';
+type WmoLabelKey = 'clear' | 'cloudy' | 'fog' | 'drizzle' | 'rain' | 'snow' | 'showers' | 'snowShowers' | 'thunderstorm';
+
+function wmoLabelKey(code: number): WmoLabelKey {
+  if (code <= 2)  return 'clear';
+  if (code === 3) return 'cloudy';
+  if (code <= 48) return 'fog';
+  if (code <= 57) return 'drizzle';
+  if (code <= 67) return 'rain';
+  if (code <= 77) return 'snow';
+  if (code <= 82) return 'showers';
+  if (code <= 86) return 'snowShowers';
+  return 'thunderstorm';
 }
 
-const DAY_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const DAY_KEYS = ['daySun', 'dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat'] as const;
 
 // ---------------------------------------------------------------------------
 // Unwetter-Alarm: prüft die nächsten 3 Tage
@@ -46,43 +49,44 @@ const DAY_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
 interface Alert {
   level: 'warning' | 'danger'; // gelb / rot
-  label: string;
+  labelKey: string;
+  labelParams: Record<string, string | number>;
   date: string; // YYYY-MM-DD
 }
 
-function computeAlerts(daily: DailyDay[]): Alert[] {
+function computeAlerts(daily: DailyDay[], t: ReturnType<typeof useTranslations<'Weather'>>): Alert[] {
   const alerts: Alert[] = [];
   const today = new Date().toISOString().split('T')[0];
   const upcoming = daily.filter(d => d.date >= today).slice(0, 3);
 
   for (const d of upcoming) {
-    const label = d.date === today
-      ? 'Heute'
-      : DAY_SHORT[new Date(d.date + 'T12:00:00Z').getDay()];
+    const dayLabel = d.date === today
+      ? t('today')
+      : t(DAY_KEYS[new Date(d.date + 'T12:00:00Z').getDay()]);
 
     // Gewitter
     if (d.weatherCode >= 95) {
-      alerts.push({ level: 'danger', label: `${label}: Gewitter`, date: d.date });
+      alerts.push({ level: 'danger', labelKey: 'alertThunderstorm', labelParams: { day: dayLabel }, date: d.date });
     }
     // Orkan / Sturm (Böen > 75 km/h)
     if ((d.windGustsKmh ?? 0) > 75) {
-      alerts.push({ level: 'danger', label: `${label}: Sturmböen ${d.windGustsKmh} km/h`, date: d.date });
+      alerts.push({ level: 'danger', labelKey: 'alertStormGusts', labelParams: { day: dayLabel, kmh: d.windGustsKmh! }, date: d.date });
     } else if ((d.windGustsKmh ?? 0) > 55) {
-      alerts.push({ level: 'warning', label: `${label}: Böen ${d.windGustsKmh} km/h`, date: d.date });
+      alerts.push({ level: 'warning', labelKey: 'alertGusts', labelParams: { day: dayLabel, kmh: d.windGustsKmh! }, date: d.date });
     }
     // Starkregen (> 20 mm/Tag)
     if ((d.precipMm ?? 0) > 20) {
-      alerts.push({ level: 'danger', label: `${label}: Starkregen ${d.precipMm} mm`, date: d.date });
+      alerts.push({ level: 'danger', labelKey: 'alertHeavyRain', labelParams: { day: dayLabel, mm: d.precipMm! }, date: d.date });
     } else if ((d.precipMm ?? 0) > 10) {
-      alerts.push({ level: 'warning', label: `${label}: Starker Regen ${d.precipMm} mm`, date: d.date });
+      alerts.push({ level: 'warning', labelKey: 'alertStrongRain', labelParams: { day: dayLabel, mm: d.precipMm! }, date: d.date });
     }
     // Frost (min < -5°C)
     if ((d.minTemp ?? 0) < -5) {
-      alerts.push({ level: 'warning', label: `${label}: Frost ${d.minTemp}°C`, date: d.date });
+      alerts.push({ level: 'warning', labelKey: 'alertFrost', labelParams: { day: dayLabel, temp: d.minTemp! }, date: d.date });
     }
     // Hitzestress (max > 35°C)
     if ((d.maxTemp ?? 0) > 35) {
-      alerts.push({ level: 'warning', label: `${label}: Hitze ${d.maxTemp}°C`, date: d.date });
+      alerts.push({ level: 'warning', labelKey: 'alertHeat', labelParams: { day: dayLabel, temp: d.maxTemp! }, date: d.date });
     }
   }
 
@@ -176,6 +180,7 @@ function getCentroid(forest: any): { lat: number; lng: number } | null {
 // ---------------------------------------------------------------------------
 
 export function MapWeatherWidget({ forests }: { forests: any[] }) {
+  const t = useTranslations('Weather');
   const selectedFeatureId   = useMapStore(s => s.selectedFeatureId);
   const selectedFeatureType = useMapStore(s => s.selectedFeatureType);
 
@@ -221,7 +226,7 @@ export function MapWeatherWidget({ forests }: { forests: any[] }) {
   const daily    = weather?.daily ?? [];
   const today    = new Date().toISOString().split('T')[0];
   const forecast = daily.filter(d => d.date >= today).slice(0, 5);
-  const alerts   = computeAlerts(daily);
+  const alerts   = computeAlerts(daily, t);
   const topAlert = alerts[0] ?? null;
 
   return (
@@ -243,7 +248,7 @@ export function MapWeatherWidget({ forests }: { forests: any[] }) {
             ? <Zap size={11} className="shrink-0" />
             : <TriangleAlert size={11} className="shrink-0" />
           }
-          <span className="truncate">{topAlert.label}</span>
+          <span className="truncate">{t(topAlert.labelKey as any, topAlert.labelParams)}</span>
           {alerts.length > 1 && (
             <span className="ml-auto shrink-0 opacity-70">+{alerts.length - 1}</span>
           )}
@@ -256,14 +261,14 @@ export function MapWeatherWidget({ forests }: { forests: any[] }) {
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <TreePine size={11} className="text-emerald-400 shrink-0" />
             <span className="text-[10px] text-white/60 truncate" title={forestName ?? ''}>
-              {forestName ?? 'Wetter'}
+              {forestName ?? t('weather')}
             </span>
           </div>
         )}
         <button
           onClick={() => setCollapsed(c => !c)}
           className="ml-auto text-white/40 hover:text-white/80 transition-colors shrink-0"
-          title={collapsed ? 'Wetter anzeigen' : 'Minimieren'}
+          title={collapsed ? t('showWeather') : t('minimize')}
         >
           {collapsed ? <Eye size={13} /> : <EyeOff size={13} />}
         </button>
@@ -272,7 +277,7 @@ export function MapWeatherWidget({ forests }: { forests: any[] }) {
       {!collapsed && (
         <>
           {loading && !cur && (
-            <div className="px-3 pb-3 text-[11px] text-white/40 animate-pulse">Lade…</div>
+            <div className="px-3 pb-3 text-[11px] text-white/40 animate-pulse">{t('loading')}</div>
           )}
 
           {cur && (
@@ -286,7 +291,7 @@ export function MapWeatherWidget({ forests }: { forests: any[] }) {
                 </div>
               </div>
               <div className="text-[11px] text-white/60 mt-0.5">
-                {wmoLabel(cur.weatherCode)}
+                {t(wmoLabelKey(cur.weatherCode))}
               </div>
               <div className="flex items-center gap-3 mt-2 text-[10px] text-white/50">
                 {cur.windKmh != null && (
@@ -325,7 +330,7 @@ export function MapWeatherWidget({ forests }: { forests: any[] }) {
                         isToday ? 'text-white' : 'text-white/50',
                         hasAlert && 'text-amber-300',
                       )}>
-                        {isToday ? 'Heute' : DAY_SHORT[d.getDay()]}
+                        {isToday ? t('today') : t(DAY_KEYS[d.getDay()])}
                       </span>
                       {wmoIcon(day.weatherCode, 13, isToday ? 'text-sky-300' : 'text-white/60')}
                       <span className="text-[9px] text-white/80 font-medium">

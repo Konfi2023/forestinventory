@@ -15,23 +15,33 @@ import { upsertPoiLogPile } from "@/actions/poi";
 import { PolterStatus, WoodType } from "@prisma/client";
 import { TREE_SPECIES } from "@/lib/tree-species";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useTranslations } from "next-intl";
 
 // ─── Konstanten ──────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<PolterStatus, { label: string; bg: string; text: string; dot: string }> = {
-  PILED:     { label: "Gepoltert",  bg: "bg-slate-100",   text: "text-slate-600",   dot: "bg-slate-400"   },
-  MEASURED:  { label: "Vermessen",  bg: "bg-blue-50",     text: "text-blue-700",    dot: "bg-blue-500"    },
-  SOLD:      { label: "Verkauft",   bg: "bg-amber-50",    text: "text-amber-700",   dot: "bg-amber-500"   },
-  COLLECTED: { label: "Abgefahren", bg: "bg-emerald-50",  text: "text-emerald-700", dot: "bg-emerald-500" },
-};
+function useStatusCfg() {
+  const t = useTranslations("Operations");
+  return {
+    PILED:     { label: t("pileStatusPiled"),     bg: "bg-slate-100",   text: "text-slate-600",   dot: "bg-slate-400"   },
+    MEASURED:  { label: t("pileStatusMeasured"),  bg: "bg-blue-50",     text: "text-blue-700",    dot: "bg-blue-500"    },
+    SOLD:      { label: t("pileStatusSold"),      bg: "bg-amber-50",    text: "text-amber-700",   dot: "bg-amber-500"   },
+    COLLECTED: { label: t("pileStatusCollected"), bg: "bg-emerald-50",  text: "text-emerald-700", dot: "bg-emerald-500" },
+  } as Record<PolterStatus, { label: string; bg: string; text: string; dot: string }>;
+}
 const STATUS_ORDER: PolterStatus[] = ["PILED", "MEASURED", "SOLD", "COLLECTED"];
 
-const WOOD_TYPE_LABELS: Record<WoodType, string> = {
-  LOG: "Stammholz", INDUSTRIAL: "Industrieholz", ENERGY: "Energieholz", PULP: "Papierholz",
-};
-const WOOD_TYPE_SHORT: Record<WoodType, string> = {
-  LOG: "Stammh.", INDUSTRIAL: "Industrie", ENERGY: "Energie", PULP: "Papier",
-};
+function useWoodTypeLabels() {
+  const t = useTranslations("Operations");
+  return {
+    LOG: t("woodTypeLog"), INDUSTRIAL: t("woodTypeIndustrial"), ENERGY: t("woodTypeEnergy"), PULP: t("woodTypePulp"),
+  } as Record<WoodType, string>;
+}
+function useWoodTypeShort() {
+  const t = useTranslations("Operations");
+  return {
+    LOG: t("woodTypeLogShort"), INDUSTRIAL: t("woodTypeIndustrialShort"), ENERGY: t("woodTypeEnergyShort"), PULP: t("woodTypePulpShort"),
+  } as Record<WoodType, string>;
+}
 
 type Mode = "CHOOSE" | "FROM_MAP" | "MANUAL";
 
@@ -48,6 +58,8 @@ interface Props {
 // ─── Edit Dialog ──────────────────────────────────────────────────────────────
 
 function EditLogPileDialog({ pile, orgSlug, onClose }: { pile: any; orgSlug: string; onClose: () => void }) {
+  const t = useTranslations("Operations");
+  const WOOD_TYPE_LABELS = useWoodTypeLabels();
   const [saving, setSaving] = useState(false);
   const [name,        setName]        = useState(pile.name ?? "");
   const [species,     setSpecies]     = useState(pile.treeSpecies ?? "");
@@ -71,7 +83,7 @@ function EditLogPileDialog({ pile, orgSlug, onClose }: { pile: any; orgSlug: str
         logLength:       logLength       ? parseFloat(logLength)  : undefined,
         note:            note            || undefined,
       });
-      toast.success("Polter aktualisiert");
+      toast.success(t("pileUpdated"));
       onClose();
     } catch (e: any) {
       toast.error(e.message);
@@ -85,14 +97,14 @@ function EditLogPileDialog({ pile, orgSlug, onClose }: { pile: any; orgSlug: str
       {/* Zeile 1: Bezeichnung + Baumart */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-slate-600">Bezeichnung</Label>
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="z.B. Polter A1" className="h-8 text-sm" />
+          <Label className="text-xs font-medium text-slate-600">{t("labelName")}</Label>
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder={t("placeholderPileName")} className="h-8 text-sm" />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-slate-600">Baumart</Label>
+          <Label className="text-xs font-medium text-slate-600">{t("labelSpecies")}</Label>
           <select value={species} onChange={e => setSpecies(e.target.value)}
             className="w-full text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
-            <option value="">— wählen —</option>
+            <option value="">{t("selectSpecies")}</option>
             {TREE_SPECIES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
@@ -101,7 +113,7 @@ function EditLogPileDialog({ pile, orgSlug, onClose }: { pile: any; orgSlug: str
       {/* Zeile 2: Holzart + Güte */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-slate-600">Holzart / Sortiment</Label>
+          <Label className="text-xs font-medium text-slate-600">{t("labelWoodType")}</Label>
           <select value={woodType} onChange={e => setWoodType(e.target.value as WoodType)}
             className="w-full text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
             {(Object.entries(WOOD_TYPE_LABELS) as [WoodType, string][]).map(([k, v]) =>
@@ -109,7 +121,7 @@ function EditLogPileDialog({ pile, orgSlug, onClose }: { pile: any; orgSlug: str
           </select>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-slate-600">Güteklasse</Label>
+          <Label className="text-xs font-medium text-slate-600">{t("labelQualityClass")}</Label>
           <select value={quality} onChange={e => setQuality(e.target.value)}
             className="w-full text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
             <option value="">—</option>
@@ -122,21 +134,21 @@ function EditLogPileDialog({ pile, orgSlug, onClose }: { pile: any; orgSlug: str
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-            <Scale size={10} /> Geschätzt (fm)
+            <Scale size={10} /> {t("labelEstimatedFm")}
           </Label>
           <Input type="number" step="0.1" value={estimated} onChange={e => setEstimated(e.target.value)}
             placeholder="0.0" className="h-8 text-sm" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-            <Check size={10} className="text-blue-500" /> Vermessen (fm)
+            <Check size={10} className="text-blue-500" /> {t("labelMeasuredFm")}
           </Label>
           <Input type="number" step="0.1" value={measured} onChange={e => setMeasured(e.target.value)}
             placeholder="0.0" className="h-8 text-sm font-medium" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-            <Ruler size={10} /> Länge (m)
+            <Ruler size={10} /> {t("labelLength")}
           </Label>
           <Input type="number" step="0.1" value={logLength} onChange={e => setLogLength(e.target.value)}
             placeholder="5.0" className="h-8 text-sm" />
@@ -145,15 +157,15 @@ function EditLogPileDialog({ pile, orgSlug, onClose }: { pile: any; orgSlug: str
 
       {/* Notiz */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-slate-600">Notiz / Besonderheiten</Label>
+        <Label className="text-xs font-medium text-slate-600">{t("labelNote")}</Label>
         <Input value={note} onChange={e => setNote(e.target.value)}
-          placeholder="z.B. Käferholz, Abrücktransport geplant ..." className="h-8 text-sm" />
+          placeholder={t("placeholderNote")} className="h-8 text-sm" />
       </div>
 
       <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <Button type="button" variant="ghost" size="sm" onClick={onClose}>Abbrechen</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>{t("cancel")}</Button>
         <Button size="sm" onClick={handleSave} disabled={saving} className="bg-amber-600 hover:bg-amber-700 text-white">
-          {saving && <Loader2 size={13} className="animate-spin mr-1" />} Speichern
+          {saving && <Loader2 size={13} className="animate-spin mr-1" />} {t("save")}
         </Button>
       </div>
     </div>
@@ -165,6 +177,8 @@ function EditLogPileDialog({ pile, orgSlug, onClose }: { pile: any; orgSlug: str
 function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
   operationId: string; forestId: string; logPilePois: any[]; orgSlug: string;
 }) {
+  const t = useTranslations("Operations");
+  const WOOD_TYPE_LABELS = useWoodTypeLabels();
   const [open, setOpen]     = useState(false);
   const [saving, setSaving] = useState(false);
   const [mode, setMode]     = useState<Mode>("CHOOSE");
@@ -215,7 +229,7 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
 
   const handleFromMap = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPoiId) { toast.error("Bitte einen Polter wählen"); return; }
+    if (!selectedPoiId) { toast.error(t("selectPileRequired")); return; }
     setSaving(true);
     try {
       await createLogPile(orgSlug, {
@@ -233,14 +247,14 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
         treeSpecies: species   || null, woodType, qualityClass: quality || null,
         notes: note || undefined,
       }, orgSlug);
-      toast.success("Polter verknüpft");
+      toast.success(t("pileLinked"));
       handleClose(false);
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
   const handleManual = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!lat || !lng) { toast.error("GPS-Koordinaten erforderlich"); return; }
+    if (!lat || !lng) { toast.error(t("gpsRequired")); return; }
     setSaving(true);
     try {
       await createLogPile(orgSlug, {
@@ -252,7 +266,7 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
         logLength:       mLength ? parseFloat(mLength) : undefined,
         note: mNote || undefined,
       });
-      toast.success("Polter angelegt");
+      toast.success(t("pileCreated"));
       handleClose(false);
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
@@ -260,7 +274,7 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
   const handleGps = () => {
     navigator.geolocation?.getCurrentPosition(
       pos => { setLat(pos.coords.latitude.toFixed(6)); setLng(pos.coords.longitude.toFixed(6)); },
-      () => toast.error("GPS nicht verfügbar")
+      () => toast.error(t("gpsNotAvailable"))
     );
   };
 
@@ -268,12 +282,12 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 border-dashed border-slate-300 text-slate-600 hover:border-amber-400 hover:text-amber-700">
-          <Plus size={12} /> Polter erfassen
+          <Plus size={12} /> {t("addPile")}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Polter erfassen</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("addPileTitle")}</DialogTitle></DialogHeader>
 
         {mode === "CHOOSE" && (
           <div className="space-y-2.5 mt-2">
@@ -283,9 +297,9 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
                 <MapPin size={18} className="text-amber-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-800">Aus Karte wählen</p>
+                <p className="text-sm font-semibold text-slate-800">{t("fromMap")}</p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {availablePois.length > 0 ? `${availablePois.length} Polter-Marker verfügbar` : "Bestehende Polter verknüpfen"}
+                  {availablePois.length > 0 ? t("fromMapDesc", { count: availablePois.length }) : t("fromMapDescFallback")}
                 </p>
               </div>
             </button>
@@ -296,8 +310,8 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
                 <ExternalLink size={18} className="text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-800">Neu auf Karte einzeichnen</p>
-                <p className="text-xs text-slate-500 mt-0.5">Zur Karte wechseln, Polter-Marker setzen, dann hier verknüpfen</p>
+                <p className="text-sm font-semibold text-slate-800">{t("drawOnMap")}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{t("drawOnMapDesc")}</p>
               </div>
             </a>
 
@@ -307,8 +321,8 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
                 <Trees size={18} className="text-slate-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-700">GPS / Koordinaten manuell</p>
-                <p className="text-xs text-slate-400 mt-0.5">Koordinaten per GPS-Button oder Eingabe</p>
+                <p className="text-sm font-medium text-slate-700">{t("manualGps")}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{t("manualGpsDesc")}</p>
               </div>
             </button>
           </div>
@@ -317,11 +331,11 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
         {mode === "FROM_MAP" && (
           <form onSubmit={handleFromMap} className="space-y-3 mt-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Polter auswählen *</Label>
+              <Label className="text-xs font-medium">{t("selectPile")}</Label>
               {availablePois.length === 0 ? (
                 <div className="text-xs text-slate-500 bg-slate-50 rounded-lg p-3 border border-slate-200">
-                  Noch keine Polter-Marker.{" "}
-                  <a href={`/dashboard/org/${orgSlug}/map`} className="text-blue-600 hover:underline">Auf Karte anlegen →</a>
+                  {t("noPileMarkers")}{" "}
+                  <a href={`/dashboard/org/${orgSlug}/map`} className="text-blue-600 hover:underline">{t("createOnMap")}</a>
                 </div>
               ) : (
                 <div className="space-y-1 max-h-44 overflow-y-auto border border-slate-200 rounded-lg p-2">
@@ -334,10 +348,10 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
                         <input type="radio" name="poi" value={p.id} checked={selectedPoiId === p.id}
                           onChange={() => !linked && handlePoiSelect(p.id)} disabled={linked} className="accent-amber-600" />
                         <MapPin size={11} className="text-amber-500 shrink-0" />
-                        <span className="text-xs text-slate-700 font-medium flex-1 truncate">{p.name ?? "Unbenannter Polter"}</span>
+                        <span className="text-xs text-slate-700 font-medium flex-1 truncate">{p.name ?? t("unnamedPile")}</span>
                         <span className="text-[10px] text-slate-400 font-mono shrink-0">{p.lat?.toFixed(4)}, {p.lng?.toFixed(4)}</span>
                         {p.logPile?.volumeFm && <span className="text-[10px] font-mono text-slate-500 shrink-0">{p.logPile.volumeFm} fm</span>}
-                        {linked && <span className="text-[10px] text-slate-400 italic shrink-0">zugewiesen</span>}
+                        {linked && <span className="text-[10px] text-slate-400 italic shrink-0">{t("assigned")}</span>}
                       </label>
                     );
                   })}
@@ -347,41 +361,41 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
 
             {selectedPoiId && (
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1"><Label className="text-xs">Holzart</Label>
+                <div className="space-y-1"><Label className="text-xs">{t("labelWoodTypeShort")}</Label>
                   <select value={woodType} onChange={e => setWoodType(e.target.value as WoodType)}
                     className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
                     {(Object.entries(WOOD_TYPE_LABELS) as [WoodType, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </div>
-                <div className="space-y-1"><Label className="text-xs">Baumart</Label>
+                <div className="space-y-1"><Label className="text-xs">{t("labelSpecies")}</Label>
                   <select value={species} onChange={e => setSpecies(e.target.value)}
                     className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
-                    <option value="">— wählen —</option>
+                    <option value="">{t("selectSpecies")}</option>
                     {TREE_SPECIES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                   </select>
                 </div>
-                <div className="space-y-1"><Label className="text-xs">Menge gesch. (fm)</Label>
+                <div className="space-y-1"><Label className="text-xs">{t("labelEstimatedAmountShort")}</Label>
                   <Input type="number" step="0.1" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.0" className="h-8 text-xs" />
                 </div>
-                <div className="space-y-1"><Label className="text-xs">Stammlänge (m)</Label>
+                <div className="space-y-1"><Label className="text-xs">{t("labelLogLengthShort")}</Label>
                   <Input type="number" step="0.1" value={logLength} onChange={e => setLogLength(e.target.value)} placeholder="5.0" className="h-8 text-xs" />
                 </div>
-                <div className="space-y-1"><Label className="text-xs">Güteklasse</Label>
+                <div className="space-y-1"><Label className="text-xs">{t("labelQualityClass")}</Label>
                   <select value={quality} onChange={e => setQuality(e.target.value)}
                     className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
                     {["A","B","C","D","IL","E"].map(q => <option key={q} value={q}>{q}</option>)}
                   </select>
                 </div>
-                <div className="space-y-1"><Label className="text-xs">Notiz</Label>
-                  <Input value={note} onChange={e => setNote(e.target.value)} placeholder="Hinweise..." className="h-8 text-xs" />
+                <div className="space-y-1"><Label className="text-xs">{t("labelNoteShort")}</Label>
+                  <Input value={note} onChange={e => setNote(e.target.value)} placeholder={t("placeholderHints")} className="h-8 text-xs" />
                 </div>
               </div>
             )}
 
             <div className="flex justify-between pt-2 border-t border-slate-100">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setMode("CHOOSE")}>← Zurück</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setMode("CHOOSE")}>{t("back")}</Button>
               <Button type="submit" size="sm" disabled={saving || !selectedPoiId} className="bg-amber-600 hover:bg-amber-700 text-white">
-                {saving && <Loader2 size={13} className="animate-spin mr-1" />} Verknüpfen
+                {saving && <Loader2 size={13} className="animate-spin mr-1" />} {t("link")}
               </Button>
             </div>
           </form>
@@ -390,54 +404,54 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
         {mode === "MANUAL" && (
           <form onSubmit={handleManual} className="space-y-3 mt-2">
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label className="text-xs">Bezeichnung</Label>
+              <div className="space-y-1"><Label className="text-xs">{t("labelName")}</Label>
                 <Input value={name} onChange={e => setName(e.target.value)} placeholder="z.B. A1" className="h-8 text-xs" />
               </div>
-              <div className="space-y-1"><Label className="text-xs">Baumart</Label>
+              <div className="space-y-1"><Label className="text-xs">{t("labelSpecies")}</Label>
                 <select value={mSpecies} onChange={e => setMSpecies(e.target.value)}
                   className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
-                  <option value="">— wählen —</option>
+                  <option value="">{t("selectSpecies")}</option>
                   {TREE_SPECIES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                 </select>
               </div>
-              <div className="space-y-1"><Label className="text-xs">Holzart</Label>
+              <div className="space-y-1"><Label className="text-xs">{t("labelWoodTypeShort")}</Label>
                 <select value={mWoodType} onChange={e => setMWoodType(e.target.value as WoodType)}
                   className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
                   {(Object.entries(WOOD_TYPE_LABELS) as [WoodType, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
-              <div className="space-y-1"><Label className="text-xs">Güteklasse</Label>
+              <div className="space-y-1"><Label className="text-xs">{t("labelQualityClass")}</Label>
                 <select value={mQuality} onChange={e => setMQuality(e.target.value)}
                   className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white h-8">
                   {["A","B","C","D","IL","E"].map(q => <option key={q} value={q}>{q}</option>)}
                 </select>
               </div>
-              <div className="space-y-1"><Label className="text-xs">Menge gesch. (fm)</Label>
+              <div className="space-y-1"><Label className="text-xs">{t("labelEstimatedAmountShort")}</Label>
                 <Input type="number" step="0.1" value={mAmount} onChange={e => setMAmount(e.target.value)} placeholder="0.0" className="h-8 text-xs" />
               </div>
-              <div className="space-y-1"><Label className="text-xs">Stammlänge (m)</Label>
+              <div className="space-y-1"><Label className="text-xs">{t("labelLogLengthShort")}</Label>
                 <Input type="number" step="0.1" value={mLength} onChange={e => setMLength(e.target.value)} placeholder="5.0" className="h-8 text-xs" />
               </div>
             </div>
             <div className="space-y-1">
               <Label className="text-xs flex items-center justify-between">
-                GPS-Position *
+                {t("gpsPosition")}
                 <button type="button" onClick={handleGps} className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
-                  <MapPin size={10} /> Aktuellen Standort
+                  <MapPin size={10} /> {t("currentLocation")}
                 </button>
               </Label>
               <div className="grid grid-cols-2 gap-2">
-                <Input value={lat} onChange={e => setLat(e.target.value)} placeholder="Breitengrad" className="h-8 text-xs" />
-                <Input value={lng} onChange={e => setLng(e.target.value)} placeholder="Längengrad" className="h-8 text-xs" />
+                <Input value={lat} onChange={e => setLat(e.target.value)} placeholder={t("latPlaceholder")} className="h-8 text-xs" />
+                <Input value={lng} onChange={e => setLng(e.target.value)} placeholder={t("lngPlaceholder")} className="h-8 text-xs" />
               </div>
             </div>
-            <div className="space-y-1"><Label className="text-xs">Notiz</Label>
-              <Input value={mNote} onChange={e => setMNote(e.target.value)} placeholder="Hinweise..." className="h-8 text-xs" />
+            <div className="space-y-1"><Label className="text-xs">{t("labelNoteShort")}</Label>
+              <Input value={mNote} onChange={e => setMNote(e.target.value)} placeholder={t("placeholderHints")} className="h-8 text-xs" />
             </div>
             <div className="flex justify-between pt-2 border-t border-slate-100">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setMode("CHOOSE")}>← Zurück</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setMode("CHOOSE")}>{t("back")}</Button>
               <Button type="submit" size="sm" disabled={saving} className="bg-amber-600 hover:bg-amber-700 text-white">
-                {saving && <Loader2 size={13} className="animate-spin mr-1" />} Speichern
+                {saving && <Loader2 size={13} className="animate-spin mr-1" />} {t("save")}
               </Button>
             </div>
           </form>
@@ -450,6 +464,9 @@ function NewLogPileDialog({ operationId, forestId, logPilePois, orgSlug }: {
 // ─── Main Section ─────────────────────────────────────────────────────────────
 
 export function LogPileSection({ logPiles, operationId, forestId, logPilePois, orgSlug }: Props) {
+  const t = useTranslations("Operations");
+  const STATUS_CFG = useStatusCfg();
+  const WOOD_TYPE_SHORT = useWoodTypeShort();
   const [deleting,  setDeleting]  = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
@@ -463,7 +480,7 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
     setDeleting(id);
     try {
       await deleteLogPile(orgSlug, id);
-      toast.success("Polter gelöscht");
+      toast.success(t("pileDeleted"));
     } catch (e: any) { toast.error(e.message); } finally { setDeleting(null); setDeleteTarget(null); }
   };
 
@@ -480,10 +497,10 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Boxes size={14} className="text-amber-500" />
-          <span className="text-xs font-semibold text-slate-700">Polterinventar</span>
+          <span className="text-xs font-semibold text-slate-700">{t("pileInventory")}</span>
           {logPiles.length > 0 && (
             <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">
-              {logPiles.length} Polter
+              {t("pileCount", { count: logPiles.length })}
             </span>
           )}
           {totalFm > 0 && (
@@ -493,7 +510,7 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
           )}
           {totalMeasured > 0 && totalMeasured !== totalFm && (
             <span className="text-[10px] text-blue-600 font-mono bg-blue-50 px-1.5 py-0.5 rounded-full">
-              {totalMeasured.toFixed(1)} fm vermessen
+              {t("fmMeasured", { value: totalMeasured.toFixed(1) })}
             </span>
           )}
         </div>
@@ -502,12 +519,12 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
 
       {/* Tabelle */}
       {logPiles.length === 0 ? (
-        <p className="text-xs text-slate-400 italic py-2 text-center">Noch keine Polter erfasst.</p>
+        <p className="text-xs text-slate-400 italic py-2 text-center">{t("noPilesYet")}</p>
       ) : (
         <div className="border border-slate-200 rounded-lg overflow-hidden">
           {/* Tabellen-Header */}
           <div className="grid grid-cols-[2fr_1.5fr_1fr_1.2fr_1.2fr_1fr_1.5fr_auto] gap-0 bg-slate-50 border-b border-slate-200 px-3 py-1.5">
-            {["Bezeichnung", "Baumart", "Güte", "Gesch. fm", "Verif. fm", "Länge", "Status", ""].map((h, i) => (
+            {[t("tableHeaderName"), t("tableHeaderSpecies"), t("tableHeaderQuality"), t("tableHeaderEstFm"), t("tableHeaderVerFm"), t("tableHeaderLength"), t("tableHeaderStatus"), ""].map((h, i) => (
               <span key={i} className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{h}</span>
             ))}
           </div>
@@ -525,7 +542,7 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
                   {/* Bezeichnung */}
                   <div className="flex items-center gap-1.5 min-w-0">
                     {pile.forestPoiId && <MapPin size={9} className="text-amber-400 shrink-0" />}
-                    <span className="font-medium text-slate-800 truncate">{pile.name ?? "Polter"}</span>
+                    <span className="font-medium text-slate-800 truncate">{pile.name ?? t("unnamedPile")}</span>
                     {pile.timberSale && (
                       <span className="text-[9px] text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded shrink-0 truncate max-w-[60px]">
                         {pile.timberSale.buyerName}
@@ -588,15 +605,15 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
                     <button
                       onClick={() => setEditingId(isEdit ? null : pile.id)}
                       className={`p-1 rounded transition-colors ${isEdit ? "text-amber-600 bg-amber-100" : "text-slate-400 hover:text-amber-600 hover:bg-amber-50"}`}
-                      title="Bearbeiten"
+                      title={t("edit")}
                     >
                       <Pencil size={11} />
                     </button>
                     <button
-                      onClick={() => setDeleteTarget({ id: pile.id, name: pile.name ?? "Polter" })}
+                      onClick={() => setDeleteTarget({ id: pile.id, name: pile.name ?? t("unnamedPile") })}
                       disabled={deleting === pile.id}
                       className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      title="Löschen"
+                      title={t("delete")}
                     >
                       {deleting === pile.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                     </button>
@@ -618,8 +635,8 @@ export function LogPileSection({ logPiles, operationId, forestId, logPilePois, o
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
-        title={`Polter "${deleteTarget?.name}" löschen?`}
-        confirmLabel="Löschen"
+        title={t("deletePile", { name: deleteTarget?.name ?? "" })}
+        confirmLabel={t("delete")}
         destructive
         onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
       />

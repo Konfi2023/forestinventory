@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn, getUserColor, getInitials } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
 import centroid from '@turf/centroid';
@@ -31,6 +32,7 @@ interface ContentEntry { species: string; count: number }
 
 // ─── Species Picker ─────────────────────────────────────────────────────────
 function SpeciesPicker({ onSelect }: { onSelect: (id: string) => void }) {
+  const t = useTranslations('Map');
   const [query, setQuery] = useState('');
   const filtered = useMemo(
     () => TREE_SPECIES.filter(s => s.label.toLowerCase().includes(query.toLowerCase())),
@@ -43,7 +45,7 @@ function SpeciesPicker({ onSelect }: { onSelect: (id: string) => void }) {
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Baumart suchen…"
+          placeholder={t('searchSpecies')}
           className="bg-transparent text-xs text-white placeholder-gray-600 outline-none w-full"
           autoFocus
         />
@@ -60,7 +62,7 @@ function SpeciesPicker({ onSelect }: { onSelect: (id: string) => void }) {
           </button>
         ))}
         {filtered.length === 0 && (
-          <p className="text-xs text-gray-600 px-3 py-2">Keine Treffer</p>
+          <p className="text-xs text-gray-600 px-3 py-2">{t('noMatch')}</p>
         )}
       </div>
     </div>
@@ -122,6 +124,7 @@ interface Props {
 export function PlantingDetailView({
   planting, forest, orgSlug, tasks, members, forests, onClose, onRefresh, onDeleteSuccess, canEdit, canDelete,
 }: Props) {
+  const t = useTranslations('Map');
   const setInteractionMode = useMapStore(s => s.setInteractionMode);
   const setEditingFeature  = useMapStore(s => s.setEditingFeature);
   const interactionMode    = useMapStore(s => s.interactionMode);
@@ -146,7 +149,7 @@ export function PlantingDetailView({
 
   const totalCount = content.reduce((s, e) => s + e.count, 0);
   const dominant   = getDominantSpecies(content) ?? planting.treeSpecies;
-  const dominantLabel = (dominant && dominant !== 'Unbekannt') ? getSpeciesLabel(dominant) : 'Pflanzfläche';
+  const dominantLabel = (dominant && dominant !== 'Unbekannt') ? getSpeciesLabel(dominant) : t('plantingArea');
   const dominantColor = getSpeciesColor(dominant ?? '');
 
   const title = (description && description.trim()) ? description.trim() : dominantLabel;
@@ -183,7 +186,7 @@ export function PlantingDetailView({
 
   const addSpecies = (id: string) => {
     if (content.some(e => e.species === id)) {
-      toast.info('Baumart bereits vorhanden');
+      toast.info(t('speciesAlreadyPresent'));
     } else {
       setContent(prev => [...prev, { species: id, count: 0 }]);
     }
@@ -203,8 +206,8 @@ export function PlantingDetailView({
     try {
       const treeSpecies = dominant ?? 'OTHER';
       const res = await updatePlanting(planting.id, { treeSpecies, description, note, content }, orgSlug);
-      if (!res.success) throw new Error(res.error ?? 'Unbekannter Fehler');
-      toast.success('Pflanzfläche aktualisiert');
+      if (!res.success) throw new Error(res.error ?? t('unknownError'));
+      toast.success(t('plantingUpdated'));
       setIsEditing(false);
       onRefresh();
     } catch (e: any) {
@@ -220,10 +223,10 @@ export function PlantingDetailView({
       const res = await togglePolygonBiomass(planting.id, 'PLANTING', enabled, orgSlug);
       if (!res.success) throw new Error(res.error);
       setTrackBiomass(enabled);
-      toast.success(enabled ? 'Biomasse-Tracking aktiviert' : 'Biomasse-Tracking deaktiviert');
+      toast.success(enabled ? t('biomassEnabled') : t('biomassDisabled'));
       onRefresh();
     } catch (e: any) {
-      toast.error(`Fehler: ${e.message}`);
+      toast.error(e.message);
     } finally {
       setIsTogglingBio(false);
     }
@@ -272,13 +275,13 @@ export function PlantingDetailView({
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <div className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1.5">
-            <Ruler size={12} /> Fläche
+            <Ruler size={12} /> {t('area')}
           </div>
           <div className="text-lg text-white font-mono font-medium">{formatArea(planting.areaHa)}</div>
         </div>
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <div className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1.5">
-            <Sprout size={12} /> Stückzahl
+            <Sprout size={12} /> {t('pieceCount')}
           </div>
           <div className="text-lg text-white font-mono font-medium">
             {totalCount > 0 ? totalCount.toLocaleString('de-DE') : '—'}
@@ -289,20 +292,20 @@ export function PlantingDetailView({
       {/* WALD */}
       {forest && (
         <div className="text-xs text-gray-500">
-          <span className="font-semibold text-gray-400">Wald:</span> {forest.name}
+          <span className="font-semibold text-gray-400">{t('forestLabel')}</span> {forest.name}
         </div>
       )}
 
       {/* ARTEN-MIX */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-[10px] uppercase text-gray-500 font-bold">Baumarten</h4>
+          <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('treeSpeciesLabel')}</h4>
           {isEditing && (
             <button
               onClick={() => setShowPicker(!showPicker)}
               className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition"
             >
-              <Plus size={11} /> Hinzufügen
+              <Plus size={11} /> {t('addLabel')}
             </button>
           )}
         </div>
@@ -335,7 +338,7 @@ export function PlantingDetailView({
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                       <span className="text-xs text-gray-300 flex-1">{label}</span>
-                      <span className="text-xs text-gray-500">{entry.count.toLocaleString('de-DE')} Stk.</span>
+                      <span className="text-xs text-gray-500">{entry.count.toLocaleString('de-DE')} {t('pieces')}</span>
                     </div>
                     {totalCount > 0 && (
                       <div className="ml-4 flex items-center gap-2">
@@ -352,7 +355,7 @@ export function PlantingDetailView({
           </div>
         ) : (
           <p className="text-xs text-gray-600 italic">
-            {isEditing ? 'Keine Baumarten eingetragen. Über "+ Hinzufügen" ergänzen.' : 'Keine Artdaten vorhanden.'}
+            {isEditing ? t('noSpeciesEditing') : t('noSpeciesData')}
           </p>
         )}
       </div>
@@ -360,13 +363,13 @@ export function PlantingDetailView({
       {/* BESCHREIBUNG */}
       {(isEditing || description) && (
         <div>
-          <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">Beschreibung</h4>
+          <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">{t('description')}</h4>
           {isEditing ? (
             <Input
               value={description}
               onChange={e => setDescription(e.target.value)}
               className="bg-black/50 border-white/20 text-white"
-              placeholder="z. B. Naturverjüngung Fichte 2023"
+              placeholder={t('descriptionPlaceholder')}
             />
           ) : (
             <p className="text-xs text-gray-400 bg-black/20 px-3 py-2 rounded-lg border border-white/5">{description}</p>
@@ -376,17 +379,17 @@ export function PlantingDetailView({
 
       {/* NOTIZ */}
       <div>
-        <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">Notiz</h4>
+        <h4 className="text-[10px] uppercase text-gray-500 font-bold mb-2">{t('note')}</h4>
         {isEditing ? (
           <Textarea
             value={note}
             onChange={e => setNote(e.target.value)}
             className="bg-black/50 border-white/20 text-white min-h-[80px]"
-            placeholder="Notizen zur Pflanzfläche…"
+            placeholder={t('notePlaceholderPlanting')}
           />
         ) : (
           <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5 min-h-[48px] whitespace-pre-wrap">
-            {note || 'Keine Notiz.'}
+            {note || t('noNote')}
           </p>
         )}
       </div>
@@ -395,13 +398,13 @@ export function PlantingDetailView({
       {!isEditing && (
         <div className="space-y-3 pt-4 border-t border-white/10 mt-4">
           <div className="flex justify-between items-center">
-            <h4 className="text-[10px] uppercase text-gray-500 font-bold">Aufgaben</h4>
+            <h4 className="text-[10px] uppercase text-gray-500 font-bold">{t('tasks')}</h4>
             <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-300">{linkedTasks.length}</span>
           </div>
           <div className="space-y-2">
             {linkedTasks.length === 0 ? (
               <div className="text-center py-4 text-xs text-gray-600 border border-dashed border-white/10 rounded-lg">
-                Alles erledigt.
+                {t('allDone')}
               </div>
             ) : (
               linkedTasks.map((task: any) => (
@@ -442,7 +445,7 @@ export function PlantingDetailView({
               variant="outline"
               onClick={() => setShowCreateTask(true)}
             >
-              <PlusCircle className="w-3 h-3 mr-2" /> Neue Aufgabe hier
+              <PlusCircle className="w-3 h-3 mr-2" /> {t('newTaskHere')}
             </Button>
           </div>
         </div>
@@ -453,8 +456,8 @@ export function PlantingDetailView({
         <div className="flex items-center gap-2">
           <Radio size={13} className={trackBiomass ? 'text-emerald-400' : 'text-gray-600'} />
           <div>
-            <p className="text-xs text-gray-300 font-medium">SAR-Monitoring</p>
-            <p className="text-[10px] text-gray-600">Sentinel-1 Tracking im Biomasse-Monitor</p>
+            <p className="text-xs text-gray-300 font-medium">{t('sarMonitoring')}</p>
+            <p className="text-[10px] text-gray-600">{t('sarDescription')}</p>
           </div>
         </div>
         <button
@@ -470,15 +473,15 @@ export function PlantingDetailView({
       {/* GEOMETRIE */}
       {isEditing && (
         <div className="pt-2 border-t border-white/10 mt-2">
-          <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">Geometrie</label>
+          <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">{t('geometry')}</label>
           <Button
             variant="outline"
             className={`w-full border-white/10 text-gray-300 hover:text-white hover:bg-white/10 h-10 font-bold ${isGeometryEditing ? 'bg-blue-900/20 border-blue-500 text-blue-400' : ''}`}
             onClick={handleToggleGeometry}
           >
             {isGeometryEditing
-              ? <><Check className="w-4 h-4 mr-2" /> Bearbeiten beenden</>
-              : <><ScanLine className="w-4 h-4 mr-2" /> Fläche auf Karte ändern</>}
+              ? <><Check className="w-4 h-4 mr-2" /> {t('editGeometryDone')}</>
+              : <><ScanLine className="w-4 h-4 mr-2" /> {t('editAreaStart')}</>}
           </Button>
         </div>
       )}
@@ -490,11 +493,11 @@ export function PlantingDetailView({
             <DeleteConfirmDialog
               trigger={
                 <Button variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-950/30 px-3">
-                  <Trash2 className="w-4 h-4 mr-2" /> Löschen
+                  <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
                 </Button>
               }
-              title={`Pflanzfläche löschen?`}
-              description="Die Pflanzfläche wird unwiderruflich von der Karte entfernt."
+              title={t('deletePlantingTitle')}
+              description={t('deletePlantingDesc')}
               confirmString={dominantLabel}
               onConfirm={async () => {
                 const taskIds = deleteTasksToo ? linkedTasks.map((t: any) => t.id) : undefined;
@@ -506,13 +509,13 @@ export function PlantingDetailView({
               {linkedTasks.length > 0 && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
                   <p className="text-xs font-semibold text-amber-800">
-                    Verknüpfte Aufgaben ({linkedTasks.length})
+                    {t('linkedTasks', { count: linkedTasks.length })}
                   </p>
                   <div className="space-y-1">
-                    {linkedTasks.map((t: any) => (
-                      <div key={t.id} className="flex items-baseline gap-2 text-sm">
-                        <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">Aufgabe</span>
-                        <span className="text-slate-700 truncate">{t.title}</span>
+                    {linkedTasks.map((task: any) => (
+                      <div key={task.id} className="flex items-baseline gap-2 text-sm">
+                        <span className="text-[10px] font-semibold uppercase text-amber-500 shrink-0 w-16">{t('taskLabel')}</span>
+                        <span className="text-slate-700 truncate">{task.title}</span>
                       </div>
                     ))}
                   </div>
@@ -523,7 +526,7 @@ export function PlantingDetailView({
                       onChange={e => setDeleteTasksToo(e.target.checked)}
                       className="rounded border-amber-400 text-red-600 focus:ring-red-500"
                     />
-                    <span className="text-sm text-slate-700">Aufgaben ebenfalls löschen</span>
+                    <span className="text-sm text-slate-700">{t('deleteTasksToo')}</span>
                   </label>
                 </div>
               )}
@@ -531,10 +534,10 @@ export function PlantingDetailView({
           ) : <div />}
           <div className="flex gap-2">
             <Button variant="ghost" onClick={resetEditing} className="text-gray-400">
-              Abbrechen
+              {t('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Speichern'}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
             </Button>
           </div>
         </div>

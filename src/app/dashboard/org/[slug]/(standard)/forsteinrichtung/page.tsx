@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { getAccessibleForests } from "@/lib/forest-access";
 import { Grid3x3 } from "lucide-react";
 import { ForsteinrichtungClient } from "./_components/ForsteinrichtungClient";
+import { getTranslations } from "next-intl/server";
 
 export default async function ForsteinrichtungPage({
   params,
@@ -58,6 +59,8 @@ export default async function ForsteinrichtungPage({
     orderBy: { name: "asc" },
   });
 
+  const t = await getTranslations('ForestSetup');
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -66,9 +69,9 @@ export default async function ForsteinrichtungPage({
           <Grid3x3 size={20} className="text-emerald-700" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Forsteinrichtung</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{t('pageTitle')}</h1>
           <p className="text-sm text-slate-500">
-            Abteilungsweise Bestandserfassung · Forsteinrichtungsblatt
+            {t('pageSubtitle')}
           </p>
         </div>
       </div>

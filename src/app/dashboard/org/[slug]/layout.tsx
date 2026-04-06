@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale, getMessages } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
 import {
   LayoutDashboard,
   Settings,
@@ -86,6 +87,8 @@ export default async function OrgLayout({
 
   // 3. Translations laden
   const t = await getTranslations("Dashboard");
+  const dashLocale = await getLocale();
+  const dashMessages = await getMessages();
 
   // 4. Alle Mitgliedschaften laden (für den Org-Switcher)
   const allMemberships = await prisma.membership.findMany({
@@ -175,10 +178,12 @@ export default async function OrgLayout({
       {/* MAIN CONTENT AREA */}
       {/* WICHTIG: Kein Padding, kein Margin, volle Breite für die Karte */}
       <main className="flex-1 relative w-full h-full overflow-hidden">
+        <NextIntlClientProvider locale={dashLocale} messages={dashMessages}>
           <TrialExpiredGate org={org} slug={slug}>
             {children}
           </TrialExpiredGate>
           <HelpPanel />
+        </NextIntlClientProvider>
       </main>
     </div>
   );

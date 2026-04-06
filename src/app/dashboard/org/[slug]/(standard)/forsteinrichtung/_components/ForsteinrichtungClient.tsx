@@ -330,6 +330,7 @@ function SpeciesPicker({ onSelect, onClose }: { onSelect: (id: string) => void; 
 function SpeciesEditor({ label, entries, onChange }: {
   label: string; entries: SpeciesEntry[]; onChange: (e: SpeciesEntry[]) => void;
 }) {
+  const t = useTranslations('ForestSetup');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
@@ -345,7 +346,7 @@ function SpeciesEditor({ label, entries, onChange }: {
                 className="flex items-center gap-2 w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm text-left hover:border-slate-300">
                 {e.species && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getSpeciesColor(e.species) }} />}
                 <span className={e.species ? 'text-slate-800' : 'text-slate-400'}>
-                  {e.species ? getSpeciesLabel(e.species) : '– Baumart wählen –'}
+                  {e.species ? getSpeciesLabel(e.species) : t('selectSpeciesPlaceholder')}
                 </span>
               </button>
               {editIdx === i && (
@@ -374,6 +375,7 @@ function SpeciesEditor({ label, entries, onChange }: {
 }
 
 function RejuvEditor({ entries, onChange }: { entries: RejuvEntry[]; onChange: (e: RejuvEntry[]) => void }) {
+  const t = useTranslations('ForestSetup');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
@@ -400,7 +402,7 @@ function RejuvEditor({ entries, onChange }: { entries: RejuvEntry[]; onChange: (
             <Input type="number" value={e.heightCm || ''} onChange={ev => upd(i, 'heightCm', ev.target.value)}
               placeholder="cm" className="w-20 border-slate-200 text-sm" />
             <Input value={e.density} onChange={ev => upd(i, 'density', ev.target.value)}
-              placeholder="Dichte" className="w-24 border-slate-200 text-sm" />
+              placeholder={t('densityPlaceholder')} className="w-24 border-slate-200 text-sm" />
             <button onClick={() => remove(i)} className="text-slate-400 hover:text-red-400">×</button>
           </div>
         ))}
@@ -419,9 +421,10 @@ function RejuvEditor({ entries, onChange }: { entries: RejuvEntry[]; onChange: (
 
 // ── Stats Blocks ──────────────────────────────────────────────────────────────
 
-const HEALTH_LABEL_MAP: Record<string, string> = { HEALTHY: 'Vital', DAMAGED: 'Geschädigt', DEAD: 'Abgestorben', MARKED_FOR_FELLING: 'Zum Fällen' };
+// Health labels are resolved via t() in components that use them
+const HEALTH_LABEL_MAP_KEYS: Record<string, string> = { HEALTHY: 'healthVital', DAMAGED: 'healthDamaged', DEAD: 'healthDead', MARKED_FOR_FELLING: 'healthMarkedFelling' };
 const HEALTH_COLOR_MAP: Record<string, string> = { HEALTHY: 'text-emerald-600', DAMAGED: 'text-amber-500', DEAD: 'text-red-500', MARKED_FOR_FELLING: 'text-orange-500' };
-const HEALTH_LABEL: Record<string, string> = { HEALTHY: 'Vital', STRESSED: 'Gestresst', DAMAGED: 'Geschädigt', DEAD: 'Abgestorben' };
+const HEALTH_LABEL_KEYS: Record<string, string> = { HEALTHY: 'healthVital', STRESSED: 'healthStressed', DAMAGED: 'healthDamaged', DEAD: 'healthDead' };
 
 function StatPill({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -434,21 +437,22 @@ function StatPill({ label, value, sub }: { label: string; value: string; sub?: s
 }
 
 function InventoryStatsBlock({ trees }: { trees: TreePoi[] }) {
+  const t = useTranslations('ForestSetup');
   const stats = useMemo(() => computeInventoryStats(trees), [trees]);
   if (!stats) return null;
   return (
     <div className="border border-slate-100 rounded-lg overflow-hidden">
       <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
         <span className="text-xs font-bold uppercase tracking-wide text-emerald-700 flex items-center gap-1.5">
-          <BarChart2 size={11} /> Inventur-Auswertung · {stats.n} Bäume
+          <BarChart2 size={11} /> {t('inventoryTitle')} · {stats.n} {t('trees')}
         </span>
       </div>
       <div className="p-4 space-y-3">
         <div className="grid grid-cols-4 gap-2">
-          <StatPill label="Mittl. BHD (Dg)" value={`${stats.dg.toFixed(1)} cm`} />
-          <StatPill label="Mittl. Höhe" value={stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'} sub={stats.meanHeight != null && stats.treesWithHeight < stats.n ? `aus ${stats.treesWithHeight} Bäumen` : undefined} />
-          <StatPill label="Grundfläche Σ" value={`${stats.basalAreaSum.toFixed(2)} m²`} />
-          <StatPill label="Vorrat ≈" value={stats.volumeEstimate > 0 ? `${stats.volumeEstimate.toFixed(1)} m³` : '–'} sub={stats.volumeEstimate > 0 ? 'Schätzwert' : undefined} />
+          <StatPill label={t('meanDbh')} value={`${stats.dg.toFixed(1)} cm`} />
+          <StatPill label={t('meanHeight')} value={stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'} sub={stats.meanHeight != null && stats.treesWithHeight < stats.n ? t('fromTrees', { count: stats.treesWithHeight }) : undefined} />
+          <StatPill label={t('basalAreaSum')} value={`${stats.basalAreaSum.toFixed(2)} m²`} />
+          <StatPill label={t('volumeEstimate')} value={stats.volumeEstimate > 0 ? `${stats.volumeEstimate.toFixed(1)} m³` : '–'} sub={stats.volumeEstimate > 0 ? t('estimate') : undefined} />
         </div>
         {stats.speciesBreakdown.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
@@ -463,7 +467,7 @@ function InventoryStatsBlock({ trees }: { trees: TreePoi[] }) {
         <div className="flex flex-wrap gap-3">
           {stats.healthBreakdown.map(h => (
             <span key={h.health} className={`text-xs font-medium ${HEALTH_COLOR_MAP[h.health] ?? 'text-slate-500'}`}>
-              {HEALTH_LABEL_MAP[h.health] ?? h.health} {h.pct}%
+              {t(HEALTH_LABEL_MAP_KEYS[h.health] as any) ?? h.health} {h.pct}%
             </span>
           ))}
         </div>
@@ -473,41 +477,42 @@ function InventoryStatsBlock({ trees }: { trees: TreePoi[] }) {
 }
 
 function PlotStatsBlock({ plot, compartmentAge, areaHa }: { plot: InventoryPlotData; compartmentAge: number | null; areaHa?: number | null }) {
+  const t = useTranslations('ForestSetup');
   const stats = useMemo(() => computePlotStats(plot, compartmentAge), [plot, compartmentAge]);
-  const dateStr = new Date(plot.measuredAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const dateStr = new Date(plot.measuredAt).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
   return (
     <div className="border border-violet-100 rounded-xl bg-violet-50/40 overflow-hidden mb-3">
       <div className="flex items-center gap-2 px-3 py-2 bg-violet-50 border-b border-violet-100">
         <CircleDot size={12} className="text-violet-600 shrink-0" />
-        <span className="text-xs font-semibold text-violet-700">{plot.name || 'Probekreis'}</span>
+        <span className="text-xs font-semibold text-violet-700">{plot.name || t('samplePlot')}</span>
         <span className="text-[10px] text-violet-400 ml-1">r = {plot.radiusM} m · {(Math.PI * plot.radiusM ** 2).toFixed(0)} m² · {dateStr}</span>
-        <span className="ml-auto text-[10px] text-violet-400">{plot.trees.length} Bäume</span>
+        <span className="ml-auto text-[10px] text-violet-400">{plot.trees.length} {t('trees')}</span>
       </div>
       {stats ? (
         <div className="p-3 space-y-3">
           <div className="grid grid-cols-4 gap-2">
             <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{Math.round(stats.nHa)}</div><div className="text-[10px] text-slate-500">N/ha</div></div>
-            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{areaHa ? `~${Math.round(stats.nHa * areaHa)}` : '–'}</div><div className="text-[10px] text-slate-500">Gesamt (Abt.)</div></div>
+            <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{areaHa ? `~${Math.round(stats.nHa * areaHa)}` : '–'}</div><div className="text-[10px] text-slate-500">{t('totalCompartment')}</div></div>
             <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{stats.gHa.toFixed(1)}</div><div className="text-[10px] text-slate-500">G/ha (m²)</div></div>
             <div className="bg-white rounded-lg px-2 py-2 text-center border border-violet-100"><div className="text-sm font-bold text-slate-800">{stats.vHa != null ? Math.round(stats.vHa) : '–'}</div><div className="text-[10px] text-slate-500">V/ha (m³)</div></div>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="text-slate-500">Dg <span className="font-medium text-slate-700">{stats.dg.toFixed(1)} cm</span></div>
-            <div className="text-slate-500">Mittl. Höhe <span className="font-medium text-slate-700">{stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'}</span></div>
+            <div className="text-slate-500">{t('meanHeight')} <span className="font-medium text-slate-700">{stats.meanHeight != null ? `${stats.meanHeight.toFixed(1)} m` : '–'}</span></div>
           </div>
           {stats.siteClass && stats.dominantSpecies && (
             <div className="bg-white border border-emerald-100 rounded-lg p-2 text-xs space-y-1.5">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">Ertragstafel · {getSpeciesLabel(stats.dominantSpecies)}</div>
-              <div className="flex items-center justify-between"><span className="text-slate-500">Bonität</span><span className="font-medium text-slate-700">{SITE_CLASS_LABELS[stats.siteClass]}</span></div>
-              {stats.bestockungsgrad != null && <div className="flex items-center justify-between"><span className="text-slate-500">Bestockungsgrad</span><span className={`font-bold ${stats.bestockungsgrad >= 1.0 ? 'text-emerald-700' : stats.bestockungsgrad >= 0.7 ? 'text-amber-600' : 'text-red-500'}`}>{stats.bestockungsgrad.toFixed(2)}</span></div>}
-              {stats.refGHa  != null && <div className="flex items-center justify-between"><span className="text-slate-500">Tafel G/ha</span><span className="font-medium text-slate-700">{stats.refGHa.toFixed(0)} m²/ha</span></div>}
-              {stats.refVHa  != null && <div className="flex items-center justify-between"><span className="text-slate-500">Tafel V/ha</span><span className="font-medium text-slate-700">{stats.refVHa.toFixed(0)} m³/ha</span></div>}
-              {stats.refIvHa != null && <div className="flex items-center justify-between"><span className="text-slate-500">Zuwachs (iV)</span><span className="font-medium text-slate-700">{stats.refIvHa.toFixed(1)} m³/ha/a</span></div>}
+              <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">{t('yieldTable')} · {getSpeciesLabel(stats.dominantSpecies)}</div>
+              <div className="flex items-center justify-between"><span className="text-slate-500">{t('siteQuality')}</span><span className="font-medium text-slate-700">{SITE_CLASS_LABELS[stats.siteClass]}</span></div>
+              {stats.bestockungsgrad != null && <div className="flex items-center justify-between"><span className="text-slate-500">{t('stockingDegreeLabel')}</span><span className={`font-bold ${stats.bestockungsgrad >= 1.0 ? 'text-emerald-700' : stats.bestockungsgrad >= 0.7 ? 'text-amber-600' : 'text-red-500'}`}>{stats.bestockungsgrad.toFixed(2)}</span></div>}
+              {stats.refGHa  != null && <div className="flex items-center justify-between"><span className="text-slate-500">{t('tableGHa')}</span><span className="font-medium text-slate-700">{stats.refGHa.toFixed(0)} m²/ha</span></div>}
+              {stats.refVHa  != null && <div className="flex items-center justify-between"><span className="text-slate-500">{t('tableVHa')}</span><span className="font-medium text-slate-700">{stats.refVHa.toFixed(0)} m³/ha</span></div>}
+              {stats.refIvHa != null && <div className="flex items-center justify-between"><span className="text-slate-500">{t('incrementIv')}</span><span className="font-medium text-slate-700">{stats.refIvHa.toFixed(1)} m³/ha/a</span></div>}
             </div>
           )}
         </div>
       ) : (
-        <p className="text-xs text-slate-400 px-3 py-2">Keine BHD-Messungen — Kennzahlen nicht berechenbar.</p>
+        <p className="text-xs text-slate-400 px-3 py-2">{t('noDbhMeasurements')}</p>
       )}
     </div>
   );
@@ -515,6 +520,7 @@ function PlotStatsBlock({ plot, compartmentAge, areaHa }: { plot: InventoryPlotD
 
 // ── Tree Row ──────────────────────────────────────────────────────────────────
 function TreeRow({ poi }: { poi: TreePoi }) {
+  const tr = useTranslations('ForestSetup');
   const t = poi.tree!;
   return (
     <div className="flex items-center gap-3 py-1.5 px-3 rounded-md hover:bg-slate-50">
@@ -524,7 +530,7 @@ function TreeRow({ poi }: { poi: TreePoi }) {
         {t.diameter != null && <span>Ø {t.diameter} cm</span>}
         {t.height   != null && <span>{t.height} m</span>}
         {t.age      != null && <span>{t.age} J</span>}
-        {t.health   && <span className={`font-medium ${t.health === 'HEALTHY' ? 'text-emerald-600' : t.health === 'DEAD' ? 'text-red-500' : 'text-amber-500'}`}>{HEALTH_LABEL[t.health] ?? t.health}</span>}
+        {t.health   && <span className={`font-medium ${t.health === 'HEALTHY' ? 'text-emerald-600' : t.health === 'DEAD' ? 'text-red-500' : 'text-amber-500'}`}>{tr(HEALTH_LABEL_KEYS[t.health] as any) ?? t.health}</span>}
       </div>
     </div>
   );
@@ -532,6 +538,7 @@ function TreeRow({ poi }: { poi: TreePoi }) {
 
 // ── Forest Overview (Gesamtbetrieb) ──────────────────────────────────────────
 function ForestOverview({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlug: string; onUpdated: (f: Forest) => void }) {
+  const t = useTranslations('ForestSetup');
   const comps = forest.compartments;
   const totalAreaHa = comps.reduce((s, c) => s + (c.areaHa ?? 0), 0);
   const totalVolume = comps.reduce((s, c) => s + (c.volumePerHa ?? 0) * (c.areaHa ?? 0), 0);
@@ -620,15 +627,15 @@ function ForestOverview({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlu
         {/* Planungszeitraum — editierbar */}
         <div className="border border-emerald-200 rounded-lg bg-emerald-50/50 overflow-hidden">
           <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-            <span className="text-xs font-bold uppercase tracking-wide text-emerald-700">Forsteinrichtung / Planungszeitraum</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-emerald-700">{t('planningPeriod')}</span>
           </div>
           <div className="p-4">
             <div className="grid grid-cols-4 gap-3 items-end">
-              <NField label="Beginn (Jahr)" value={start} onChange={setStart} step="1" />
-              <NField label="Ende (Jahr)" value={end} onChange={setEnd} step="1" />
-              <NField label="Nutzungssatz" value={target} onChange={setTarget} unit="Vfm/Jahr" />
+              <NField label={t('startYear')} value={start} onChange={setStart} step="1" />
+              <NField label={t('endYear')} value={end} onChange={setEnd} step="1" />
+              <NField label={t('harvestRate')} value={target} onChange={setTarget} unit={t('vfmPerYear')} />
               <Button onClick={handleSavePlanning} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white h-9">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Speichern'}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
               </Button>
             </div>
           </div>
@@ -637,18 +644,18 @@ function ForestOverview({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlu
         {/* Betriebskennzahlen */}
         <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
           <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
-            <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Betriebskennzahlen</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{t('operationalStats')}</span>
           </div>
           <div className="p-4 grid grid-cols-3 gap-4">
-            <Stat label="Abteilungen" value={comps.length.toString()} />
-            <Stat label="Gesamtfläche" value={`${totalAreaHa.toFixed(1)} ha`} />
-            <Stat label="Gesamtvorrat" value={`${Math.round(totalVolume)} Vfm`} />
-            <Stat label="Mittl. Vorrat/ha" value={`${avgVolumePerHa.toFixed(0)} m³/ha`} />
-            <Stat label="Mittl. Zuwachs/ha" value={`${avgIncrementPerHa.toFixed(1)} m³/ha/a`} />
-            <Stat label="Gesamtzuwachs" value={`${Math.round(totalIncrement)} Vfm/a`} />
-            {avgStockingDegree != null && <Stat label="Mittl. Bestockungsgrad" value={avgStockingDegree.toFixed(2)} />}
-            {avgDeadwood != null && <Stat label="Mittl. Totholz" value={`${avgDeadwood.toFixed(1)} m³/ha`} />}
-            {totalPlannedHarvest > 0 && <Stat label="Gepl. Einschlag (gesamt)" value={`${Math.round(totalPlannedHarvest)} Vfm`} />}
+            <Stat label={t('statCompartments')} value={comps.length.toString()} />
+            <Stat label={t('statTotalArea')} value={`${totalAreaHa.toFixed(1)} ha`} />
+            <Stat label={t('statTotalVolume')} value={`${Math.round(totalVolume)} Vfm`} />
+            <Stat label={t('statAvgVolHa')} value={`${avgVolumePerHa.toFixed(0)} m³/ha`} />
+            <Stat label={t('statAvgIncrHa')} value={`${avgIncrementPerHa.toFixed(1)} m³/ha/a`} />
+            <Stat label={t('statTotalIncr')} value={`${Math.round(totalIncrement)} Vfm/a`} />
+            {avgStockingDegree != null && <Stat label={t('statAvgStocking')} value={avgStockingDegree.toFixed(2)} />}
+            {avgDeadwood != null && <Stat label={t('statAvgDeadwood')} value={`${avgDeadwood.toFixed(1)} m³/ha`} />}
+            {totalPlannedHarvest > 0 && <Stat label={t('statPlannedHarvest')} value={`${Math.round(totalPlannedHarvest)} Vfm`} />}
           </div>
         </div>
 
@@ -656,7 +663,7 @@ function ForestOverview({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlu
         {speciesShares.length > 0 && (
           <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
             <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
-              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Baumartenflächenanteile</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{t('speciesSharesTitle')}</span>
             </div>
             <div className="p-4 space-y-1.5">
               {speciesShares.map(({ species, area, pct }) => (
@@ -678,7 +685,7 @@ function ForestOverview({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlu
         {ageData.length > 0 && (
           <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
             <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
-              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Altersklassenverteilung</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{t('ageClassTitle')}</span>
             </div>
             <div className="p-4 space-y-1.5">
               {ageData.map(([label, area]) => (
@@ -698,7 +705,7 @@ function ForestOverview({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlu
         {functionMap.size > 0 && (
           <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
             <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
-              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Waldfunktionen</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{t('forestFunctionsTitle')}</span>
             </div>
             <div className="p-4 space-y-1">
               {[...functionMap.entries()].sort((a, b) => b[1] - a[1]).map(([fn, area]) => (
@@ -715,7 +722,7 @@ function ForestOverview({ forest, orgSlug, onUpdated }: { forest: Forest; orgSlu
         {comps.some(c => c.plannedHarvestVolume || (c.plannedMeasures && c.plannedMeasures.length > 0)) && (
           <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
             <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
-              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Nutzungsplanung je Abteilung</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{t('harvestPlanTitle')}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -856,7 +863,7 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExpo
     }
   };
 
-  const displayName = `${number ? `[${number}] ` : ''}${name || 'Abteilung'}`;
+  const displayName = `${number ? `[${number}] ` : ''}${name || t('compartmentFallback')}`;
 
   return (
     <div className="flex flex-col h-full">
@@ -887,7 +894,7 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExpo
           <div className="border border-violet-200 rounded-lg overflow-hidden bg-violet-50/30">
             <div className="bg-violet-50 px-4 py-2.5 border-b border-violet-100 flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wide text-violet-600 flex items-center gap-1.5">
-                <CircleDot size={11} /> Berechnete Werte aus {plots.length} {plots.length === 1 ? 'Probekreis' : 'Probekreisen'}
+                <CircleDot size={11} /> {t('calcValuesFrom', { count: plots.length })}
               </span>
               {compartment.areaHa != null && (() => {
                 // Calculate total estimated stem count from all plots
@@ -896,7 +903,7 @@ function CompartmentEditor({ compartment, orgSlug, trees, onSaved, onOpenPdfExpo
                 if (totalPlotArea > 0 && allPlotTrees.length > 0) {
                   const nHa = allPlotTrees.length / totalPlotArea * 10000;
                   const totalStems = Math.round(nHa * compartment.areaHa!);
-                  return <span className="text-xs text-violet-500">~{totalStems} Bäume geschätzt ({compartment.areaHa!.toFixed(2)} ha)</span>;
+                  return <span className="text-xs text-violet-500">{t('treesEstimated', { count: totalStems, area: compartment.areaHa!.toFixed(2) })}</span>;
                 }
                 return null;
               })()}
@@ -1200,6 +1207,7 @@ interface ExtractedCompartment {
 function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
   forests: Forest[]; orgSlug: string; onClose: () => void; onImported: () => void;
 }) {
+  const t = useTranslations('ForestSetup');
   const [step, setStep]               = useState<'upload' | 'review' | 'done'>('upload');
   const [uploading, setUploading]     = useState(false);
   const [tokensUsed, setTokensUsed]   = useState(0);
@@ -1217,14 +1225,14 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
       fd.append('orgSlug', orgSlug);
       const res = await fetch('/api/forsteinrichtung/import', { method: 'POST', body: fd });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Fehler');
+      if (!res.ok) throw new Error(json.error ?? t('errorGeneric'));
       const extracted: ExtractedCompartment[] = json.compartments ?? [];
       setRows(extracted);
       setSelected(new Set(extracted.map((_, i) => i)));
       setTokensUsed(json.tokensUsed ?? 0);
       setStep('review');
     } catch (e: any) {
-      toast.error('KI-Analyse fehlgeschlagen: ' + e.message);
+      toast.error(t('aiAnalysisFailed') + e.message);
     } finally {
       setUploading(false);
     }
@@ -1237,18 +1245,18 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
   });
 
   const handleImport = async () => {
-    if (!targetForestId) { toast.error('Bitte Wald auswählen'); return; }
+    if (!targetForestId) { toast.error(t('selectForest')); return; }
     const toImport = rows.filter((_, i) => selected.has(i));
-    if (toImport.length === 0) { toast.error('Keine Abteilungen ausgewählt'); return; }
+    if (toImport.length === 0) { toast.error(t('noCompartmentsSelected')); return; }
     setImporting(true);
     try {
       const res = await importCompartmentsFromAI(targetForestId, orgSlug, toImport);
       if (!res.success) throw new Error((res as any).error);
-      toast.success(`${toImport.length} Abteilung${toImport.length > 1 ? 'en' : ''} importiert`);
+      toast.success(t('importedCount', { count: toImport.length }));
       setStep('done');
       onImported();
     } catch (e: any) {
-      toast.error('Import fehlgeschlagen: ' + e.message);
+      toast.error(t('importFailed') + e.message);
     } finally {
       setImporting(false);
     }
@@ -1260,7 +1268,7 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-200 shrink-0">
           <Upload size={16} className="text-emerald-600" />
-          <h3 className="font-bold text-slate-900">Forsteinrichtung importieren (KI)</h3>
+          <h3 className="font-bold text-slate-900">{t('importTitle')}</h3>
           <button onClick={onClose} className="ml-auto text-slate-400 hover:text-slate-600"><X size={16} /></button>
         </div>
 
@@ -1269,16 +1277,15 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
           {step === 'upload' && (
             <div className="space-y-4">
               <p className="text-sm text-slate-600">
-                Lade ein Foto oder einen Scan einer bestehenden Forsteinrichtungstafel hoch.
-                GPT-4o analysiert das Bild und extrahiert alle Abteilungsdaten automatisch.
+                {t('importDesc')}
               </p>
               <div
                 onClick={() => fileRef.current?.click()}
                 className="border-2 border-dashed border-slate-300 rounded-xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
               >
                 {uploading
-                  ? <><Loader2 size={28} className="animate-spin text-emerald-600" /><span className="text-sm text-slate-500">Analysiere Bild …</span></>
-                  : <><Upload size={28} className="text-slate-400" /><span className="text-sm text-slate-500">Bild auswählen (JPEG, PNG, WebP)</span></>
+                  ? <><Loader2 size={28} className="animate-spin text-emerald-600" /><span className="text-sm text-slate-500">{t('analyzingImage')}</span></>
+                  : <><Upload size={28} className="text-slate-400" /><span className="text-sm text-slate-500">{t('selectImage')}</span></>
                 }
               </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden"
@@ -1298,7 +1305,7 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
 
               {rows.length === 0 ? (
                 <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-lg px-4 py-3">
-                  <AlertTriangle size={14} /> Keine Abteilungen erkannt. Bitte ein deutlicheres Bild hochladen.
+                  <AlertTriangle size={14} /> {t('noCompartmentsRecognized')}
                 </div>
               ) : (
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -1348,7 +1355,7 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
               )}
 
               <div className="flex items-center gap-3">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide shrink-0">Importieren in:</label>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide shrink-0">{t('importInto')}</label>
                 <select value={targetForestId} onChange={e => setTargetForestId(e.target.value)}
                   className="flex-1 border border-slate-200 rounded-md text-sm px-3 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
                   {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -1360,8 +1367,8 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
           {step === 'done' && (
             <div className="flex flex-col items-center gap-3 py-8">
               <CheckCircle2 size={40} className="text-emerald-600" />
-              <p className="text-sm text-slate-700 font-medium">Import abgeschlossen!</p>
-              <p className="text-xs text-slate-500">Die Abteilungen wurden angelegt. Du kannst sie jetzt in der Liste bearbeiten.</p>
+              <p className="text-sm text-slate-700 font-medium">{t('importCompleted')}</p>
+              <p className="text-xs text-slate-500">{t('importCompletedDesc')}</p>
             </div>
           )}
         </div>
@@ -1371,24 +1378,24 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
           {step === 'review' && rows.length > 0 && (
             <Button size="sm" variant="outline" onClick={() => setStep('upload')}
               className="border-slate-200 text-slate-600">
-              Neues Bild
+              {t('newImage')}
             </Button>
           )}
           {step === 'review' && rows.length > 0 && (
             <Button size="sm" onClick={handleImport} disabled={importing || selected.size === 0}
               className="bg-emerald-700 hover:bg-emerald-800 text-white">
               {importing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-              {selected.size} Abteilung{selected.size !== 1 ? 'en' : ''} importieren
+              {t('importCount', { count: selected.size })}
             </Button>
           )}
           {(step === 'done' || (step === 'review' && rows.length === 0)) && (
             <Button size="sm" onClick={onClose} className="bg-emerald-700 hover:bg-emerald-800 text-white">
-              Schließen
+              {t('closeBtn')}
             </Button>
           )}
           {step === 'upload' && (
             <Button size="sm" variant="outline" onClick={onClose} className="border-slate-200 text-slate-600">
-              Abbrechen
+              {t('cancelBtn')}
             </Button>
           )}
         </div>
@@ -1403,6 +1410,7 @@ function ImportWizardDialog({ forests, orgSlug, onClose, onImported }: {
 function PdfExportModal({ forests, orgSlug, onClose, preselectedCompartmentIds }: {
   forests: Forest[]; orgSlug: string; onClose: () => void; preselectedCompartmentIds?: string[];
 }) {
+  const t = useTranslations('ForestSetup');
   const [selected, setSelected] = useState<Set<string>>(() => {
     if (preselectedCompartmentIds?.length) return new Set(preselectedCompartmentIds);
     // Default: all compartments selected
@@ -1452,16 +1460,16 @@ function PdfExportModal({ forests, orgSlug, onClose, preselectedCompartmentIds }
   }, [forests, selected]);
 
   const handleExport = async () => {
-    if (selected.size === 0) { toast.error('Keine Abteilungen ausgewählt'); return; }
+    if (selected.size === 0) { toast.error(t('noCompartmentsSelected')); return; }
     if (forestsMissingPeriod.length > 0) {
-      toast.error(`Planungszeitraum fehlt für: ${forestsMissingPeriod.join(', ')}. Bitte in der Gesamtübersicht des Waldes eintragen.`);
+      toast.error(t('planningMissingForForests', { forests: forestsMissingPeriod.join(', ') }));
       return;
     }
     setLoading(true);
     try {
       const ids = [...selected].join(',');
       const res = await fetch(`/api/forsteinrichtung/pdf?orgSlug=${orgSlug}&compartmentIds=${ids}`);
-      if (!res.ok) throw new Error('PDF-Fehler');
+      if (!res.ok) throw new Error(t('pdfErrorGeneric'));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1471,7 +1479,7 @@ function PdfExportModal({ forests, orgSlug, onClose, preselectedCompartmentIds }
       URL.revokeObjectURL(url);
       onClose();
     } catch {
-      toast.error('PDF konnte nicht erstellt werden.');
+      toast.error(t('pdfError'));
     } finally {
       setLoading(false);
     }
@@ -1483,18 +1491,18 @@ function PdfExportModal({ forests, orgSlug, onClose, preselectedCompartmentIds }
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
           <div>
-            <h3 className="font-bold text-slate-900">Forsteinrichtung exportieren</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Wälder und Abteilungen für den Bericht auswählen</p>
+            <h3 className="font-bold text-slate-900">{t('pdfExportTitle')}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{t('pdfExportDesc')}</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
         </div>
 
         {/* Selection controls */}
         <div className="px-6 py-2 border-b border-slate-100 flex items-center gap-3 shrink-0">
-          <button onClick={selectAll} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Alle auswählen</button>
+          <button onClick={selectAll} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">{t('selectAll')}</button>
           <span className="text-slate-300">|</span>
-          <button onClick={selectNone} className="text-xs text-slate-500 hover:text-slate-700 font-medium">Keine</button>
-          <span className="ml-auto text-xs text-slate-400">{selected.size} von {allIds.length} Abteilungen</span>
+          <button onClick={selectNone} className="text-xs text-slate-500 hover:text-slate-700 font-medium">{t('selectNone')}</button>
+          <span className="ml-auto text-xs text-slate-400">{selected.size} {t('ofCompartments', { total: allIds.length })}</span>
         </div>
 
         {/* Forest/Compartment list */}
@@ -1550,18 +1558,17 @@ function PdfExportModal({ forests, orgSlug, onClose, preselectedCompartmentIds }
           <div className="px-6 py-3 border-t border-amber-200 bg-amber-50 flex items-start gap-2 shrink-0">
             <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
             <div className="text-xs text-amber-800">
-              <span className="font-semibold">Planungszeitraum fehlt</span> für: {forestsMissingPeriod.join(', ')}.
-              Bitte in der Gesamtübersicht des jeweiligen Waldes eintragen (Klick auf den Waldnamen in der Sidebar).
+              <span className="font-semibold">{t('planningPeriodMissing')}</span> {t('planningPeriodMissingDesc', { forests: forestsMissingPeriod.join(', ') })}
             </div>
           </div>
         )}
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0">
-          <Button variant="outline" onClick={onClose}>Abbrechen</Button>
+          <Button variant="outline" onClick={onClose}>{t('cancelBtn')}</Button>
           <Button onClick={handleExport} disabled={loading || selected.size === 0 || forestsMissingPeriod.length > 0} className="bg-emerald-700 hover:bg-emerald-800 text-white">
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
-            {selected.size} Abteilung{selected.size !== 1 ? 'en' : ''} exportieren
+            {t('exportCount', { count: selected.size })}
           </Button>
         </div>
       </div>
@@ -1648,15 +1655,16 @@ function ForestGroup({ forest, selectedId, selectedForestOverviewId, onSelect, o
 
 // ── Main Client ───────────────────────────────────────────────────────────────
 
-const HEALTH_OPTIONS = [
-  { id: 'HEALTHY', label: 'Gesund', color: 'bg-emerald-600' },
-  { id: 'DAMAGED', label: 'Geschädigt', color: 'bg-amber-600' },
-  { id: 'DEAD', label: 'Abgestorben', color: 'bg-red-600' },
-  { id: 'MARKED_FOR_FELLING', label: 'Fällung markiert', color: 'bg-slate-600' },
-];
+const HEALTH_OPTION_KEYS = [
+  { id: 'HEALTHY', tKey: 'healthHealthy', color: 'bg-emerald-600' },
+  { id: 'DAMAGED', tKey: 'healthDamaged', color: 'bg-amber-600' },
+  { id: 'DEAD', tKey: 'healthDead', color: 'bg-red-600' },
+  { id: 'MARKED_FOR_FELLING', tKey: 'healthFellingMarked', color: 'bg-slate-600' },
+] as const;
 
 // ── Habitat Tree Editor ─────────────────────────────────────────────────────
 function HabitatTreeEditor({ poi, orgSlug, forests }: { poi: TreePoi & { forestName: string }; orgSlug: string; forests: Forest[] }) {
+  const tr = useTranslations('ForestSetup');
   const t = poi.tree!;
   const [saving, setSaving] = useState(false);
   const [species, setSpecies] = useState(t.species ?? '');
@@ -1669,7 +1677,7 @@ function HabitatTreeEditor({ poi, orgSlug, forests }: { poi: TreePoi & { forestN
   const [crownCondition, setCrownCondition] = useState(t.crownCondition?.toString() ?? '');
   const [notes, setNotes] = useState(t.notes ?? '');
 
-  const speciesLabel = species ? getSpeciesLabel(species) : 'Unbekannt';
+  const speciesLabel = species ? getSpeciesLabel(species) : tr('unknownSpecies');
   const speciesColor = species ? getSpeciesColor(species) : '#94a3b8';
 
   const handleSave = async () => {
@@ -1688,10 +1696,10 @@ function HabitatTreeEditor({ poi, orgSlug, forests }: { poi: TreePoi & { forestN
           crownCondition: crownCondition ? parseInt(crownCondition) : undefined,
         }),
       });
-      if (!res.ok) throw new Error('Fehler');
-      toast.success('Baum gespeichert');
+      if (!res.ok) throw new Error(tr('errorGeneric'));
+      toast.success(tr('treeSaved'));
     } catch {
-      toast.error('Speichern fehlgeschlagen');
+      toast.error(tr('treeSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -1711,57 +1719,57 @@ function HabitatTreeEditor({ poi, orgSlug, forests }: { poi: TreePoi & { forestN
         </div>
         <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-          Speichern
+          {tr('save')}
         </Button>
       </div>
 
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-slate-50">
         {/* Dendro */}
-        <Section title="Dendrometrie" cols={2}>
+        <Section title={tr('dendrometry')} cols={2}>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Baumart</label>
+            <label className="block text-[11px] font-medium text-slate-500 mb-1">{tr('speciesLabel')}</label>
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-800">
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: speciesColor }} />
               {speciesLabel}
             </div>
           </div>
-          <TField label="BHD (cm)" value={diameter} onChange={setDiameter} placeholder="z.B. 42" type="number" />
-          <TField label="Höhe (m)" value={height} onChange={setHeight} placeholder="z.B. 28" type="number" />
-          <TField label="Alter (Jahre)" value={age} onChange={setAge} placeholder="z.B. 80" type="number" />
+          <TField label={tr('dbhCm')} value={diameter} onChange={setDiameter} placeholder="z.B. 42" type="number" />
+          <TField label={tr('heightM')} value={height} onChange={setHeight} placeholder="z.B. 28" type="number" />
+          <TField label={tr('ageYears')} value={age} onChange={setAge} placeholder="z.B. 80" type="number" />
         </Section>
 
         {/* Gesundheit */}
-        <Section title="Gesundheit" cols={2}>
+        <Section title={tr('healthTitle')} cols={2}>
           <div className="col-span-2">
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Zustand</label>
+            <label className="block text-[11px] font-medium text-slate-500 mb-1">{tr('conditionLabel')}</label>
             <div className="grid grid-cols-4 gap-1.5">
-              {HEALTH_OPTIONS.map(h => (
+              {HEALTH_OPTION_KEYS.map(h => (
                 <button key={h.id} onClick={() => setHealth(h.id)}
                   className={`py-2 rounded-md text-xs font-medium transition-colors ${
                     health === h.id ? `${h.color} text-white` : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}>
-                  {h.label}
+                  {tr(h.tKey as any)}
                 </button>
               ))}
             </div>
           </div>
           {health !== 'HEALTHY' && (
             <>
-              <TField label="Schadursache" value={damageType} onChange={setDamageType} placeholder="z.B. Borkenkäfer" />
-              <TField label="Schadausmaß (%)" value={damageSeverity} onChange={setDamageSeverity} placeholder="0-100" type="number" />
+              <TField label={tr('damageCause')} value={damageType} onChange={setDamageType} placeholder="z.B. Borkenkäfer" />
+              <TField label={tr('damageSeverityPct')} value={damageSeverity} onChange={setDamageSeverity} placeholder="0-100" type="number" />
             </>
           )}
-          <TField label="Kronenvitalität (%)" value={crownCondition} onChange={setCrownCondition} placeholder="0-100" type="number" />
+          <TField label={tr('crownVitalityPct')} value={crownCondition} onChange={setCrownCondition} placeholder="0-100" type="number" />
         </Section>
 
         {/* Notizen */}
-        <Section title="Notizen" cols={1}>
+        <Section title={tr('notesTitle')} cols={1}>
           <div>
             <Textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="Besonderheiten, Markierungen, Habitat-Merkmale …"
+              placeholder={tr('notesPlaceholderHabitat')}
               rows={4}
               className="text-sm"
             />
@@ -1887,7 +1895,7 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
               sidebarTab === 'compartments' ? 'text-emerald-700 border-b-2 border-emerald-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            <Layers size={13} /> Abteilungen
+            <Layers size={13} /> {t('tabCompartments')}
           </button>
           <button
             onClick={() => setSidebarTab('trees')}
@@ -1895,7 +1903,7 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
               sidebarTab === 'trees' ? 'text-emerald-700 border-b-2 border-emerald-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            <TreePine size={13} /> Habitatbäume
+            <TreePine size={13} /> {t('tabHabitatTrees')}
             {habitatTrees.length > 0 && <span className="text-[10px] bg-slate-100 text-slate-500 rounded-full px-1.5">{habitatTrees.length}</span>}
           </button>
         </div>
@@ -1904,21 +1912,21 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
         {sidebarTab === 'compartments' && (
           <div className="px-3 pt-3 pb-2 border-b border-slate-100">
             <div className="grid grid-cols-3 gap-1 text-center mb-2">
-              <div><div className="text-base font-bold text-slate-900">{totalCompartments}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Abtlg.</div></div>
+              <div><div className="text-base font-bold text-slate-900">{totalCompartments}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">{t('statAbtlg')}</div></div>
               <div><div className="text-base font-bold text-slate-900">{totalHa.toFixed(0)}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">ha</div></div>
-              <div><div className="text-base font-bold text-slate-900">{totalTrees}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">Bäume</div></div>
+              <div><div className="text-base font-bold text-slate-900">{totalTrees}</div><div className="text-[9px] text-slate-400 uppercase tracking-wide">{t('trees')}</div></div>
             </div>
             <div className="flex gap-1.5">
               <div className="flex-1">
                 <button onClick={() => { setPdfPreselect(undefined); setShowPdfExport(true); }}
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200">
-                  <FileDown size={11} /> Bericht exportieren
+                  <FileDown size={11} /> {t('exportReport')}
                 </button>
               </div>
               <button
                 onClick={() => setShowImport(true)}
                 className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors border border-slate-200"
-                title="Forsteinrichtung per KI importieren"
+                title={t('importAiTooltip')}
               >
                 <Upload size={11} />
               </button>
@@ -1933,7 +1941,7 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder={sidebarTab === 'compartments' ? 'Abteilung suchen …' : 'Baum suchen …'}
+              placeholder={sidebarTab === 'compartments' ? t('searchCompartment') : t('searchTree')}
               className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -1944,7 +1952,7 @@ export function ForsteinrichtungClient({ forests, orgSlug, speciesLookup }: { fo
           {sidebarTab === 'compartments' ? (
             /* Forest groups with compartments */
             forests.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-8">Keine Wälder gefunden.</p>
+              <p className="text-xs text-slate-400 text-center py-8">{t('noForestsFound')}</p>
             ) : (
               forests.map(f => (
                 <ForestGroup key={f.id} forest={f} selectedId={selectedCompartmentId} selectedForestOverviewId={selectedForestOverviewId} onSelect={handleSelect} onSelectOverview={handleSelectForestOverview} query={query} />

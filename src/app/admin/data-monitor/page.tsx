@@ -54,6 +54,8 @@ export default async function DataMonitorPage({
   const entries: DataFeedEntry[] = [];
 
   const shouldInclude = (type: string) => !sourceFilter || sourceFilter === type;
+  // Wenn ein Quellenfilter aktiv ist, 50 Einträge davon; sonst max 10 pro Quelle für gemischten Feed
+  const perSourceLimit = sourceFilter ? 50 : 10;
 
   const [weatherRows, s1Rows, ndviRows, polyRows, aiTreeRows, aiBiomassRows] = await Promise.all([
     shouldInclude('weather') ? prisma.forestWeatherSnapshot.findMany({
@@ -62,7 +64,7 @@ export default async function DataMonitorPage({
         ...(forestIdFilter ? { forestId: forestIdFilter } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: perSourceLimit,
       select: {
         id: true, createdAt: true, processedAt: true, source: true, method: true, confidence: true,
         forestId: true, date: true, maxTempC: true, minTempC: true, precipMm: true,
@@ -75,7 +77,7 @@ export default async function DataMonitorPage({
         ...(forestIdFilter ? { forestId: forestIdFilter } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: perSourceLimit,
       select: {
         id: true, createdAt: true, processedAt: true, source: true, method: true, confidence: true,
         forestId: true, date: true, vhMeanDb: true, vvMeanDb: true, changeDb: true, isAnomaly: true, sceneCount: true,
@@ -87,7 +89,7 @@ export default async function DataMonitorPage({
         ...(forestIdFilter ? { forestId: forestIdFilter } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: perSourceLimit,
       select: {
         id: true, createdAt: true, processedAt: true, source: true, method: true, confidence: true,
         forestId: true, date: true, meanNdvi: true, minNdvi: true, maxNdvi: true, cloudPct: true,
@@ -99,7 +101,7 @@ export default async function DataMonitorPage({
         ...(forestIdFilter ? { forestId: forestIdFilter } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: perSourceLimit,
       select: {
         id: true, createdAt: true, processedAt: true, source: true, method: true, confidence: true,
         forestId: true, date: true, polygonType: true, vhMeanDb: true, changeDb: true, isAnomaly: true,
@@ -110,7 +112,7 @@ export default async function DataMonitorPage({
         createdAt: { gte: since },
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: perSourceLimit,
       select: {
         id: true, createdAt: true, source: true, analysisType: true, confidence: true,
         poiId: true, scientificName: true, speciesLabel: true, diameterCm: true, heightM: true,
@@ -124,7 +126,7 @@ export default async function DataMonitorPage({
         ...(forestIdFilter ? { forestId: forestIdFilter } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: perSourceLimit,
       select: {
         id: true, createdAt: true, source: true, forestId: true, reportMonth: true,
         status: true, headline: true, aiModel: true, ndviValue: true,

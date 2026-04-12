@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { prisma } from '@/lib/prisma';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -48,7 +49,7 @@ WICHTIG: crownDefoliation + crownCondition müssen zusammen 100% ergeben.`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64, mimeType } = await req.json();
+    const { imageBase64, mimeType, poiId } = await req.json();
 
     if (!imageBase64 || !mimeType) {
       return NextResponse.json({ error: 'imageBase64 und mimeType erforderlich' }, { status: 400 });
@@ -84,6 +85,31 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('[ai/crown-analysis] Result:', JSON.stringify(result));
+
+    // AI-Ergebnis persistieren, wenn poiId vorhanden
+    if (poiId) {
+      try {
+        await prisma.aiTreeAnalysis.create({
+          data: {
+            poiId,
+            analysisType: 'CROWN_PHOTO',
+            crownDefoliation: result.crownDefoliation,
+            crownCondition: result.crownCondition,
+            crownForm: result.crownForm ?? null,
+            health: result.health ?? null,
+            damageType: result.damageType ?? null,
+            damageSeverity: result.damageSeverity ?? null,
+            reasoning: result.reasoning ?? null,
+            aiModel: 'gpt-4o',
+            source: 'GPT4O_VISION',
+            confidence: result.crownCondition != null ? result.crownCondition / 100 : null,
+          },
+        });
+      } catch (e) {
+        console.error('[ai/crown-analysis] Failed to persist:', e);
+      }
+    }
+
     return NextResponse.json(result);
   } catch (err: any) {
     console.error('[ai/crown-analysis]', err);

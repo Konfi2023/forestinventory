@@ -560,6 +560,24 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             } catch {
               setPhotoUploadStatus('error');
             }
+
+            // AI-Ergebnisse persistieren (non-blocking)
+            try {
+              if (aiResult) {
+                fetch(`/api/app/inventory/trees/${poiId}/ai-analysis`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ analysisType: 'TREE_PHOTO', data: aiResult }),
+                }).catch(() => {});
+              }
+              if (crownAiResult) {
+                fetch(`/api/app/inventory/trees/${poiId}/ai-analysis`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ analysisType: 'CROWN_PHOTO', data: crownAiResult }),
+                }).catch(() => {});
+              }
+            } catch { /* non-fatal */ }
           }
         }
       } catch {

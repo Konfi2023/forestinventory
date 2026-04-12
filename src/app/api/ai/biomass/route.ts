@@ -219,5 +219,38 @@ Antworte mit exakt diesem JSON-Format:
   });
 
   const result = JSON.parse(response.choices[0].message.content || '{}');
+
+  // AI-Report persistieren
+  if (forestId) {
+    try {
+      const reportMonth = new Date(Date.UTC(latestYear, latestMonth, 1));
+      await prisma.forestAiBiomassReport.upsert({
+        where: { forestId_reportMonth: { forestId, reportMonth } },
+        create: {
+          forestId,
+          reportMonth,
+          status: result.status ?? 'green',
+          headline: result.headline ?? '',
+          summary: result.summary ?? '',
+          takeaways: result.takeaways ?? [],
+          aiModel: 'gpt-4o',
+          source: 'GPT4O_NDVI_WEATHER',
+          ndviValue: latest.meanNdvi ?? null,
+          inputData: contextData,
+        },
+        update: {
+          status: result.status ?? 'green',
+          headline: result.headline ?? '',
+          summary: result.summary ?? '',
+          takeaways: result.takeaways ?? [],
+          ndviValue: latest.meanNdvi ?? null,
+          inputData: contextData,
+        },
+      });
+    } catch (e) {
+      console.error('[ai/biomass] Failed to persist report:', e);
+    }
+  }
+
   return NextResponse.json(result);
 }

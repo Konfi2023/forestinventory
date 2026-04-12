@@ -198,12 +198,14 @@ export async function GET(request: NextRequest) {
 
           await prisma.forestBiomassSnapshot.create({
             data: {
-              forestId: forest.id,
-              date:     snapshotDate,
-              meanNdvi: ndvi.mean,
-              minNdvi:  ndvi.min,
-              maxNdvi:  ndvi.max,
-              source:   'SENTINEL2_L2A',
+              forestId:    forest.id,
+              date:        snapshotDate,
+              meanNdvi:    ndvi.mean,
+              minNdvi:     ndvi.min,
+              maxNdvi:     ndvi.max,
+              source:      'SENTINEL2_L2A',
+              method:      'NDVI_MONTHLY_STATS',
+              processedAt: new Date(),
             },
           });
           log.snapshots++;

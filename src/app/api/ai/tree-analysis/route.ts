@@ -68,7 +68,7 @@ WICHTIG: diameterCm ist nur eine grobe Schätzung — die exakte Messung erfolgt
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64, mimeType } = await req.json();
+    const { imageBase64, mimeType, poiId } = await req.json();
 
     if (!imageBase64 || !mimeType) {
       return NextResponse.json({ error: 'imageBase64 und mimeType erforderlich' }, { status: 400 });
@@ -145,6 +145,33 @@ export async function POST(req: NextRequest) {
     if (result.heightM != null && isNaN(result.heightM)) result.heightM = null;
 
     console.log('[ai/tree-analysis] Result:', JSON.stringify(result));
+
+    // AI-Ergebnis persistieren, wenn poiId vorhanden
+    if (poiId) {
+      try {
+        await prisma.aiTreeAnalysis.create({
+          data: {
+            poiId,
+            analysisType: 'TREE_PHOTO',
+            scientificName: aiResult.scientificName ?? null,
+            speciesId: speciesId ?? null,
+            speciesLabel: speciesLabel ?? null,
+            speciesConfidence: aiResult.speciesConfidence ?? null,
+            diameterCm: result.diameterCm,
+            heightM: result.heightM,
+            health: result.health,
+            damageType: result.damageType,
+            reasoning: result.reasoning,
+            aiModel: 'gpt-4o',
+            source: 'GPT4O_VISION',
+            confidence: aiResult.speciesConfidence ?? null,
+          },
+        });
+      } catch (e) {
+        console.error('[ai/tree-analysis] Failed to persist:', e);
+      }
+    }
+
     return NextResponse.json(result);
   } catch (err: any) {
     console.error('[ai/tree-analysis]', err);

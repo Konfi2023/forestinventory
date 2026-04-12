@@ -75,6 +75,9 @@ interface DailyWeather {
   isHeatStress: boolean;
   barkBeetleRisk: boolean;
   isStorm: boolean;
+  // Provenienz
+  method: 'ARCHIVE' | 'FORECAST';
+  confidence: number; // 1.0 für Archive, 0.8 für Forecast
 }
 
 async function fetchWeather(
@@ -135,6 +138,9 @@ async function fetchWeather(
       barkBeetleRisk:   avgT != null && avgT >= 16.5 && (precip ?? 0) < 2,
       // Bft 8 Sturm ab 62 km/h Böen (Windwurf-Risiko für Waldbestände)
       isStorm:          windMax != null && windMax >= 62,
+      // Provenienz
+      method:           useArchive ? 'ARCHIVE' as const : 'FORECAST' as const,
+      confidence:       useArchive ? 1.0 : 0.8,
     };
   });
 }
@@ -195,11 +201,12 @@ export async function GET(request: NextRequest) {
         const date = new Date(`${w.date}T00:00:00Z`);
         // 'date' aus dem Spread ausschließen — Prisma erwartet DateTime, w.date ist String
         const { date: _dateStr, ...fields } = w;
+        const processedAt = new Date();
         try {
           await prisma.forestWeatherSnapshot.upsert({
             where:  { forestId_date: { forestId: forest.id, date } },
-            create: { forestId: forest.id, date, ...fields, source: 'OPEN_METEO' },
-            update: { ...fields },
+            create: { forestId: forest.id, date, ...fields, source: 'OPEN_METEO', processedAt },
+            update: { ...fields, processedAt },
           });
           log.inserted++;
         } catch (e: any) {

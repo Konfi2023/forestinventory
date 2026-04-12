@@ -381,6 +381,8 @@ export async function GET(request: NextRequest) {
             changeDb,
             isAnomaly,
             sceneCount: stats.sceneCount,
+            method: 'VH_VV_STATS_6DAY',
+            processedAt: new Date(),
           },
         });
 
@@ -515,6 +517,8 @@ export async function GET(request: NextRequest) {
             baselineDb,
             isAnomaly,
             sceneCount: stats.sceneCount,
+            method: 'VH_VV_STATS_6DAY',
+            processedAt: new Date(),
           },
         });
 

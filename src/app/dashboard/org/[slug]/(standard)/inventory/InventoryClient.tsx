@@ -205,33 +205,56 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
   // Load species: erst aus Cache, dann vom Server aktualisieren
   useEffect(() => {
-    // 1. Sofort aus IndexedDB-Cache laden (offline-fähig)
-    db.cachedSpecies.toArray().then(cached => {
-      if (cached.length > 0) {
-        setSpeciesFavorites(cached.filter(s => s.isFavorite).sort((a, b) => b.usageCount - a.usageCount));
-        setSpeciesResults(cached);
-      }
-    }).catch(() => {});
+    let cancelled = false;
 
-    // 2. Im Hintergrund vom Server aktualisieren (limit=100 für vollständigen Cache)
-    fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100`)
-      .then(r => r.json())
-      .then(async (data) => {
+    async function loadSpecies() {
+      // 1. Sofort aus IndexedDB-Cache laden (offline-fähig)
+      try {
+        const cached = await db.cachedSpecies.toArray();
+        if (!cancelled && cached.length > 0) {
+          setSpeciesFavorites(cached.filter(s => s.isFavorite).sort((a, b) => b.usageCount - a.usageCount));
+          setSpeciesResults(cached);
+        }
+      } catch (e) {
+        console.warn('[species] Cache read failed:', e);
+      }
+
+      // 2. Vom Server aktualisieren (limit=100 für vollständigen Cache)
+      try {
+        const res = await fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100`);
+        if (!res.ok) return;
+        const data = await res.json();
         const favorites = data.favorites ?? [];
         const results = data.results ?? [];
+        if (cancelled) return;
         setSpeciesFavorites(favorites);
         setSpeciesResults(results);
-        // Alle Baumarten in Cache schreiben (für Offline-Suche)
-        try {
-          const all = [...results];
-          for (const fav of favorites) {
-            if (!all.find(s => s.id === fav.id)) all.push(fav);
-          }
-          await db.cachedSpecies.clear();
-          await db.cachedSpecies.bulkPut(all);
-        } catch { /* IndexedDB-Fehler nicht fatal */ }
-      })
-      .catch(() => {});
+
+        // Alle Baumarten in Cache schreiben
+        const all = [...results];
+        for (const fav of favorites) {
+          if (!all.find((s: any) => s.id === fav.id)) all.push(fav);
+        }
+        // Nur die Felder speichern die im Schema definiert sind
+        const toCache = all.map((s: any) => ({
+          id: s.id,
+          scientificName: s.scientificName ?? '',
+          label: s.label ?? s.scientificName ?? '',
+          color: s.color ?? '#22c55e',
+          legacyId: s.legacyId ?? null,
+          isFavorite: s.isFavorite ?? false,
+          usageCount: s.usageCount ?? 0,
+        }));
+        await db.cachedSpecies.clear();
+        await db.cachedSpecies.bulkPut(toCache);
+        console.log(`[species] ${toCache.length} Arten im Cache gespeichert`);
+      } catch {
+        // Offline oder Server-Fehler — Cache wurde bereits in Schritt 1 geladen
+      }
+    }
+
+    loadSpecies();
+    return () => { cancelled = true; };
   }, [orgSlug]);
 
   // Search species — online vom Server, offline aus Cache

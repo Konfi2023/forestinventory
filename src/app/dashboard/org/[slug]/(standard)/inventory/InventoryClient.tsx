@@ -528,15 +528,26 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       synced:            false,
     };
 
+    // Offline-First: IMMER zuerst lokal in IndexedDB sichern
+    const localId = await db.pendingTrees.add(treeData);
+    await loadPendingCount();
+
+    // Dann im Hintergrund versuchen, zum Server zu syncen
     if (isOnline) {
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000); // 15s Timeout
         const res = await fetch('/api/inventory/tree', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...treeData, speciesId: form.species, orgSlug }),
+          signal: controller.signal,
         });
+        clearTimeout(timeout);
         if (res.ok) {
           treeData.synced = true;
+          await db.pendingTrees.update(localId, { synced: true });
+          await loadPendingCount();
           const { poiId } = await res.json();
           setSavedPoiId(poiId ?? null);
           if (poiId) {
@@ -581,13 +592,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           }
         }
       } catch {
-        // Offline-Fallback
+        // Server nicht erreichbar — Baum ist bereits lokal gesichert
       }
-    }
-
-    if (!treeData.synced) {
-      await db.pendingTrees.add(treeData);
-      await loadPendingCount();
     }
 
     setSessionTrees(prev => [...prev, {

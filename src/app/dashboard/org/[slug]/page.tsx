@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { getAccessibleForests } from '@/lib/forest-access';
 import { getActiveAlerts } from '@/lib/active-alerts';
 import { AlertBanner } from '@/components/alerts/AlertBanner';
+import { computeForestBenchmark } from '@/lib/benchmark';
+import { BenchmarkCard, BenchmarkEmpty } from '@/components/benchmark/BenchmarkCard';
 import {
   Trees, Users, ClipboardList, History, AlertTriangle, Wind,
   FlaskConical, CalendarClock, ChevronRight, CircleDot,
@@ -60,6 +62,11 @@ export default async function OrgDashboardPage({
   ]);
 
   const totalHa = accessible.reduce((s, f) => s + (f.areaHa ?? 0), 0);
+
+  // Benchmark für den ersten zugänglichen Wald berechnen
+  const benchmarks = (await Promise.all(
+    accessibleIds.slice(0, 3).map(id => computeForestBenchmark(id).catch(() => null))
+  )).filter((b): b is NonNullable<typeof b> => b !== null);
 
   const STATUS_LABEL: Record<string, string> = {
     OPEN:        t('statusOpen'),
@@ -146,6 +153,15 @@ export default async function OrgDashboardPage({
             <p className="text-xs text-slate-400 mt-1">{t('assignedToMe')}</p>
           </div>
         </div>
+
+        {/* Waldvergleich / Benchmark */}
+        {benchmarks.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {benchmarks.map(b => (
+              <BenchmarkCard key={b.forestId} benchmark={b} />
+            ))}
+          </div>
+        )}
 
         {/* Hauptbereich: 2 Spalten */}
         <div className="grid gap-6 lg:grid-cols-3">

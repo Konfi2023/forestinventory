@@ -55,7 +55,24 @@ function MetricBar({ metric }: { metric: BenchmarkMetric }) {
 export function BenchmarkCard({ benchmark }: { benchmark: BenchmarkResult }) {
   const validMetrics = benchmark.metrics.filter(m => m.value != null && m.groupAvg != null);
 
-  if (validMetrics.length === 0) return null;
+  if (validMetrics.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border shadow-sm p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <BarChart3 size={18} className="text-violet-600" />
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Waldvergleich: {benchmark.forestName}</h3>
+            <p className="text-xs text-slate-500">
+              Vergleichsgruppe: {benchmark.groupDescription} (n={benchmark.groupSize})
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-slate-400">
+          Noch keine Vergleichsdaten. Bitte Holzvorrat, Zuwachs oder Bestockungsgrad in den Abteilungen eintragen.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border shadow-sm p-4 space-y-4">

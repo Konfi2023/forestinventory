@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { AlertTriangle, Wind, X, FlaskConical, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, Wind, X, FlaskConical, ChevronDown, ChevronUp, Bug, Droplets, Snowflake } from 'lucide-react';
 import type { ActiveAlert } from '@/lib/active-alerts';
 import { acknowledgeAlert } from '@/actions/alerts';
 import { useTranslations } from 'next-intl';
@@ -27,12 +27,22 @@ const WIND_DIR_FULL_KEYS = [
 
 interface AlertGroup {
   key:        string;
-  type:       'STORM' | 'SAR_ANOMALY';
+  type:       ActiveAlert['type'];
   date:       string;
   alerts:     ActiveAlert[];
   maxWindKmh?: number | null;
   windDirDeg?: number | null;
 }
+
+// Styling pro Alert-Typ
+const ALERT_STYLES: Record<string, { border: string; bg: string; header: string; text: string; dot: string; icon: any; label: string }> = {
+  STORM:          { border: 'border-amber-400', bg: 'bg-amber-50', header: 'bg-amber-100', text: 'text-amber-800', dot: 'bg-amber-500', icon: Wind, label: 'Sturmwarnung' },
+  SAR_ANOMALY:    { border: 'border-red-400', bg: 'bg-red-50', header: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500', icon: AlertTriangle, label: 'SAR-Anomalie' },
+  BARK_BEETLE:    { border: 'border-red-400', bg: 'bg-red-50', header: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500', icon: Bug, label: 'Borkenkäfer-Warnung' },
+  DROUGHT_STRESS: { border: 'border-orange-400', bg: 'bg-orange-50', header: 'bg-orange-100', text: 'text-orange-800', dot: 'bg-orange-500', icon: Droplets, label: 'Trockenstress' },
+  STORM_DAMAGE:   { border: 'border-red-400', bg: 'bg-red-50', header: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500', icon: Wind, label: 'Sturmschaden bestätigt' },
+  FROST_DAMAGE:   { border: 'border-blue-400', bg: 'bg-blue-50', header: 'bg-blue-100', text: 'text-blue-800', dot: 'bg-blue-500', icon: Snowflake, label: 'Spätfrost-Warnung' },
+};
 
 function groupAlerts(alerts: ActiveAlert[]): AlertGroup[] {
   const map = new Map<string, AlertGroup>();
@@ -93,49 +103,61 @@ export function AlertBanner({ alerts, orgSlug }: Props) {
   return (
     <div className="space-y-3">
       {visible.map(group => {
-        const isStorm    = group.type === 'STORM';
+        const style = ALERT_STYLES[group.type] ?? ALERT_STYLES.SAR_ANOMALY;
+        const IconComponent = style.icon;
         const isExpanded = expanded.has(group.key);
         const count      = group.alerts.length;
+        const isCorrelation = ['BARK_BEETLE', 'DROUGHT_STRESS', 'STORM_DAMAGE', 'FROST_DAMAGE'].includes(group.type);
 
-        const titleBase = isStorm ? t('stormEvent') : t('possibleForestDamage');
-        const titleSuffix = count > 1
-          ? ` – ${t('forestsAffected', { count })}`
-          : ` ${t('inForest', { name: group.alerts[0].forestName })}`;
-        const title = titleBase + titleSuffix;
+        // Title
+        let title: string;
+        if (isCorrelation) {
+          title = group.alerts[0]?.description
+            ? `${style.label}: ${group.alerts[0].forestName}`
+            : style.label;
+        } else {
+          const titleBase = group.type === 'STORM' ? t('stormEvent') : t('possibleForestDamage');
+          const titleSuffix = count > 1
+            ? ` – ${t('forestsAffected', { count })}`
+            : ` ${t('inForest', { name: group.alerts[0].forestName })}`;
+          title = titleBase + titleSuffix;
+        }
 
-        const body = isStorm
-          ? (() => {
-              const kmh = group.maxWindKmh != null
-                ? t('windGustsUp', { kmh: group.maxWindKmh })
-                : t('strongWindGusts');
-              const dir = windDir(group.windDirDeg);
-              return `${kmh}${dir ? ` ${t('fromDirection', { dir })}` : ''} ${t('stormBodySuffix')}`;
-            })()
-          : t('sarBody');
+        // Body
+        let body: string;
+        if (isCorrelation) {
+          const a = group.alerts[0];
+          body = a.description ?? '';
+          if (a.suggestion) body += `\n\nEmpfehlung: ${a.suggestion}`;
+        } else if (group.type === 'STORM') {
+          const kmh = group.maxWindKmh != null
+            ? t('windGustsUp', { kmh: group.maxWindKmh })
+            : t('strongWindGusts');
+          const dir = windDir(group.windDirDeg);
+          body = `${kmh}${dir ? ` ${t('fromDirection', { dir })}` : ''} ${t('stormBodySuffix')}`;
+        } else {
+          body = t('sarBody');
+        }
 
         return (
-          <div key={group.key} className={`rounded-xl border-2 shadow-md overflow-hidden ${
-            isStorm ? 'border-amber-400 bg-amber-50' : 'border-red-400 bg-red-50'
-          }`}>
+          <div key={group.key} className={`rounded-xl border-2 shadow-md overflow-hidden ${style.border} ${style.bg}`}>
             {/* Header */}
-            <div className={`flex items-center gap-3 px-4 py-3 ${isStorm ? 'bg-amber-100' : 'bg-red-100'}`}>
+            <div className={`flex items-center gap-3 px-4 py-3 ${style.header}`}>
               <span className="relative flex h-3 w-3 shrink-0">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isStorm ? 'bg-amber-500' : 'bg-red-500'}`} />
-                <span className={`relative inline-flex rounded-full h-3 w-3 ${isStorm ? 'bg-amber-600' : 'bg-red-600'}`} />
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${style.dot}`} />
+                <span className={`relative inline-flex rounded-full h-3 w-3 ${style.dot}`} />
               </span>
-              {isStorm
-                ? <Wind size={18} className="text-amber-700 shrink-0" />
-                : <AlertTriangle size={18} className="text-red-700 shrink-0" />}
-              <span className={`font-bold text-base flex-1 ${isStorm ? 'text-amber-900' : 'text-red-900'}`}>
+              <IconComponent size={18} className={`${style.text} shrink-0`} />
+              <span className={`font-bold text-base flex-1 ${style.text}`}>
                 {title}
               </span>
-              <span className={`text-xs shrink-0 ${isStorm ? 'text-amber-600' : 'text-red-500'}`}>
+              <span className={`text-xs shrink-0 ${style.text} opacity-70`}>
                 {new Date(group.date).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}
               </span>
               {count > 1 && (
                 <button
                   onClick={() => toggleExpand(group.key)}
-                  className={`p-1 rounded transition ${isStorm ? 'text-amber-600 hover:bg-amber-200' : 'text-red-500 hover:bg-red-200'}`}
+                  className={`p-1 rounded transition ${style.text} hover:opacity-80`}
                   title={isExpanded ? t('collapse') : t('showAffectedForests')}
                 >
                   {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -143,9 +165,7 @@ export function AlertBanner({ alerts, orgSlug }: Props) {
               )}
               <button
                 onClick={() => dismiss(group)}
-                className={`p-1 rounded-md transition shrink-0 ${
-                  isStorm ? 'text-amber-500 hover:bg-amber-200 hover:text-amber-800' : 'text-red-400 hover:bg-red-200 hover:text-red-800'
-                }`}
+                className={`p-1 rounded-md transition shrink-0 ${style.text} hover:opacity-80`}
                 title={t('acknowledgeWarning')}
               >
                 <X size={17} />
@@ -154,13 +174,13 @@ export function AlertBanner({ alerts, orgSlug }: Props) {
 
             {/* Body */}
             <div className="px-4 py-3 space-y-2">
-              <p className={`text-sm leading-relaxed ${isStorm ? 'text-amber-800' : 'text-red-800'}`}>{body}</p>
+              <p className={`text-sm leading-relaxed whitespace-pre-line ${style.text}`}>{body}</p>
 
               {count > 1 && isExpanded && (
-                <ul className={`text-sm space-y-1 pt-2 border-t ${isStorm ? 'border-amber-200 text-amber-700' : 'border-red-200 text-red-700'}`}>
+                <ul className={`text-sm space-y-1 pt-2 border-t border-current/20 ${style.text}`}>
                   {group.alerts.map(a => (
                     <li key={a.id} className="flex items-center gap-2">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isStorm ? 'bg-amber-500' : 'bg-red-500'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
                       {a.forestName}
                     </li>
                   ))}

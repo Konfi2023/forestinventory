@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 
 export interface ActiveAlert {
   id:         string;
-  type:       'SAR_ANOMALY' | 'STORM';
+  type:       'SAR_ANOMALY' | 'STORM' | 'BARK_BEETLE' | 'DROUGHT_STRESS' | 'STORM_DAMAGE' | 'FROST_DAMAGE';
   forestId:   string;
   forestName: string;
   date:       string;   // ISO
@@ -18,6 +18,10 @@ export interface ActiveAlert {
   // Storm
   windMaxKmh?: number | null;
   windDirDeg?: number | null;
+  // Correlation
+  severity?:   string | null;
+  description?: string | null;
+  suggestion?:  string | null;
 }
 
 export async function getActiveAlerts(
@@ -38,7 +42,7 @@ export async function getActiveAlerts(
     : [];
   const ackedIds = new Set(acknowledged.map(a => a.alertId));
 
-  const [sarRows, stormRows, forests] = await Promise.all([
+  const [sarRows, stormRows, correlationRows, forests] = await Promise.all([
     prisma.forestS1Snapshot.findMany({
       where: {
         forestId:  { in: accessibleForestIds },
@@ -58,6 +62,17 @@ export async function getActiveAlerts(
       },
       orderBy: { date: 'desc' },
       select:  { id: true, forestId: true, date: true, windMaxKmh: true, windDirDeg: true, source: true },
+    }),
+    prisma.forestCorrelationAlert.findMany({
+      where: {
+        forestId:    { in: accessibleForestIds },
+        expiresAt:   { gt: new Date() },
+      },
+      orderBy: { triggeredAt: 'desc' },
+      select: {
+        id: true, forestId: true, ruleId: true, severity: true,
+        title: true, description: true, suggestion: true, triggeredAt: true,
+      },
     }),
     prisma.forest.findMany({
       where:  { id: { in: accessibleForestIds } },
@@ -91,6 +106,19 @@ export async function getActiveAlerts(
         isTest:     false,
         windMaxKmh: r.windMaxKmh,
         windDirDeg: r.windDirDeg,
+      })),
+    ...correlationRows
+      .filter(r => !ackedIds.has(r.id))
+      .map(r => ({
+        id:          r.id,
+        type:        r.ruleId as ActiveAlert['type'],
+        forestId:    r.forestId,
+        forestName:  nameMap[r.forestId] ?? '—',
+        date:        r.triggeredAt.toISOString(),
+        isTest:      false,
+        severity:    r.severity,
+        description: r.description,
+        suggestion:  r.suggestion,
       })),
   ];
 

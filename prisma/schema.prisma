@@ -317,7 +317,9 @@ model Forest {
   owner   ForestOwner? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   // AI-Reports
-  aiBiomassReports ForestAiBiomassReport[]
+  aiBiomassReports  ForestAiBiomassReport[]
+  // Korrelations-Alerts
+  correlationAlerts ForestCorrelationAlert[]
 }
 
 // ... (Hier folgen die bestehenden GIS-Modelle unverändert) ...
@@ -835,6 +837,25 @@ model ForestAiBiomassReport {
 
   @@unique([forestId, reportMonth])
   @@index([forestId, reportMonth])
+}
+
+// Multi-Source-Korrelations-Alerts (Wetter × Sentinel × NDVI verschnitten)
+model ForestCorrelationAlert {
+  id          String   @id @default(uuid())
+  forestId    String
+  forest      Forest   @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  ruleId      String // BARK_BEETLE | DROUGHT_STRESS | STORM_DAMAGE | FROST_DAMAGE
+  severity    String // HIGH | MEDIUM
+  title       String
+  description String   @db.Text
+  suggestion  String // Maßnahmenvorschlag
+  sources     Json     @db.JsonB // { weather: {...}, sentinel: {...}, ndvi: {...} }
+  triggeredAt DateTime @default(now())
+  expiresAt   DateTime // Alert verfällt nach 14 Tagen
+
+  @@unique([forestId, ruleId, triggeredAt])
+  @@index([forestId, triggeredAt])
+  @@index([expiresAt])
 }
 
 model SkidTrail {

@@ -65,10 +65,21 @@ export interface PendingPlot {
   synced: boolean;
 }
 
+export interface CachedSpecies {
+  id: string;
+  scientificName: string;
+  label: string;
+  color: string;
+  legacyId: string | null;
+  isFavorite: boolean;
+  usageCount: number;
+}
+
 export class InventoryDB extends Dexie {
   pendingTrees!: Table<PendingTree, number>;
   pendingLogPiles!: Table<PendingLogPile, number>;
   pendingPlots!: Table<PendingPlot, number>;
+  cachedSpecies!: Table<CachedSpecies, string>;
 
   constructor() {
     super('Forest ManagerDB');
@@ -103,6 +114,13 @@ export class InventoryDB extends Dexie {
       pendingTrees:    '++id, synced, createdAt, forestId, plotId',
       pendingLogPiles: '++id, synced, createdAt, forestId',
       pendingPlots:    '++id, synced, createdAt, forestId',
+    });
+    // Version 8: Offline-Cache für Baumarten
+    this.version(8).stores({
+      pendingTrees:    '++id, synced, createdAt, forestId, plotId',
+      pendingLogPiles: '++id, synced, createdAt, forestId',
+      pendingPlots:    '++id, synced, createdAt, forestId',
+      cachedSpecies:   'id, isFavorite',
     });
   }
 }

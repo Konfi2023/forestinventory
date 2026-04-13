@@ -203,18 +203,38 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const crownFileInputRef = useRef<HTMLInputElement>(null);
   const crownPhotoFileRef = useRef<File | null>(null);
 
-  // Load species favorites on mount
+  // Load species: erst aus Cache, dann vom Server aktualisieren
   useEffect(() => {
+    // 1. Sofort aus IndexedDB-Cache laden (offline-fähig)
+    db.cachedSpecies.toArray().then(cached => {
+      if (cached.length > 0) {
+        setSpeciesFavorites(cached.filter(s => s.isFavorite).sort((a, b) => b.usageCount - a.usageCount));
+        setSpeciesResults(cached);
+      }
+    }).catch(() => {});
+
+    // 2. Im Hintergrund vom Server aktualisieren
     fetch(`/api/tree-species/search?orgSlug=${orgSlug}`)
       .then(r => r.json())
-      .then(data => {
-        setSpeciesFavorites(data.favorites ?? []);
-        setSpeciesResults(data.results ?? []);
+      .then(async (data) => {
+        const favorites = data.favorites ?? [];
+        const results = data.results ?? [];
+        setSpeciesFavorites(favorites);
+        setSpeciesResults(results);
+        // Cache aktualisieren
+        try {
+          const all = [...results];
+          for (const fav of favorites) {
+            if (!all.find(s => s.id === fav.id)) all.push(fav);
+          }
+          await db.cachedSpecies.clear();
+          await db.cachedSpecies.bulkPut(all);
+        } catch { /* IndexedDB-Fehler nicht fatal */ }
       })
       .catch(() => {});
   }, [orgSlug]);
 
-  // Search species from DB
+  // Search species — online vom Server, offline aus Cache
   function searchSpeciesDb(query: string) {
     clearTimeout(speciesSearchTimeout.current);
     if (query.length < 1) {
@@ -222,7 +242,12 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       fetch(`/api/tree-species/search?orgSlug=${orgSlug}`)
         .then(r => r.json())
         .then(data => { setSpeciesResults(data.results ?? []); setSpeciesSearchLoading(false); })
-        .catch(() => setSpeciesSearchLoading(false));
+        .catch(() => {
+          // Offline: aus Cache laden
+          db.cachedSpecies.toArray()
+            .then(cached => { setSpeciesResults(cached); setSpeciesSearchLoading(false); })
+            .catch(() => setSpeciesSearchLoading(false));
+        });
       return;
     }
     setSpeciesSearchLoading(true);
@@ -230,7 +255,20 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       fetch(`/api/tree-species/search?q=${encodeURIComponent(query)}&orgSlug=${orgSlug}`)
         .then(r => r.json())
         .then(data => { setSpeciesResults(data.results ?? []); setSpeciesSearchLoading(false); })
-        .catch(() => setSpeciesSearchLoading(false));
+        .catch(() => {
+          // Offline: lokal im Cache suchen
+          const q = query.toLowerCase();
+          db.cachedSpecies.toArray()
+            .then(cached => {
+              const filtered = cached.filter(s =>
+                s.label.toLowerCase().includes(q) ||
+                s.scientificName.toLowerCase().includes(q)
+              );
+              setSpeciesResults(filtered);
+              setSpeciesSearchLoading(false);
+            })
+            .catch(() => setSpeciesSearchLoading(false));
+        });
     }, 250);
   }
 

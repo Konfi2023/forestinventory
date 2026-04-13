@@ -267,17 +267,18 @@ model AuditLog {
 // --- DOMAIN: FORST (GIS & BESTÄNDE) ---
 
 model Forest {
-  id             String       @id @default(uuid())
+  id             String                                   @id @default(uuid())
   name           String
   location       String?
   description    String?
-  geoJson        Json?        @db.JsonB
+  geoJson        Json?                                    @db.JsonB
+  geom           Unsupported("geometry(Geometry, 4326)")?
   areaHa         Float?
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  color          String?      @default("#10b981")
+  organization   Organization                             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime                                 @default(now())
+  updatedAt      DateTime                                 @updatedAt
+  color          String?                                  @default("#10b981")
 
   // GIS Layer
   paths            ForestPath[]

@@ -213,15 +213,15 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       }
     }).catch(() => {});
 
-    // 2. Im Hintergrund vom Server aktualisieren
-    fetch(`/api/tree-species/search?orgSlug=${orgSlug}`)
+    // 2. Im Hintergrund vom Server aktualisieren (limit=100 für vollständigen Cache)
+    fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100`)
       .then(r => r.json())
       .then(async (data) => {
         const favorites = data.favorites ?? [];
         const results = data.results ?? [];
         setSpeciesFavorites(favorites);
         setSpeciesResults(results);
-        // Cache aktualisieren
+        // Alle Baumarten in Cache schreiben (für Offline-Suche)
         try {
           const all = [...results];
           for (const fav of favorites) {

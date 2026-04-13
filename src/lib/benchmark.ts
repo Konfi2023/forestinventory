@@ -108,14 +108,13 @@ export async function computeForestBenchmark(
 
   if (!dominantSpecies) return null;
 
-  // 3. Vergleichsgruppe finden: Alle Compartments plattformweit mit gleicher Baumart + Altersklasse
+  // 3. Vergleichsgruppe finden: Alle Compartments plattformweit mit gleicher Baumart
+  // Erst mit Altersfilter, falls zu wenige Ergebnisse dann ohne
   const allCompartments = await prisma.forestCompartment.findMany({
-    where: {
-      ...(ageClass ? { standAge: { gte: ageClass.min, lte: ageClass.max } } : {}),
-    },
     select: {
       forestId: true,
       mainSpecies: true,
+      standAge: true,
       areaHa: true,
       volumePerHa: true,
       incrementPerHa: true,
@@ -125,10 +124,22 @@ export async function computeForestBenchmark(
   });
 
   // Nach Baumart filtern (im Application Layer, da mainSpecies JSON ist)
-  const matchingCompartments = allCompartments.filter(c => {
+  const speciesMatch = allCompartments.filter(c => {
     const species = getDominantSpecies(c.mainSpecies);
     return species === dominantSpecies;
   });
+
+  // Erst mit Altersklasse, Fallback auf nur Baumart
+  let matchingCompartments = ageClass
+    ? speciesMatch.filter(c => c.standAge != null && c.standAge >= ageClass.min && c.standAge <= ageClass.max)
+    : speciesMatch;
+
+  let usedAgeClass = ageClass;
+  if (matchingCompartments.length < 2 && ageClass) {
+    // Fallback: nur Baumart, ohne Altersfilter
+    matchingCompartments = speciesMatch;
+    usedAgeClass = null;
+  }
 
   // Pro Wald aggregieren (gewichteter Durchschnitt)
   const forestGroups = new Map<string, typeof matchingCompartments>();
@@ -205,8 +216,8 @@ export async function computeForestBenchmark(
     };
   }
 
-  const groupDesc = ageClass
-    ? `${dominantSpecies}, ${ageClass.label}`
+  const groupDesc = usedAgeClass
+    ? `${dominantSpecies}, ${usedAgeClass.label}`
     : dominantSpecies;
 
   return {

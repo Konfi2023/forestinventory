@@ -4,9 +4,9 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 -- Geometry-Spalte an Forest (parallel zu geoJson)
 ALTER TABLE "app"."Forest" ADD COLUMN "geom" geometry(Geometry, 4326);
 
--- Bestehende GeoJSON-Daten in geometry konvertieren
+-- Bestehende GeoJSON-Daten in geometry konvertieren (ST_Force2D für 3D-Koordinaten)
 UPDATE "app"."Forest"
-SET "geom" = ST_SetSRID(
+SET "geom" = ST_Force2D(ST_SetSRID(
   ST_GeomFromGeoJSON(
     CASE
       WHEN "geoJson" #>> '{features,0,geometry}' IS NOT NULL
@@ -15,7 +15,7 @@ SET "geom" = ST_SetSRID(
         THEN "geoJson" #>> '{geometry}'
       ELSE "geoJson"::text
     END
-  ), 4326)
+  ), 4326))
 WHERE "geoJson" IS NOT NULL;
 
 -- Spatial Index für schnelle räumliche Abfragen
@@ -27,7 +27,7 @@ RETURNS TRIGGER AS $$
 BEGIN
   IF NEW."geoJson" IS NOT NULL THEN
     BEGIN
-      NEW."geom" := ST_SetSRID(
+      NEW."geom" := ST_Force2D(ST_SetSRID(
         ST_GeomFromGeoJSON(
           CASE
             WHEN NEW."geoJson" #>> '{features,0,geometry}' IS NOT NULL
@@ -36,7 +36,7 @@ BEGIN
               THEN NEW."geoJson" #>> '{geometry}'
             ELSE NEW."geoJson"::text
           END
-        ), 4326);
+        ), 4326));
     EXCEPTION WHEN OTHERS THEN
       NEW."geom" := NULL;
     END;

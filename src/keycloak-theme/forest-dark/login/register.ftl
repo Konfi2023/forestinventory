@@ -110,14 +110,8 @@
         || document.URL.indexOf('https://localhost') === 0;
       // Funktion zum Oeffnen im System-Browser (ausserhalb der WebView)
       window.openExternalBrowser = function() {
-        // Direkt zum Keycloak-Registrierungsformular im Browser
-        // Die registrationUrl enthaelt eine session-gebundene URL die im externen Browser nicht funktioniert.
-        // Daher bauen wir die Registrierungs-URL manuell mit dem richtigen Client und Redirect.
-        var url = 'https://auth.forest-manager.eu/realms/forest-realm/protocol/openid-connect/registrations'
-          + '?client_id=forest-app'
-          + '&response_type=code'
-          + '&scope=openid'
-          + '&redirect_uri=' + encodeURIComponent('https://forest-manager.eu/api/auth/callback/keycloak');
+        // Ueber NextAuth signin mit register=true → Keycloak kc_action=register
+        var url = 'https://forest-manager.eu/signin?register=true';
         if (window.NativeBridge && window.NativeBridge.openInBrowser) {
           window.NativeBridge.openInBrowser(url);
         } else {

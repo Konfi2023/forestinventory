@@ -14,7 +14,11 @@ function SignInRedirect() {
     if (started.current) return;
     started.current = true;
     const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
-    signIn('keycloak', { callbackUrl }, { ui_locales: locale });
+    const wantRegister = searchParams.get('register') === 'true';
+    signIn('keycloak', { callbackUrl }, {
+      ui_locales: locale,
+      ...(wantRegister ? { kc_action: 'register' } : {}),
+    });
   // searchParams intentionally excluded: we only want to fire once per mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

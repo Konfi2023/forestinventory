@@ -2845,6 +2845,12 @@
     "crownVitalityScreen": "Crown Vitality",
     "crownVitalityTunerLabel": "Vital crown in percent",
     "co2Storage": "CO₂ Storage",
-    "co2Unit": "kg CO₂"
+    "co2Unit": "kg CO₂",
+    "speciesLabel": "Tree Species",
+    "bhdMeasurementHint": "DBH measurement: Hold the measurement card or a credit card horizontally against the trunk.",
+    "photographCrownDesc": "Take a photo of the tree crown (optional).",
+    "takeCrownPhoto": "Take Crown Photo",
+    "selectDamageType": "Select damage type",
+    "damageSeverityScreen": "Damage Severity"
   }
 }

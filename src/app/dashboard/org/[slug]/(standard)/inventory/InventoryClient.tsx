@@ -80,7 +80,7 @@ const DAMAGE_TYPES = [
   { id: 'OTHER', tKey: 'damageOther' },
 ];
 
-type Step = 'mode' | 'plot-setup' | 'camera' | 'bhd' | 'species' | 'height' | 'age' | 'crown' | 'crown-vitality' | 'health' | 'stand' | 'soil' | 'exposition' | 'notes' | 'review' | 'saved' | 'task' | 'plot-done' | 'summary';
+type Step = 'mode' | 'plot-setup' | 'camera' | 'bhd' | 'species' | 'height' | 'age' | 'crown' | 'crown-vitality' | 'health' | 'damage' | 'stand' | 'soil' | 'exposition' | 'notes' | 'review' | 'saved' | 'task' | 'plot-done' | 'summary';
 
 const SINGLE_STEPS: Step[] = ['camera', 'bhd', 'species', 'height', 'age', 'crown', 'crown-vitality', 'health', 'stand', 'soil', 'exposition', 'notes', 'review'];
 const PLOT_STEPS: Step[] = ['camera', 'bhd', 'species', 'height', 'age', 'crown', 'crown-vitality', 'health', 'stand', 'soil', 'exposition', 'notes', 'review'];
@@ -1629,43 +1629,48 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               </div>
             </div>
 
-            {/* Damage type as dropdown */}
-            {formHealth !== 'HEALTHY' && (
-              <>
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">{m('damageType')}</label>
-                  <select
-                    value={formDamageType}
-                    onChange={e => setFormDamageType(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="">{m('damageTypePlaceholder')}</option>
-                    {DAMAGE_TYPES.map(d => (
-                      <option key={d.id} value={d.id}>{t(d.tKey)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">{m('damageSeverity')}</label>
-                  <RotaryTuner
-                    value={formDamageSeverity ? parseInt(formDamageSeverity) : 30}
-                    onChange={(v) => setFormDamageSeverity(String(v))}
-                    onConfirm={() => {}}
-                    min={0}
-                    max={100}
-                    step={5}
-                    unit="%"
-                    label={m('damageSeverity')}
-                    color="#f59e0b"
-                  />
-                </div>
-              </>
-            )}
-
-            <button onClick={() => setStep('stand')}
+            <button onClick={() => setStep(formHealth !== 'HEALTHY' ? 'damage' : 'stand')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
               {m('continue')} <ChevronRight size={18} />
             </button>
+          </div>
+        )}
+
+        {/* DAMAGE: Schadursache + Schadausmass (nur bei Damaged/Dead/Felling) */}
+        {step === 'damage' && (
+          <div className="p-4">
+            <button onClick={() => setStep('health')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> {m('back')}
+            </button>
+            <h2 className="text-xl font-bold mb-1">{m('damageType')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('selectDamageType')}</p>
+
+            {/* Damage type as buttons */}
+            <div className="grid grid-cols-2 gap-2 mb-6">
+              {DAMAGE_TYPES.map(d => (
+                <button key={d.id} onClick={() => setFormDamageType(d.id)}
+                  className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
+                    formDamageType === d.id ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}>
+                  {m(d.tKey)}
+                </button>
+              ))}
+            </div>
+
+            {/* Damage severity tuner */}
+            <div className="mb-5">
+              <RotaryTuner
+                value={formDamageSeverity ? parseInt(formDamageSeverity) : 30}
+                onChange={(v) => setFormDamageSeverity(String(v))}
+                onConfirm={() => setStep('stand')}
+                min={0}
+                max={100}
+                step={5}
+                unit="%"
+                label={m('damageSeverity')}
+                color="#f59e0b"
+              />
+            </div>
           </div>
         )}
 

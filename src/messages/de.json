@@ -3314,6 +3314,12 @@
     "crownVitalityScreen": "Kronenvitalität",
     "crownVitalityTunerLabel": "Vitale Krone in Prozent",
     "co2Storage": "CO₂-Speicherleistung",
-    "co2Unit": "kg CO₂"
+    "co2Unit": "kg CO₂",
+    "speciesLabel": "Baumart",
+    "bhdMeasurementHint": "BHD messen: Halte die Messkarte oder eine Kreditkarte quer an den Stamm.",
+    "photographCrownDesc": "Foto der Baumkrone aufnehmen (optional).",
+    "takeCrownPhoto": "Kronenfoto aufnehmen",
+    "selectDamageType": "Schadursache wählen",
+    "damageSeverityScreen": "Schadausmaß"
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Plus, X, CheckCircle2, CircleDot, CircleOff, Eye, RefreshCw,
   Camera, Calendar, List, AlertTriangle, Clock, CalendarDays, MapPin,
@@ -22,12 +23,12 @@ type ViewMode = 'calendar' | 'list';
 
 type LucideIcon = React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
 
-const STATUS_CONFIG: Record<string, { label: string; textColor: string; bgColor: string; Icon: LucideIcon }> = {
-  OPEN:        { label: 'Offen',     textColor: '#64748b', bgColor: 'rgba(226,232,240,0.8)', Icon: CircleDot },
-  IN_PROGRESS: { label: 'In Arbeit', textColor: '#2563eb', bgColor: 'rgba(219,234,254,0.8)', Icon: RefreshCw },
-  REVIEW:      { label: 'Review',    textColor: '#9333ea', bgColor: 'rgba(243,232,255,0.8)', Icon: Eye },
-  BLOCKED:     { label: 'Blockiert', textColor: '#dc2626', bgColor: 'rgba(254,226,226,0.8)', Icon: CircleOff },
-  DONE:        { label: 'Erledigt',  textColor: '#16a34a', bgColor: 'rgba(220,252,231,0.8)', Icon: CheckCircle2 },
+const STATUS_CONFIG: Record<string, { tKey: string; textColor: string; bgColor: string; Icon: LucideIcon }> = {
+  OPEN:        { tKey: 'open',       textColor: '#64748b', bgColor: 'rgba(226,232,240,0.8)', Icon: CircleDot },
+  IN_PROGRESS: { tKey: 'inProgress', textColor: '#2563eb', bgColor: 'rgba(219,234,254,0.8)', Icon: RefreshCw },
+  REVIEW:      { tKey: 'review',     textColor: '#9333ea', bgColor: 'rgba(243,232,255,0.8)', Icon: Eye },
+  BLOCKED:     { tKey: 'blocked',    textColor: '#dc2626', bgColor: 'rgba(254,226,226,0.8)', Icon: CircleOff },
+  DONE:        { tKey: 'done',       textColor: '#16a34a', bgColor: 'rgba(220,252,231,0.8)', Icon: CheckCircle2 },
 };
 
 // Feste Farben als inline-style – umgeht Tailwind-Purge bei dynamischen Klassen
@@ -62,11 +63,11 @@ function groupByDate(tasks: Task[]): DateGroup[] {
   const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
 
   const groups: DateGroup[] = [
-    { key: 'overdue', label: 'Überfällig',  Icon: AlertTriangle, iconColor: '#f87171', tasks: [] },
-    { key: 'today',   label: 'Heute',       Icon: Clock,         iconColor: '#fbbf24', tasks: [] },
-    { key: 'week',    label: 'Diese Woche', Icon: Calendar,      iconColor: '#60a5fa', tasks: [] },
-    { key: 'later',   label: 'Später',      Icon: CalendarDays,  iconColor: '#94a3b8', tasks: [] },
-    { key: 'nodate',  label: 'Kein Datum',  Icon: CircleDot,     iconColor: '#64748b', tasks: [] },
+    { key: 'overdue', label: 'overdue',   Icon: AlertTriangle, iconColor: '#f87171', tasks: [] },
+    { key: 'today',   label: 'today',     Icon: Clock,         iconColor: '#fbbf24', tasks: [] },
+    { key: 'week',    label: 'thisWeek',  Icon: Calendar,      iconColor: '#60a5fa', tasks: [] },
+    { key: 'later',   label: 'later',     Icon: CalendarDays,  iconColor: '#94a3b8', tasks: [] },
+    { key: 'nodate',  label: 'noDate',    Icon: CircleDot,     iconColor: '#64748b', tasks: [] },
   ];
 
   for (const task of tasks) {
@@ -91,6 +92,7 @@ interface TasksTabProps {
 }
 
 export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: TasksTabProps) {
+  const m = useTranslations('MobileApp');
   const [filter, setFilter]       = useState<Filter>('ALL');
   const [viewMode, setViewMode]   = useState<ViewMode>('calendar');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -142,13 +144,13 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
         // Rollback bei Server-Fehler
         setLocalTasks(ts => ts.map(t => t.id === task.id ? task : t));
         if (selectedTask?.id === task.id) setSelectedTask(task);
-        setCycleError('Status konnte nicht gespeichert werden.');
+        setCycleError(m('statusSaveError'));
       }
     } catch {
       // Rollback bei Netzwerkfehler
       setLocalTasks(ts => ts.map(t => t.id === task.id ? task : t));
       if (selectedTask?.id === task.id) setSelectedTask(task);
-      setCycleError('Offline – Status nicht gespeichert.');
+      setCycleError(m('offlineStatusError'));
     }
     setUpdatingId(null);
   }, [selectedTask]);
@@ -162,10 +164,10 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
         {/* Filter-Chips */}
         <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
           {([
-            ['ALL',  `Alle (${localTasks.length})`],
-            ['MINE', 'Meine'],
-            ['OPEN', 'Offen'],
-            ['DONE', 'Erledigt'],
+            ['ALL',  `${m('all')} (${localTasks.length})`],
+            ['MINE', m('mine')],
+            ['OPEN', m('open')],
+            ['DONE', m('done')],
           ] as [Filter, string][]).map(([key, label]) => (
             <button
               key={key}
@@ -187,7 +189,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
               viewMode === 'calendar' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 active:bg-slate-200'
             }`}
           >
-            <Calendar size={17} /> Kalender
+            <Calendar size={17} /> {m('calendar')}
           </button>
           <button
             onClick={() => setViewMode('list')}
@@ -195,7 +197,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
               viewMode === 'list' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 active:bg-slate-200'
             }`}
           >
-            <List size={17} /> Liste
+            <List size={17} /> {m('list')}
           </button>
         </div>
       </div>
@@ -212,7 +214,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
       <div className="flex-1 w-full overflow-y-auto px-4 pb-28 pt-4 space-y-4">
 
         {filtered.length === 0 && (
-          <p className="text-center text-slate-500 pt-16">Keine Aufgaben.</p>
+          <p className="text-center text-slate-500 pt-16">{m('noTasks')}</p>
         )}
 
         {/* Kalender-Ansicht: nach Datum gruppiert */}
@@ -224,7 +226,7 @@ export function TasksTab({ tasks, forests, members, orgSlug, currentUserId }: Ta
               <div className="flex items-center gap-2 mb-2 px-1">
                 <GroupIcon size={16} style={{ color: group.iconColor }} />
                 <span className="text-sm font-bold" style={{ color: group.iconColor }}>
-                  {group.label}
+                  {m(group.label)}
                 </span>
                 <span className="text-xs text-slate-400 font-medium">{group.tasks.length}</span>
               </div>
@@ -311,6 +313,7 @@ function TaskCard({ task, updatingId, onCycle, onOpen }: {
   onCycle: (t: Task) => void;
   onOpen: (t: Task) => void;
 }) {
+  const m = useTranslations('MobileApp');
   const cfg = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.OPEN;
   const StatusIcon = cfg.Icon;
   const isDone = task.status === 'DONE';
@@ -354,7 +357,7 @@ function TaskCard({ task, updatingId, onCycle, onOpen }: {
             className="inline-block mt-1.5 text-xs px-2 py-0.5 rounded-full font-medium"
             style={{ color: cfg.textColor, backgroundColor: cfg.bgColor }}
           >
-            {cfg.label}
+            {m(cfg.tKey)}
           </span>
         </button>
       </div>
@@ -392,6 +395,7 @@ function TaskDetail({ task, onStatusChange, updatingId }: {
   onStatusChange: (t: Task) => void;
   updatingId: string | null;
 }) {
+  const m = useTranslations('MobileApp');
   const cfg = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.OPEN;
   const StatusIcon = cfg.Icon;
   const [images, setImages] = useState<{ id: string; url: string; name: string }[]>([]);
@@ -433,20 +437,20 @@ function TaskDetail({ task, onStatusChange, updatingId }: {
         style={{ backgroundColor: cfg.bgColor, color: cfg.textColor }}
       >
         <StatusIcon size={22} className={updatingId === task.id ? 'animate-spin' : ''} />
-        {cfg.label}
-        <span className="text-xs opacity-60 font-normal">→ tippen zum Weiterschalten</span>
+        {m(cfg.tKey)}
+        <span className="text-xs opacity-60 font-normal">{m('tapToSwitch')}</span>
       </button>
 
       <div className="mb-6 space-y-0">
-        <Row label="Wald" value={task.forest.name} />
-        <Row label="Zugewiesen" value={memberName(task.assignee) ?? '–'} />
-        <Row label="Priorität" value={
-          task.priority === 'URGENT' ? 'Dringend'
-          : task.priority === 'HIGH' ? 'Hoch'
-          : task.priority === 'LOW'  ? 'Niedrig' : 'Mittel'
+        <Row label={m('forest')} value={task.forest.name} />
+        <Row label={m('assignedTo')} value={memberName(task.assignee) ?? '–'} />
+        <Row label={m('priority')} value={
+          task.priority === 'URGENT' ? m('priorityUrgent')
+          : task.priority === 'HIGH' ? m('priorityHigh')
+          : task.priority === 'LOW'  ? m('priorityLow') : m('priorityMedium')
         } />
         {task.dueDate && (
-          <Row label="Fällig" value={
+          <Row label={m('dueDate')} value={
             new Date(task.dueDate).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })
           } />
         )}
@@ -455,13 +459,13 @@ function TaskDetail({ task, onStatusChange, updatingId }: {
       {/* Fotos */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-slate-700">Fotos</span>
+          <span className="text-sm font-semibold text-slate-700">{m('photos')}</span>
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl text-sm text-emerald-600 disabled:opacity-50 active:bg-slate-200"
           >
-            <Camera size={16} />{uploading ? 'Lädt hoch…' : 'Foto hinzufügen'}
+            <Camera size={16} />{uploading ? m('uploading') : m('addPhoto')}
           </button>
         </div>
         <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
@@ -473,7 +477,7 @@ function TaskDetail({ task, onStatusChange, updatingId }: {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-400 text-center py-6">Noch keine Fotos</p>
+          <p className="text-sm text-slate-400 text-center py-6">{m('noPhotos')}</p>
         )}
       </div>
     </div>
@@ -498,6 +502,7 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
   orgSlug: string;
   onCreated: (task: Task) => void;
 }) {
+  const m = useTranslations('MobileApp');
   const [title, setTitle]           = useState('');
   const [forestId, setForestId]     = useState(forests[0]?.id ?? '');
   const [priority, setPriority]     = useState('MEDIUM');
@@ -562,20 +567,20 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-6">Neue Aufgabe</h2>
+      <h2 className="text-xl font-bold mb-6">{m('newTask')}</h2>
       <div className="space-y-5">
 
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Titel *</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">{m('taskTitle')}</label>
           <input
-            type="text" placeholder="Was muss erledigt werden?" value={title}
+            type="text" placeholder={m('taskTitlePlaceholder')} value={title}
             onChange={e => setTitle(e.target.value)} autoFocus
             className="w-full bg-white border border-slate-300 rounded-xl px-4 py-4 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Wald *</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">{m('forest')} *</label>
           <select value={forestId} onChange={e => setForestId(e.target.value)}
             className="w-full bg-white border border-slate-300 rounded-xl px-4 py-4 text-base text-slate-900 focus:outline-none focus:border-emerald-500">
             {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -583,11 +588,11 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Priorität</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">{m('priority')}</label>
           <div className="grid grid-cols-2 gap-2">
             {([
-              ['LOW', 'Niedrig', '#475569'], ['MEDIUM', 'Mittel', '#ca8a04'],
-              ['HIGH', 'Hoch', '#ea580c'],   ['URGENT', 'Dringend', '#dc2626'],
+              ['LOW', m('priorityLow'), '#475569'], ['MEDIUM', m('priorityMedium'), '#ca8a04'],
+              ['HIGH', m('priorityHigh'), '#ea580c'],   ['URGENT', m('priorityUrgent'), '#dc2626'],
             ] as [string, string, string][]).map(([val, label, color]) => (
               <button key={val} onClick={() => setPriority(val)}
                 className="py-3.5 rounded-xl text-sm font-semibold transition-all"
@@ -604,16 +609,16 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
 
         {members.length > 0 && (
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Zuweisen an</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">{m('assignTo')}</label>
             <div className="space-y-2">
               <button onClick={() => setAssigneeId('')}
                 className={`w-full text-left px-4 py-3.5 rounded-xl text-base transition-colors ${assigneeId === '' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                Nicht zugewiesen
+                {m('notAssigned')}
               </button>
-              {members.map(m => (
-                <button key={m.id} onClick={() => setAssigneeId(m.id)}
-                  className={`w-full text-left px-4 py-3.5 rounded-xl text-base transition-colors ${assigneeId === m.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                  {memberName(m)}
+              {members.map(mem => (
+                <button key={mem.id} onClick={() => setAssigneeId(mem.id)}
+                  className={`w-full text-left px-4 py-3.5 rounded-xl text-base transition-colors ${assigneeId === mem.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {memberName(mem)}
                 </button>
               ))}
             </div>
@@ -621,12 +626,12 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
         )}
 
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Fällig am</label>
-          <DateTrigger value={dueDate} placeholder="Kein Datum gewählt" onClick={() => setShowDatePicker(true)} />
+          <label className="block text-sm font-semibold text-slate-700 mb-2">{m('dueOn')}</label>
+          <DateTrigger value={dueDate} placeholder={m('noDateSelected')} onClick={() => setShowDatePicker(true)} />
           {showDatePicker && (
             <DatePickerSheet
               value={dueDate}
-              label="Fälligkeitsdatum"
+              label={m('dueDateLabel')}
               onChange={setDueDate}
               onClose={() => setShowDatePicker(false)}
             />
@@ -634,12 +639,12 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Foto (optional)</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">{m('photoOptional')}</label>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
           {photoPreview ? (
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoPreview} alt="Vorschau" className="w-full h-48 object-cover rounded-xl" />
+              <img src={photoPreview} alt={m('preview')} className="w-full h-48 object-cover rounded-xl" />
               <button onClick={() => { setPhoto(null); setPhotoPreview(null); if (fileRef.current) fileRef.current.value = ''; }}
                 className="absolute top-2 right-2 bg-black/60 rounded-full p-2 text-white">
                 <X size={18} />
@@ -648,14 +653,14 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
           ) : (
             <button onClick={() => fileRef.current?.click()}
               className="w-full flex items-center justify-center gap-3 py-5 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl text-base text-slate-400 active:bg-slate-100">
-              <Camera size={22} /> Foto aufnehmen
+              <Camera size={22} /> {m('takePhoto')}
             </button>
           )}
         </div>
 
         {/* Standort */}
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Standort</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">{m('locationLabel')}</label>
           {lat != null && lng != null ? (
             <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
               <MapPin size={18} className="text-emerald-600 shrink-0" />
@@ -664,7 +669,7 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
               </div>
               <button onClick={getGPS} disabled={gpsLoading}
                 className="text-xs text-emerald-600 font-semibold px-2 py-1 rounded-lg hover:bg-emerald-100 active:bg-emerald-100">
-                {gpsLoading ? <RefreshCw size={14} className="animate-spin" /> : 'Neu'}
+                {gpsLoading ? <RefreshCw size={14} className="animate-spin" /> : m('new')}
               </button>
               <button onClick={() => { setLat(null); setLng(null); }}
                 className="text-xs text-slate-400 font-semibold px-2 py-1 rounded-lg hover:bg-slate-100 active:bg-slate-100">
@@ -675,24 +680,24 @@ function CreateTaskForm({ forests, members, orgSlug, onCreated }: {
             <button onClick={getGPS} disabled={gpsLoading}
               className="w-full flex items-center justify-center gap-3 py-4 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl text-base text-slate-400 active:bg-slate-100">
               {gpsLoading ? <RefreshCw size={18} className="animate-spin" /> : <MapPin size={18} />}
-              {gpsLoading ? 'Wird ermittelt…' : 'Standort erfassen'}
+              {gpsLoading ? m('gpsLoading') : m('captureLocation')}
             </button>
           )}
-          {gpsError === 'insecure' && <p className="mt-2 text-xs text-red-400 text-center">GPS erfordert HTTPS.</p>}
-          {gpsError === 'denied'   && <p className="mt-2 text-xs text-amber-500 text-center">GPS-Zugriff verweigert. Bitte in den Einstellungen freigeben.</p>}
-          {gpsError === 'timeout'  && <p className="mt-2 text-xs text-amber-500 text-center">GPS-Signal zu schwach. Im Freien erneut versuchen.</p>}
-          {gpsError === 'unavailable' && <p className="mt-2 text-xs text-amber-500 text-center">GPS nicht verfügbar auf diesem Gerät.</p>}
+          {gpsError === 'insecure' && <p className="mt-2 text-xs text-red-400 text-center">{m('gpsRequiresHttps')}</p>}
+          {gpsError === 'denied'   && <p className="mt-2 text-xs text-amber-500 text-center">{m('gpsDenied')}</p>}
+          {gpsError === 'timeout'  && <p className="mt-2 text-xs text-amber-500 text-center">{m('gpsTimeout')}</p>}
+          {gpsError === 'unavailable' && <p className="mt-2 text-xs text-amber-500 text-center">{m('gpsUnavailable')}</p>}
           {lat != null && lng != null && (
             <div className="mt-2">
               <LocationPickerMap lat={lat} lng={lng} onChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }} height="160px" />
-              <p className="text-[10px] text-slate-400 text-center mt-1">Pin verschieben um Position anzupassen</p>
+              <p className="text-[10px] text-slate-400 text-center mt-1">{m('movePin')}</p>
             </div>
           )}
         </div>
 
         <button onClick={submit} disabled={!title.trim() || !forestId || saving}
           className="w-full py-4 bg-emerald-600 active:bg-emerald-500 disabled:opacity-40 rounded-xl text-base font-bold transition-colors">
-          {saving ? 'Wird gespeichert…' : 'Aufgabe anlegen'}
+          {saving ? m('saving') : m('createTask')}
         </button>
       </div>
     </div>

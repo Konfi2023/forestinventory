@@ -12,7 +12,7 @@ import {
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 import { ImportInventoryDialog } from './ImportInventoryDialog';
 import { BhdMeasurement } from '@/components/BhdMeasurement';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 const SOIL_CONDITIONS = [
   { id: 'SANDY', tKey: 'soilSandy' },
@@ -136,7 +136,7 @@ const EMPTY_FORM: TreeForm = {
 
 export function InventoryClient({ forests, orgSlug, members = [], userId = '' }: InventoryClientProps) {
   const t = useTranslations('Inventory');
-  const debugLocale = useLocale();
+  const m = useTranslations('MobileApp');
   const [step, setStep] = useState<Step>('mode');
   const [showImport, setShowImport] = useState(false);
   const [mode, setMode] = useState<'single' | 'plot' | null>(null);
@@ -737,7 +737,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setStep('saved');
     } catch {
-      setTaskSaveError('Aufgabe konnte nicht gespeichert werden. Bitte erneut versuchen.');
+      setTaskSaveError(m('taskSaveError'));
     }
     setTaskSaving(false);
   }
@@ -819,20 +819,20 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       {showCancelConfirm && (
         <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-6">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Erfassung abbrechen?</h3>
-            <p className="text-sm text-slate-500 mb-6">Nicht gespeicherte Daten gehen verloren. Möchtest du wirklich abbrechen?</p>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">{m('cancelConfirmTitle')}</h3>
+            <p className="text-sm text-slate-500 mb-6">{m('cancelConfirmDesc')}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCancelConfirm(false)}
                 className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-colors"
               >
-                Weiter erfassen
+                {m('continueCapture')}
               </button>
               <button
                 onClick={() => { setShowCancelConfirm(false); startNew(); }}
                 className="flex-1 py-3 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors"
               >
-                Abbrechen
+                {m('cancel')}
               </button>
             </div>
           </div>
@@ -851,7 +851,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0">
         <div className="flex items-center gap-2">
           <TreePine size={20} className="text-emerald-600" />
-          <span className="font-semibold text-sm">Forstinventur</span>
+          <span className="font-semibold text-sm">{m('forestInventory')}</span>
           {form.forestName && (
             <span className="text-xs text-slate-400 hidden sm:block">· {form.forestName}</span>
           )}
@@ -861,7 +861,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               onClick={() => setShowCancelConfirm(true)}
               className="ml-2 flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors"
             >
-              <X size={12} /> Abbrechen
+              <X size={12} /> {m('cancel')}
             </button>
           )}
           {plotSession && (
@@ -874,7 +874,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           {/* Offline-Badge */}
           {!isOnline && (
             <span className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
-              <CloudOff size={12} /> Offline
+              <CloudOff size={12} /> {m('offline')}
             </span>
           )}
           {/* Sync-Ergebnis-Badge */}
@@ -885,8 +885,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 : 'bg-emerald-100 text-emerald-700'
             }`}>
               {syncResult.fail > 0
-                ? `✓ ${syncResult.ok} sync · ${syncResult.fail} fehlgeschlagen`
-                : `✓ ${syncResult.ok} synchronisiert`
+                ? `✓ ${syncResult.ok} sync · ${syncResult.fail} ${m('failed')}`
+                : `✓ ${m('synced', { count: syncResult.ok })}`
               }
             </span>
           )}
@@ -898,7 +898,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               className="flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-100 hover:bg-blue-200 disabled:opacity-50"
             >
               <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
-              {isSyncing ? 'Sync läuft…' : `${pendingCount} ausstehend`}
+              {isSyncing ? 'Sync…' : `${pendingCount} ${m('pending')}`}
             </button>
           )}
         </div>
@@ -909,9 +909,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         <div className="flex items-center gap-2 px-4 py-2 bg-violet-100 border-b border-violet-200 shrink-0">
           <CircleDot size={13} className="text-violet-700 shrink-0" />
           <span className="text-xs font-semibold text-violet-800">{plotSession.name}</span>
-          <span className="text-xs text-violet-600">· Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} erfasst</span>
+          <span className="text-xs text-violet-600">· Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? m('tree') : m('trees')} {m('captured')}</span>
           <button onClick={finishPlot} className="ml-auto text-xs text-violet-700 hover:text-violet-900 underline shrink-0">
-            Plot abschließen
+            {m('finishPlot')}
           </button>
         </div>
       )}
@@ -937,8 +937,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'mode' && (
           <div className="p-6 flex flex-col gap-4 pt-10">
             <div className="text-center mb-4">
-              <h2 className="text-2xl font-bold mb-1">Erfassung starten</h2>
-              <p className="text-slate-400 text-sm">Wie möchtest du heute messen?</p>
+              <h2 className="text-2xl font-bold mb-1">{m('startCapture')}</h2>
+              <p className="text-slate-400 text-sm">{m('howToMeasure')}</p>
             </div>
             <button
               onClick={() => { setMode('single'); setStep('camera'); }}
@@ -946,10 +946,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             >
               <div className="flex items-center gap-2 mb-1">
                 <TreePine size={22} className="text-emerald-600" />
-                <span className="text-lg font-bold">Einzelbaum</span>
+                <span className="text-lg font-bold">{m('singleTree')}</span>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Bäume einzeln erfassen — Foto, GPS, BHD, Höhe, Art. Kein Probekreis. Ideal für Stichproben, Einzelmarkierungen oder Bestandsergänzungen.
+                {m('singleTreeDesc')}
               </p>
             </button>
             <button
@@ -958,10 +958,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             >
               <div className="flex items-center gap-2 mb-1">
                 <CircleDot size={22} className="text-violet-600" />
-                <span className="text-lg font-bold">Plot-Stichprobe</span>
+                <span className="text-lg font-bold">{m('plotSample')}</span>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Probekreis-Inventur: Plot anlegen → alle Bäume im Radius erfassen → Plot abschließen → nächsten Plot starten. Ergibt N/ha, G/ha, V/ha und Ertragstafel-Vergleich.
+                {m('plotSampleDesc')}
               </p>
             </button>
             <button
@@ -970,16 +970,16 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             >
               <div className="flex items-center gap-2 mb-1">
                 <Upload size={22} className="text-amber-600" />
-                <span className="text-lg font-bold">Daten importieren</span>
+                <span className="text-lg font-bold">{m('dataImport')}</span>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Bestehende Inventur einlesen — CSV-Datei oder Foto von Feldbuch / Notizen. Probekreise und Einzelbäume werden automatisch erkannt.
+                {m('dataImportDesc')}
               </p>
             </button>
             {(pendingCount > 0 || sessionTrees.length > 0) && (
               <button onClick={() => setStep('summary')}
                 className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm text-slate-700 transition-colors">
-                Letzte Session ansehen ({savedCount} Bäume)
+                {m('lastSession')} ({savedCount} {m('trees')})
               </button>
             )}
           </div>
@@ -988,31 +988,31 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* PLOT-SETUP */}
         {step === 'plot-setup' && (
           <div className="p-4">
-            <h2 className="text-xl font-bold mb-1">Plot einrichten</h2>
-            <p className="text-slate-400 text-sm mb-5">GPS wird als Mittelpunkt gesetzt. Alle Bäume dieses Plots werden automatisch zugeordnet.</p>
+            <h2 className="text-xl font-bold mb-1">{m('setupPlot')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('setupPlotDesc')}</p>
 
             {/* GPS Status */}
             <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex items-center gap-3">
               <MapPin size={16} className={locating || gpsLoading ? 'text-amber-600 animate-pulse' : form.lat ? 'text-emerald-600' : 'text-slate-500'} />
               <div className="flex-1 min-w-0">
                 {locating || gpsLoading ? (
-                  <p className="text-sm text-amber-600">GPS wird ermittelt…</p>
+                  <p className="text-sm text-amber-600">{m('detectingGps')}</p>
                 ) : form.lat ? (
                   <p className="text-sm text-emerald-600 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
                 ) : (
-                  <p className="text-sm text-slate-500">Kein GPS-Signal</p>
+                  <p className="text-sm text-slate-500">{m('gpsNoSignal')}</p>
                 )}
               </div>
               <button onClick={captureGps} disabled={gpsLoading || locating}
                 className="text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 shrink-0">
-                Neu
+                {m('new')}
               </button>
             </div>
 
             {/* Wald */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-                <Trees size={14} className="text-emerald-600" /> Wald
+                <Trees size={14} className="text-emerald-600" /> {m('forest')}
               </label>
               <select
                 value={form.forestId}
@@ -1022,7 +1022,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 }}
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-violet-500"
               >
-                <option value="">– Wald wählen –</option>
+                <option value="">{m('selectForestPlaceholder')}</option>
                 {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
@@ -1030,7 +1030,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {/* Abteilung */}
             {form.forestId && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Abteilung</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{m('compartment')}</label>
                 <div className="space-y-2">
                   {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
                     <button key={c.id}
@@ -1043,7 +1043,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     >
                       <div className="flex items-center gap-3">
                         <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
-                        <span className="font-medium">{c.number ? `[${c.number}]` : ''}{c.name ? ` ${c.name}` : ''}{!c.number && !c.name ? 'Abteilung' : ''}</span>
+                        <span className="font-medium">{c.number ? `[${c.number}]` : ''}{c.name ? ` ${c.name}` : ''}{!c.number && !c.name ? m('compartment') : ''}</span>
                       </div>
                       {form.compartmentId === c.id && <Check size={16} className="text-violet-600" />}
                     </button>
@@ -1056,7 +1056,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                         : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:bg-slate-100'
                     }`}
                   >
-                    Keine Abteilung
+                    {m('noCompartment')}
                   </button>
                 </div>
               </div>
@@ -1065,7 +1065,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {/* Radius + Name */}
             <div className="grid grid-cols-2 gap-3 mb-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Radius (m)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{m('plotRadius')}</label>
                 <input
                   type="number" inputMode="decimal"
                   value={plotRadius}
@@ -1075,7 +1075,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Bezeichnung (opt.)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{m('plotLabel')}</label>
                 <input
                   type="text"
                   value={plotName}
@@ -1092,13 +1092,13 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               className="w-full py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               {isCreatingPlot ? <Loader2 size={18} className="animate-spin" /> : <CircleDot size={18} />}
-              Plot starten
+              {m('startPlot')}
             </button>
             {!form.lat && (
-              <p className="text-xs text-amber-600 mt-2 text-center">Warte auf GPS-Signal…</p>
+              <p className="text-xs text-amber-600 mt-2 text-center">{m('waitingGps')}</p>
             )}
             {!form.forestId && form.lat && (
-              <p className="text-xs text-amber-600 mt-2 text-center">Bitte Wald auswählen.</p>
+              <p className="text-xs text-amber-600 mt-2 text-center">{m('selectForestFirst')}</p>
             )}
           </div>
         )}
@@ -1106,12 +1106,12 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 1: Kamera */}
         {step === 'camera' && (
           <div className="p-4">
-            <h2 className="text-xl font-bold mb-1">Baum fotografieren</h2>
-            <p className="text-slate-400 text-sm mb-3">Stammfoto aufnehmen — GPS und Standort werden automatisch ermittelt.</p>
+            <h2 className="text-xl font-bold mb-1">{m('photographTree')}</h2>
+            <p className="text-slate-400 text-sm mb-3">{m('photographTreeDesc')}</p>
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 mb-4">
               <span className="text-blue-500 text-base mt-0.5">💳</span>
               <p className="text-xs text-blue-700 leading-relaxed">
-                <span className="font-medium">BHD messen:</span> Halte die Forest Manager Messkarte oder eine Kreditkarte <span className="font-medium">quer</span> an den Stamm. Nach dem Foto wird der Durchmesser gemessen.
+                {m('bhdMeasureHint')}
               </p>
             </div>
 
@@ -1124,11 +1124,11 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             >
               {photoPreview ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoPreview} alt="Baum" className="w-full h-full object-cover" />
+                <img src={photoPreview} alt={m('tree')} className="w-full h-full object-cover" />
               ) : (
                 <div className="flex flex-col items-center gap-2 text-slate-400">
                   <Camera size={40} />
-                  <span className="text-sm">Foto aufnehmen</span>
+                  <span className="text-sm">{m('takePhoto')}</span>
                 </div>
               )}
               {photoPreview && (
@@ -1151,7 +1151,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {(gpsLoading || form.lat) && (
               <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
                 <MapPin size={12} className={gpsLoading ? 'animate-pulse text-emerald-500' : 'text-emerald-600'} />
-                {gpsLoading ? 'GPS wird ermittelt…' : `${form.lat?.toFixed(5)}, ${form.lng?.toFixed(5)}`}
+                {gpsLoading ? m('detectingGps') : `${form.lat?.toFixed(5)}, ${form.lng?.toFixed(5)}`}
               </div>
             )}
 
@@ -1159,14 +1159,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {aiStatus === 'analyzing' && (
               <div className="flex items-center gap-2 text-xs text-violet-600 mb-4 bg-violet-50 rounded-xl px-3 py-2.5">
                 <Loader2 size={14} className="animate-spin" />
-                KI analysiert Baumart und BHD…
+                {m('aiAnalyzing')}
               </div>
             )}
             {aiStatus === 'done' && aiResult && (
               <div className="mb-4 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2.5 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700">
                   <Sparkles size={12} />
-                  KI-Vorschlag
+                  {m('aiSuggestion')}
                 </div>
                 <p className="text-sm text-slate-700">
                   <span className="font-medium">{aiResult.speciesLabel || aiResult.species}</span>
@@ -1174,7 +1174,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     <span className="text-slate-400 ml-1">({Math.round(aiResult.speciesConfidence * 100)} %)</span>
                   )}
                   {aiResult.heightM != null && (
-                    <span className="text-slate-500"> · Höhe {aiResult.heightM} m</span>
+                    <span className="text-slate-500"> · {m('heightLabel')} {aiResult.heightM} m</span>
                   )}
                 </p>
                 {aiResult.reasoning && (
@@ -1182,7 +1182,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 )}
                 {aiResult.health && aiResult.health !== 'HEALTHY' && (
                   <p className="text-[11px] text-amber-600">
-                    Zustand: {aiResult.health === 'DAMAGED' ? 'Geschädigt' : 'Abgestorben'}
+                    {aiResult.health === 'DAMAGED' ? m('damaged') : m('dead')}
                     {aiResult.damageType && ` (${aiResult.damageType})`}
                   </p>
                 )}
@@ -1191,53 +1191,53 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {aiStatus === 'error' && (
               <div className="flex items-center gap-2 text-xs text-slate-400 mb-4">
                 <Sparkles size={12} />
-                KI-Analyse nicht verfügbar
+                {m('aiUnavailable')}
               </div>
             )}
 
             {false && gpsError === 'insecure' ? (
                 <div className="mt-1 space-y-2">
-                  <p className="text-sm text-red-600 font-medium">GPS erfordert HTTPS.</p>
+                  <p className="text-sm text-red-600 font-medium">{m('gpsRequiresHttps')}</p>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Safari blockiert GPS auf unsicheren Verbindungen (HTTP). Öffne die App über eine HTTPS-Adresse.
+                    {m('gpsHttpsDesc')}
                   </p>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Schnellste Lösung: Starte auf dem PC einen HTTPS-Tunnel:
+                    {m('gpsHttpsTunnel')}
                   </p>
                   <p className="text-xs font-mono bg-slate-100 rounded px-2 py-1.5 text-emerald-700 font-mono">
                     npx ngrok http 3000
                   </p>
                   <p className="text-xs text-slate-500">
-                    ngrok gibt eine <span className="text-slate-700">https://…ngrok-free.app</span>-URL aus — diese im iPhone-Safari öffnen.
+                    {m('gpsNgrokHint')}
                   </p>
                 </div>
               ) : gpsError === 'denied' ? (
                 <div className="mt-1 space-y-2">
-                  <p className="text-sm text-amber-600 font-medium">Ortungsdienste sind deaktiviert.</p>
+                  <p className="text-sm text-amber-600 font-medium">{m('locationDisabled')}</p>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Bitte erlaube den Standortzugriff in deinen Geräteeinstellungen:
+                    {m('gpsDeniedDesc')}
                   </p>
                   <ul className="text-xs text-slate-400 list-disc list-inside space-y-0.5">
-                    <li><span className="text-slate-700">iOS:</span> Einstellungen → Datenschutz → Ortungsdienste → Safari/Browser → „Beim Verwenden"</li>
-                    <li><span className="text-slate-700">Android:</span> Einstellungen → Apps → Browser → Berechtigungen → Standort</li>
+                    <li>{m('gpsDeniedIos')}</li>
+                    <li>{m('gpsDeniedAndroid')}</li>
                   </ul>
                   <button
                     onClick={captureGps}
                     className="mt-1 text-xs text-emerald-600 underline hover:text-emerald-700"
                   >
-                    Nochmal versuchen
+                    {m('retry')}
                   </button>
                 </div>
               ) : gpsError === 'timeout' ? (
                 <div className="mt-1">
-                  <p className="text-sm text-amber-600">GPS-Signal zu schwach. Im Freien erneut versuchen.</p>
+                  <p className="text-sm text-amber-600">{m('gpsTimeout')}</p>
                   <button onClick={captureGps} className="mt-1 text-xs text-emerald-600 underline hover:text-emerald-700">
-                    Nochmal versuchen
+                    {m('retry')}
                   </button>
                 </div>
               ) : gpsError === 'unavailable' ? (
                 <div className="mt-1">
-                  <p className="text-sm text-amber-600">GPS nicht verfügbar auf diesem Gerät.</p>
+                  <p className="text-sm text-amber-600">{m('gpsUnavailable')}</p>
                 </div>
               ) : null}
 
@@ -1246,10 +1246,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5 mb-3">
                 <div className="flex items-center gap-2 text-sm text-emerald-700">
                   <Check size={14} />
-                  <span>BHD: <span className="font-semibold">{form.diameter} cm</span> (gemessen)</span>
+                  <span>{m('bhd')} <span className="font-semibold">{form.diameter} cm</span> {m('measured')}</span>
                 </div>
                 <button onClick={() => setBhdMeasureOpen(true)} className="text-xs text-emerald-600 hover:text-emerald-800">
-                  Neu messen
+                  {m('remeasure')}
                 </button>
               </div>
             )}
@@ -1259,7 +1259,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               disabled={!photoPreview}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
-              Weiter <ChevronRight size={18} />
+              {m('continue')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1268,43 +1268,43 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'location' && (
           <div className="p-4">
             <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Standort</h2>
-            <p className="text-slate-400 text-sm mb-5">Wald und Abteilung werden per GPS vorgeschlagen. Bei Bedarf anpassen.</p>
+            <h2 className="text-xl font-bold mb-1">{m('location')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('locationDesc')}</p>
 
             {/* GPS Status */}
             <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex items-center gap-3">
               <MapPin size={16} className={locating || gpsLoading ? 'text-amber-600 animate-pulse' : form.lat ? 'text-emerald-600' : 'text-slate-500'} />
               <div className="flex-1 min-w-0">
                 {locating || gpsLoading ? (
-                  <p className="text-sm text-amber-600">GPS & Standort werden ermittelt…</p>
+                  <p className="text-sm text-amber-600">{m('gpsDetecting')}</p>
                 ) : form.lat ? (
                   <p className="text-sm text-emerald-600 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
                 ) : (
-                  <p className="text-sm text-slate-500">Kein GPS-Signal</p>
+                  <p className="text-sm text-slate-500">{m('gpsNoSignal')}</p>
                 )}
               </div>
               <button onClick={captureGps} disabled={gpsLoading || locating}
                 className="text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 shrink-0">
-                Neu
+                {m('new')}
               </button>
             </div>
 
             {/* GPS-Fehler */}
             {gpsError && !gpsLoading && (
               <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 mb-4 text-sm text-amber-700">
-                {gpsError === 'denied' && 'GPS-Zugriff verweigert. Bitte in den Einstellungen freigeben.'}
-                {gpsError === 'insecure' && 'GPS erfordert HTTPS. Bitte App über HTTPS öffnen.'}
-                {gpsError === 'timeout' && 'GPS-Signal zu schwach. Im Freien erneut versuchen.'}
-                {gpsError === 'unavailable' && 'GPS nicht verfügbar.'}
+                {gpsError === 'denied' && m('gpsDenied')}
+                {gpsError === 'insecure' && m('gpsRequiresHttps')}
+                {gpsError === 'timeout' && m('gpsTimeout')}
+                {gpsError === 'unavailable' && m('gpsUnavailable')}
               </div>
             )}
 
             {/* Wald */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-                <Trees size={14} className="text-emerald-600" /> Wald
+                <Trees size={14} className="text-emerald-600" /> {m('forest')}
               </label>
               <select
                 value={form.forestId}
@@ -1314,12 +1314,12 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 }}
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500"
               >
-                <option value="">– Wald wählen –</option>
+                <option value="">{m('selectForestPlaceholder')}</option>
                 {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
               {form.forestId && !gpsLoading && !locating && (
                 <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                  <Check size={10} /> GPS-Vorschlag
+                  <Check size={10} /> {m('gpsSuggestion')}
                 </p>
               )}
             </div>
@@ -1327,7 +1327,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {/* Abteilung */}
             {form.forestId && (
               <div className="mb-5">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Abteilung</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{m('compartment')}</label>
                 <div className="space-y-2">
                   {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
                     <button key={c.id}
@@ -1340,7 +1340,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     >
                       <div className="flex items-center gap-3">
                         <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
-                        <span className="font-medium">{c.number ? `[${c.number}]` : ''}{c.name ? ` ${c.name}` : ''}{!c.number && !c.name ? 'Abteilung' : ''}</span>
+                        <span className="font-medium">{c.number ? `[${c.number}]` : ''}{c.name ? ` ${c.name}` : ''}{!c.number && !c.name ? m('compartment') : ''}</span>
                       </div>
                       {form.compartmentId === c.id && <Check size={16} className="text-emerald-600" />}
                     </button>
@@ -1353,7 +1353,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                         : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:bg-slate-100'
                     }`}
                   >
-                    Keine Abteilung
+                    {m('noCompartment')}
                   </button>
                 </div>
               </div>
@@ -1364,7 +1364,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               disabled={!form.forestId}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
-              Weiter <ChevronRight size={18} />
+              {m('continue')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1373,10 +1373,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'crown' && (
           <div className="p-4">
             <button onClick={() => setStep(mode === 'plot' ? 'camera' : 'location')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Krone fotografieren</h2>
-            <p className="text-slate-400 text-sm mb-5">Foto der Baumkrone von unten aufnehmen. Die KI analysiert Vitalität, Verlichtung und Schäden.</p>
+            <h2 className="text-xl font-bold mb-1">{m('photographCrown')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('photographCrownDesc')}</p>
 
             <input
               id="crown-photo-input"
@@ -1395,11 +1395,11 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             >
               {crownPhotoPreview ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={crownPhotoPreview} alt="Krone" className="w-full h-full object-cover" />
+                <img src={crownPhotoPreview} alt={m('crownHealth')} className="w-full h-full object-cover" />
               ) : (
                 <div className="flex flex-col items-center gap-2 text-slate-400">
                   <Camera size={40} />
-                  <span className="text-sm">Kronenfoto aufnehmen</span>
+                  <span className="text-sm">{m('takeCrownPhoto')}</span>
                 </div>
               )}
               {crownPhotoPreview && (
@@ -1413,26 +1413,26 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {crownAiStatus === 'analyzing' && (
               <div className="flex items-center gap-2 text-xs text-violet-600 mb-4 bg-violet-50 rounded-xl px-3 py-2.5">
                 <Loader2 size={14} className="animate-spin" />
-                KI analysiert Kronengesundheit…
+                {m('aiAnalyzingCrown')}
               </div>
             )}
             {crownAiStatus === 'done' && crownAiResult && (
               <div className="mb-4 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2.5 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700">
-                  <Sparkles size={12} /> Kronenanalyse
+                  <Sparkles size={12} /> {m('crownAnalysis')}
                 </div>
                 <p className="text-sm text-slate-700">
-                  Vitalität: <span className="font-semibold">{crownAiResult.crownCondition}%</span>
+                  {m('vitality')} <span className="font-semibold">{crownAiResult.crownCondition}%</span>
                   <span className="text-slate-400 mx-1">·</span>
-                  Verlichtung: <span className="font-semibold">{crownAiResult.crownDefoliation}%</span>
+                  {m('defoliation')} <span className="font-semibold">{crownAiResult.crownDefoliation}%</span>
                   {crownAiResult.health && crownAiResult.health !== 'HEALTHY' && (
                     <span className="text-amber-600 ml-1">
-                      · {crownAiResult.health === 'DAMAGED' ? 'Geschädigt' : 'Abgestorben'}
+                      · {crownAiResult.health === 'DAMAGED' ? m('damaged') : m('dead')}
                     </span>
                   )}
                 </p>
                 {crownAiResult.damageType && (
-                  <p className="text-[11px] text-amber-600">Schadursache: {crownAiResult.damageType}</p>
+                  <p className="text-[11px] text-amber-600">{m('damageType')}: {crownAiResult.damageType}</p>
                 )}
                 {crownAiResult.reasoning && (
                   <p className="text-[11px] text-slate-400 leading-relaxed">{crownAiResult.reasoning}</p>
@@ -1444,7 +1444,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               onClick={() => setStep('species')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
-              {crownPhotoPreview ? 'Weiter' : 'Ohne Kronenfoto weiter'} <ChevronRight size={18} />
+              {crownPhotoPreview ? m('continue') : m('withoutCrownPhoto')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1453,10 +1453,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'species' && (
           <div className="p-4">
             <button onClick={() => setStep('crown')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Baumart & Maße</h2>
-            <p className="text-slate-400 text-sm mb-5">Baumart bestätigen und Durchmesser eingeben.</p>
+            <h2 className="text-xl font-bold mb-1">{m('speciesAndMeasure')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('speciesConfirm')}</p>
 
             {/* KI-Vorschlag Banner */}
             {aiResult && !form.species && aiResult.speciesLabel && (
@@ -1471,26 +1471,26 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 <Sparkles size={16} className="text-violet-600 shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-violet-800">
-                    KI-Vorschlag: {aiResult.speciesLabel}
+                    {m('aiSuggestion')}: {aiResult.speciesLabel}
                   </p>
                   <p className="text-xs text-violet-500">
-                    {aiResult.speciesConfidence != null && `${Math.round(aiResult.speciesConfidence * 100)}% Konfidenz`}
+                    {aiResult.speciesConfidence != null && `${Math.round(aiResult.speciesConfidence * 100)}% ${m('confidence')}`}
                     {aiResult.reasoning && ` · ${aiResult.reasoning.substring(0, 80)}…`}
                   </p>
                 </div>
-                <span className="text-xs font-semibold text-violet-600 shrink-0">Übernehmen</span>
+                <span className="text-xs font-semibold text-violet-600 shrink-0">{m('apply')}</span>
               </button>
             )}
             {aiStatus === 'analyzing' && !form.species && (
               <div className="mb-4 flex items-center gap-2 bg-violet-50 border border-violet-100 rounded-xl px-4 py-3 text-xs text-violet-600">
-                <Loader2 size={14} className="animate-spin" /> KI analysiert Baumart…
+                <Loader2 size={14} className="animate-spin" /> {m('aiAnalyzing')}
               </div>
             )}
 
             {/* Durchmesser */}
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Brusthöhendurchmesser (BHD) in cm
+                {m('bhdLabel')}
               </label>
               <input
                 type="number"
@@ -1519,7 +1519,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             {/* Baumartensuche — DB-basiert mit Favoriten */}
             <div className="mb-3">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Baumart</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('speciesLabel')}</label>
 
               {/* Ausgewählte Baumart */}
               {form.species && (
@@ -1534,7 +1534,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                     <span className="text-sm font-medium text-emerald-800">{selectedSpeciesLabel || getSpeciesLabel(form.species)}</span>
                   </div>
                   <button onClick={() => { setForm(f => ({ ...f, species: '' })); setSelectedSpeciesLabel(''); }}
-                    className="text-xs text-emerald-600 hover:text-emerald-800">Ändern</button>
+                    className="text-xs text-emerald-600 hover:text-emerald-800">{m('change')}</button>
                 </div>
               )}
 
@@ -1543,7 +1543,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 <>
                   <input
                     type="text"
-                    placeholder="Baumart suchen (deutsch, englisch oder lateinisch)…"
+                    placeholder={m('searchSpecies')}
                     value={speciesSearch}
                     onChange={e => { setSpeciesSearch(e.target.value); searchSpeciesDb(e.target.value); }}
                     className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-3"
@@ -1552,7 +1552,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   {/* Favoriten (häufig verwendet) */}
                   {!speciesSearch && speciesFavorites.length > 0 && (
                     <div className="mb-3">
-                      <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Häufig verwendet</p>
+                      <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">{m('frequentlyUsed')}</p>
                       <div className="flex flex-wrap gap-2">
                         {speciesFavorites.map(s => (
                           <button key={s.id}
@@ -1585,7 +1585,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                       </button>
                     ))}
                     {!speciesSearchLoading && speciesSearch && speciesResults.length === 0 && (
-                      <p className="text-xs text-slate-400 py-3 text-center">Keine Baumart gefunden</p>
+                      <p className="text-xs text-slate-400 py-3 text-center">{m('noSpeciesFound')}</p>
                     )}
                   </div>
                 </>
@@ -1597,7 +1597,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               disabled={!form.species}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors mt-4"
             >
-              Weiter <ChevronRight size={18} />
+              {m('continue')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1606,17 +1606,17 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'height-age' && (
           <div className="p-4">
             <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Höhe & Alter</h2>
-            <p className="text-slate-400 text-sm mb-5">Baumhöhe messen oder schätzen und Alter angeben.</p>
+            <h2 className="text-xl font-bold mb-1">{m('heightAndAge')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('heightAgeDesc')}</p>
 
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Baumhöhe in m
+                {m('heightLabel')}
                 {form.species && form.diameter && !isNaN(parseFloat(form.diameter)) && (() => {
                   const h = estimateHeight(form.species, parseFloat(form.diameter));
-                  return h ? <span className="ml-2 text-xs text-emerald-600 font-normal">Richtwert: ~{h} m</span> : null;
+                  return h ? <span className="ml-2 text-xs text-emerald-600 font-normal">{m('heightGuide', { height: h })}</span> : null;
                 })()}
               </label>
               <input type="number" inputMode="decimal" placeholder="z.B. 28" value={form.height}
@@ -1639,7 +1639,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             </div>
 
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Geschätztes Alter (Jahre)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('ageLabel')}</label>
               <input type="number" inputMode="numeric" placeholder="z.B. 80" value={form.age}
                 onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
@@ -1648,7 +1648,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             <button onClick={() => setStep('crown-health')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-              Weiter <ChevronRight size={18} />
+              {m('continue')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1657,23 +1657,23 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'crown-health' && (
           <div className="p-4">
             <button onClick={() => setStep('height-age')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Kronengesundheit</h2>
+            <h2 className="text-xl font-bold mb-1">{m('crownHealth')}</h2>
             <p className="text-slate-400 text-sm mb-4">
-              {crownAiResult ? 'KI-Vorschlag prüfen und bei Bedarf anpassen.' : 'Kronenvitalität und Schadmerkmale erfassen.'}
+              {crownAiResult ? m('crownHealthAiDesc') : m('crownHealthDesc')}
             </p>
 
             {/* KI-Vorschlag Banner */}
             {crownAiResult && (
               <div className="mb-4 bg-violet-50 border border-violet-200 rounded-xl px-4 py-3">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700 mb-1">
-                  <Sparkles size={12} /> KI-Ergebnis übernommen
+                  <Sparkles size={12} /> {m('aiResultApplied')}
                 </div>
                 <p className="text-sm text-violet-800">
-                  Vitalität: <span className="font-semibold">{crownAiResult.crownCondition}%</span>
+                  {m('vitality')} <span className="font-semibold">{crownAiResult.crownCondition}%</span>
                   <span className="text-violet-400 mx-1">·</span>
-                  {crownAiResult.health === 'HEALTHY' ? 'Gesund' : crownAiResult.health === 'DAMAGED' ? 'Geschädigt' : 'Abgestorben'}
+                  {crownAiResult.health === 'HEALTHY' ? m('healthy') : crownAiResult.health === 'DAMAGED' ? m('damaged') : m('dead')}
                   {crownAiResult.damageType && <span className="text-violet-400"> · {crownAiResult.damageType}</span>}
                 </p>
                 {crownAiResult.reasoning && (
@@ -1683,14 +1683,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             )}
             {crownAiStatus === 'analyzing' && (
               <div className="mb-4 flex items-center gap-2 bg-violet-50 border border-violet-100 rounded-xl px-4 py-3 text-xs text-violet-600">
-                <Loader2 size={14} className="animate-spin" /> KI analysiert Kronenzustand…
+                <Loader2 size={14} className="animate-spin" /> {m('aiAnalyzingCrown')}
               </div>
             )}
 
             {/* Crown Condition (Vitalität) */}
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Kronenvitalität (% vitale Krone)
+                {m('crownVitality')}
               </label>
               <input type="number" inputMode="numeric" placeholder="z.B. 85" min="0" max="100"
                 value={formCrownCondition}
@@ -1709,13 +1709,13 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             {/* Health status */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Gesundheitsstufe</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('healthGrade')}</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { id: 'HEALTHY', label: 'Gesund', color: 'bg-emerald-600' },
-                  { id: 'DAMAGED', label: 'Geschädigt', color: 'bg-amber-600' },
-                  { id: 'DEAD', label: 'Abgestorben', color: 'bg-red-600' },
-                  { id: 'MARKED_FOR_FELLING', label: 'Zum Fällen markiert', color: 'bg-slate-600' },
+                  { id: 'HEALTHY', label: m('healthy'), color: 'bg-emerald-600' },
+                  { id: 'DAMAGED', label: m('damaged'), color: 'bg-amber-600' },
+                  { id: 'DEAD', label: m('dead'), color: 'bg-red-600' },
+                  { id: 'MARKED_FOR_FELLING', label: m('markedForFelling'), color: 'bg-slate-600' },
                 ].map(h => (
                   <button key={h.id} onClick={() => setFormHealth(h.id)}
                     className={`px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
@@ -1731,15 +1731,15 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {formHealth !== 'HEALTHY' && (
               <>
                 <div className="mb-5">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Schadursache</label>
-                  <input type="text" placeholder="z.B. Borkenkäfer, Trockenheit, Pilzbefall"
+                  <label className="block text-sm font-medium text-slate-700 mb-2">{m('damageType')}</label>
+                  <input type="text" placeholder={m('damageTypePlaceholder')}
                     value={formDamageType}
                     onChange={e => setFormDamageType(e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
                 <div className="mb-5">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Schadausmaß (%)</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">{m('damageSeverity')}</label>
                   <input type="number" inputMode="numeric" placeholder="z.B. 30" min="0" max="100"
                     value={formDamageSeverity}
                     onChange={e => setFormDamageSeverity(e.target.value)}
@@ -1751,7 +1751,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             <button onClick={() => setStep('stand')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-              Weiter <ChevronRight size={18} />
+              {m('continue')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1760,13 +1760,13 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'stand' && (
           <div className="p-4">
             <button onClick={() => setStep('crown-health')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Bestand</h2>
-            <p className="text-slate-400 text-sm mb-5">Bestandstyp und Bestockungsgrad einschätzen.</p>
+            <h2 className="text-xl font-bold mb-1">{m('standSection')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('standDesc')}</p>
 
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Bestandstyp</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('standType')}</label>
               <div className="grid grid-cols-2 gap-2">
                 {STAND_TYPES.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, standType: f.standType === s.id ? '' : s.id }))}
@@ -1778,7 +1778,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             </div>
 
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Bestockungsgrad</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('stockingDegree')}</label>
               <div className="grid grid-cols-3 gap-2">
                 {STOCKING_DEGREES.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({ ...f, stockingDegree: f.stockingDegree === s.id ? '' : s.id }))}
@@ -1791,7 +1791,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             <button onClick={() => setStep('soil')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-              Weiter <ChevronRight size={18} />
+              {m('continue')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1800,14 +1800,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'soil' && (
           <div className="p-4">
             <button onClick={() => setStep('stand')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Boden</h2>
-            <p className="text-slate-400 text-sm mb-5">Bodenbeschaffenheit und Feuchtigkeit angeben.</p>
+            <h2 className="text-xl font-bold mb-1">{m('soilSection')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('soilDesc')}</p>
 
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
-                <Leaf size={14} className="text-emerald-600" /> Bodenbeschaffenheit
+                <Leaf size={14} className="text-emerald-600" /> {m('soilCondition')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {SOIL_CONDITIONS.map(s => (
@@ -1821,7 +1821,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
-                <Droplets size={14} className="text-blue-400" /> Bodenfeuchtigkeit
+                <Droplets size={14} className="text-blue-400" /> {m('soilMoisture')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {SOIL_MOISTURE.map(s => (
@@ -1835,7 +1835,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             <button onClick={() => setStep('exposition')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-              Weiter <ChevronRight size={18} />
+              {m('continue')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1844,13 +1844,13 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'exposition' && (
           <div className="p-4">
             <button onClick={() => setStep('soil')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Exposition</h2>
-            <p className="text-slate-400 text-sm mb-5">Hangrichtung und bei Hanglage: Neigung und Position.</p>
+            <h2 className="text-xl font-bold mb-1">{m('exposition')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('expositionDesc')}</p>
 
             <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Hangrichtung</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('aspect')}</label>
               <div className="grid grid-cols-3 gap-2">
                 {EXPOSITIONS.map(s => (
                   <button key={s.id} onClick={() => setForm(f => ({
@@ -1867,7 +1867,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {form.exposition && form.exposition !== 'FLAT' && (
               <>
                 <div className="mb-5">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Hangneigung</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">{m('slopeClass')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {SLOPE_CLASSES.map(s => (
                       <button key={s.id} onClick={() => setForm(f => ({ ...f, slopeClass: f.slopeClass === s.id ? '' : s.id }))}
@@ -1878,7 +1878,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   </div>
                 </div>
                 <div className="mb-5">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Hangposition</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">{m('slopePosition')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {SLOPE_POSITIONS.map(s => (
                       <button key={s.id} onClick={() => setForm(f => ({ ...f, slopePosition: f.slopePosition === s.id ? '' : s.id }))}
@@ -1893,7 +1893,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             <button onClick={() => setStep('notes')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-              Weiter <ChevronRight size={18} />
+              {m('continue')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1902,14 +1902,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'notes' && (
           <div className="p-4">
             <button onClick={() => setStep('exposition')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Notizen</h2>
-            <p className="text-slate-400 text-sm mb-5">Besonderheiten, Schäden oder sonstige Anmerkungen.</p>
+            <h2 className="text-xl font-bold mb-1">{m('notesSection')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('notesDesc')}</p>
 
             <textarea
               rows={4}
-              placeholder="z.B. Zwiesel, Borkenkäferbefall, Stammriss…"
+              placeholder={m('notesPlaceholder')}
               value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 resize-none mb-5"
@@ -1917,7 +1917,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             <button onClick={() => setStep('review')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-              Zusammenfassung <ChevronRight size={18} />
+              {m('review')} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -1926,21 +1926,21 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'review' && (
           <div className="p-4">
             <button onClick={() => setStep('notes')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Zusammenfassung</h2>
-            <p className="text-slate-400 text-sm mb-5">Daten prüfen und Baum speichern.</p>
+            <h2 className="text-xl font-bold mb-1">{m('review')}</h2>
+            <p className="text-slate-400 text-sm mb-5">{m('reviewDesc')}</p>
 
             {/* Foto-Vorschau */}
             {photoPreview && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoPreview} alt="Baum" className="w-full aspect-video object-cover rounded-xl mb-4" />
+              <img src={photoPreview} alt={m('tree')} className="w-full aspect-video object-cover rounded-xl mb-4" />
             )}
 
             <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100 mb-5">
               {/* Standort */}
               <div className="px-4 py-3 flex justify-between">
-                <span className="text-sm text-slate-500">Standort</span>
+                <span className="text-sm text-slate-500">{m('location')}</span>
                 <span className="text-sm font-medium text-slate-900 text-right">
                   {form.forestName || '–'}
                   {form.compartmentName && <span className="text-slate-500"> · {form.compartmentName}</span>}
@@ -1954,7 +1954,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               )}
               {/* Baumart */}
               <div className="px-4 py-3 flex justify-between items-center">
-                <span className="text-sm text-slate-500">Baumart</span>
+                <span className="text-sm text-slate-500">{m('speciesLabel')}</span>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: (() => {
                     const f = speciesFavorites.find(s => s.id === form.species);
@@ -1975,21 +1975,21 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               {/* Höhe */}
               {form.height && (
                 <div className="px-4 py-3 flex justify-between">
-                  <span className="text-sm text-slate-500">Höhe</span>
+                  <span className="text-sm text-slate-500">{m('heightLabel')}</span>
                   <span className="text-sm font-medium text-slate-900">{form.height} m</span>
                 </div>
               )}
               {/* Alter */}
               {form.age && (
                 <div className="px-4 py-3 flex justify-between">
-                  <span className="text-sm text-slate-500">Alter</span>
-                  <span className="text-sm font-medium text-slate-900">~{form.age} Jahre</span>
+                  <span className="text-sm text-slate-500">{m('ageLabel')}</span>
+                  <span className="text-sm font-medium text-slate-900">~{form.age} {m('years')}</span>
                 </div>
               )}
               {/* Bestand */}
               {(form.standType || form.stockingDegree) && (
                 <div className="px-4 py-3 flex justify-between">
-                  <span className="text-sm text-slate-500">Bestand</span>
+                  <span className="text-sm text-slate-500">{m('standSection')}</span>
                   <span className="text-sm text-slate-700">
                     {(() => { const found = STAND_TYPES.find(s => s.id === form.standType); return found ? t(found.tKey) : ''; })()}
                     {form.standType && form.stockingDegree && ' · '}
@@ -2000,7 +2000,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               {/* Boden */}
               {(form.soilCondition || form.soilMoisture) && (
                 <div className="px-4 py-3 flex justify-between">
-                  <span className="text-sm text-slate-500">Boden</span>
+                  <span className="text-sm text-slate-500">{m('soilSection')}</span>
                   <span className="text-sm text-slate-700">
                     {(() => { const found = SOIL_CONDITIONS.find(s => s.id === form.soilCondition); return found ? t(found.tKey) : ''; })()}
                     {form.soilCondition && form.soilMoisture && ' · '}
@@ -2011,7 +2011,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               {/* Exposition */}
               {form.exposition && (
                 <div className="px-4 py-3 flex justify-between">
-                  <span className="text-sm text-slate-500">Exposition</span>
+                  <span className="text-sm text-slate-500">{m('exposition')}</span>
                   <span className="text-sm text-slate-700">
                     {(() => { const found = EXPOSITIONS.find(s => s.id === form.exposition); return found ? t(found.tKey) : ''; })()}
                     {form.slopeClass && (() => { const found = SLOPE_CLASSES.find(s => s.id === form.slopeClass); return found ? ` · ${t(found.tKey)}` : ''; })()}
@@ -2023,17 +2023,17 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               {/* Kronengesundheit */}
               {(formCrownCondition || formHealth !== 'HEALTHY') && (
                 <div className="px-4 py-3 flex justify-between">
-                  <span className="text-sm text-slate-500">Krone</span>
+                  <span className="text-sm text-slate-500">{m('crownHealth')}</span>
                   <span className="text-sm text-slate-700">
-                    {formCrownCondition && `${formCrownCondition}% vital`}
-                    {formHealth !== 'HEALTHY' && ` · ${formHealth === 'DAMAGED' ? 'Geschädigt' : formHealth === 'DEAD' ? 'Abgestorben' : 'Fällung markiert'}`}
+                    {formCrownCondition && `${formCrownCondition}% ${m('vital')}`}
+                    {formHealth !== 'HEALTHY' && ` · ${formHealth === 'DAMAGED' ? m('damaged') : formHealth === 'DEAD' ? m('dead') : m('markedForFelling')}`}
                     {formDamageType && ` (${formDamageType})`}
                   </span>
                 </div>
               )}
               {form.notes && (
                 <div className="px-4 py-3">
-                  <span className="text-sm text-slate-500 block mb-1">Notizen</span>
+                  <span className="text-sm text-slate-500 block mb-1">{m('notesSection')}</span>
                   <span className="text-sm text-slate-700">{form.notes}</span>
                 </div>
               )}
@@ -2045,8 +2045,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               {isSavingTree
-                ? <><Loader2 size={18} className="animate-spin" /> Wird gespeichert…</>
-                : <><Check size={18} /> Baum speichern</>
+                ? <><Loader2 size={18} className="animate-spin" /> {m('saving')}</>
+                : <><Check size={18} /> {m('saveTree')}</>
               }
             </button>
           </div>
@@ -2058,7 +2058,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
               <Check size={40} className="text-emerald-600" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Baum gespeichert</h2>
+            <h2 className="text-2xl font-bold mb-2">{m('treeSaved')}</h2>
             <p className="text-slate-400 mb-2">
               {TREE_SPECIES.find(s => s.id === form.species)?.label ?? form.species}
               {form.diameter && ` · Ø ${form.diameter} cm`}
@@ -2071,25 +2071,25 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             )}
             {!isOnline && (
               <p className="text-sm text-amber-600 mt-2 mb-4 flex items-center gap-1.5">
-                <CloudOff size={14} /> Offline gespeichert – wird synchronisiert sobald online
+                <CloudOff size={14} /> {m('offlineSaved')}
               </p>
             )}
             {isOnline && (
               <p className="text-sm text-emerald-600 mt-2">
-                ✓ Auf der Karte sichtbar
+                ✓ {m('onMap')}
               </p>
             )}
             {photoUploadStatus === 'uploading' && (
               <p className="text-sm text-slate-400 mt-2 mb-2 flex items-center justify-center gap-1.5">
-                <RefreshCw size={13} className="animate-spin" /> Foto wird hochgeladen…
+                <RefreshCw size={13} className="animate-spin" /> {m('uploadingPhoto')}
               </p>
             )}
             {photoUploadStatus === 'success' && (
-              <p className="text-sm text-emerald-600 mt-2 mb-2">✓ Foto gespeichert</p>
+              <p className="text-sm text-emerald-600 mt-2 mb-2">✓ {m('photoSaved')}</p>
             )}
             {photoUploadStatus === 'error' && (
               <p className="text-sm text-amber-600 mt-2 mb-2">
-                ⚠ Foto konnte nicht hochgeladen werden – Baum ist trotzdem gespeichert
+                {m('photoUploadFailed')}
               </p>
             )}
 
@@ -2102,7 +2102,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 <div className={`mt-4 w-full rounded-xl px-4 py-3 ${done ? 'bg-emerald-900/30 border border-emerald-700/40' : 'bg-slate-800 border border-slate-700'}`}>
                   <div className="flex justify-between text-xs mb-1.5">
                     <span className={done ? 'text-emerald-400' : 'text-slate-300'}>
-                      {done ? '✓ Stichprobe vollständig' : `Stichprobe: ${savedCount} / ${target} Bäume`}
+                      {done ? `✓ ${m('sampleComplete')}` : `${m('sample')}: ${savedCount} / ${target} ${m('trees')}`}
                     </span>
                     <span className={done ? 'text-emerald-400' : 'text-slate-500'}>{pct}%</span>
                   </div>
@@ -2119,28 +2119,28 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   onClick={() => setStep('task')}
                   className="w-full py-3 bg-blue-700 hover:bg-blue-600 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
                 >
-                  <ClipboardList size={18} /> Aufgabe erstellen
+                  <ClipboardList size={18} /> {m('addTask')}
                 </button>
               )}
               <button
                 onClick={nextTree}
                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
               >
-                <TreePine size={18} /> Nächster Baum
+                <TreePine size={18} /> {m('nextTreeBtn')}
               </button>
               {mode === 'plot' ? (
                 <button
                   onClick={finishPlot}
                   className="w-full py-3 bg-violet-700 hover:bg-violet-600 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
                 >
-                  <CircleDot size={16} /> Plot abschließen
+                  <CircleDot size={16} /> {m('finishPlot')}
                 </button>
               ) : (
                 <button
                   onClick={finish}
                   className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-700 transition-colors"
                 >
-                  Inventur beenden ({savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'})
+                  {m('finishInventory')} ({savedCount} {savedCount === 1 ? m('tree') : m('trees')})
                 </button>
               )}
             </div>
@@ -2151,19 +2151,19 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {step === 'task' && (
           <div className="p-4">
             <button onClick={() => setStep('saved')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> Zurück
+              <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">Aufgabe erstellen</h2>
+            <h2 className="text-xl font-bold mb-1">{m('addTask')}</h2>
             <p className="text-slate-400 text-sm mb-5">
-              Diese Aufgabe wird dem Baum zugeordnet und erscheint im Kanban-Board und Kalender.
+              {m('taskDesc')}
             </p>
 
             {/* Titel */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Titel *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('taskTitle')} *</label>
               <input
                 type="text"
-                placeholder="z.B. Schaden kontrollieren"
+                placeholder={m('taskTitlePlaceholder')}
                 value={taskTitle}
                 onChange={e => setTaskTitle(e.target.value)}
                 className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
@@ -2172,9 +2172,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             {/* Priorität */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Priorität</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('priority')}</label>
               <div className="grid grid-cols-3 gap-2">
-                {([['LOW', 'Niedrig', 'bg-slate-600'], ['MEDIUM', 'Mittel', 'bg-amber-600'], ['HIGH', 'Hoch', 'bg-red-600']] as [string, string, string][]).map(([val, label, active]) => (
+                {([['LOW', m('priorityLow'), 'bg-slate-600'], ['MEDIUM', m('priorityMedium'), 'bg-amber-600'], ['HIGH', m('priorityHigh'), 'bg-red-600']] as [string, string, string][]).map(([val, label, active]) => (
                   <button
                     key={val}
                     onClick={() => setTaskPriority(val)}
@@ -2190,16 +2190,16 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
             {/* Fälligkeitsdatum */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Fällig bis (optional)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{m('dueDate')}</label>
               <DateTrigger
                 value={taskDueDate}
-                placeholder="Kein Datum gewählt"
+                placeholder={m('noDateSelected')}
                 onClick={() => setTaskShowDatePicker(true)}
               />
               {taskShowDatePicker && (
                 <DatePickerSheet
                   value={taskDueDate}
-                  label="Fälligkeitsdatum"
+                  label={m('dueDateLabel')}
                   onChange={setTaskDueDate}
                   onClose={() => setTaskShowDatePicker(false)}
                 />
@@ -2210,7 +2210,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {members.length > 0 && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <span className="flex items-center gap-1.5"><User size={14} /> Zuweisen an (optional)</span>
+                  <span className="flex items-center gap-1.5"><User size={14} /> {m('assignTo')}</span>
                 </label>
                 <div className="space-y-1.5">
                   <button
@@ -2219,7 +2219,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                       taskAssigneeId === '' ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-700'
                     }`}
                   >
-                    Nicht zugewiesen
+                    {m('unassigned')}
                   </button>
                   {members.map(m => (
                     <button
@@ -2253,7 +2253,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               {taskSaving ? (
                 <RefreshCw size={18} className="animate-spin" />
               ) : (
-                <><ClipboardList size={18} /> Aufgabe speichern</>
+                <><ClipboardList size={18} /> {m('saveTask')}</>
               )}
             </button>
           </div>
@@ -2265,26 +2265,26 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             <div className="w-20 h-20 bg-violet-100 rounded-full flex items-center justify-center mb-6">
               <CircleDot size={40} className="text-violet-600" />
             </div>
-            <h2 className="text-2xl font-bold mb-1">Plot abgeschlossen</h2>
+            <h2 className="text-2xl font-bold mb-1">{m('plotCompleted')}</h2>
             <p className="text-slate-700 text-base font-medium mb-1">{plotSession.name}</p>
             <p className="text-slate-400 text-sm mb-2">
-              Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'} erfasst
+              Radius {plotSession.radiusM} m · {savedCount} {savedCount === 1 ? m('tree') : m('trees')} {m('captured')}
             </p>
             <p className="text-xs text-slate-500 mb-8">
-              Die Auswertung (N/ha, G/ha, V/ha, Ertragstafel) erscheint in der Forsteinrichtung.
+              {m('plotEvaluationHint')}
             </p>
             <div className="w-full space-y-3">
               <button
                 onClick={startNewPlot}
                 className="w-full py-4 bg-violet-700 hover:bg-violet-600 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
               >
-                <CircleDot size={18} /> Neuen Plot starten
+                <CircleDot size={18} /> {m('newPlot')}
               </button>
               <button
                 onClick={finish}
                 className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-700 transition-colors"
               >
-                Inventur beenden ({savedCount} {savedCount === 1 ? 'Baum' : 'Bäume'})
+                {m('finishInventory')} ({savedCount} {savedCount === 1 ? m('tree') : m('trees')})
               </button>
             </div>
           </div>
@@ -2298,15 +2298,15 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
                 <Check size={32} className="text-emerald-600" />
               </div>
-              <h2 className="text-2xl font-bold mb-1">Inventur abgeschlossen</h2>
+              <h2 className="text-2xl font-bold mb-1">{m('inventoryCompleted')}</h2>
               <p className="text-slate-400 text-sm">
-                {sessionTrees.length} {sessionTrees.length === 1 ? 'Baum' : 'Bäume'} erfasst
+                {sessionTrees.length} {sessionTrees.length === 1 ? m('tree') : m('trees')} {m('captured')}
               </p>
               {pendingCount > 0 && (
                 <div className="mt-3 flex items-center gap-2 bg-amber-900/30 border border-amber-800 rounded-xl px-3 py-2">
                   <CloudOff size={14} className="text-amber-600 shrink-0" />
                   <p className="text-xs text-amber-700">
-                    {pendingCount} {pendingCount === 1 ? 'Datensatz' : 'Datensätze'} warten auf Synchronisation
+                    {m('pendingSyncCount', { count: pendingCount })}
                   </p>
                   {isOnline && (
                     <button
@@ -2314,14 +2314,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                       disabled={isSyncing}
                       className="ml-auto shrink-0 text-xs text-emerald-600 underline disabled:opacity-50"
                     >
-                      {isSyncing ? 'Sync…' : 'Jetzt sync'}
+                      {isSyncing ? 'Sync…' : m('syncNow')}
                     </button>
                   )}
                 </div>
               )}
               {pendingCount === 0 && (
                 <p className="mt-2 text-xs text-emerald-600 flex items-center gap-1">
-                  <Check size={12} /> Alle Daten synchronisiert
+                  <Check size={12} /> {m('allSynced')}
                 </p>
               )}
             </div>
@@ -2329,7 +2329,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             {/* Baumliste */}
             {sessionTrees.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Erfasste Bäume</h3>
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{m('capturedTrees')}</h3>
                 <div className="space-y-2">
                   {sessionTrees.map((tree, i) => {
                     const speciesLabel = TREE_SPECIES.find(s => s.id === tree.species)?.label ?? tree.species;
@@ -2348,15 +2348,15 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-400">
                           {tree.diameter && <span>Ø {tree.diameter} cm</span>}
                           {tree.height && <span>↕ {tree.height} m</span>}
-                          {soilLabel && <span>Boden: {soilLabel}</span>}
-                          {moistLabel && <span>Feuchte: {moistLabel}</span>}
+                          {soilLabel && <span>{m('soilSection')}: {soilLabel}</span>}
+                          {moistLabel && <span>{m('soilMoisture')}: {moistLabel}</span>}
                           {tree.lat && tree.lng && (
                             <span className="font-mono">{tree.lat.toFixed(4)}, {tree.lng.toFixed(4)}</span>
                           )}
                         </div>
                         {!tree.synced && (
                           <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-600">
-                            <CloudOff size={10} /> Offline gespeichert
+                            <CloudOff size={10} /> {m('offlineSaved')}
                           </span>
                         )}
                       </div>
@@ -2372,7 +2372,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 onClick={startNew}
                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
               >
-                <TreePine size={18} /> Neue Session starten
+                <TreePine size={18} /> {m('newSession')}
               </button>
             </div>
           </div>

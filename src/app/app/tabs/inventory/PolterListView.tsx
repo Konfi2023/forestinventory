@@ -4,14 +4,22 @@ import { useEffect, useState } from 'react';
 import { RefreshCw, PackageOpen, ChevronDown, Pencil, Trash2, X, Check } from 'lucide-react';
 import { db, type PendingLogPile } from '@/lib/inventory-db';
 import { TREE_SPECIES } from '@/lib/tree-species';
+import { useTranslations } from 'next-intl';
 
-const WOOD_TYPE_LABELS: Record<string, string> = {
-  LOG: 'Stammholz', INDUSTRIAL: 'Industrieholz', ENERGY: 'Energieholz', PULP: 'Faserholz',
-};
+const WOOD_TYPE_KEYS: { id: string; tKey: string }[] = [
+  { id: 'LOG',        tKey: 'woodLog' },
+  { id: 'INDUSTRIAL', tKey: 'woodIndustrial' },
+  { id: 'ENERGY',     tKey: 'woodEnergy' },
+  { id: 'PULP',       tKey: 'woodPulp' },
+];
 
-const QUALITY_CLASSES = [
-  { id: 'A', label: 'A – Sehr gut' }, { id: 'B', label: 'B – Gut' }, { id: 'C', label: 'C – Mittel' },
-  { id: 'D', label: 'D – Gering' }, { id: 'IL', label: 'IL – Industriell' }, { id: 'E', label: 'E – Energie' },
+const QUALITY_CLASS_KEYS: { id: string; tKey: string }[] = [
+  { id: 'A',  tKey: 'qualityA' },
+  { id: 'B',  tKey: 'qualityB' },
+  { id: 'C',  tKey: 'qualityC' },
+  { id: 'D',  tKey: 'qualityD' },
+  { id: 'IL', tKey: 'qualityIL' },
+  { id: 'E',  tKey: 'qualityE' },
 ];
 
 interface Forest { id: string; name: string; }
@@ -40,6 +48,7 @@ interface Props {
 }
 
 export function PolterListView({ orgSlug, forests }: Props) {
+  const m = useTranslations('MobileApp');
   const [forestId, setForestId]     = useState(forests[0]?.id ?? '');
   const [piles, setPiles]           = useState<LogPileRow[]>([]);
   const [total, setTotal]           = useState<number | null>(null);
@@ -88,7 +97,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
       setTotal(apiRes.total ?? null);
       setPiles([...mapPending(pending, fId), ...(apiRes.logpiles ?? [])]);
     } catch (e) {
-      setLoadError('Polter konnten nicht geladen werden.');
+      setLoadError(m('polterLoadError'));
     }
     setLoading(false);
   }
@@ -117,7 +126,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setPiles(ps => ps.filter(p => p.id !== pile.id));
     } catch {
-      setDeleteError('Polter konnte nicht gelöscht werden.');
+      setDeleteError(m('polterDeleteError'));
     }
     setDeleting(null);
   }
@@ -153,7 +162,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
         {!loading && loadError && (
           <div className="mt-4 px-4 py-3 bg-red-50 border border-red-300 rounded-xl flex items-center justify-between gap-3">
             <span className="text-sm text-red-600">{loadError}</span>
-            <button onClick={() => load(forestId)} className="text-xs text-red-500 underline">Erneut</button>
+            <button onClick={() => load(forestId)} className="text-xs text-red-500 underline">{m('retry')}</button>
           </div>
         )}
 
@@ -167,14 +176,14 @@ export function PolterListView({ orgSlug, forests }: Props) {
         {!loading && !loadError && piles.length === 0 && (
           <div className="flex flex-col items-center justify-center pt-12 gap-2 text-slate-400">
             <PackageOpen size={32} />
-            <p className="text-sm">Noch keine Polter in diesem Wald.</p>
+            <p className="text-sm">{m('noPolter')}</p>
           </div>
         )}
 
         {!loading && piles.length > 0 && (
           <p className="text-xs text-slate-500 mb-1">
             {piles.length}{total !== null && total > piles.length ? ` von ${total}` : ''}{' '}
-            {piles.length === 1 ? 'Polter' : 'Polter'}
+            {m('tabPolter')}
           </p>
         )}
 
@@ -186,14 +195,14 @@ export function PolterListView({ orgSlug, forests }: Props) {
                 <PackageOpen size={18} className="text-amber-500 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-base leading-tight text-slate-900">
-                    {species?.label ?? pile.treeSpecies ?? 'Unbekannte Baumart'}
-                    {!pile.synced && <span className="ml-2 text-xs text-amber-500 font-normal">● Offline</span>}
+                    {species?.label ?? pile.treeSpecies ?? m('unknownSpecies')}
+                    {!pile.synced && <span className="ml-2 text-xs text-amber-500 font-normal">{m('offlineLabel')}</span>}
                   </p>
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-slate-500 mt-1">
                     {pile.volumeFm  != null && <span>{pile.volumeFm} fm</span>}
                     {pile.logLength != null && <span>{pile.logLength} m</span>}
-                    {pile.layerCount != null && <span>{pile.layerCount} Lagen</span>}
-                    {pile.woodType  && <span>{WOOD_TYPE_LABELS[pile.woodType] ?? pile.woodType}</span>}
+                    {pile.layerCount != null && <span>{pile.layerCount} {m('layers')}</span>}
+                    {pile.woodType  && <span>{m(WOOD_TYPE_KEYS.find(w => w.id === pile.woodType)?.tKey ?? 'woodLog')}</span>}
                     {pile.qualityClass && <span>Kl. {pile.qualityClass}</span>}
                   </div>
                   {pile.notes && <p className="text-sm text-slate-400 mt-1 truncate">{pile.notes}</p>}
@@ -208,7 +217,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
                     onClick={() => setEditing(pile)}
                     className="flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-emerald-600 hover:bg-slate-50 active:bg-slate-100 transition-colors"
                   >
-                    <Pencil size={18} /> Bearbeiten
+                    <Pencil size={18} /> {m('edit')}
                   </button>
                   <div className="w-px bg-slate-200" />
                   <button
@@ -220,7 +229,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
                       ? <RefreshCw size={18} className="animate-spin" />
                       : <Trash2 size={18} />
                     }
-                    Löschen
+                    {m('delete')}
                   </button>
                 </div>
               )}
@@ -234,7 +243,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
             disabled={loadingMore}
             className="w-full py-3.5 mt-1 rounded-xl bg-slate-100 text-sm font-medium text-slate-600 flex items-center justify-center gap-2 active:bg-slate-200 disabled:opacity-50"
           >
-            {loadingMore ? <><RefreshCw size={15} className="animate-spin" /> Lade…</> : 'Weitere Polter laden'}
+            {loadingMore ? <><RefreshCw size={15} className="animate-spin" /> {m('loading')}</> : m('loadMore')}
           </button>
         )}
       </div>
@@ -267,6 +276,7 @@ function EditSheet({ pile, onClose, onSaved }: {
   onClose: () => void;
   onSaved: (p: Partial<LogPileRow> & { id: string }) => void;
 }) {
+  const m = useTranslations('MobileApp');
   const [treeSpecies, setTreeSpecies] = useState(pile.treeSpecies ?? '');
   const [woodType,    setWoodType]    = useState(pile.woodType    ?? 'LOG');
   const [volumeFm,    setVolumeFm]    = useState(pile.volumeFm?.toString()    ?? '');
@@ -299,7 +309,7 @@ function EditSheet({ pile, onClose, onSaved }: {
         qualityClass, notes,
       });
     } catch {
-      setSaveError('Änderungen konnten nicht gespeichert werden.');
+      setSaveError(m('polterLoadError'));
     }
     setSaving(false);
   }
@@ -309,14 +319,14 @@ function EditSheet({ pile, onClose, onSaved }: {
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white z-10">
-          <h2 className="font-bold text-slate-900">Polter bearbeiten</h2>
+          <h2 className="font-bold text-slate-900">{m('editPolter')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-800"><X size={20} /></button>
         </div>
         <div className="px-4 pb-8 pt-4 space-y-5">
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Baumart</label>
-            <input type="text" placeholder="Suchen…" value={search} onChange={e => setSearch(e.target.value)}
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('treeSpecies')}</label>
+            <input type="text" placeholder={m('search')} value={search} onChange={e => setSearch(e.target.value)}
               className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-2" />
             <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
               {filteredSpecies.map(s => (
@@ -329,12 +339,12 @@ function EditSheet({ pile, onClose, onSaved }: {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Holzart</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('woodType')}</label>
             <div className="grid grid-cols-2 gap-1.5">
-              {Object.entries(WOOD_TYPE_LABELS).map(([id, label]) => (
-                <button key={id} onClick={() => setWoodType(id)}
-                  className={`py-2.5 rounded-lg text-xs font-medium transition-colors ${woodType === id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  {label}
+              {WOOD_TYPE_KEYS.map(w => (
+                <button key={w.id} onClick={() => setWoodType(w.id)}
+                  className={`py-2.5 rounded-lg text-xs font-medium transition-colors ${woodType === w.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  {m(w.tKey)}
                 </button>
               ))}
             </div>
@@ -342,27 +352,27 @@ function EditSheet({ pile, onClose, onSaved }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Festmeter (fm)</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('volume')}</label>
               <input type="number" inputMode="decimal" value={volumeFm} onChange={e => setVolumeFm(e.target.value)}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Stammlänge (m)</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('logLength')}</label>
               <input type="number" inputMode="decimal" value={logLength} onChange={e => setLogLength(e.target.value)}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Anzahl der Lagen</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('layerCount')}</label>
             <input type="number" inputMode="numeric" value={layerCount} onChange={e => setLayerCount(e.target.value)}
               className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500" />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Qualitätsklasse</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('qualityClass')}</label>
             <div className="grid grid-cols-3 gap-1.5">
-              {QUALITY_CLASSES.map(q => (
+              {QUALITY_CLASS_KEYS.map(q => (
                 <button key={q.id} onClick={() => tog(q.id, qualityClass, setQualityClass)}
                   className={`py-2 rounded-lg text-xs font-medium transition-colors ${qualityClass === q.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
                   {q.id}
@@ -372,7 +382,7 @@ function EditSheet({ pile, onClose, onSaved }: {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Notizen</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('notes')}</label>
             <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)}
               className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 resize-none" />
           </div>
@@ -386,7 +396,7 @@ function EditSheet({ pile, onClose, onSaved }: {
 
           <button onClick={save} disabled={saving}
             className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-            <Check size={18} /> {saving ? 'Wird gespeichert…' : 'Speichern'}
+            <Check size={18} /> {saving ? m('saving') : m('save')}
           </button>
         </div>
       </div>
@@ -398,6 +408,7 @@ function EditSheet({ pile, onClose, onSaved }: {
 function ConfirmDeleteSheet({ pile, onConfirm, onCancel }: {
   pile: LogPileRow; onConfirm: () => void; onCancel: () => void;
 }) {
+  const m = useTranslations('MobileApp');
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
@@ -406,17 +417,17 @@ function ConfirmDeleteSheet({ pile, onConfirm, onCancel }: {
           <div className="w-10 h-1 bg-slate-200 rounded-full" />
         </div>
         <div className="px-5 pt-3 pb-8">
-          <h2 className="text-lg font-bold text-center mb-1 text-slate-900">Polter löschen?</h2>
+          <h2 className="text-lg font-bold text-center mb-1 text-slate-900">{m('deletePolterTitle')}</h2>
           <p className="text-sm text-slate-500 text-center mb-6">
-            Dieser Polter-Eintrag wird unwiderruflich gelöscht.
+            {m('deletePolterDesc')}
           </p>
           <button onClick={onConfirm}
             className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-xl font-semibold text-white mb-3 flex items-center justify-center gap-2">
-            <Trash2 size={20} /> Endgültig löschen
+            <Trash2 size={20} /> {m('deleteConfirm')}
           </button>
           <button onClick={onCancel}
             className="w-full py-4 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold text-slate-700">
-            Abbrechen
+            {m('cancel')}
           </button>
         </div>
       </div>

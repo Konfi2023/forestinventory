@@ -223,7 +223,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
           <PackageOpen size={20} />
           <span className="font-semibold">{t('polterCapture')}</span>
         </div>
-        <p className="text-sm text-slate-500">Für welchen Wald soll der Polter erfasst werden?</p>
+        <p className="text-sm text-slate-500">{t('polterForWhichForest')}</p>
         <div className="space-y-2">
           {forests.map(f => (
             <button
@@ -254,12 +254,12 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
               {i < 1 && <div className="flex-1 h-px bg-slate-200 w-8" />}
             </div>
           ))}
-          <span className="text-xs text-slate-400 ml-1">Foto & Position</span>
+          <span className="text-xs text-slate-400 ml-1">{t('photoAndPosition')}</span>
         </div>
 
         {/* Foto */}
         <div>
-          <p className="text-xs font-medium text-slate-500 mb-2">Foto (optional)</p>
+          <p className="text-xs font-medium text-slate-500 mb-2">{t('photoOptional')}</p>
           <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhoto} className="hidden" />
           {form.imageDataUrl ? (
             <div className="relative rounded-xl overflow-hidden aspect-video bg-slate-100">
@@ -296,10 +296,10 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
               {form.lat.toFixed(5)}, {form.lng!.toFixed(5)}
             </p>
           )}
-          {gpsError === 'insecure' && <p className="mt-2 text-xs text-red-400 text-center">GPS erfordert HTTPS.</p>}
-          {gpsError === 'denied'   && <p className="mt-2 text-xs text-amber-400 text-center">GPS-Zugriff verweigert. Bitte in den Einstellungen freigeben.</p>}
-          {gpsError === 'timeout'  && <p className="mt-2 text-xs text-amber-400 text-center">GPS-Signal zu schwach. Im Freien erneut versuchen.</p>}
-          {gpsError === 'unavailable' && <p className="mt-2 text-xs text-amber-400 text-center">GPS nicht verfügbar auf diesem Gerät.</p>}
+          {gpsError === 'insecure' && <p className="mt-2 text-xs text-red-400 text-center">{t('gpsRequiresHttps')}</p>}
+          {gpsError === 'denied'   && <p className="mt-2 text-xs text-amber-400 text-center">{t('gpsDenied')}</p>}
+          {gpsError === 'timeout'  && <p className="mt-2 text-xs text-amber-400 text-center">{t('gpsTimeout')}</p>}
+          {gpsError === 'unavailable' && <p className="mt-2 text-xs text-amber-400 text-center">{t('gpsUnavailable')}</p>}
         </div>
 
         <button
@@ -307,7 +307,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
           disabled={form.lat == null}
           className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
         >
-          Weiter <ChevronRight size={18} />
+          {t('continue')} <ChevronRight size={18} />
         </button>
         <button onClick={reset} className="text-xs text-slate-500 text-center hover:text-slate-300">{t('cancel')}</button>
       </div>
@@ -319,7 +319,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
     return (
       <div className="flex flex-col gap-5 p-4 pb-8">
         <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-          <ChevronLeft size={16} /> Zurück
+          <ChevronLeft size={16} /> {t('back')}
         </button>
 
         {/* Baumart */}
@@ -327,7 +327,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
           <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('treeSpecies')}</label>
           <input
             type="text"
-            placeholder="Suchen…"
+            placeholder={t('search')}
             value={speciesSearch}
             onChange={e => setSpeciesSearch(e.target.value)}
             className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-2"
@@ -443,7 +443,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
           disabled={saving}
           className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
         >
-          {saving ? <RefreshCw size={18} className="animate-spin" /> : <><Check size={18} /> Polter speichern</>}
+          {saving ? <RefreshCw size={18} className="animate-spin" /> : <><Check size={18} /> {t('savePolter')}</>}
         </button>
       </div>
     );
@@ -463,15 +463,15 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
       </h2>
       <p className="text-sm text-slate-500 text-center">
         {savedPoiId === 'offline'
-          ? 'Der Polter wird synchronisiert, sobald du wieder online bist.'
-          : 'Der Polter wurde auf der Karte eingetragen und ist im Detailpanel sichtbar.'
+          ? t('polterSyncNote')
+          : t('polterSavedNote')
         }
       </p>
       <button
         onClick={reset}
         className="mt-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-sm transition-colors"
       >
-        Weiteren Polter erfassen
+        {t('captureAnother')}
       </button>
     </div>
   );

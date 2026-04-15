@@ -7,14 +7,15 @@ import { createPoi } from '@/actions/poi';
 import { toast } from 'sonner';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
+import { useTranslations } from 'next-intl';
 
 const POI_TYPES = [
-  { type: 'HUNTING_STAND', icon: Tent,     color: 'bg-yellow-100 text-yellow-600', label: 'Hochsitz' },
-  { type: 'LOG_PILE',      icon: Boxes,    color: 'bg-blue-100 text-blue-600',     label: 'Polter' },
-  { type: 'HUT',           icon: Home,     color: 'bg-orange-100 text-orange-600', label: 'Hütte' },
-  { type: 'BARRIER',       icon: Ban,      color: 'bg-red-100 text-red-600',       label: 'Schranke' },
-  { type: 'VEHICLE',       icon: Truck,    color: 'bg-slate-100 text-slate-600',   label: 'Fahrzeug' },
-  { type: 'TREE',          icon: TreePine, color: 'bg-green-100 text-green-600',   label: 'Einzelbaum' },
+  { type: 'HUNTING_STAND', icon: Tent,     color: 'bg-yellow-100 text-yellow-600', tKey: 'huntingStand' },
+  { type: 'LOG_PILE',      icon: Boxes,    color: 'bg-blue-100 text-blue-600',     tKey: 'tabPolter' },
+  { type: 'HUT',           icon: Home,     color: 'bg-orange-100 text-orange-600', tKey: 'hut' },
+  { type: 'BARRIER',       icon: Ban,      color: 'bg-red-100 text-red-600',       tKey: 'barrier' },
+  { type: 'VEHICLE',       icon: Truck,    color: 'bg-slate-100 text-slate-600',   tKey: 'vehicle' },
+  { type: 'TREE',          icon: TreePine, color: 'bg-green-100 text-green-600',   tKey: 'singleTree' },
 ];
 
 interface Props {
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export function MobilePoiCreator({ latlng, forests, orgSlug, currentUserId, onClose, onRefresh }: Props) {
+  const m = useTranslations('MobileApp');
   const [saving, setSaving] = useState(false);
 
   if (!latlng) return null;
@@ -41,7 +43,7 @@ export function MobilePoiCreator({ latlng, forests, orgSlug, currentUserId, onCl
     } catch {}
 
     if (!forestId) {
-      toast.error('Dieser Punkt liegt außerhalb aller Waldgrenzen.');
+      toast.error(m('outsideForest'));
       return;
     }
 
@@ -55,11 +57,11 @@ export function MobilePoiCreator({ latlng, forests, orgSlug, currentUserId, onCl
         userId: currentUserId,
         forestId,
       });
-      toast.success('Objekt erstellt!');
+      toast.success(m('objectCreated'));
       onRefresh();
       onClose();
     } catch (e: any) {
-      toast.error(e.message ?? 'Fehler beim Erstellen');
+      toast.error(e.message ?? m('objectCreateError'));
     }
     setSaving(false);
   };
@@ -76,7 +78,7 @@ export function MobilePoiCreator({ latlng, forests, orgSlug, currentUserId, onCl
         </div>
 
         <SheetHeader className="mb-4">
-          <SheetTitle className="text-base text-slate-900">Neues Objekt erstellen</SheetTitle>
+          <SheetTitle className="text-base text-slate-900">{m('createObject')}</SheetTitle>
         </SheetHeader>
 
         {saving ? (
@@ -85,7 +87,7 @@ export function MobilePoiCreator({ latlng, forests, orgSlug, currentUserId, onCl
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
-            {POI_TYPES.map(({ type, icon: Icon, color, label }) => (
+            {POI_TYPES.map(({ type, icon: Icon, color, tKey }) => (
               <button
                 key={type}
                 onClick={() => handleSelect(type)}
@@ -94,7 +96,7 @@ export function MobilePoiCreator({ latlng, forests, orgSlug, currentUserId, onCl
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="text-xs font-medium text-slate-700">{label}</span>
+                <span className="text-xs font-medium text-slate-700">{m(tKey)}</span>
               </button>
             ))}
           </div>

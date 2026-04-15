@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2, ChevronDown, TreePine, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMapStore } from '@/components/map/stores/useMapStores';
 import { getBoundsFromGeoJson } from '@/lib/map-helpers';
 import { MapStyleToggle } from './MapStyleToggle';
@@ -49,6 +50,7 @@ interface Props {
 }
 
 export function MobileMapView({ orgSlug, forests }: Props) {
+  const m = useTranslations('MobileApp');
   const [data, setData]       = useState<MapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -119,7 +121,7 @@ export function MobileMapView({ orgSlug, forests }: Props) {
     return (
       <div className="flex items-center justify-center h-full bg-slate-100">
         <Loader2 className="animate-spin w-6 h-6 text-emerald-600" />
-        <span className="ml-2 text-sm text-slate-500">Lade Karte…</span>
+        <span className="ml-2 text-sm text-slate-500">{m('loadingMap')}</span>
       </div>
     );
   }
@@ -128,13 +130,13 @@ export function MobileMapView({ orgSlug, forests }: Props) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 bg-slate-100 px-8 text-center">
         <AlertTriangle className="w-8 h-8 text-amber-500" />
-        <p className="text-slate-600 text-sm">Karte konnte nicht geladen werden.</p>
+        <p className="text-slate-600 text-sm">{m('mapLoadError')}</p>
         <button
           onClick={loadData}
           className="flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium text-sm transition-colors"
         >
           <RefreshCw size={16} />
-          Erneut versuchen
+          {m('retry')}
         </button>
       </div>
     );

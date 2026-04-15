@@ -89,6 +89,20 @@ export function middleware(req: NextRequest) {
   if (isInternalRoute) {
     const res = NextResponse.next();
     res.headers.set('x-current-path', pathname);
+
+    // Sicherstellen dass NEXT_LOCALE Cookie gesetzt ist (fuer /app, /dashboard etc.)
+    if (!req.cookies.get('NEXT_LOCALE')) {
+      const acceptLang = req.headers.get('accept-language') ?? '';
+      const browserLang = acceptLang.split(',')[0]?.split('-')[0]?.toLowerCase();
+      const supported = ['de', 'en', 'es', 'fr'];
+      const locale = supported.includes(browserLang) ? browserLang : 'de';
+      res.cookies.set('NEXT_LOCALE', locale, {
+        path: '/',
+        maxAge: 365 * 24 * 60 * 60,
+        sameSite: 'lax',
+      });
+    }
+
     return res;
   }
 

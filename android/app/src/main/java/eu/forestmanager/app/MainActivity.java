@@ -1,18 +1,34 @@
 package eu.forestmanager.app;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.webkit.GeolocationPermissions;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.os.Bundle;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private static final int LOCATION_PERMISSION_REQUEST = 1001;
+
     @Override
     public void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
+
+        // Standort-Berechtigung zur Laufzeit anfragen
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                },
+                LOCATION_PERMISSION_REQUEST);
+        }
 
         WebView webView = getBridge().getWebView();
         WebSettings settings = webView.getSettings();
@@ -24,7 +40,7 @@ public class MainActivity extends BridgeActivity {
         // Geolocation in WebView erlauben
         settings.setGeolocationEnabled(true);
 
-        // Den bestehenden Capacitor ChromeClient wrappen (nicht ersetzen)
+        // Den bestehenden Capacitor ChromeClient wrappen
         final WebChromeClient originalClient = webView.getWebChromeClient();
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -32,7 +48,6 @@ public class MainActivity extends BridgeActivity {
                 callback.invoke(origin, true, true);
             }
 
-            // Alle anderen Methoden an den Original-Client delegieren
             @Override
             public boolean onShowFileChooser(WebView view, android.webkit.ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 if (originalClient != null) {

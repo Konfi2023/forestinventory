@@ -1,0 +1,36 @@
+{
+	"appId": "eu.forestmanager.app",
+	"appName": "ForestManager",
+	"webDir": "public",
+	"server": {
+		"url": "https://forest-manager.eu/signin",
+		"cleartext": false,
+		"allowNavigation": [
+			"forest-manager.eu",
+			"*.forest-manager.eu",
+			"auth.forest-manager.eu"
+		]
+	},
+	"ios": {
+		"scheme": "ForestManager",
+		"contentInset": "automatic",
+		"backgroundColor": "#faf9f6",
+		"preferredContentMode": "mobile"
+	},
+	"android": {
+		"backgroundColor": "#faf9f6",
+		"allowMixedContent": false
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchAutoHide": true,
+			"launchShowDuration": 2000,
+			"backgroundColor": "#faf9f6",
+			"showSpinner": false
+		},
+		"StatusBar": {
+			"style": "DARK",
+			"backgroundColor": "#faf9f6"
+		}
+	}
+}

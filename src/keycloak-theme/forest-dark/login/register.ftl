@@ -95,5 +95,19 @@
             </div>
         </div>
     </div>
+    <script>
+    (function() {
+      var isApp = navigator.userAgent.indexOf('CapacitorApp') > -1
+        || window.Capacitor
+        || document.URL.indexOf('capacitor://') === 0
+        || document.URL.indexOf('https://localhost') === 0;
+      if (isApp) {
+        var backLink = document.querySelector('.np-back-link');
+        if (backLink) backLink.style.display = 'none';
+        var logoLink = document.querySelector('.np-top-nav a[href*="forest-manager.eu"]');
+        if (logoLink) logoLink.removeAttribute('href');
+      }
+    })();
+    </script>
 </body>
 </html>

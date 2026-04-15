@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
 
 interface RotaryTunerProps {
@@ -22,159 +22,172 @@ export function RotaryTuner({
   color = '#10b981',
   decimals = 0,
 }: RotaryTunerProps) {
-  const knobRef = useRef<HTMLDivElement>(null);
-  const prevAngleRef = useRef<number | null>(null);
-  const accumulatedRef = useRef<number>(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const lastX = useRef(0);
+  const accumulated = useRef(0);
+  const [, forceRender] = useState(0);
 
-  // Sensitivity: degrees of rotation per step
-  // Full rotation (360°) = sensSteps * step value change
-  const sensSteps = 40; // 360° = 40 steps → ~9° per step
-  const degreesPerStep = 360 / sensSteps;
+  // Pixels per step — how many px the user must drag to change one step
+  const pxPerStep = 12;
 
-  const getAngleFromEvent = useCallback((clientX: number, clientY: number) => {
-    const knob = knobRef.current;
-    if (!knob) return 0;
-    const rect = knob.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    return Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI);
-  }, []);
+  // Total steps for rendering
+  const totalSteps = Math.round((max - min) / step);
+
+  // Width of the full ruler in px
+  const rulerWidth = totalSteps * pxPerStep;
+
+  // Current position (centered on value)
+  const valuePosition = ((value - min) / step) * pxPerStep;
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    // Don't start drag on the OK button
-    if ((e.target as HTMLElement).closest('button')) return;
-    e.preventDefault();
-    setIsDragging(true);
-    prevAngleRef.current = getAngleFromEvent(e.clientX, e.clientY);
-    accumulatedRef.current = 0;
+    isDragging.current = true;
+    lastX.current = e.clientX;
+    accumulated.current = 0;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  }, [getAngleFromEvent]);
+  }, []);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging || prevAngleRef.current === null) return;
+    if (!isDragging.current) return;
+    const deltaX = lastX.current - e.clientX; // inverted: drag left = increase
+    lastX.current = e.clientX;
+    accumulated.current += deltaX;
 
-    const currentAngle = getAngleFromEvent(e.clientX, e.clientY);
-    let delta = currentAngle - prevAngleRef.current;
-
-    // Handle wrap-around at ±180°
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
-
-    prevAngleRef.current = currentAngle;
-    accumulatedRef.current += delta;
-
-    // Convert accumulated degrees to step changes
-    const stepChanges = Math.floor(accumulatedRef.current / degreesPerStep);
+    const stepChanges = Math.floor(accumulated.current / pxPerStep);
     if (stepChanges !== 0) {
-      accumulatedRef.current -= stepChanges * degreesPerStep;
+      accumulated.current -= stepChanges * pxPerStep;
       const newValue = Math.max(min, Math.min(max,
         Number((value + stepChanges * step).toFixed(decimals))
       ));
       if (newValue !== value) {
         onChange(newValue);
-        if (navigator.vibrate) navigator.vibrate(3);
+        if (navigator.vibrate) navigator.vibrate(2);
       }
     }
-  }, [isDragging, getAngleFromEvent, degreesPerStep, min, max, value, step, decimals, onChange]);
+  }, [min, max, value, step, decimals, onChange]);
 
   const handlePointerUp = useCallback(() => {
-    setIsDragging(false);
-    prevAngleRef.current = null;
+    isDragging.current = false;
   }, []);
 
-  // Visual angle for the indicator (map value to 0-300° range)
-  const progress = (value - min) / (max - min || 1);
-  const indicatorAngle = progress * 300 - 150; // -150° to +150°
+  // Generate tick marks for visible range
+  const renderTicks = () => {
+    const track = trackRef.current;
+    if (!track) return null;
+    const trackWidth = track.clientWidth;
+    const centerOffset = trackWidth / 2;
 
-  // SVG arc
-  const radius = 90;
-  const circumference = 2 * Math.PI * radius;
-  const arcLength = (300 / 360) * circumference;
-  const progressLength = progress * arcLength;
+    // How many steps to render on each side
+    const visibleSteps = Math.ceil(trackWidth / pxPerStep) + 4;
+    const startStep = Math.max(0, Math.round((value - min) / step) - visibleSteps);
+    const endStep = Math.min(totalSteps, Math.round((value - min) / step) + visibleSteps);
+
+    const ticks = [];
+    // Decide major tick interval based on step size
+    let majorEvery = 10;
+    if (step >= 5) majorEvery = 2;
+    if (step === 0.5) majorEvery = 2; // every 1.0
+
+    for (let i = startStep; i <= endStep; i++) {
+      const tickValue = min + i * step;
+      const px = centerOffset + (i * pxPerStep - valuePosition);
+      const isMajor = i % majorEvery === 0;
+
+      ticks.push(
+        <div
+          key={i}
+          className="absolute flex flex-col items-center"
+          style={{
+            left: px,
+            transform: 'translateX(-50%)',
+            transition: isDragging.current ? 'none' : 'left 0.05s',
+          }}
+        >
+          <div
+            style={{
+              width: isMajor ? 2 : 1,
+              height: isMajor ? 32 : 18,
+              backgroundColor: isMajor ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.1)',
+              borderRadius: 1,
+            }}
+          />
+          {isMajor && (
+            <span className="text-[10px] text-slate-400 mt-1 select-none font-medium">
+              {tickValue.toFixed(decimals)}
+            </span>
+          )}
+        </div>
+      );
+    }
+    return ticks;
+  };
+
+  // Force re-render on mount to get trackRef dimensions
+  useEffect(() => { forceRender(n => n + 1); }, []);
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-6 w-full">
       {/* Label */}
       <p className="text-sm font-medium text-slate-500">{label}</p>
 
       {/* Value display */}
       <div className="text-center">
-        <span className="text-5xl font-bold" style={{ color }}>
+        <span className="text-6xl font-bold" style={{ color }}>
           {value.toFixed(decimals)}
         </span>
         <span className="text-2xl font-light text-slate-400 ml-2">{unit}</span>
       </div>
 
-      {/* Knob */}
-      <div
-        ref={knobRef}
-        className="relative w-56 h-56 select-none"
-        style={{ touchAction: 'none' }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 200">
-          {/* Track background */}
-          <circle
-            cx="100" cy="100" r={radius}
-            fill="none"
-            stroke="rgba(0,0,0,0.06)"
-            strokeWidth="14"
-            strokeLinecap="round"
-            strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-            strokeDashoffset={-circumference * (210 / 360)}
-          />
-          {/* Progress arc */}
-          <circle
-            cx="100" cy="100" r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth="14"
-            strokeLinecap="round"
-            strokeDasharray={`${progressLength} ${circumference - progressLength}`}
-            strokeDashoffset={-circumference * (210 / 360)}
-            style={{ transition: isDragging ? 'none' : 'stroke-dasharray 0.15s ease-out' }}
-          />
-
-          {/* Indicator dot */}
-          {(() => {
-            const rad = ((indicatorAngle + 90) * Math.PI) / 180;
-            return (
-              <circle
-                cx={100 + radius * Math.cos(rad)}
-                cy={100 + radius * Math.sin(rad)}
-                r="10"
-                fill="white"
-                stroke={color}
-                strokeWidth="4"
-                style={{
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
-                  transition: isDragging ? 'none' : 'cx 0.15s, cy 0.15s',
-                }}
-              />
-            );
-          })()}
-
-          {/* Min/Max labels on arc */}
-          <text x="45" y="185" textAnchor="middle" fontSize="11" fill="#94a3b8" fontFamily="sans-serif">{min}</text>
-          <text x="155" y="185" textAnchor="middle" fontSize="11" fill="#94a3b8" fontFamily="sans-serif">{max}</text>
-        </svg>
-
-        {/* OK button in center */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onConfirm(); }}
-          className="absolute inset-0 m-auto w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-95"
+      {/* Ruler */}
+      <div className="w-full relative">
+        {/* Center indicator */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 z-10"
+          style={{ width: 3, height: 44, backgroundColor: color, borderRadius: 2 }}
+        />
+        {/* Small triangle pointer */}
+        <div
+          className="absolute -top-2 left-1/2 -translate-x-1/2 z-10"
           style={{
-            background: color,
-            boxShadow: `0 4px 20px ${color}40`,
+            width: 0, height: 0,
+            borderLeft: '6px solid transparent',
+            borderRight: '6px solid transparent',
+            borderTop: `8px solid ${color}`,
           }}
+        />
+
+        {/* Scrollable track */}
+        <div
+          ref={trackRef}
+          className="relative w-full overflow-hidden select-none"
+          style={{ height: 60, touchAction: 'none', cursor: 'grab' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
         >
-          <Check size={32} className="text-white" strokeWidth={3} />
-        </button>
+          {/* Fade edges */}
+          <div className="absolute inset-y-0 left-0 w-16 z-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, rgb(249 250 251), transparent)' }} />
+          <div className="absolute inset-y-0 right-0 w-16 z-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to left, rgb(249 250 251), transparent)' }} />
+
+          {/* Ticks */}
+          <div className="absolute inset-0 pt-2">
+            {renderTicks()}
+          </div>
+        </div>
       </div>
+
+      {/* OK button */}
+      <button
+        onClick={onConfirm}
+        className="w-full max-w-xs py-4 rounded-xl font-bold text-white text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+        style={{ background: color, boxShadow: `0 4px 20px ${color}40` }}
+      >
+        <Check size={22} strokeWidth={3} />
+        OK
+      </button>
     </div>
   );
 }

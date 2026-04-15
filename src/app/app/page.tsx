@@ -2,15 +2,28 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
+import { cookies, headers } from 'next/headers';
 import { AppShell } from './AppShell';
 
-export const metadata = { title: 'Forstinventur App' };
+export const metadata = { title: 'ForestManager App' };
 
 export default async function AppPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     redirect('/api/auth/signin?callbackUrl=/app');
+  }
+
+  // Sicherstellen dass NEXT_LOCALE Cookie gesetzt ist (fuer Capacitor-App)
+  const cookieStore = await cookies();
+  if (!cookieStore.get('NEXT_LOCALE')) {
+    // Sprache aus Accept-Language Header oder Organisation-Default ableiten
+    const headerStore = await headers();
+    const acceptLang = headerStore.get('accept-language') ?? '';
+    const browserLang = acceptLang.split(',')[0]?.split('-')[0]?.toLowerCase();
+    const supportedLocales = ['de', 'en', 'es', 'fr'];
+    const locale = supportedLocales.includes(browserLang) ? browserLang : 'de';
+    cookieStore.set('NEXT_LOCALE', locale, { path: '/', maxAge: 365 * 24 * 60 * 60 });
   }
 
   // Alle Organisationen des Nutzers laden

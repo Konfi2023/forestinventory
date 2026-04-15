@@ -161,6 +161,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const [taskSaving, setTaskSaving]     = useState(false);
   const [taskSaveError, setTaskSaveError] = useState<string | null>(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [locating, setLocating] = useState(false);
   const [isSavingTree, setIsSavingTree] = useState(false);
   // KI-Baumanalyse
@@ -813,6 +814,29 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           onSkip={() => setBhdMeasureOpen(false)}
         />
       )}
+      {/* Abbrechen-Bestätigung */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Erfassung abbrechen?</h3>
+            <p className="text-sm text-slate-500 mb-6">Nicht gespeicherte Daten gehen verloren. Möchtest du wirklich abbrechen?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-colors"
+              >
+                Weiter erfassen
+              </button>
+              <button
+                onClick={() => { setShowCancelConfirm(false); startNew(); }}
+                className="flex-1 py-3 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors"
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showImport && (
         <ImportInventoryDialog
           forests={forests}
@@ -833,11 +857,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           {/* Abbrechen-Button: nur sichtbar während aktiver Erfassung */}
           {step !== 'mode' && step !== 'saved' && step !== 'summary' && step !== 'plot-done' && step !== 'task' && (
             <button
-              onClick={() => {
-                if (window.confirm('Erfassung abbrechen? Nicht gespeicherte Daten gehen verloren.')) {
-                  startNew();
-                }
-              }}
+              onClick={() => setShowCancelConfirm(true)}
               className="ml-2 flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors"
             >
               <X size={12} /> Abbrechen

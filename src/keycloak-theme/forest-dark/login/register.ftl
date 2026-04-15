@@ -110,6 +110,33 @@
         || document.URL.indexOf('https://localhost') === 0;
       if (isApp) {
         document.body.classList.add('is-native-app');
+
+        // Registrierungsformular durch Hinweis-Seite ersetzen
+        var authLeft = document.querySelector('.np-auth-left');
+        if (authLeft) {
+          authLeft.innerHTML = ''
+            + '<div class="app-logo-section" style="display:flex;flex-direction:column;align-items:center;margin-bottom:40px;">'
+            + '  <img src="' + document.querySelector('.app-logo-section img').src + '" style="height:72px;margin-bottom:12px;" alt="ForestManager">'
+            + '  <div class="app-brand" style="font-size:26px;font-weight:700;">Forest<span style="color:#2b5741;">Manager</span></div>'
+            + '</div>'
+            + '<div style="text-align:center;padding:0 20px;">'
+            + '  <h1 style="font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:16px;font-family:Nunito,sans-serif;">Willkommen bei ForestManager</h1>'
+            + '  <p style="font-size:15px;color:#4a4a44;line-height:1.7;margin-bottom:32px;">'
+            + '    Diese App ist die mobile Erweiterung der ForestManager Plattform.<br><br>'
+            + '    Um ein Konto zu erstellen, registrieren Sie sich bitte auf unserer Webseite.'
+            + '  </p>'
+            + '  <a href="https://forest-manager.eu/signin" target="_blank" rel="noopener"'
+            + '     style="display:inline-block;padding:14px 36px;background:#2b5741;color:white;border-radius:14px;font-size:15px;font-weight:700;text-decoration:none;font-family:Nunito,sans-serif;">'
+            + '    Auf forest-manager.eu registrieren'
+            + '  </a>'
+            + '  <div style="margin-top:24px;">'
+            + '    <a href="' + document.querySelector('a.np-link[href*="login"]')?.href + '" style="font-size:14px;color:#2b5741;text-decoration:none;font-weight:600;">'
+            + '      Zurück zum Login'
+            + '    </a>'
+            + '  </div>'
+            + '</div>';
+        }
+
         var canvas = document.getElementById('forest-net-bg');
         if (canvas) {
           canvas.style.display = 'block';

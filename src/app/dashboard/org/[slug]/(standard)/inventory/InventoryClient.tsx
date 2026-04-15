@@ -816,16 +816,18 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {bhdMeasureOpen && photoPreview && (
-        <BhdMeasurement
-          photoSrc={photoPreview}
-          onMeasured={(bhdCm) => {
-            setForm(f => ({ ...f, diameter: String(bhdCm) }));
-            setBhdMethod('CARD');
-            setBhdMeasureOpen(false);
-          }}
-          onSkip={() => setBhdMeasureOpen(false)}
-        />
+      {photoPreview && (
+        <div style={{ display: bhdMeasureOpen ? 'contents' : 'none' }}>
+          <BhdMeasurement
+            photoSrc={photoPreview}
+            onMeasured={(bhdCm) => {
+              setForm(f => ({ ...f, diameter: String(bhdCm) }));
+              setBhdMethod('CARD');
+              setBhdMeasureOpen(false);
+            }}
+            onSkip={() => setBhdMeasureOpen(false)}
+          />
+        </div>
       )}
       {/* Abbrechen-Bestätigung */}
       {showCancelConfirm && (

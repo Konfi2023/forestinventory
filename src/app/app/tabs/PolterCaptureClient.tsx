@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Camera, MapPin, ChevronRight, ChevronLeft,
-  Check, CloudOff, RefreshCw, PackageOpen,
+  Check, CloudOff, RefreshCw, PackageOpen, Search,
 } from 'lucide-react';
 import { db } from '@/lib/inventory-db';
-import { TREE_SPECIES } from '@/lib/tree-species';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { RotaryTuner } from '@/components/RotaryTuner';
 
 const WOOD_TYPE_KEYS: { id: string; tKey: string }[] = [
   { id: 'LOG',        tKey: 'woodLog' },
@@ -25,7 +25,7 @@ const QUALITY_CLASS_KEYS: { id: string; tKey: string }[] = [
   { id: 'E',  tKey: 'qualityE' },
 ];
 
-type Step = 'forest' | 'camera' | 'details' | 'saved';
+type Step = 'forest' | 'camera' | 'species' | 'woodType' | 'volume' | 'length' | 'quality' | 'notes' | 'saved';
 type GpsError = 'denied' | 'unavailable' | 'timeout' | 'insecure' | null;
 
 interface Forest { id: string; name: string; }
@@ -53,6 +53,7 @@ interface FormState {
 
 export function PolterCaptureClient({ forests, orgSlug }: Props) {
   const t = useTranslations('MobileApp');
+  const locale = useLocale();
   const [step, setStep]             = useState<Step>('forest');
   const [form, setForm]             = useState<FormState>({
     forestId: forests[0]?.id ?? '',
@@ -71,9 +72,34 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
   const fileInputRef                = useRef<HTMLInputElement>(null);
   const [speciesSearch, setSpeciesSearch] = useState('');
 
-  const filteredSpecies = TREE_SPECIES.filter(s =>
+  // ── Species from API ────────────────────────────────────────────────────────
+  const [speciesList, setSpeciesList] = useState<{ id: string; label: string; color?: string }[]>([]);
+  const CACHE_KEY = `polter_species_${orgSlug}_${locale}`;
+
+  useEffect(() => {
+    // Load from cache first
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) setSpeciesList(JSON.parse(cached));
+    } catch { /* ignore */ }
+
+    fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100&lang=${locale}`)
+      .then(r => r.json())
+      .then(data => {
+        const results = data.results ?? [];
+        setSpeciesList(results);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(results)); } catch { /* ignore */ }
+      })
+      .catch(() => {});
+  }, [orgSlug, locale, CACHE_KEY]);
+
+  const filteredSpecies = speciesList.filter(s =>
     s.label.toLowerCase().includes(speciesSearch.toLowerCase())
   );
+
+  // Volume / length as numbers for RotaryTuner
+  const [volumeNum, setVolumeNum] = useState(5.0);
+  const [lengthNum, setLengthNum] = useState(4.0);
 
   const getGPS = useCallback(() => {
     if (!navigator.geolocation) { setGpsError('unavailable'); return; }
@@ -210,6 +236,8 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
     setSavedPoiId(null);
     setSaveError(null);
     setSpeciesSearch('');
+    setVolumeNum(5.0);
+    setLengthNum(4.0);
   };
 
   const tog = (val: string, current: string, set: (v: string) => void) =>
@@ -244,17 +272,9 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
   if (step === 'camera') {
     return (
       <div className="flex flex-col gap-5 p-4">
-        {/* Fortschritt */}
+        {/* Titel */}
         <div className="flex items-center gap-2">
-          {(['camera', 'details'] as const).map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                step === s ? 'bg-emerald-500 text-white' : i < ['camera','details'].indexOf(step) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-400'
-              }`}>{i + 1}</div>
-              {i < 1 && <div className="flex-1 h-px bg-slate-200 w-8" />}
-            </div>
-          ))}
-          <span className="text-xs text-slate-400 ml-1">{t('photoAndPosition')}</span>
+          <span className="text-xs text-slate-400">{t('photoAndPosition')}</span>
         </div>
 
         {/* Foto */}
@@ -303,7 +323,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
         </div>
 
         <button
-          onClick={() => setStep('details')}
+          onClick={() => setStep('species')}
           disabled={form.lat == null}
           className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
         >
@@ -314,80 +334,265 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
     );
   }
 
-  // ── Schritt: Details ────────────────────────────────────────────────────────
-  if (step === 'details') {
+  // ── Schritt: Baumart ─────────────────────────────────────────────────────
+  if (step === 'species') {
     return (
-      <div className="flex flex-col gap-5 p-4 pb-8">
-        <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+      <div className="flex flex-col gap-4 p-4 pb-8">
+        <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 mb-4">
           <ChevronLeft size={16} /> {t('back')}
         </button>
 
-        {/* Baumart */}
-        <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('treeSpecies')}</label>
+        <h2 className="text-lg font-semibold text-slate-800">{t('treeSpecies')}</h2>
+
+        {/* Search */}
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder={t('search')}
             value={speciesSearch}
             onChange={e => setSpeciesSearch(e.target.value)}
-            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-2"
+            className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
           />
-          <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+        </div>
+
+        {/* Favorites (first 6) */}
+        {!speciesSearch && speciesList.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-slate-400 mb-2">{t('favorites') ?? 'Favoriten'}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {speciesList.slice(0, 6).map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setForm(f => ({ ...f, treeSpecies: f.treeSpecies === s.id ? '' : s.id }));
+                  }}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-left transition-colors ${
+                    form.treeSpecies === s.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {s.color && <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: s.color }} />}
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Search results */}
+        {speciesSearch && (
+          <div className="grid grid-cols-2 gap-1.5 max-h-64 overflow-y-auto">
             {filteredSpecies.map(s => (
               <button
                 key={s.id}
-                onClick={() => tog(s.id, form.treeSpecies, v => setForm(f => ({ ...f, treeSpecies: v })))}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-left transition-colors ${
+                onClick={() => {
+                  setForm(f => ({ ...f, treeSpecies: f.treeSpecies === s.id ? '' : s.id }));
+                }}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium text-left transition-colors ${
                   form.treeSpecies === s.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                {s.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />}
                 {s.label}
               </button>
             ))}
           </div>
-        </div>
+        )}
 
-        {/* Holzart */}
-        <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('woodType')}</label>
-          <div className="grid grid-cols-2 gap-1.5">
-            {WOOD_TYPE_KEYS.map(w => (
-              <button
-                key={w.id}
-                onClick={() => setForm(f => ({ ...f, woodType: w.id }))}
-                className={`py-2.5 rounded-lg text-xs font-medium transition-colors ${
-                  form.woodType === w.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {t(w.tKey)}
-              </button>
-            ))}
+        {/* All species when not searching */}
+        {!speciesSearch && speciesList.length > 6 && (
+          <div>
+            <p className="text-xs font-medium text-slate-400 mb-2">{t('allSpecies') ?? 'Alle Baumarten'}</p>
+            <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
+              {speciesList.slice(6).map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setForm(f => ({ ...f, treeSpecies: f.treeSpecies === s.id ? '' : s.id }));
+                  }}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium text-left transition-colors ${
+                    form.treeSpecies === s.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {s.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />}
+                  {s.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Festmeter + Stammlänge */}
+        <button
+          onClick={() => setStep('woodType')}
+          className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors mt-2"
+        >
+          {t('continue')} <ChevronRight size={18} />
+        </button>
+      </div>
+    );
+  }
+
+  // ── Schritt: Holzart ────────────────────────────────────────────────────────
+  if (step === 'woodType') {
+    return (
+      <div className="flex flex-col gap-5 p-4 pb-8">
+        <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-500 mb-4">
+          <ChevronLeft size={16} /> {t('back')}
+        </button>
+
+        <h2 className="text-lg font-semibold text-slate-800">{t('woodType')}</h2>
+
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('volume')}</label>
-            <input
-              type="number" inputMode="decimal"
-              placeholder="z.B. 12.5"
-              value={form.volumeFm}
-              onChange={e => setForm(f => ({ ...f, volumeFm: e.target.value }))}
-              className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('logLength')}</label>
-            <input
-              type="number" inputMode="decimal"
-              placeholder="z.B. 4.0"
-              value={form.logLength}
-              onChange={e => setForm(f => ({ ...f, logLength: e.target.value }))}
-              className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
+          {WOOD_TYPE_KEYS.map(w => (
+            <button
+              key={w.id}
+              onClick={() => setForm(f => ({ ...f, woodType: w.id }))}
+              className={`py-4 rounded-xl text-sm font-semibold transition-colors ${
+                form.woodType === w.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {t(w.tKey)}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setStep('volume')}
+          className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors mt-2"
+        >
+          {t('continue')} <ChevronRight size={18} />
+        </button>
+      </div>
+    );
+  }
+
+  // ── Schritt: Volumen ────────────────────────────────────────────────────────
+  if (step === 'volume') {
+    return (
+      <div className="flex flex-col gap-4 p-4 pb-8">
+        <button onClick={() => setStep('woodType')} className="flex items-center gap-1 text-sm text-slate-500 mb-4">
+          <ChevronLeft size={16} /> {t('back')}
+        </button>
+
+        <RotaryTuner
+          value={volumeNum}
+          onChange={setVolumeNum}
+          onConfirm={() => {
+            setForm(f => ({ ...f, volumeFm: String(volumeNum) }));
+            setStep('length');
+          }}
+          min={0.5}
+          max={100}
+          step={0.5}
+          unit="fm"
+          label={t('volume')}
+          decimals={1}
+        />
+
+        <button
+          onClick={() => {
+            setForm(f => ({ ...f, volumeFm: '' }));
+            setStep('length');
+          }}
+          className="text-sm text-slate-400 text-center hover:text-slate-600 mt-2"
+        >
+          Weiter ohne Angabe
+        </button>
+      </div>
+    );
+  }
+
+  // ── Schritt: Stammlänge ─────────────────────────────────────────────────────
+  if (step === 'length') {
+    return (
+      <div className="flex flex-col gap-4 p-4 pb-8">
+        <button onClick={() => setStep('volume')} className="flex items-center gap-1 text-sm text-slate-500 mb-4">
+          <ChevronLeft size={16} /> {t('back')}
+        </button>
+
+        <RotaryTuner
+          value={lengthNum}
+          onChange={setLengthNum}
+          onConfirm={() => {
+            setForm(f => ({ ...f, logLength: String(lengthNum) }));
+            setStep('quality');
+          }}
+          min={1}
+          max={20}
+          step={0.5}
+          unit="m"
+          label={t('logLength')}
+          decimals={1}
+        />
+
+        <button
+          onClick={() => {
+            setForm(f => ({ ...f, logLength: '' }));
+            setStep('quality');
+          }}
+          className="text-sm text-slate-400 text-center hover:text-slate-600 mt-2"
+        >
+          Weiter ohne Angabe
+        </button>
+      </div>
+    );
+  }
+
+  // ── Schritt: Qualitätsklasse ────────────────────────────────────────────────
+  if (step === 'quality') {
+    return (
+      <div className="flex flex-col gap-5 p-4 pb-8">
+        <button onClick={() => setStep('length')} className="flex items-center gap-1 text-sm text-slate-500 mb-4">
+          <ChevronLeft size={16} /> {t('back')}
+        </button>
+
+        <h2 className="text-lg font-semibold text-slate-800">{t('qualityClass')}</h2>
+
+        <div className="grid grid-cols-3 gap-2">
+          {QUALITY_CLASS_KEYS.map(q => (
+            <button
+              key={q.id}
+              onClick={() => tog(q.id, form.qualityClass, v => setForm(f => ({ ...f, qualityClass: v })))}
+              className={`py-4 rounded-xl text-sm font-semibold transition-colors ${
+                form.qualityClass === q.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              <span className="text-base">{q.id}</span>
+              <br />
+              <span className="text-xs font-normal opacity-75">{t(q.tKey)}</span>
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setStep('notes')}
+          className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors mt-2"
+        >
+          {t('continue')} <ChevronRight size={18} />
+        </button>
+      </div>
+    );
+  }
+
+  // ── Schritt: Notizen ────────────────────────────────────────────────────────
+  if (step === 'notes') {
+    return (
+      <div className="flex flex-col gap-5 p-4 pb-8">
+        <button onClick={() => setStep('quality')} className="flex items-center gap-1 text-sm text-slate-500 mb-4">
+          <ChevronLeft size={16} /> {t('back')}
+        </button>
+
+        <h2 className="text-lg font-semibold text-slate-800">{t('notes')}</h2>
+
+        {/* Notizen */}
+        <div>
+          <textarea
+            rows={4}
+            placeholder={t('notes')}
+            value={form.notes}
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 resize-none"
+          />
         </div>
 
         {/* Lagenanzahl */}
@@ -398,39 +603,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
             placeholder="z.B. 3"
             value={form.layerCount}
             onChange={e => setForm(f => ({ ...f, layerCount: e.target.value }))}
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-
-        {/* Qualitätsklasse */}
-        <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('qualityClass')}</label>
-          <div className="grid grid-cols-3 gap-1.5">
-            {QUALITY_CLASS_KEYS.map(q => (
-              <button
-                key={q.id}
-                onClick={() => tog(q.id, form.qualityClass, v => setForm(f => ({ ...f, qualityClass: v })))}
-                className={`py-2 rounded-lg text-xs font-medium transition-colors ${
-                  form.qualityClass === q.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {q.id}
-              </button>
-            ))}
-          </div>
-          {form.qualityClass && (
-            <p className="text-xs text-slate-400 mt-1">{t(QUALITY_CLASS_KEYS.find(q => q.id === form.qualityClass)?.tKey ?? 'qualityA')}</p>
-          )}
-        </div>
-
-        {/* Notizen */}
-        <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('notes')}</label>
-          <textarea
-            rows={2}
-            value={form.notes}
-            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 resize-none"
+            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500"
           />
         </div>
 
@@ -441,7 +614,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+          className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors mt-2"
         >
           {saving ? <RefreshCw size={18} className="animate-spin" /> : <><Check size={18} /> {t('savePolter')}</>}
         </button>

@@ -3452,6 +3452,8 @@
     "statusUpdateError": "Fehler beim Aktualisieren",
     "navigateLabel": "Navigieren",
     "markDone": "Als erledigt markieren",
-    "startWork": "In Arbeit setzen"
+    "startWork": "In Arbeit setzen",
+    "allSpecies": "Alle Baumarten",
+    "favorites": "Favoriten"
   }
 }

@@ -2983,6 +2983,8 @@
     "statusUpdateError": "Error updating status",
     "navigateLabel": "Navigate",
     "markDone": "Mark as done",
-    "startWork": "Start working"
+    "startWork": "Start working",
+    "allSpecies": "All Species",
+    "favorites": "Favorites"
   }
 }

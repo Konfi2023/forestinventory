@@ -110,7 +110,8 @@
         || document.URL.indexOf('https://localhost') === 0;
       // Funktion zum Oeffnen im System-Browser (ausserhalb der WebView)
       window.openExternalBrowser = function() {
-        var url = 'https://forest-manager.eu/signin';
+        // Keycloak Registrierungs-URL direkt verwenden (vom Server generiert)
+        var url = '${url.registrationUrl?js_string}';
         if (window.NativeBridge && window.NativeBridge.openInBrowser) {
           window.NativeBridge.openInBrowser(url);
         } else {

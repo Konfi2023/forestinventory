@@ -1287,7 +1287,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               onChange={(v) => setForm(f => ({ ...f, diameter: String(v) }))}
               onConfirm={() => setStep('species')}
               min={1}
-              max={150}
+              max={300}
               step={1}
               unit="cm"
               label={m('bhdTunerLabel')}

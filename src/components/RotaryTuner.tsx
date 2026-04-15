@@ -23,24 +23,14 @@ export function RotaryTuner({
   decimals = 0,
 }: RotaryTunerProps) {
   const knobRef = useRef<HTMLDivElement>(null);
-  const startAngleRef = useRef<number>(0);
-  const startValueRef = useRef<number>(0);
-  const lastStepRef = useRef<number>(0);
+  const prevAngleRef = useRef<number | null>(null);
+  const accumulatedRef = useRef<number>(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Value to angle: map value range to 0-300 degrees (leave 60 deg gap at bottom)
-  const valueToAngle = useCallback((v: number) => {
-    const range = max - min;
-    if (range <= 0) return 0;
-    return ((v - min) / range) * 300 - 150; // -150 to +150
-  }, [min, max]);
-
-  const angleToValue = useCallback((angle: number) => {
-    const range = max - min;
-    const raw = ((angle + 150) / 300) * range + min;
-    const stepped = Math.round(raw / step) * step;
-    return Math.max(min, Math.min(max, Number(stepped.toFixed(decimals))));
-  }, [min, max, step, decimals]);
+  // Sensitivity: degrees of rotation per step
+  // Full rotation (360°) = sensSteps * step value change
+  const sensSteps = 40; // 360° = 40 steps → ~9° per step
+  const degreesPerStep = 360 / sensSteps;
 
   const getAngleFromEvent = useCallback((clientX: number, clientY: number) => {
     const knob = knobRef.current;
@@ -52,57 +42,59 @@ export function RotaryTuner({
   }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // Don't start drag on the OK button
+    if ((e.target as HTMLElement).closest('button')) return;
     e.preventDefault();
     setIsDragging(true);
-    startAngleRef.current = getAngleFromEvent(e.clientX, e.clientY);
-    startValueRef.current = value;
-    lastStepRef.current = value;
+    prevAngleRef.current = getAngleFromEvent(e.clientX, e.clientY);
+    accumulatedRef.current = 0;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  }, [getAngleFromEvent, value]);
+  }, [getAngleFromEvent]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging) return;
-    const currentAngle = getAngleFromEvent(e.clientX, e.clientY);
-    let delta = currentAngle - startAngleRef.current;
+    if (!isDragging || prevAngleRef.current === null) return;
 
-    // Handle wrap-around
+    const currentAngle = getAngleFromEvent(e.clientX, e.clientY);
+    let delta = currentAngle - prevAngleRef.current;
+
+    // Handle wrap-around at ±180°
     if (delta > 180) delta -= 360;
     if (delta < -180) delta += 360;
 
-    const range = max - min;
-    const valueDelta = (delta / 300) * range;
-    const newValue = angleToValue(startValueRef.current + valueDelta);
+    prevAngleRef.current = currentAngle;
+    accumulatedRef.current += delta;
 
-    if (newValue !== value) {
-      onChange(newValue);
-      // Haptic feedback on step change
-      if (Math.abs(newValue - lastStepRef.current) >= step) {
-        lastStepRef.current = newValue;
-        if (navigator.vibrate) navigator.vibrate(5);
+    // Convert accumulated degrees to step changes
+    const stepChanges = Math.floor(accumulatedRef.current / degreesPerStep);
+    if (stepChanges !== 0) {
+      accumulatedRef.current -= stepChanges * degreesPerStep;
+      const newValue = Math.max(min, Math.min(max,
+        Number((value + stepChanges * step).toFixed(decimals))
+      ));
+      if (newValue !== value) {
+        onChange(newValue);
+        if (navigator.vibrate) navigator.vibrate(3);
       }
     }
-  }, [isDragging, getAngleFromEvent, max, min, angleToValue, onChange, value, step]);
+  }, [isDragging, getAngleFromEvent, degreesPerStep, min, max, value, step, decimals, onChange]);
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false);
+    prevAngleRef.current = null;
   }, []);
 
-  const angle = valueToAngle(value);
-  const progress = (value - min) / (max - min);
+  // Visual angle for the indicator (map value to 0-300° range)
+  const progress = (value - min) / (max - min || 1);
+  const indicatorAngle = progress * 300 - 150; // -150° to +150°
 
-  // SVG arc for progress
+  // SVG arc
   const radius = 90;
   const circumference = 2 * Math.PI * radius;
   const arcLength = (300 / 360) * circumference;
   const progressLength = progress * arcLength;
 
-  // Tick marks
-  const totalSteps = Math.floor((max - min) / step);
-  const tickInterval = totalSteps > 60 ? 10 : totalSteps > 30 ? 5 : 1;
-  const majorTickInterval = tickInterval * (totalSteps > 60 ? 5 : totalSteps > 30 ? 2 : 5);
-
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-3">
       {/* Label */}
       <p className="text-sm font-medium text-slate-500">{label}</p>
 
@@ -124,68 +116,51 @@ export function RotaryTuner({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Background circle */}
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 200">
-          {/* Track */}
+          {/* Track background */}
           <circle
             cx="100" cy="100" r={radius}
             fill="none"
             stroke="rgba(0,0,0,0.06)"
-            strokeWidth="12"
+            strokeWidth="14"
             strokeLinecap="round"
             strokeDasharray={`${arcLength} ${circumference - arcLength}`}
             strokeDashoffset={-circumference * (210 / 360)}
-            transform="rotate(0 100 100)"
           />
-          {/* Progress */}
+          {/* Progress arc */}
           <circle
             cx="100" cy="100" r={radius}
             fill="none"
             stroke={color}
-            strokeWidth="12"
+            strokeWidth="14"
             strokeLinecap="round"
             strokeDasharray={`${progressLength} ${circumference - progressLength}`}
             strokeDashoffset={-circumference * (210 / 360)}
-            transform="rotate(0 100 100)"
-            style={{ transition: isDragging ? 'none' : 'stroke-dasharray 0.1s' }}
+            style={{ transition: isDragging ? 'none' : 'stroke-dasharray 0.15s ease-out' }}
           />
 
-          {/* Tick marks */}
-          {Array.from({ length: Math.floor((max - min) / step) + 1 }, (_, i) => {
-            if (i % tickInterval !== 0) return null;
-            const isMajor = i % majorTickInterval === 0;
-            const tickAngle = (i / totalSteps) * 300 - 150 + 90;
-            const innerR = isMajor ? 72 : 76;
-            const outerR = 80;
-            const rad = (tickAngle * Math.PI) / 180;
-            return (
-              <line
-                key={i}
-                x1={100 + innerR * Math.cos(rad)}
-                y1={100 + innerR * Math.sin(rad)}
-                x2={100 + outerR * Math.cos(rad)}
-                y2={100 + outerR * Math.sin(rad)}
-                stroke={isMajor ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.08)'}
-                strokeWidth={isMajor ? 1.5 : 1}
-              />
-            );
-          })}
-
-          {/* Indicator dot on the arc */}
+          {/* Indicator dot */}
           {(() => {
-            const indicatorAngle = ((angle + 90) * Math.PI) / 180;
+            const rad = ((indicatorAngle + 90) * Math.PI) / 180;
             return (
               <circle
-                cx={100 + radius * Math.cos(indicatorAngle)}
-                cy={100 + radius * Math.sin(indicatorAngle)}
-                r="8"
-                fill={color}
-                stroke="white"
-                strokeWidth="3"
-                style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.2))' }}
+                cx={100 + radius * Math.cos(rad)}
+                cy={100 + radius * Math.sin(rad)}
+                r="10"
+                fill="white"
+                stroke={color}
+                strokeWidth="4"
+                style={{
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
+                  transition: isDragging ? 'none' : 'cx 0.15s, cy 0.15s',
+                }}
               />
             );
           })()}
+
+          {/* Min/Max labels on arc */}
+          <text x="45" y="185" textAnchor="middle" fontSize="11" fill="#94a3b8" fontFamily="sans-serif">{min}</text>
+          <text x="155" y="185" textAnchor="middle" fontSize="11" fill="#94a3b8" fontFamily="sans-serif">{max}</text>
         </svg>
 
         {/* OK button in center */}
@@ -199,12 +174,6 @@ export function RotaryTuner({
         >
           <Check size={32} className="text-white" strokeWidth={3} />
         </button>
-      </div>
-
-      {/* Min/Max labels */}
-      <div className="flex justify-between w-56 text-xs text-slate-400">
-        <span>{min}{unit}</span>
-        <span>{max}{unit}</span>
       </div>
     </div>
   );

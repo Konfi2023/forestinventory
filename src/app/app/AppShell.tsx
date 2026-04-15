@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { ClipboardList, TreePine, PackageOpen, ChevronDown, Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { TasksTab } from './tabs/TasksTab';
 import { InventoryTab } from './tabs/InventoryTab';
 import { PolterTab } from './tabs/PolterTab';
@@ -30,6 +31,7 @@ interface AppShellProps {
 export function AppShell({
   orgs, currentUserId, initialOrgSlug, initialTasks, initialForests, initialMembers,
 }: AppShellProps) {
+  const t = useTranslations('MobileApp');
   const [tab, setTab] = useState<Tab>('tasks');
   const [orgSlug, setOrgSlug] = useState(initialOrgSlug);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -233,7 +235,7 @@ export function AppShell({
           }`}
         >
           <ClipboardList size={22} />
-          <span className="text-xs font-medium">Aufgaben</span>
+          <span className="text-xs font-medium">{t('tabTasks')}</span>
         </button>
         <button
           onClick={() => setTab('inventory')}
@@ -242,7 +244,7 @@ export function AppShell({
           }`}
         >
           <TreePine size={22} />
-          <span className="text-xs font-medium">Inventur</span>
+          <span className="text-xs font-medium">{t('tabInventory')}</span>
         </button>
         <button
           onClick={() => setTab('polter')}
@@ -251,7 +253,7 @@ export function AppShell({
           }`}
         >
           <PackageOpen size={22} />
-          <span className="text-xs font-medium">Polter</span>
+          <span className="text-xs font-medium">{t('tabPolter')}</span>
         </button>
       </div>
     </div>

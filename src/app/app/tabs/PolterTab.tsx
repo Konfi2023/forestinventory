@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { PlusCircle, List, Map } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { PolterCaptureClient } from './PolterCaptureClient';
 import { PolterListView } from './inventory/PolterListView';
 import { MobileMapView } from './inventory/MobileMapView';
@@ -16,15 +17,16 @@ interface Props {
 }
 
 export function PolterTab({ forests, orgSlug }: Props) {
+  const t = useTranslations('MobileApp');
   const [subTab, setSubTab] = useState<SubTab>('capture');
 
   return (
     <div className="flex flex-col h-full">
       <div className="shrink-0 bg-white border-b border-slate-200 flex">
         {([
-          ['capture', 'Erfassen', PlusCircle],
-          ['list',    'Liste',    List],
-          ['map',     'Karte',    Map],
+          ['capture', t('subCapture'), PlusCircle],
+          ['list',    t('subList'),    List],
+          ['map',     t('subMap'),     Map],
         ] as [SubTab, string, any][]).map(([key, label, Icon]) => (
           <button
             key={key}

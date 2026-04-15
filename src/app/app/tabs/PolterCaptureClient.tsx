@@ -7,21 +7,22 @@ import {
 } from 'lucide-react';
 import { db } from '@/lib/inventory-db';
 import { TREE_SPECIES } from '@/lib/tree-species';
+import { useTranslations } from 'next-intl';
 
-const WOOD_TYPES = [
-  { id: 'LOG',        label: 'Stammholz' },
-  { id: 'INDUSTRIAL', label: 'Industrieholz' },
-  { id: 'ENERGY',     label: 'Energieholz' },
-  { id: 'PULP',       label: 'Faserholz' },
+const WOOD_TYPE_KEYS: { id: string; tKey: string }[] = [
+  { id: 'LOG',        tKey: 'woodLog' },
+  { id: 'INDUSTRIAL', tKey: 'woodIndustrial' },
+  { id: 'ENERGY',     tKey: 'woodEnergy' },
+  { id: 'PULP',       tKey: 'woodPulp' },
 ];
 
-const QUALITY_CLASSES = [
-  { id: 'A', label: 'A – Sehr gut' },
-  { id: 'B', label: 'B – Gut' },
-  { id: 'C', label: 'C – Mittel' },
-  { id: 'D', label: 'D – Gering' },
-  { id: 'IL', label: 'IL – Industriell' },
-  { id: 'E', label: 'E – Energie' },
+const QUALITY_CLASS_KEYS: { id: string; tKey: string }[] = [
+  { id: 'A',  tKey: 'qualityA' },
+  { id: 'B',  tKey: 'qualityB' },
+  { id: 'C',  tKey: 'qualityC' },
+  { id: 'D',  tKey: 'qualityD' },
+  { id: 'IL', tKey: 'qualityIL' },
+  { id: 'E',  tKey: 'qualityE' },
 ];
 
 type Step = 'forest' | 'camera' | 'details' | 'saved';
@@ -51,6 +52,7 @@ interface FormState {
 }
 
 export function PolterCaptureClient({ forests, orgSlug }: Props) {
+  const t = useTranslations('MobileApp');
   const [step, setStep]             = useState<Step>('forest');
   const [form, setForm]             = useState<FormState>({
     forestId: forests[0]?.id ?? '',
@@ -219,7 +221,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
       <div className="flex flex-col gap-4 p-4">
         <div className="flex items-center gap-2 text-emerald-400 mb-2">
           <PackageOpen size={20} />
-          <span className="font-semibold">Polter erfassen</span>
+          <span className="font-semibold">{t('polterCapture')}</span>
         </div>
         <p className="text-sm text-slate-500">Für welchen Wald soll der Polter erfasst werden?</p>
         <div className="space-y-2">
@@ -273,7 +275,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
               className="w-full aspect-video bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-emerald-400 hover:text-emerald-500 transition-colors active:bg-slate-100"
             >
               <Camera size={36} />
-              <span className="text-sm font-medium">Foto aufnehmen</span>
+              <span className="text-sm font-medium">{t('takePhoto')}</span>
             </button>
           )}
         </div>
@@ -287,7 +289,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
             className="w-full flex items-center justify-center gap-2 py-3.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-200 rounded-xl text-sm font-medium text-slate-700 transition-colors disabled:opacity-50"
           >
             {gpsLoading ? <RefreshCw size={16} className="animate-spin" /> : <MapPin size={16} className="text-emerald-400" />}
-            {gpsLoading ? 'Wird ermittelt…' : form.lat ? 'Neu erfassen' : 'Position ermitteln'}
+            {gpsLoading ? t('detectingGps') : form.lat ? t('recaptureGps') : t('detectGps')}
           </button>
           {form.lat != null && (
             <p className="mt-2 text-xs text-emerald-400 font-mono text-center">
@@ -307,7 +309,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
         >
           Weiter <ChevronRight size={18} />
         </button>
-        <button onClick={reset} className="text-xs text-slate-500 text-center hover:text-slate-300">Abbrechen</button>
+        <button onClick={reset} className="text-xs text-slate-500 text-center hover:text-slate-300">{t('cancel')}</button>
       </div>
     );
   }
@@ -322,7 +324,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
 
         {/* Baumart */}
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Baumart</label>
+          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('treeSpecies')}</label>
           <input
             type="text"
             placeholder="Suchen…"
@@ -348,9 +350,9 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
 
         {/* Holzart */}
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Holzart</label>
+          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('woodType')}</label>
           <div className="grid grid-cols-2 gap-1.5">
-            {WOOD_TYPES.map(w => (
+            {WOOD_TYPE_KEYS.map(w => (
               <button
                 key={w.id}
                 onClick={() => setForm(f => ({ ...f, woodType: w.id }))}
@@ -358,7 +360,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
                   form.woodType === w.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'
                 }`}
               >
-                {w.label}
+                {t(w.tKey)}
               </button>
             ))}
           </div>
@@ -367,7 +369,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
         {/* Festmeter + Stammlänge */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Festmeter (fm)</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('volume')}</label>
             <input
               type="number" inputMode="decimal"
               placeholder="z.B. 12.5"
@@ -377,7 +379,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Stammlänge (m)</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('logLength')}</label>
             <input
               type="number" inputMode="decimal"
               placeholder="z.B. 4.0"
@@ -390,7 +392,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
 
         {/* Lagenanzahl */}
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Anzahl der Lagen</label>
+          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('layerCount')}</label>
           <input
             type="number" inputMode="numeric"
             placeholder="z.B. 3"
@@ -402,9 +404,9 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
 
         {/* Qualitätsklasse */}
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Qualitätsklasse</label>
+          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('qualityClass')}</label>
           <div className="grid grid-cols-3 gap-1.5">
-            {QUALITY_CLASSES.map(q => (
+            {QUALITY_CLASS_KEYS.map(q => (
               <button
                 key={q.id}
                 onClick={() => tog(q.id, form.qualityClass, v => setForm(f => ({ ...f, qualityClass: v })))}
@@ -417,13 +419,13 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
             ))}
           </div>
           {form.qualityClass && (
-            <p className="text-xs text-slate-400 mt-1">{QUALITY_CLASSES.find(q => q.id === form.qualityClass)?.label}</p>
+            <p className="text-xs text-slate-400 mt-1">{t(QUALITY_CLASS_KEYS.find(q => q.id === form.qualityClass)?.tKey ?? 'qualityA')}</p>
           )}
         </div>
 
         {/* Notizen */}
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1.5">Notizen</label>
+          <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('notes')}</label>
           <textarea
             rows={2}
             value={form.notes}
@@ -457,7 +459,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
         }
       </div>
       <h2 className="font-bold text-lg">
-        {savedPoiId === 'offline' ? 'Offline gespeichert' : 'Polter erfasst!'}
+        {savedPoiId === 'offline' ? t('offlineSaved') : t('polterCaptured')}
       </h2>
       <p className="text-sm text-slate-500 text-center">
         {savedPoiId === 'offline'

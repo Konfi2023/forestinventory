@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { PlusCircle, List, Map } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { InventoryClient } from '@/app/dashboard/org/[slug]/(standard)/inventory/InventoryClient';
 import { TreeListView } from './inventory/TreeListView';
 import { MobileMapView } from './inventory/MobileMapView';
@@ -18,6 +19,7 @@ interface InventoryTabProps {
 }
 
 export function InventoryTab({ forests, orgSlug, members }: InventoryTabProps) {
+  const t = useTranslations('MobileApp');
   const [subTab, setSubTab] = useState<SubTab>('capture');
 
   return (
@@ -25,9 +27,9 @@ export function InventoryTab({ forests, orgSlug, members }: InventoryTabProps) {
       {/* Sub-Tab-Leiste */}
       <div className="shrink-0 bg-slate-900 border-b border-slate-800 flex">
         {([
-          ['capture', 'Erfassen', PlusCircle],
-          ['list',    'Liste',    List],
-          ['map',     'Karte',    Map],
+          ['capture', t('subCapture'), PlusCircle],
+          ['list',    t('subList'),    List],
+          ['map',     t('subMap'),     Map],
         ] as [SubTab, string, any][]).map(([key, label, Icon]) => (
           <button
             key={key}

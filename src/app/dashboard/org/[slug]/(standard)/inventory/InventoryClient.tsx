@@ -482,10 +482,11 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     photoFileRef.current = file;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      // BHD overlay zuerst oeffnen, dann Bild setzen — verhindert
-      // dass der Kamera-Step kurz mit dem Foto sichtbar ist
+      // Beide Updates zusammen — React batycht sie in einem Render
+      // Das BHD-Overlay oeffnet sich sofort mit dem Bild
+      const dataUrl = ev.target?.result as string;
+      setPhotoPreview(dataUrl);
       setBhdMeasureOpen(true);
-      setPhotoPreview(ev.target?.result as string);
     };
     reader.readAsDataURL(file);
     // Trigger GPS + locate silently in background
@@ -1117,8 +1118,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 1: Kamera */}
-        {step === 'camera' && (
+        {/* SCHRITT 1: Kamera (versteckt wenn BHD-Overlay aktiv) */}
+        {step === 'camera' && !bhdMeasureOpen && (
           <div className="p-4">
             <h2 className="text-xl font-bold mb-1">{m('photographTree')}</h2>
             <p className="text-slate-400 text-sm mb-3">{m('photographTreeDesc')}</p>

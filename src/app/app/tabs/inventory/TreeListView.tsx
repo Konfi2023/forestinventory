@@ -5,6 +5,7 @@ import { RefreshCw, TreePine, ChevronDown, Pencil, Trash2, X, Check, ClipboardLi
 import { DatePickerSheet, DateTrigger } from '../DatePickerSheet';
 import { db, type PendingTree } from '@/lib/inventory-db';
 import { TREE_SPECIES } from '@/lib/tree-species';
+import { useTranslations } from 'next-intl';
 
 interface Forest { id: string; name: string; }
 interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
@@ -34,42 +35,44 @@ interface TreeRow {
   synced: boolean;
 }
 
-const SOIL_LABELS: Record<string, string> = {
-  SANDY: 'Sandig', LOAMY: 'Lehmig', CLAY: 'Tonig',
-  HUMUS: 'Humos', ROCKY: 'Steinig', MIXED: 'Gemischt',
+const SOIL_LABEL_KEYS: Record<string, string> = {
+  SANDY: 'soilSandy', LOAMY: 'soilLoamy', CLAY: 'soilCite',
+  HUMUS: 'soilHumus', ROCKY: 'soilRocky', MIXED: 'soilMixed',
 };
-const MOISTURE_LABELS: Record<string, string> = {
-  DRY: 'Trocken', FRESH: 'Frisch', MOIST: 'Feucht',
-  WET: 'Nass', WATERLOGGED: 'Staunass',
+const MOISTURE_LABEL_KEYS: Record<string, string> = {
+  DRY: 'moistureDry', FRESH: 'moistureFresh', MOIST: 'moistureMoist',
+  WET: 'moistureWet', WATERLOGGED: 'moistureWaterlogged',
 };
-const EXPOSITION_LABELS: Record<string, string> = {
-  N: 'N', NE: 'NO', E: 'O', SE: 'SO', S: 'S', SW: 'SW', W: 'W', NW: 'NW', FLAT: 'Eben',
+const EXPOSITION_LABEL_KEYS: Record<string, string> = {
+  N: 'expositionN', NE: 'expositionNE', E: 'expositionE', SE: 'expositionSE',
+  S: 'expositionS', SW: 'expositionSW', W: 'expositionW', NW: 'expositionNW', FLAT: 'expositionFlat',
 };
-const SLOPE_LABELS: Record<string, string> = {
-  FLAT: 'Flach', MODERATE: 'Mäßig', STEEP: 'Steil', VERY_STEEP: 'Sehr steil',
+const SLOPE_LABEL_KEYS: Record<string, string> = {
+  FLAT: 'slopeFlat', MODERATE: 'slopeModerate', STEEP: 'slopeSteep', VERY_STEEP: 'slopeVerySteep',
 };
-const SLOPE_POS_LABELS: Record<string, string> = {
-  SUMMIT: 'Kuppe', UPPER_SLOPE: 'Oberhang', MID_SLOPE: 'Mittelhang',
-  LOWER_SLOPE: 'Unterhang', VALLEY: 'Talboden',
+const SLOPE_POS_LABEL_KEYS: Record<string, string> = {
+  SUMMIT: 'positionSummit', UPPER_SLOPE: 'positionUpperSlope', MID_SLOPE: 'positionMidSlope',
+  LOWER_SLOPE: 'positionLowerSlope', VALLEY: 'positionValley',
 };
-const STAND_TYPE_LABELS: Record<string, string> = {
-  PURE_CONIFER: 'Rein Nadel', PURE_DECIDUOUS: 'Rein Laub', MIXED: 'Mischbestand',
-  EDGE: 'Waldrand', CLEARCUT: 'Freifläche', YOUNG_GROWTH: 'Jungwuchs',
+const STAND_TYPE_LABEL_KEYS: Record<string, string> = {
+  PURE_CONIFER: 'standPureConifer', PURE_DECIDUOUS: 'standPureDeciduous', MIXED: 'standMixed',
+  EDGE: 'standEdge', CLEARCUT: 'standClearcut', YOUNG_GROWTH: 'standYoungGrowth',
 };
-const STOCKING_LABELS: Record<string, string> = {
-  OPEN: 'Locker', SPARSE: 'Licht', MEDIUM: 'Mittel', DENSE: 'Dicht', VERY_DENSE: 'Sehr dicht',
+const STOCKING_LABEL_KEYS: Record<string, string> = {
+  OPEN: 'stockingOpen', SPARSE: 'stockingSparse', MEDIUM: 'stockingMedium',
+  DENSE: 'stockingDense', VERY_DENSE: 'stockingVeryDense',
 };
 
-const SOIL_CONDITIONS    = Object.entries(SOIL_LABELS).map(([id, label]) => ({ id, label }));
-const SOIL_MOISTURE_LIST = Object.entries(MOISTURE_LABELS).map(([id, label]) => ({ id, label }));
-const EXPOSITIONS        = Object.entries(EXPOSITION_LABELS).map(([id, label]) => ({ id, label }));
-const SLOPE_CLASSES      = [
-  { id: 'FLAT', label: 'Flach (<5°)' }, { id: 'MODERATE', label: 'Mäßig (5–15°)' },
-  { id: 'STEEP', label: 'Steil (15–30°)' }, { id: 'VERY_STEEP', label: 'Sehr steil' },
-];
-const SLOPE_POSITIONS = Object.entries(SLOPE_POS_LABELS).map(([id, label]) => ({ id, label }));
-const STAND_TYPES     = Object.entries(STAND_TYPE_LABELS).map(([id, label]) => ({ id, label }));
-const STOCKING_DEGREES = Object.entries(STOCKING_LABELS).map(([id, label]) => ({ id, label }));
+const SOIL_CONDITION_IDS = Object.keys(SOIL_LABEL_KEYS);
+const MOISTURE_IDS       = Object.keys(MOISTURE_LABEL_KEYS);
+const EXPOSITION_IDS     = Object.keys(EXPOSITION_LABEL_KEYS);
+const SLOPE_CLASS_IDS    = ['FLAT', 'MODERATE', 'STEEP', 'VERY_STEEP'];
+const SLOPE_CLASS_DETAIL_KEYS: Record<string, string> = {
+  FLAT: 'slopeFlatDeg', MODERATE: 'slopeModerateDeg', STEEP: 'slopeSteepDeg', VERY_STEEP: 'slopeVerySteep',
+};
+const SLOPE_POSITION_IDS = Object.keys(SLOPE_POS_LABEL_KEYS);
+const STAND_TYPE_IDS     = Object.keys(STAND_TYPE_LABEL_KEYS);
+const STOCKING_IDS       = Object.keys(STOCKING_LABEL_KEYS);
 
 interface Props {
   orgSlug: string;
@@ -78,6 +81,7 @@ interface Props {
 }
 
 export function TreeListView({ orgSlug, forests, members = [] }: Props) {
+  const m = useTranslations('MobileApp');
   const [forestId, setForestId]   = useState(forests[0]?.id ?? '');
   const [trees, setTrees]         = useState<TreeRow[]>([]);
   const [total, setTotal]         = useState<number | null>(null);
@@ -139,9 +143,9 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
       setTotal(apiRes.total ?? null);
       setTrees([...mapPending(pending, fId), ...(apiRes.trees ?? [])]);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Unbekannter Fehler';
+      const msg = e instanceof Error ? e.message : 'Unknown error';
       console.error('TreeListView load error', msg);
-      setLoadError('Bäume konnten nicht geladen werden.');
+      setLoadError(m('noTreesLoadError'));
     }
     setLoading(false);
   }
@@ -178,7 +182,7 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setTrees(ts => ts.filter(t => t.id !== tree.id));
     } catch (e) {
-      setDeleteError('Baum konnte nicht gelöscht werden. Bitte erneut versuchen.');
+      setDeleteError(m('treeDeleteError'));
     }
     setDeleting(null);
   }
@@ -218,7 +222,7 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
               onClick={() => load(forestId)}
               className="text-xs text-red-500 underline shrink-0"
             >
-              Erneut versuchen
+              {m('retry')}
             </button>
           </div>
         )}
@@ -233,14 +237,14 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
         {!loading && !loadError && trees.length === 0 && (
           <div className="flex flex-col items-center justify-center pt-12 gap-2 text-slate-400">
             <TreePine size={32} />
-            <p className="text-sm">Noch keine Bäume in diesem Wald.</p>
+            <p className="text-sm">{m('noTreesInForest')}</p>
           </div>
         )}
 
         {!loading && trees.length > 0 && (
           <p className="text-xs text-slate-500 mb-1">
-            {trees.length}{total !== null && total > trees.length ? ` von ${total}` : ''}{' '}
-            {trees.length === 1 ? 'Baum' : 'Bäume'}
+            {trees.length}{total !== null && total > trees.length ? ` ${m('ofTotal')} ${total}` : ''}{' '}
+            {trees.length === 1 ? m('tree') : m('trees')}
           </p>
         )}
 
@@ -253,14 +257,14 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
                 <span className="w-3 h-3 rounded-full shrink-0 mt-1" style={{ backgroundColor: species?.color ?? '#64748b' }} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-base leading-tight text-slate-900">
-                    {species?.label ?? tree.speciesLabel ?? tree.species ?? 'Unbekannte Baumart'}
+                    {species?.label ?? tree.speciesLabel ?? tree.species ?? m('unknownSpecies')}
                     {!tree.synced && <span className="ml-2 text-xs text-amber-500 font-normal">● Offline</span>}
                   </p>
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-slate-500 mt-1">
                     {tree.diameter && <span>Ø {tree.diameter} cm</span>}
                     {tree.height   && <span>↕ {tree.height} m</span>}
-                    {tree.soilCondition && <span>{SOIL_LABELS[tree.soilCondition] ?? tree.soilCondition}</span>}
-                    {tree.soilMoisture  && <span>{MOISTURE_LABELS[tree.soilMoisture] ?? tree.soilMoisture}</span>}
+                    {tree.soilCondition && <span>{m(SOIL_LABEL_KEYS[tree.soilCondition] ?? tree.soilCondition)}</span>}
+                    {tree.soilMoisture  && <span>{m(MOISTURE_LABEL_KEYS[tree.soilMoisture] ?? tree.soilMoisture)}</span>}
                   </div>
                   {tree.notes && <p className="text-sm text-slate-400 mt-1 truncate">{tree.notes}</p>}
                   <p className="text-xs text-slate-400 font-mono mt-1.5">{tree.lat.toFixed(5)}, {tree.lng.toFixed(5)}</p>
@@ -276,7 +280,7 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
                     className="flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-600 hover:bg-slate-50 active:bg-slate-100 transition-colors"
                   >
                     <ClipboardList size={18} />
-                    Aufgabe
+                    {m('addTask')}
                   </button>
                   <div className="w-px bg-slate-200" />
                   <button
@@ -284,7 +288,7 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
                     className="flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-emerald-600 hover:bg-slate-50 active:bg-slate-100 transition-colors"
                   >
                     <Pencil size={18} />
-                    Bearbeiten
+                    {m('edit')}
                   </button>
                   <div className="w-px bg-slate-200" />
                   <button
@@ -296,7 +300,7 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
                       ? <RefreshCw size={18} className="animate-spin" />
                       : <Trash2 size={18} />
                     }
-                    Löschen
+                    {m('delete')}
                   </button>
                 </div>
               )}
@@ -312,8 +316,8 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
             className="w-full py-3.5 mt-1 rounded-xl bg-slate-100 text-sm font-medium text-slate-600 flex items-center justify-center gap-2 active:bg-slate-200 disabled:opacity-50"
           >
             {loadingMore
-              ? <><RefreshCw size={15} className="animate-spin" /> Lade…</>
-              : 'Weitere Bäume laden'
+              ? <><RefreshCw size={15} className="animate-spin" /> {m('loading')}</>
+              : m('loadMoreTrees')
             }
           </button>
         )}
@@ -360,6 +364,7 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
   members: Member[];
   onClose: () => void;
 }) {
+  const m = useTranslations('MobileApp');
   const [title, setTitle]           = useState('');
   const [priority, setPriority]     = useState('MEDIUM');
   const [dueDate, setDueDate]       = useState('');
@@ -392,7 +397,7 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setDone(true);
     } catch {
-      setSaveError('Aufgabe konnte nicht gespeichert werden. Bitte erneut versuchen.');
+      setSaveError(m('taskSaveError'));
     }
     setSaving(false);
   }
@@ -404,7 +409,7 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white z-10">
-          <h2 className="font-bold text-slate-900">Aufgabe erstellen</h2>
+          <h2 className="font-bold text-slate-900">{m('createTask')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-800"><X size={20} /></button>
         </div>
 
@@ -413,10 +418,10 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
             <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
               <Check size={28} className="text-blue-600" />
             </div>
-            <p className="font-semibold text-slate-900">Aufgabe gespeichert</p>
-            <p className="text-sm text-slate-500">Sie erscheint im Kanban-Board und Kalender.</p>
+            <p className="font-semibold text-slate-900">{m('taskSaved')}</p>
+            <p className="text-sm text-slate-500">{m('taskSavedDesc')}</p>
             <button onClick={onClose} className="mt-2 px-6 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
-              Schließen
+              {m('closeLabel')}
             </button>
           </div>
         ) : (
@@ -424,17 +429,17 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
             {/* Baum-Kontext */}
             <div className="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2.5">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: species?.color ?? '#64748b' }} />
-              <span className="text-sm font-medium text-slate-800">{species?.label ?? tree.speciesLabel ?? tree.species ?? 'Baum'}</span>
+              <span className="text-sm font-medium text-slate-800">{species?.label ?? tree.speciesLabel ?? tree.species ?? m('tree')}</span>
               {tree.diameter && <span className="text-xs text-slate-500">Ø {tree.diameter} cm</span>}
               <span className="ml-auto text-xs font-mono text-slate-400">{tree.lat.toFixed(4)}, {tree.lng.toFixed(4)}</span>
             </div>
 
             {/* Titel */}
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Titel *</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('taskTitle')}</label>
               <input
                 type="text"
-                placeholder="z.B. Schaden kontrollieren"
+                placeholder={m('taskTitlePlaceholder')}
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 autoFocus
@@ -444,9 +449,9 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
 
             {/* Priorität */}
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Priorität</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('priority')}</label>
               <div className="grid grid-cols-3 gap-2">
-                {([['LOW', 'Niedrig', 'bg-slate-500'], ['MEDIUM', 'Mittel', 'bg-amber-600'], ['HIGH', 'Hoch', 'bg-red-600']] as [string, string, string][]).map(([val, label, active]) => (
+                {([['LOW', m('priorityLow'), 'bg-slate-500'], ['MEDIUM', m('priorityMedium'), 'bg-amber-600'], ['HIGH', m('priorityHigh'), 'bg-red-600']] as [string, string, string][]).map(([val, label, active]) => (
                   <button key={val} onClick={() => setPriority(val)}
                     className={`py-2.5 rounded-lg text-sm font-medium transition-colors ${priority === val ? `${active} text-white` : 'bg-slate-100 text-slate-600'}`}>
                     {label}
@@ -457,16 +462,16 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
 
             {/* Fälligkeitsdatum */}
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Fällig bis (optional)</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('dueDateOptional')}</label>
               <DateTrigger
                 value={dueDate}
-                placeholder="Kein Datum gewählt"
+                placeholder={m('noDateSelected')}
                 onClick={() => setShowDatePicker(true)}
               />
               {showDatePicker && (
                 <DatePickerSheet
                   value={dueDate}
-                  label="Fälligkeitsdatum"
+                  label={m('dueDateLabel')}
                   onChange={setDueDate}
                   onClose={() => setShowDatePicker(false)}
                 />
@@ -476,11 +481,11 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
             {/* Zuweisung */}
             {members.length > 0 && (
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5 flex items-center gap-1"><User size={12} /> Zuweisen an</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5 flex items-center gap-1"><User size={12} /> {m('assignTo')}</label>
                 <div className="space-y-1.5">
                   <button onClick={() => setAssigneeId('')}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${assigneeId === '' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                    Nicht zugewiesen
+                    {m('notAssigned')}
                   </button>
                   {members.map(m => (
                     <button key={m.id} onClick={() => setAssigneeId(m.id)}
@@ -501,7 +506,7 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
 
             <button onClick={save} disabled={!title.trim() || saving}
               className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-              {saving ? <RefreshCw size={18} className="animate-spin" /> : <><ClipboardList size={18} /> Aufgabe speichern</>}
+              {saving ? <RefreshCw size={18} className="animate-spin" /> : <><ClipboardList size={18} /> {m('saveTask')}</>}
             </button>
           </div>
         )}
@@ -516,6 +521,7 @@ function EditSheet({ tree, onClose, onSaved }: {
   onClose: () => void;
   onSaved: (t: Partial<TreeRow> & { id: string }) => void;
 }) {
+  const m = useTranslations('MobileApp');
   const [species, setSpecies]               = useState(tree.species ?? '');
   const [diameter, setDiameter]             = useState(tree.diameter?.toString() ?? '');
   const [height, setHeight]                 = useState(tree.height?.toString() ?? '');
@@ -547,10 +553,10 @@ function EditSheet({ tree, onClose, onSaved }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ poiId: tree.id, contentType: file.type, contentLength: file.size }),
       });
-      if (!res.ok) throw new Error('Upload-URL fehlgeschlagen');
+      if (!res.ok) throw new Error('Upload URL failed');
       const { uploadUrl, key } = await res.json();
       const uploadRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
-      if (!uploadRes.ok) throw new Error('S3 Upload fehlgeschlagen');
+      if (!uploadRes.ok) throw new Error('S3 Upload failed');
       // Save key to tree
       const field = type === 'trunk' ? 'imageKey' : 'crownImageKey';
       await fetch(`/api/app/inventory/trees/${tree.id}`, {
@@ -560,7 +566,7 @@ function EditSheet({ tree, onClose, onSaved }: {
       });
       setPreview(URL.createObjectURL(file));
     } catch (e: any) {
-      alert(e.message || 'Upload fehlgeschlagen');
+      alert(e.message || m('uploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -596,7 +602,7 @@ function EditSheet({ tree, onClose, onSaved }: {
         notes,
       });
     } catch {
-      setSaveError('Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.');
+      setSaveError(m('editSaveError'));
     }
     setSaving(false);
   }
@@ -610,15 +616,15 @@ function EditSheet({ tree, onClose, onSaved }: {
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white z-10">
-          <h2 className="font-bold text-slate-900">Baum bearbeiten</h2>
+          <h2 className="font-bold text-slate-900">{m('editTreeTitle')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-800"><X size={20} /></button>
         </div>
 
         <div className="px-4 pb-8 pt-4 space-y-5">
           {/* Baumart */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Baumart</label>
-            <input type="text" placeholder="Suchen…" value={search}
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('treeSpecies')}</label>
+            <input type="text" placeholder={m('search')} value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-2"
             />
@@ -636,12 +642,12 @@ function EditSheet({ tree, onClose, onSaved }: {
           {/* Maße */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">BHD (cm)</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('bhdCm')}</label>
               <input type="number" inputMode="decimal" value={diameter} onChange={e => setDiameter(e.target.value)}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">Höhe (m)</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('heightLabel')}</label>
               <input type="number" inputMode="decimal" value={height} onChange={e => setHeight(e.target.value)}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500" />
             </div>
@@ -649,7 +655,7 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Fotos */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Fotos</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('photos')}</label>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <input ref={trunkInputRef} type="file" accept="image/*" capture="environment" className="hidden"
@@ -657,13 +663,13 @@ function EditSheet({ tree, onClose, onSaved }: {
                 {trunkPreview ? (
                   <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={trunkPreview} alt="Stammfoto" className="w-full h-full object-cover" />
+                    <img src={trunkPreview} alt={m('trunkPhoto')} className="w-full h-full object-cover" />
                   </div>
                 ) : (
                   <button onClick={() => trunkInputRef.current?.click()} disabled={trunkUploading}
                     className="w-full aspect-square rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-1 text-slate-400 active:bg-slate-50">
                     {trunkUploading ? <RefreshCw size={20} className="animate-spin" /> : <Camera size={20} />}
-                    <span className="text-[10px]">Stammfoto</span>
+                    <span className="text-[10px]">{m('trunkPhoto')}</span>
                   </button>
                 )}
               </div>
@@ -673,13 +679,13 @@ function EditSheet({ tree, onClose, onSaved }: {
                 {crownPreview ? (
                   <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={crownPreview} alt="Kronenfoto" className="w-full h-full object-cover" />
+                    <img src={crownPreview} alt={m('photographCrown')} className="w-full h-full object-cover" />
                   </div>
                 ) : (
                   <button onClick={() => crownInputRef.current?.click()} disabled={crownUploading}
                     className="w-full aspect-square rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-1 text-slate-400 active:bg-slate-50">
                     {crownUploading ? <RefreshCw size={20} className="animate-spin" /> : <Camera size={20} />}
-                    <span className="text-[10px]">Kronenfoto</span>
+                    <span className="text-[10px]">{m('photographCrown')}</span>
                   </button>
                 )}
               </div>
@@ -688,12 +694,12 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Bodenbeschaffenheit */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Bodenbeschaffenheit</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('soilCondition')}</label>
             <div className="grid grid-cols-3 gap-1.5">
-              {SOIL_CONDITIONS.map(s => (
-                <button key={s.id} onClick={() => tog(s.id, soilCondition, setSoilCondition)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${soilCondition === s.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  {s.label}
+              {SOIL_CONDITION_IDS.map(id => (
+                <button key={id} onClick={() => tog(id, soilCondition, setSoilCondition)}
+                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${soilCondition === id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  {m(SOIL_LABEL_KEYS[id])}
                 </button>
               ))}
             </div>
@@ -701,12 +707,12 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Bodenfeuchtigkeit */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Bodenfeuchtigkeit</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('soilMoisture')}</label>
             <div className="grid grid-cols-3 gap-1.5">
-              {SOIL_MOISTURE_LIST.map(s => (
-                <button key={s.id} onClick={() => tog(s.id, soilMoisture, setSoilMoisture)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${soilMoisture === s.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  {s.label}
+              {MOISTURE_IDS.map(id => (
+                <button key={id} onClick={() => tog(id, soilMoisture, setSoilMoisture)}
+                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${soilMoisture === id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  {m(MOISTURE_LABEL_KEYS[id])}
                 </button>
               ))}
             </div>
@@ -714,12 +720,12 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Exposition */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Exposition</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('exposition')}</label>
             <div className="grid grid-cols-3 gap-1.5">
-              {EXPOSITIONS.map(s => (
-                <button key={s.id} onClick={() => tog(s.id, exposition, setExposition)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${exposition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  {s.label}
+              {EXPOSITION_IDS.map(id => (
+                <button key={id} onClick={() => tog(id, exposition, setExposition)}
+                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${exposition === id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  {m(EXPOSITION_LABEL_KEYS[id])}
                 </button>
               ))}
             </div>
@@ -727,12 +733,12 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Hangneigung */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Hangneigung</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('slopeClass')}</label>
             <div className="grid grid-cols-2 gap-1.5">
-              {SLOPE_CLASSES.map(s => (
-                <button key={s.id} onClick={() => tog(s.id, slopeClass, setSlopeClass)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${slopeClass === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  {s.label}
+              {SLOPE_CLASS_IDS.map(id => (
+                <button key={id} onClick={() => tog(id, slopeClass, setSlopeClass)}
+                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${slopeClass === id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  {m(SLOPE_CLASS_DETAIL_KEYS[id])}
                 </button>
               ))}
             </div>
@@ -740,12 +746,12 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Hangposition */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Hangposition</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('slopePosition')}</label>
             <div className="grid grid-cols-2 gap-1.5">
-              {SLOPE_POSITIONS.map(s => (
-                <button key={s.id} onClick={() => tog(s.id, slopePosition, setSlopePosition)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${slopePosition === s.id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  {s.label}
+              {SLOPE_POSITION_IDS.map(id => (
+                <button key={id} onClick={() => tog(id, slopePosition, setSlopePosition)}
+                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${slopePosition === id ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  {m(SLOPE_POS_LABEL_KEYS[id])}
                 </button>
               ))}
             </div>
@@ -753,12 +759,12 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Bestandstyp */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Bestandstyp</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('standType')}</label>
             <div className="grid grid-cols-2 gap-1.5">
-              {STAND_TYPES.map(s => (
-                <button key={s.id} onClick={() => tog(s.id, standType, setStandType)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${standType === s.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  {s.label}
+              {STAND_TYPE_IDS.map(id => (
+                <button key={id} onClick={() => tog(id, standType, setStandType)}
+                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${standType === id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  {m(STAND_TYPE_LABEL_KEYS[id])}
                 </button>
               ))}
             </div>
@@ -766,12 +772,12 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Bestockungsgrad */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Bestockungsgrad</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('stockingDegree')}</label>
             <div className="grid grid-cols-3 gap-1.5">
-              {STOCKING_DEGREES.map(s => (
-                <button key={s.id} onClick={() => tog(s.id, stockingDegree, setStockingDegree)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${stockingDegree === s.id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  {s.label}
+              {STOCKING_IDS.map(id => (
+                <button key={id} onClick={() => tog(id, stockingDegree, setStockingDegree)}
+                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${stockingDegree === id ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  {m(STOCKING_LABEL_KEYS[id])}
                 </button>
               ))}
             </div>
@@ -779,7 +785,7 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           {/* Notizen */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Notizen</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">{m('notes')}</label>
             <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)}
               className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 resize-none" />
           </div>
@@ -793,7 +799,7 @@ function EditSheet({ tree, onClose, onSaved }: {
 
           <button onClick={save} disabled={saving}
             className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-            <Check size={18} /> {saving ? 'Wird gespeichert…' : 'Speichern'}
+            <Check size={18} /> {saving ? m('saving') : m('save')}
           </button>
         </div>
       </div>
@@ -807,6 +813,7 @@ function ConfirmDeleteSheet({ tree, onConfirm, onCancel }: {
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const m = useTranslations('MobileApp');
   const species = TREE_SPECIES.find(s => s.id === tree.species);
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -818,9 +825,9 @@ function ConfirmDeleteSheet({ tree, onConfirm, onCancel }: {
         </div>
 
         <div className="px-5 pt-3 pb-8">
-          <h2 className="text-lg font-bold text-center mb-1 text-slate-900">Baum löschen?</h2>
+          <h2 className="text-lg font-bold text-center mb-1 text-slate-900">{m('deleteTreeTitle')}</h2>
           <p className="text-sm text-slate-500 text-center mb-6">
-            {species?.label ?? tree.speciesLabel ?? tree.species ?? 'Dieser Baum'} wird unwiderruflich gelöscht.
+            {m('deleteTreeDesc', { name: species?.label ?? tree.speciesLabel ?? tree.species ?? m('tree') })}
           </p>
 
           <button
@@ -828,13 +835,13 @@ function ConfirmDeleteSheet({ tree, onConfirm, onCancel }: {
             className="w-full py-4 bg-red-600 hover:bg-red-500 active:bg-red-700 rounded-xl font-semibold text-white text-base mb-3 flex items-center justify-center gap-2 transition-colors"
           >
             <Trash2 size={20} />
-            Endgültig löschen
+            {m('deleteConfirm')}
           </button>
           <button
             onClick={onCancel}
             className="w-full py-4 bg-slate-100 hover:bg-slate-200 active:bg-slate-200 rounded-xl font-semibold text-slate-700 text-base transition-colors"
           >
-            Abbrechen
+            {m('cancel')}
           </button>
         </div>
       </div>

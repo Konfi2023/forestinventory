@@ -2,31 +2,32 @@
 
 import { Tent, Home, Ban, Boxes, Truck, TreePine, MapPin, Navigation, ExternalLink } from 'lucide-react';
 import { getSpeciesLabel } from '@/lib/tree-species';
+import { useTranslations } from 'next-intl';
 
-const POI_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
-  HUNTING_STAND: { icon: Tent,     color: 'text-yellow-500', label: 'Hochsitz'   },
-  LOG_PILE:      { icon: Boxes,    color: 'text-blue-500',   label: 'Polter'     },
-  HUT:           { icon: Home,     color: 'text-orange-500', label: 'Hütte'      },
-  BARRIER:       { icon: Ban,      color: 'text-red-500',    label: 'Schranke'   },
-  VEHICLE:       { icon: Truck,    color: 'text-gray-500',   label: 'Fahrzeug'   },
-  TREE:          { icon: TreePine, color: 'text-green-500',  label: 'Einzelbaum' },
+const POI_CONFIG: Record<string, { icon: any; color: string; tKey: string }> = {
+  HUNTING_STAND: { icon: Tent,     color: 'text-yellow-500', tKey: 'huntingStand' },
+  LOG_PILE:      { icon: Boxes,    color: 'text-blue-500',   tKey: 'poiLogPile'   },
+  HUT:           { icon: Home,     color: 'text-orange-500', tKey: 'hut'          },
+  BARRIER:       { icon: Ban,      color: 'text-red-500',    tKey: 'barrier'      },
+  VEHICLE:       { icon: Truck,    color: 'text-gray-500',   tKey: 'vehicle'      },
+  TREE:          { icon: TreePine, color: 'text-green-500',  tKey: 'poiSingleTree'},
 };
 
-const VEHICLE_TYPE_LABELS: Record<string, string> = {
-  EXCAVATOR: 'Bagger', HARVESTER: 'Harvester', FORWARDER: 'Forwarder',
-  TRACTOR: 'Traktor', SKIDDER: 'Seilschlepper', CRANE_TRUCK: 'LKW mit Kran',
-  MULCHER: 'Mulcher', CHAINSAW: 'Motorsäge', TRAILER: 'Anhänger', OTHER: 'Sonstiges',
+const VEHICLE_TYPE_KEYS: Record<string, string> = {
+  EXCAVATOR: 'vehicleExcavator', HARVESTER: 'vehicleHarvester', FORWARDER: 'vehicleForwarder',
+  TRACTOR: 'vehicleTractor', SKIDDER: 'vehicleSkidder', CRANE_TRUCK: 'vehicleCraneTruck',
+  MULCHER: 'vehicleMulcher', CHAINSAW: 'vehicleChainsaw', TRAILER: 'vehicleTrailer', OTHER: 'vehicleOther',
 };
 
-const WOOD_TYPE_LABELS: Record<string, string> = {
-  LOG: 'Stammholz', INDUSTRIAL: 'Industrieholz', ENERGY: 'Energieholz', PULP: 'Faserholz',
+const WOOD_TYPE_KEYS: Record<string, string> = {
+  LOG: 'woodLog', INDUSTRIAL: 'woodIndustrial', ENERGY: 'woodEnergy', PULP: 'woodPulp',
 };
 
-const HEALTH_LABELS: Record<string, { label: string; color: string }> = {
-  HEALTHY:            { label: 'Gesund',              color: 'text-green-500'  },
-  DAMAGED:            { label: 'Geschädigt',           color: 'text-orange-400' },
-  DEAD:               { label: 'Abgestorben',          color: 'text-red-400'    },
-  MARKED_FOR_FELLING: { label: 'Zum Fällen markiert', color: 'text-blue-400'   },
+const HEALTH_LABEL_KEYS: Record<string, { tKey: string; color: string }> = {
+  HEALTHY:            { tKey: 'healthy',           color: 'text-green-500'  },
+  DAMAGED:            { tKey: 'damaged',            color: 'text-orange-400' },
+  DEAD:               { tKey: 'dead',               color: 'text-red-400'    },
+  MARKED_FOR_FELLING: { tKey: 'markedForFelling',  color: 'text-blue-400'   },
 };
 
 interface Props {
@@ -35,8 +36,10 @@ interface Props {
 }
 
 export function MobilePoiDetail({ poi, tasks }: Props) {
-  const config = POI_CONFIG[poi.type] ?? { icon: MapPin, color: 'text-gray-400', label: 'Objekt' };
-  const Icon = config.icon;
+  const m = useTranslations('MobileApp');
+  const rawConfig = POI_CONFIG[poi.type] ?? { icon: MapPin, color: 'text-gray-400', tKey: 'poiObject' };
+  const Icon = rawConfig.icon;
+  const configLabel = m(rawConfig.tKey);
 
   const linkedTasks = tasks.filter((t: any) => {
     if (t.status === 'DONE') return false;
@@ -58,11 +61,11 @@ export function MobilePoiDetail({ poi, tasks }: Props) {
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-          <Icon className={`w-5 h-5 ${config.color}`} />
+          <Icon className={`w-5 h-5 ${rawConfig.color}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-900 truncate">{poi.name || config.label}</h3>
-          <p className="text-xs text-slate-500">{config.label}</p>
+          <h3 className="font-semibold text-slate-900 truncate">{poi.name || configLabel}</h3>
+          <p className="text-xs text-slate-500">{configLabel}</p>
         </div>
       </div>
 
@@ -72,7 +75,7 @@ export function MobilePoiDetail({ poi, tasks }: Props) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`/api/images/poi?key=${encodeURIComponent(imageKey)}`}
-            alt={poi.name || config.label}
+            alt={poi.name || configLabel}
             className="w-full h-full object-cover"
           />
         </div>
@@ -82,27 +85,27 @@ export function MobilePoiDetail({ poi, tasks }: Props) {
       <div className="grid grid-cols-2 gap-2 text-sm">
         {poi.type === 'VEHICLE' && poi.vehicle && (
           <>
-            <InfoItem label="Typ" value={VEHICLE_TYPE_LABELS[poi.vehicle.vehicleType] ?? poi.vehicle.vehicleType} />
-            {poi.vehicle.serialNumber && <InfoItem label="Kennzeichen" value={poi.vehicle.serialNumber} />}
-            {poi.vehicle.yearBuilt && <InfoItem label="Baujahr" value={poi.vehicle.yearBuilt} />}
+            <InfoItem label={m('typeLabel')} value={m(VEHICLE_TYPE_KEYS[poi.vehicle.vehicleType] ?? poi.vehicle.vehicleType)} />
+            {poi.vehicle.serialNumber && <InfoItem label={m('licensePlate')} value={poi.vehicle.serialNumber} />}
+            {poi.vehicle.yearBuilt && <InfoItem label={m('yearBuilt')} value={poi.vehicle.yearBuilt} />}
           </>
         )}
         {poi.type === 'TREE' && poi.tree && (
           <>
-            {poi.tree.species && <InfoItem label="Baumart" value={getSpeciesLabel(poi.tree.species)} />}
-            {poi.tree.diameter && <InfoItem label="BHD" value={`${poi.tree.diameter} cm`} />}
-            {poi.tree.height && <InfoItem label="Höhe" value={`${poi.tree.height} m`} />}
-            {poi.tree.health && <InfoItem label="Zustand" value={HEALTH_LABELS[poi.tree.health]?.label ?? poi.tree.health} />}
+            {poi.tree.species && <InfoItem label={m('treeSpecies')} value={getSpeciesLabel(poi.tree.species)} />}
+            {poi.tree.diameter && <InfoItem label={m('bhd')} value={`${poi.tree.diameter} cm`} />}
+            {poi.tree.height && <InfoItem label={m('heightLabel')} value={`${poi.tree.height} m`} />}
+            {poi.tree.health && <InfoItem label={m('conditionLabel')} value={m(HEALTH_LABEL_KEYS[poi.tree.health]?.tKey ?? poi.tree.health)} />}
           </>
         )}
         {poi.type === 'LOG_PILE' && poi.logPile && (
           <>
-            {poi.logPile.volumeFm && <InfoItem label="Festmeter" value={`${poi.logPile.volumeFm} fm`} />}
-            {poi.logPile.logLength && <InfoItem label="Stammlänge" value={`${poi.logPile.logLength} m`} />}
-            {poi.logPile.treeSpecies && <InfoItem label="Baumart" value={getSpeciesLabel(poi.logPile.treeSpecies)} />}
-            {poi.logPile.woodType && <InfoItem label="Holzart" value={WOOD_TYPE_LABELS[poi.logPile.woodType] ?? poi.logPile.woodType} />}
-            {poi.logPile.qualityClass && <InfoItem label="Qualität" value={poi.logPile.qualityClass} />}
-            {poi.logPile.layerCount && <InfoItem label="Lagen" value={poi.logPile.layerCount} />}
+            {poi.logPile.volumeFm && <InfoItem label={m('volume')} value={`${poi.logPile.volumeFm} fm`} />}
+            {poi.logPile.logLength && <InfoItem label={m('logLength')} value={`${poi.logPile.logLength} m`} />}
+            {poi.logPile.treeSpecies && <InfoItem label={m('treeSpecies')} value={getSpeciesLabel(poi.logPile.treeSpecies)} />}
+            {poi.logPile.woodType && <InfoItem label={m('woodType')} value={m(WOOD_TYPE_KEYS[poi.logPile.woodType] ?? poi.logPile.woodType)} />}
+            {poi.logPile.qualityClass && <InfoItem label={m('qualityLabel')} value={poi.logPile.qualityClass} />}
+            {poi.logPile.layerCount && <InfoItem label={m('layers')} value={poi.logPile.layerCount} />}
           </>
         )}
       </div>
@@ -123,7 +126,7 @@ export function MobilePoiDetail({ poi, tasks }: Props) {
       {/* Verknüpfte Aufgaben */}
       {linkedTasks.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-slate-500 uppercase mb-1.5">Offene Aufgaben ({linkedTasks.length})</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase mb-1.5">{m('openTasksCount', { count: linkedTasks.length })}</p>
           <div className="space-y-1.5">
             {linkedTasks.map((t: any) => (
               <div key={t.id} className="flex items-center gap-2 text-sm bg-slate-50 px-3 py-2 rounded-lg">
@@ -141,7 +144,7 @@ export function MobilePoiDetail({ poi, tasks }: Props) {
         className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl font-medium text-sm transition-colors"
       >
         <Navigation className="w-4 h-4" />
-        In Google Maps navigieren
+        {m('navigateGoogleMaps')}
         <ExternalLink className="w-3.5 h-3.5 opacity-60" />
       </button>
     </div>

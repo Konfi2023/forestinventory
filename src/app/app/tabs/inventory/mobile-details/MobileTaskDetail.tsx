@@ -6,19 +6,20 @@ import { updateTaskStatus } from '@/actions/tasks';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { useTranslations } from 'next-intl';
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  TODO:        { label: 'Offen',        color: 'bg-slate-200 text-slate-700' },
-  IN_PROGRESS: { label: 'In Arbeit',    color: 'bg-blue-100 text-blue-700' },
-  BLOCKED:     { label: 'Blockiert',     color: 'bg-red-100 text-red-700' },
-  DONE:        { label: 'Erledigt',      color: 'bg-green-100 text-green-700' },
+const STATUS_LABEL_KEYS: Record<string, { tKey: string; color: string }> = {
+  TODO:        { tKey: 'open',        color: 'bg-slate-200 text-slate-700' },
+  IN_PROGRESS: { tKey: 'inProgress',  color: 'bg-blue-100 text-blue-700' },
+  BLOCKED:     { tKey: 'blocked',     color: 'bg-red-100 text-red-700' },
+  DONE:        { tKey: 'done',        color: 'bg-green-100 text-green-700' },
 };
 
-const PRIORITY_LABELS: Record<string, { label: string; color: string }> = {
-  LOW:    { label: 'Niedrig', color: 'text-slate-400' },
-  MEDIUM: { label: 'Normal',  color: 'text-blue-500' },
-  HIGH:   { label: 'Hoch',    color: 'text-orange-500' },
-  URGENT: { label: 'Dringend', color: 'text-red-500' },
+const PRIORITY_LABEL_KEYS: Record<string, { tKey: string; color: string }> = {
+  LOW:    { tKey: 'priorityLow',    color: 'text-slate-400' },
+  MEDIUM: { tKey: 'priorityMedium', color: 'text-blue-500' },
+  HIGH:   { tKey: 'priorityHigh',   color: 'text-orange-500' },
+  URGENT: { tKey: 'priorityUrgent', color: 'text-red-500' },
 };
 
 interface Props {
@@ -28,19 +29,20 @@ interface Props {
 }
 
 export function MobileTaskDetail({ task, orgSlug, onRefresh }: Props) {
+  const m = useTranslations('MobileApp');
   const [saving, setSaving] = useState(false);
-  const statusInfo = STATUS_LABELS[task.status] ?? STATUS_LABELS.TODO;
-  const priorityInfo = PRIORITY_LABELS[task.priority] ?? PRIORITY_LABELS.MEDIUM;
+  const statusInfo = STATUS_LABEL_KEYS[task.status] ?? STATUS_LABEL_KEYS.TODO;
+  const priorityInfo = PRIORITY_LABEL_KEYS[task.priority] ?? PRIORITY_LABEL_KEYS.MEDIUM;
   const isDone = task.status === 'DONE';
 
   const handleStatusChange = async (newStatus: string) => {
     setSaving(true);
     try {
       await updateTaskStatus(orgSlug, task.id, newStatus as any);
-      toast.success(newStatus === 'DONE' ? 'Aufgabe erledigt!' : 'Status aktualisiert');
+      toast.success(newStatus === 'DONE' ? m('taskDoneToast') : m('statusUpdated'));
       onRefresh();
     } catch (e: any) {
-      toast.error(e.message ?? 'Fehler beim Aktualisieren');
+      toast.error(e.message ?? m('statusUpdateError'));
     }
     setSaving(false);
   };
@@ -62,10 +64,10 @@ export function MobileTaskDetail({ task, orgSlug, onRefresh }: Props) {
           <h3 className="font-semibold text-slate-900">{task.title}</h3>
           <div className="flex items-center gap-2 mt-1">
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusInfo.color}`}>
-              {statusInfo.label}
+              {m(statusInfo.tKey)}
             </span>
             <span className={`text-xs font-medium ${priorityInfo.color}`}>
-              {priorityInfo.label}
+              {m(priorityInfo.tKey)}
             </span>
           </div>
         </div>
@@ -80,7 +82,7 @@ export function MobileTaskDetail({ task, orgSlug, onRefresh }: Props) {
       <div className="grid grid-cols-2 gap-2 text-sm">
         {task.dueDate && (
           <div className="bg-slate-50 px-3 py-2 rounded-lg">
-            <p className="text-[10px] text-slate-400 uppercase font-semibold">Fällig</p>
+            <p className="text-[10px] text-slate-400 uppercase font-semibold">{m('dueDate')}</p>
             <p className="text-slate-800 font-medium">{format(new Date(task.dueDate), 'dd.MM.yyyy', { locale: de })}</p>
           </div>
         )}
@@ -104,7 +106,7 @@ export function MobileTaskDetail({ task, orgSlug, onRefresh }: Props) {
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-xl font-medium text-sm transition-colors"
           >
             <Navigation className="w-4 h-4" />
-            Navigieren
+            {m('navigateLabel')}
             <ExternalLink className="w-3.5 h-3.5 opacity-60" />
           </button>
         </>
@@ -119,7 +121,7 @@ export function MobileTaskDetail({ task, orgSlug, onRefresh }: Props) {
             className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Als erledigt markieren
+            {m('markDone')}
           </button>
           {task.status === 'TODO' && (
             <button
@@ -127,7 +129,7 @@ export function MobileTaskDetail({ task, orgSlug, onRefresh }: Props) {
               disabled={saving}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 disabled:opacity-50 text-blue-700 rounded-xl font-medium text-sm transition-colors"
             >
-              In Arbeit setzen
+              {m('startWork')}
             </button>
           )}
         </div>

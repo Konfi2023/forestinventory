@@ -1,20 +1,9 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Check, RotateCcw, Loader2, ZoomIn } from 'lucide-react';
+import { X, Check, RotateCcw, Loader2 } from 'lucide-react';
 import { detectCardMarkers, type CardDetectionResult } from '@/lib/card-detection';
 import { useTranslations } from 'next-intl';
-
-/**
- * BHD measurement — redesigned with draggable lines + pinch-to-zoom.
- *
- * Instead of tapping points (finger covers target), the user drags
- * vertical lines to the edges. Pinch-to-zoom for precision.
- *
- * Two modes:
- * 1. Auto (Messkarte detected) → 2 lines for trunk edges
- * 2. Manual (credit card) → 2 lines for card edges, then 2 for trunk
- */
 
 const CARD_LONG_MM = 85.6;
 const CARD_SHORT_MM = 54.0;
@@ -22,6 +11,7 @@ const CARD_SHORT_MM = 54.0;
 type Mode = 'detecting' | 'auto' | 'manual';
 type Phase = 'card' | 'trunk' | 'result';
 
+interface Point { x: number; y: number }
 interface Props {
   photoSrc: string;
   onMeasured: (bhdCm: number) => void;
@@ -36,35 +26,26 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
   const [cardMm, setCardMm] = useState(CARD_LONG_MM);
   const [bhdValue, setBhdValue] = useState<number | null>(null);
 
-  // Line positions in image coordinates (x position on image)
   const [cardLineL, setCardLineL] = useState<number>(0);
   const [cardLineR, setCardLineR] = useState<number>(0);
   const [trunkLineL, setTrunkLineL] = useState<number>(0);
   const [trunkLineR, setTrunkLineR] = useState<number>(0);
 
-  // Zoom & pan
-  const [zoomScale, setZoomScale] = useState(1);
-  const [panX, setPanX] = useState(0);
-  const [panY, setPanY] = useState(0);
-
-  // Dragging state
   const [dragging, setDragging] = useState<'cardL' | 'cardR' | 'trunkL' | 'trunkR' | null>(null);
-
-  // Pinch state
-  const lastPinchDist = useRef<number | null>(null);
-  const lastPanPos = useRef<{ x: number; y: number } | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imgSizeRef = useRef<{ w: number; h: number }>({ w: 1, h: 1 });
+  const imgLoadedRef = useRef(false);
 
-  // Auto-detect markers when image loads
+  // Detect markers when image loads — no state change until ready
   useEffect(() => {
     const img = imgRef.current;
     if (!img) return;
     const run = () => {
       imgSizeRef.current = { w: img.naturalWidth, h: img.naturalHeight };
+      imgLoadedRef.current = true;
       const result = detectCardMarkers(img);
       setCardResult(result);
 
@@ -73,40 +54,35 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
       const spread = iw * 0.1;
 
       if (result.found) {
-        setMode('auto');
-        setPhase('trunk');
-        // Initialize trunk lines near center
         setTrunkLineL(center - spread);
         setTrunkLineR(center + spread);
+        setPhase('trunk');
+        setMode('auto');
       } else {
-        setMode('manual');
-        setPhase('card');
-        // Initialize card lines near center
         setCardLineL(center - spread * 0.3);
         setCardLineR(center + spread * 0.3);
         setTrunkLineL(center - spread);
         setTrunkLineR(center + spread);
+        setPhase('card');
+        setMode('manual');
       }
     };
     if (img.complete && img.naturalWidth > 0) run();
     else img.onload = run;
   }, [photoSrc]);
 
-  // Image bounds accounting for zoom/pan
   const getImageBounds = useCallback(() => {
     const container = containerRef.current;
     if (!container) return null;
     const cw = container.clientWidth, ch = container.clientHeight;
     const { w: iw, h: ih } = imgSizeRef.current;
     if (!iw || !ih) return null;
-    const baseScale = Math.min(cw / iw, ch / ih);
-    const scale = baseScale * zoomScale;
-    const ox = (cw - iw * scale) / 2 + panX;
-    const oy = (ch - ih * scale) / 2 + panY;
-    return { ox, oy, scale, baseScale };
-  }, [zoomScale, panX, panY]);
+    const scale = Math.min(cw / iw, ch / ih);
+    const ox = (cw - iw * scale) / 2;
+    const oy = (ch - ih * scale) / 2;
+    return { ox, oy, scale };
+  }, []);
 
-  // Convert screen X to image X
   const screenToImageX = useCallback((screenX: number) => {
     const bounds = getImageBounds();
     if (!bounds) return 0;
@@ -114,14 +90,13 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     return (screenX - rect.left - bounds.ox) / bounds.scale;
   }, [getImageBounds]);
 
-  // Convert image X to screen X
   const imageToScreenX = useCallback((imgX: number) => {
     const bounds = getImageBounds();
     if (!bounds) return 0;
     return bounds.ox + imgX * bounds.scale;
   }, [getImageBounds]);
 
-  // Draw everything
+  // Draw
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const bounds = getImageBounds();
@@ -136,34 +111,28 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     ctx.clearRect(0, 0, container.clientWidth, container.clientHeight);
 
     const { ox, oy, scale } = bounds;
-    const { h: ih } = imgSizeRef.current;
     const ch = container.clientHeight;
 
-    const drawLine = (imgX: number, color: string, label: string, lineWidth = 2) => {
+    const drawLine = (imgX: number, color: string, label: string) => {
       const sx = ox + imgX * scale;
       ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth;
-      ctx.setLineDash([]);
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(sx, 0);
       ctx.lineTo(sx, ch);
       ctx.stroke();
 
-      // Handle (draggable area indicator)
       const handleY = ch / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(sx - 14, handleY - 18, 28, 36, 6);
       ctx.fill();
-
-      // Label on handle
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 11px Nunito, sans-serif';
+      ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(label, sx, handleY + 4);
     };
 
-    // Draw measurement area (shaded between active lines)
     if (phase === 'card' && mode === 'manual') {
       const lx = ox + cardLineL * scale;
       const rx = ox + cardLineR * scale;
@@ -178,20 +147,10 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
       const rx = ox + trunkLineR * scale;
       ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
       ctx.fillRect(lx, 0, rx - lx, ch);
-
-      // Dashed center line
-      ctx.strokeStyle = 'rgba(34, 197, 94, 0.3)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      const cx = (lx + rx) / 2;
-      ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, ch); ctx.stroke();
-      ctx.setLineDash([]);
-
-      drawLine(trunkLineL, '#ef4444', 'L', phase === 'result' ? 3 : 2);
-      drawLine(trunkLineR, '#3b82f6', 'R', phase === 'result' ? 3 : 2);
+      drawLine(trunkLineL, '#ef4444', 'L');
+      drawLine(trunkLineR, '#3b82f6', 'R');
     }
 
-    // Auto-detected markers
     if (mode === 'auto' && cardResult?.found) {
       const m1sx = ox + cardResult.marker1.x * scale;
       const m1sy = oy + cardResult.marker1.y * scale;
@@ -202,10 +161,6 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
       ctx.setLineDash([3, 3]);
       ctx.beginPath(); ctx.moveTo(m1sx, m1sy); ctx.lineTo(m2sx, m2sy); ctx.stroke();
       ctx.setLineDash([]);
-      [{ x: m1sx, y: m1sy }, { x: m2sx, y: m2sy }].forEach(p => {
-        ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
-        ctx.strokeStyle = '#FF00FF'; ctx.lineWidth = 2; ctx.stroke();
-      });
     }
   }, [mode, phase, cardResult, cardLineL, cardLineR, trunkLineL, trunkLineR, getImageBounds]);
 
@@ -215,7 +170,6 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     return () => window.removeEventListener('resize', draw);
   }, [draw]);
 
-  // Calculate BHD from current line positions
   function calculateBhd() {
     let pxPerMm: number;
     if (mode === 'auto' && cardResult?.found) {
@@ -228,12 +182,8 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     return Math.round(trunkDist / pxPerMm / 10);
   }
 
-  // Find which line is nearest to touch point
   function findNearestLine(screenX: number): typeof dragging {
-    const bounds = getImageBounds();
-    if (!bounds) return null;
-
-    const threshold = 40; // px touch area
+    const threshold = 40;
     const lines: { id: typeof dragging; sx: number }[] = [];
 
     if (phase === 'card' && mode === 'manual') {
@@ -260,37 +210,25 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     if (line) {
       setDragging(line);
       e.preventDefault();
-    } else {
-      // Start pan
-      lastPanPos.current = { x: e.clientX, y: e.clientY };
     }
   }
 
   function handlePointerMove(e: React.PointerEvent) {
-    if (dragging) {
-      const imgX = screenToImageX(e.clientX);
-      const clamped = Math.max(0, Math.min(imgSizeRef.current.w, imgX));
-      switch (dragging) {
-        case 'cardL': setCardLineL(clamped); break;
-        case 'cardR': setCardLineR(clamped); break;
-        case 'trunkL': setTrunkLineL(clamped); break;
-        case 'trunkR': setTrunkLineR(clamped); break;
-      }
-      e.preventDefault();
-    } else if (lastPanPos.current && e.pointerType !== 'touch') {
-      // Pan with mouse drag
-      setPanX(prev => prev + e.clientX - lastPanPos.current!.x);
-      setPanY(prev => prev + e.clientY - lastPanPos.current!.y);
-      lastPanPos.current = { x: e.clientX, y: e.clientY };
+    if (!dragging) return;
+    const imgX = screenToImageX(e.clientX);
+    const clamped = Math.max(0, Math.min(imgSizeRef.current.w, imgX));
+    switch (dragging) {
+      case 'cardL': setCardLineL(clamped); break;
+      case 'cardR': setCardLineR(clamped); break;
+      case 'trunkL': setTrunkLineL(clamped); break;
+      case 'trunkR': setTrunkLineR(clamped); break;
     }
+    e.preventDefault();
   }
 
   function handlePointerUp() {
     setDragging(null);
-    lastPanPos.current = null;
   }
-
-  // Zoom disabled — caused crashes on mobile WebView
 
   function confirmPhase() {
     if (phase === 'card') {
@@ -304,9 +242,6 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
 
   function reset() {
     setBhdValue(null);
-    setZoomScale(1);
-    setPanX(0);
-    setPanY(0);
     const iw = imgSizeRef.current.w;
     const center = iw / 2;
     const spread = iw * 0.1;
@@ -361,16 +296,12 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
           </div>
         )}
         {!isResult && mode !== 'detecting' && (
-          <div className="space-y-1">
+          <div>
             {phase === 'card' && (
-              <p className="text-sm text-yellow-400">
-                {m('slideK1K2')}
-              </p>
+              <p className="text-sm text-yellow-400">{m('slideK1K2')}</p>
             )}
             {phase === 'trunk' && (
-              <p className="text-sm text-emerald-400">
-                {m('slideLR')}
-              </p>
+              <p className="text-sm text-emerald-400">{m('slideLR')}</p>
             )}
           </div>
         )}
@@ -388,14 +319,9 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
       <div ref={containerRef} className="flex-1 relative overflow-hidden"
         style={{ touchAction: 'none' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img ref={imgRef} src={photoSrc} alt="Baum"
-          style={{
-            position: 'absolute',
-            width: '100%', height: '100%',
-            objectFit: 'contain',
-            transformOrigin: 'center center',
-            pointerEvents: 'none',
-          }}
+        <img ref={imgRef} src={photoSrc} alt=""
+          className="absolute inset-0 w-full h-full object-contain"
+          style={{ pointerEvents: 'none' }}
           onLoad={draw}
         />
         <canvas ref={canvasRef}

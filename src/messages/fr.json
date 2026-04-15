@@ -2826,6 +2826,25 @@
     "speciesConfidence": "{pct}% confidence",
     "overrideSpecies": "Apply",
     "change": "Change",
-    "failed": "failed"
+    "failed": "failed",
+    "damageBarkBeetle": "Bark Beetle",
+    "damageDrought": "Drought",
+    "damageStorm": "Storm Damage",
+    "damageFungal": "Fungal Infection",
+    "damageBrowsing": "Browsing Damage",
+    "damageSnowBreak": "Snow Break",
+    "damageOther": "Other",
+    "bhdScreen": "Set DBH",
+    "bhdTunerLabel": "Diameter at Breast Height",
+    "heightScreen": "Tree Height",
+    "heightTunerLabel": "Height in meters",
+    "skipHeight": "Continue without height",
+    "ageScreen": "Tree Age",
+    "ageTunerLabel": "Age in years",
+    "skipAge": "Continue without age",
+    "crownVitalityScreen": "Crown Vitality",
+    "crownVitalityTunerLabel": "Vital crown in percent",
+    "co2Storage": "CO₂ Storage",
+    "co2Unit": "kg CO₂"
   }
 }

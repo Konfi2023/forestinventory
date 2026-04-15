@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TREE_SPECIES, getSpeciesLabel, getSpeciesColor } from '@/lib/tree-species';
 import { db, type PendingTree, type PendingPlot } from '@/lib/inventory-db';
-import { validateTreeMeasurement, estimateHeight, getTargetSampleSize } from '@/lib/forest-mensuration';
+import { validateTreeMeasurement, estimateHeight, getTargetSampleSize, calcCo2Storage } from '@/lib/forest-mensuration';
+import { RotaryTuner } from '@/components/RotaryTuner';
 import {
   Camera, MapPin, Trees, ChevronRight, ChevronLeft, X,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
@@ -69,10 +70,20 @@ const STOCKING_DEGREES = [
   { id: 'VERY_DENSE', tKey: 'stockingVeryDense' },
 ];
 
-type Step = 'mode' | 'plot-setup' | 'camera' | 'location' | 'crown' | 'species' | 'height-age' | 'crown-health' | 'stand' | 'soil' | 'exposition' | 'notes' | 'review' | 'saved' | 'task' | 'plot-done' | 'summary';
+const DAMAGE_TYPES = [
+  { id: 'BARK_BEETLE', tKey: 'damageBarkBeetle' },
+  { id: 'DROUGHT', tKey: 'damageDrought' },
+  { id: 'STORM', tKey: 'damageStorm' },
+  { id: 'FUNGAL', tKey: 'damageFungal' },
+  { id: 'BROWSING', tKey: 'damageBrowsing' },
+  { id: 'SNOW_BREAK', tKey: 'damageSnowBreak' },
+  { id: 'OTHER', tKey: 'damageOther' },
+];
 
-const SINGLE_STEPS: Step[] = ['camera', 'location', 'crown', 'species', 'height-age', 'crown-health', 'stand', 'soil', 'exposition', 'notes', 'review'];
-const PLOT_STEPS: Step[] = ['camera', 'crown', 'species', 'height-age', 'crown-health', 'stand', 'soil', 'exposition', 'notes', 'review'];
+type Step = 'mode' | 'plot-setup' | 'camera' | 'bhd' | 'species' | 'height' | 'age' | 'crown' | 'crown-vitality' | 'health' | 'stand' | 'soil' | 'exposition' | 'notes' | 'review' | 'saved' | 'task' | 'plot-done' | 'summary';
+
+const SINGLE_STEPS: Step[] = ['camera', 'bhd', 'species', 'height', 'age', 'crown', 'crown-vitality', 'health', 'stand', 'soil', 'exposition', 'notes', 'review'];
+const PLOT_STEPS: Step[] = ['camera', 'bhd', 'species', 'height', 'age', 'crown', 'crown-vitality', 'health', 'stand', 'soil', 'exposition', 'notes', 'review'];
 
 interface SessionTree {
   species: string;
@@ -1255,7 +1266,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             )}
 
             <button
-              onClick={() => setStep(mode === 'plot' ? 'crown' : 'location')}
+              onClick={() => setStep('bhd')}
               disabled={!photoPreview}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
@@ -1264,115 +1275,31 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 2: Standort (nur im Einzelbaum-Modus) */}
-        {step === 'location' && (
-          <div className="p-4">
-            <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+        {/* BHD (Brusthöhendurchmesser) */}
+        {step === 'bhd' && (
+          <div className="p-4 flex flex-col items-center justify-center h-full">
+            <button onClick={() => setStep('camera')} className="self-start flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">{m('location')}</h2>
-            <p className="text-slate-400 text-sm mb-5">{m('locationDesc')}</p>
-
-            {/* GPS Status */}
-            <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex items-center gap-3">
-              <MapPin size={16} className={locating || gpsLoading ? 'text-amber-600 animate-pulse' : form.lat ? 'text-emerald-600' : 'text-slate-500'} />
-              <div className="flex-1 min-w-0">
-                {locating || gpsLoading ? (
-                  <p className="text-sm text-amber-600">{m('gpsDetecting')}</p>
-                ) : form.lat ? (
-                  <p className="text-sm text-emerald-600 font-mono">{form.lat.toFixed(5)}, {form.lng?.toFixed(5)}</p>
-                ) : (
-                  <p className="text-sm text-slate-500">{m('gpsNoSignal')}</p>
-                )}
-              </div>
-              <button onClick={captureGps} disabled={gpsLoading || locating}
-                className="text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 shrink-0">
-                {m('new')}
-              </button>
-            </div>
-
-            {/* GPS-Fehler */}
-            {gpsError && !gpsLoading && (
-              <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 mb-4 text-sm text-amber-700">
-                {gpsError === 'denied' && m('gpsDenied')}
-                {gpsError === 'insecure' && m('gpsRequiresHttps')}
-                {gpsError === 'timeout' && m('gpsTimeout')}
-                {gpsError === 'unavailable' && m('gpsUnavailable')}
-              </div>
-            )}
-
-            {/* Wald */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-                <Trees size={14} className="text-emerald-600" /> {m('forest')}
-              </label>
-              <select
-                value={form.forestId}
-                onChange={e => {
-                  const f = forests.find(f => f.id === e.target.value);
-                  setForm(prev => ({ ...prev, forestId: e.target.value, forestName: f?.name ?? '', compartmentId: '', compartmentName: '' }));
-                }}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500"
-              >
-                <option value="">{m('selectForestPlaceholder')}</option>
-                {forests.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-              </select>
-              {form.forestId && !gpsLoading && !locating && (
-                <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                  <Check size={10} /> {m('gpsSuggestion')}
-                </p>
-              )}
-            </div>
-
-            {/* Abteilung */}
-            {form.forestId && (
-              <div className="mb-5">
-                <label className="block text-sm font-medium text-slate-700 mb-2">{m('compartment')}</label>
-                <div className="space-y-2">
-                  {(forests.find(f => f.id === form.forestId)?.compartments ?? []).map(c => (
-                    <button key={c.id}
-                      onClick={() => setForm(f => ({ ...f, compartmentId: c.id, compartmentName: c.name ?? '' }))}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors border ${
-                        form.compartmentId === c.id
-                          ? 'bg-emerald-600/20 border-emerald-500 text-white'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color ?? '#3b82f6' }} />
-                        <span className="font-medium">{c.number ? `[${c.number}]` : ''}{c.name ? ` ${c.name}` : ''}{!c.number && !c.name ? m('compartment') : ''}</span>
-                      </div>
-                      {form.compartmentId === c.id && <Check size={16} className="text-emerald-600" />}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setForm(f => ({ ...f, compartmentId: '', compartmentName: '' }))}
-                    className={`w-full px-4 py-3 rounded-xl text-left text-sm border transition-colors ${
-                      form.compartmentId === ''
-                        ? 'bg-slate-200 border-slate-400 text-slate-700'
-                        : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:bg-slate-100'
-                    }`}
-                  >
-                    {m('noCompartment')}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setStep('crown')}
-              disabled={!form.forestId}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
-            >
-              {m('continue')} <ChevronRight size={18} />
-            </button>
+            <h2 className="text-xl font-bold mb-2">{m('bhdScreen')}</h2>
+            <RotaryTuner
+              value={form.diameter ? parseFloat(form.diameter) : 25}
+              onChange={(v) => setForm(f => ({ ...f, diameter: String(v) }))}
+              onConfirm={() => setStep('species')}
+              min={1}
+              max={150}
+              step={1}
+              unit="cm"
+              label={m('bhdTunerLabel')}
+              color="#10b981"
+            />
           </div>
         )}
 
-        {/* SCHRITT 3: Kronenfoto */}
+        {/* Kronenfoto */}
         {step === 'crown' && (
           <div className="p-4">
-            <button onClick={() => setStep(mode === 'plot' ? 'camera' : 'location')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+            <button onClick={() => setStep('age')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> {m('back')}
             </button>
             <h2 className="text-xl font-bold mb-1">{m('photographCrown')}</h2>
@@ -1441,7 +1368,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             )}
 
             <button
-              onClick={() => setStep('species')}
+              onClick={() => setStep('crown-vitality')}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               {crownPhotoPreview ? m('continue') : m('withoutCrownPhoto')} <ChevronRight size={18} />
@@ -1449,10 +1376,34 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 4: Baumart + Durchmesser */}
+        {/* Crown Vitality */}
+        {step === 'crown-vitality' && (
+          <div className="p-4 flex flex-col items-center justify-center h-full">
+            <button onClick={() => setStep('crown')} className="self-start flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> {m('back')}
+            </button>
+            <h2 className="text-xl font-bold mb-2">{m('crownVitalityScreen')}</h2>
+            <RotaryTuner
+              value={formCrownCondition ? parseInt(formCrownCondition) : (crownAiResult?.crownCondition ?? 85)}
+              onChange={(v) => setFormCrownCondition(String(v))}
+              onConfirm={() => setStep('health')}
+              min={0}
+              max={100}
+              step={1}
+              unit="%"
+              label={m('crownVitalityTunerLabel')}
+              color={(() => {
+                const v = formCrownCondition ? parseInt(formCrownCondition) : 85;
+                return v >= 75 ? '#10b981' : v >= 40 ? '#f59e0b' : '#ef4444';
+              })()}
+            />
+          </div>
+        )}
+
+        {/* Baumart */}
         {step === 'species' && (
           <div className="p-4">
-            <button onClick={() => setStep('crown')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+            <button onClick={() => setStep('bhd')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> {m('back')}
             </button>
             <h2 className="text-xl font-bold mb-1">{m('speciesAndMeasure')}</h2>
@@ -1486,36 +1437,6 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 <Loader2 size={14} className="animate-spin" /> {m('aiAnalyzing')}
               </div>
             )}
-
-            {/* Durchmesser */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                {m('bhdLabel')}
-              </label>
-              <input
-                type="number"
-                inputMode="decimal"
-                placeholder="z.B. 42"
-                value={form.diameter}
-                onChange={e => setForm(f => ({ ...f, diameter: e.target.value }))}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
-              />
-              {/* Plausibilitätswarnungen BHD */}
-              {form.diameter && (() => {
-                const d = parseFloat(form.diameter);
-                const warns = validateTreeMeasurement({ diameterCm: isNaN(d) ? null : d });
-                const dWarns = warns.filter(w => w.field === 'diameter');
-                return dWarns.length > 0 ? (
-                  <div className="mt-2 space-y-1">
-                    {dWarns.map((w, i) => (
-                      <p key={i} className={`text-xs px-3 py-1.5 rounded-lg ${w.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
-                        ⚠ {w.message}
-                      </p>
-                    ))}
-                  </div>
-                ) : null;
-              })()}
-            </div>
 
             {/* Baumartensuche — DB-basiert mit Favoriten */}
             <div className="mb-3">
@@ -1593,7 +1514,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             </div>
 
             <button
-              onClick={() => setStep('height-age')}
+              onClick={() => setStep('height')}
               disabled={!form.species}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors mt-4"
             >
@@ -1602,61 +1523,64 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 4: Höhe & Alter */}
-        {step === 'height-age' && (
-          <div className="p-4">
-            <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+        {/* Height */}
+        {step === 'height' && (
+          <div className="p-4 flex flex-col items-center justify-center h-full">
+            <button onClick={() => setStep('species')} className="self-start flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> {m('back')}
             </button>
-            <h2 className="text-xl font-bold mb-1">{m('heightAndAge')}</h2>
-            <p className="text-slate-400 text-sm mb-5">{m('heightAgeDesc')}</p>
-
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                {m('heightLabel')}
-                {form.species && form.diameter && !isNaN(parseFloat(form.diameter)) && (() => {
-                  const h = estimateHeight(form.species, parseFloat(form.diameter));
-                  return h ? <span className="ml-2 text-xs text-emerald-600 font-normal">{m('heightGuide', { height: h })}</span> : null;
-                })()}
-              </label>
-              <input type="number" inputMode="decimal" placeholder="z.B. 28" value={form.height}
-                onChange={e => setForm(f => ({ ...f, height: e.target.value }))}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
-              />
-              {form.height && (() => {
-                const d = form.diameter ? parseFloat(form.diameter) : null;
-                const h = parseFloat(form.height);
-                const warns = validateTreeMeasurement({ diameterCm: d && !isNaN(d) ? d : null, heightM: isNaN(h) ? null : h, species: form.species || null });
-                const hWarns = warns.filter(w => w.field === 'height');
-                return hWarns.length > 0 ? (
-                  <div className="mt-2 space-y-1">
-                    {hWarns.map((w, i) => (
-                      <p key={i} className={`text-xs px-3 py-1.5 rounded-lg ${w.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>⚠ {w.message}</p>
-                    ))}
-                  </div>
-                ) : null;
+            <h2 className="text-xl font-bold mb-2">{m('heightScreen')}</h2>
+            <RotaryTuner
+              value={form.height ? parseFloat(form.height) : (() => {
+                const est = form.species && form.diameter ? estimateHeight(form.species, parseFloat(form.diameter)) : null;
+                return est ?? 20;
               })()}
-            </div>
-
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">{m('ageLabel')}</label>
-              <input type="number" inputMode="numeric" placeholder="z.B. 80" value={form.age}
-                onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <button onClick={() => setStep('crown-health')}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
-              {m('continue')} <ChevronRight size={18} />
+              onChange={(v) => setForm(f => ({ ...f, height: String(v) }))}
+              onConfirm={() => setStep('age')}
+              min={1}
+              max={50}
+              step={0.5}
+              unit="m"
+              label={m('heightTunerLabel')}
+              color="#3b82f6"
+              decimals={1}
+            />
+            <button onClick={() => { setForm(f => ({ ...f, height: '' })); setStep('age'); }}
+              className="mt-4 text-sm text-slate-400 hover:text-slate-600">
+              {m('skipHeight')}
             </button>
           </div>
         )}
 
-        {/* SCHRITT 6: Kronengesundheit */}
-        {step === 'crown-health' && (
+        {/* Age */}
+        {step === 'age' && (
+          <div className="p-4 flex flex-col items-center justify-center h-full">
+            <button onClick={() => setStep('height')} className="self-start flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+              <ChevronLeft size={16} /> {m('back')}
+            </button>
+            <h2 className="text-xl font-bold mb-2">{m('ageScreen')}</h2>
+            <RotaryTuner
+              value={form.age ? parseInt(form.age) : 50}
+              onChange={(v) => setForm(f => ({ ...f, age: String(v) }))}
+              onConfirm={() => setStep('crown')}
+              min={5}
+              max={300}
+              step={5}
+              unit=""
+              label={m('ageTunerLabel')}
+              color="#8b5cf6"
+            />
+            <button onClick={() => { setForm(f => ({ ...f, age: '' })); setStep('crown'); }}
+              className="mt-4 text-sm text-slate-400 hover:text-slate-600">
+              {m('skipAge')}
+            </button>
+          </div>
+        )}
+
+        {/* Health */}
+        {step === 'health' && (
           <div className="p-4">
-            <button onClick={() => setStep('height-age')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+            <button onClick={() => setStep('crown-vitality')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> {m('back')}
             </button>
             <h2 className="text-xl font-bold mb-1">{m('crownHealth')}</h2>
@@ -1671,8 +1595,6 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                   <Sparkles size={12} /> {m('aiResultApplied')}
                 </div>
                 <p className="text-sm text-violet-800">
-                  {m('vitality')} <span className="font-semibold">{crownAiResult.crownCondition}%</span>
-                  <span className="text-violet-400 mx-1">·</span>
                   {crownAiResult.health === 'HEALTHY' ? m('healthy') : crownAiResult.health === 'DAMAGED' ? m('damaged') : m('dead')}
                   {crownAiResult.damageType && <span className="text-violet-400"> · {crownAiResult.damageType}</span>}
                 </p>
@@ -1686,26 +1608,6 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
                 <Loader2 size={14} className="animate-spin" /> {m('aiAnalyzingCrown')}
               </div>
             )}
-
-            {/* Crown Condition (Vitalität) */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                {m('crownVitality')}
-              </label>
-              <input type="number" inputMode="numeric" placeholder="z.B. 85" min="0" max="100"
-                value={formCrownCondition}
-                onChange={e => setFormCrownCondition(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-lg placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
-              />
-              {formCrownCondition && (
-                <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${
-                    Number(formCrownCondition) >= 75 ? 'bg-emerald-500' :
-                    Number(formCrownCondition) >= 40 ? 'bg-amber-500' : 'bg-red-500'
-                  }`} style={{ width: `${Math.min(100, Number(formCrownCondition))}%` }} />
-                </div>
-              )}
-            </div>
 
             {/* Health status */}
             <div className="mb-5">
@@ -1727,23 +1629,34 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               </div>
             </div>
 
-            {/* Damage type */}
+            {/* Damage type as dropdown */}
             {formHealth !== 'HEALTHY' && (
               <>
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-slate-700 mb-2">{m('damageType')}</label>
-                  <input type="text" placeholder={m('damageTypePlaceholder')}
+                  <select
                     value={formDamageType}
                     onChange={e => setFormDamageType(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
-                  />
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="">{m('damageTypePlaceholder')}</option>
+                    {DAMAGE_TYPES.map(d => (
+                      <option key={d.id} value={d.id}>{t(d.tKey)}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-slate-700 mb-2">{m('damageSeverity')}</label>
-                  <input type="number" inputMode="numeric" placeholder="z.B. 30" min="0" max="100"
-                    value={formDamageSeverity}
-                    onChange={e => setFormDamageSeverity(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
+                  <RotaryTuner
+                    value={formDamageSeverity ? parseInt(formDamageSeverity) : 30}
+                    onChange={(v) => setFormDamageSeverity(String(v))}
+                    onConfirm={() => {}}
+                    min={0}
+                    max={100}
+                    step={5}
+                    unit="%"
+                    label={m('damageSeverity')}
+                    color="#f59e0b"
                   />
                 </div>
               </>
@@ -1756,10 +1669,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 7: Bestandstyp & Bestockungsgrad */}
+        {/* Bestandstyp & Bestockungsgrad */}
         {step === 'stand' && (
           <div className="p-4">
-            <button onClick={() => setStep('crown-health')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
+            <button onClick={() => setStep('health')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
               <ChevronLeft size={16} /> {m('back')}
             </button>
             <h2 className="text-xl font-bold mb-1">{m('standSection')}</h2>
@@ -2039,6 +1952,20 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               )}
             </div>
 
+            {/* CO2 Storage */}
+            {(() => {
+              const d = form.diameter ? parseFloat(form.diameter) : null;
+              const h = form.height ? parseFloat(form.height) : null;
+              const co2 = d && h && form.species ? calcCo2Storage(form.species, d, h) : null;
+              if (!co2) return null;
+              return (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-center mb-5">
+                  <p className="text-xs text-emerald-600 font-medium">{m('co2Storage')}</p>
+                  <p className="text-2xl font-bold text-emerald-700">{Math.round(co2).toLocaleString()} {m('co2Unit')}</p>
+                </div>
+              );
+            })()}
+
             <button
               onClick={saveTree}
               disabled={isSavingTree}
@@ -2052,7 +1979,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           </div>
         )}
 
-        {/* SCHRITT 4: Gespeichert */}
+        {/* Gespeichert */}
         {step === 'saved' && (
           <div className="p-4 flex flex-col items-center text-center pt-12">
             <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
@@ -2114,20 +2041,20 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             })()}
 
             <div className="mt-4 w-full space-y-3">
-              {savedPoiId && (
-                <button
-                  onClick={() => setStep('task')}
-                  className="w-full py-3 bg-blue-700 hover:bg-blue-600 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
-                >
-                  <ClipboardList size={18} /> {m('addTask')}
-                </button>
-              )}
               <button
                 onClick={nextTree}
                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
               >
                 <TreePine size={18} /> {m('nextTreeBtn')}
               </button>
+              {savedPoiId && (
+                <button
+                  onClick={() => setStep('task')}
+                  className="w-full py-3 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
+                >
+                  <ClipboardList size={18} /> {m('addTask')}
+                </button>
+              )}
               {mode === 'plot' ? (
                 <button
                   onClick={finishPlot}
@@ -2138,7 +2065,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               ) : (
                 <button
                   onClick={finish}
-                  className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium text-slate-700 transition-colors"
+                  className="w-full text-center text-sm text-slate-500 hover:text-slate-700 py-2 transition-colors"
                 >
                   {m('finishInventory')} ({savedCount} {savedCount === 1 ? m('tree') : m('trees')})
                 </button>

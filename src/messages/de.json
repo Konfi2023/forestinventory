@@ -3295,6 +3295,25 @@
     "speciesConfidence": "{pct}% Konfidenz",
     "overrideSpecies": "Übernehmen",
     "change": "Ändern",
-    "failed": "fehlgeschlagen"
+    "failed": "fehlgeschlagen",
+    "damageBarkBeetle": "Borkenkäfer",
+    "damageDrought": "Trockenheit",
+    "damageStorm": "Sturmschaden",
+    "damageFungal": "Pilzbefall",
+    "damageBrowsing": "Fraßschäden",
+    "damageSnowBreak": "Schneebruch",
+    "damageOther": "Sonstige",
+    "bhdScreen": "BHD einstellen",
+    "bhdTunerLabel": "Durchmesser in Brusthöhe",
+    "heightScreen": "Baumhöhe",
+    "heightTunerLabel": "Höhe in Metern",
+    "skipHeight": "Ohne Höhe weiter",
+    "ageScreen": "Baumalter",
+    "ageTunerLabel": "Alter in Jahren",
+    "skipAge": "Ohne Alter weiter",
+    "crownVitalityScreen": "Kronenvitalität",
+    "crownVitalityTunerLabel": "Vitale Krone in Prozent",
+    "co2Storage": "CO₂-Speicherleistung",
+    "co2Unit": "kg CO₂"
   }
 }

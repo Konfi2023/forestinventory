@@ -12,7 +12,7 @@ import {
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 import { ImportInventoryDialog } from './ImportInventoryDialog';
 import { BhdMeasurement } from '@/components/BhdMeasurement';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 const SOIL_CONDITIONS = [
   { id: 'SANDY', tKey: 'soilSandy' },
@@ -136,6 +136,7 @@ const EMPTY_FORM: TreeForm = {
 
 export function InventoryClient({ forests, orgSlug, members = [], userId = '' }: InventoryClientProps) {
   const t = useTranslations('Inventory');
+  const debugLocale = useLocale();
   const [step, setStep] = useState<Step>('mode');
   const [showImport, setShowImport] = useState(false);
   const [mode, setMode] = useState<'single' | 'plot' | null>(null);
@@ -1802,7 +1803,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Boden</h2>
-            <p className="text-slate-400 text-sm mb-5">Bodenbeschaffenheit und Feuchtigkeit angeben.</p>
+            <p className="text-slate-400 text-sm mb-1">Bodenbeschaffenheit und Feuchtigkeit angeben.</p>
+            <p className="text-xs text-red-400 mb-4">DEBUG locale: {debugLocale} | soilSandy: {t('soilSandy')}</p>
 
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">

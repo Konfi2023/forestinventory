@@ -5,7 +5,7 @@ import { TREE_SPECIES, getSpeciesLabel, getSpeciesColor } from '@/lib/tree-speci
 import { db, type PendingTree, type PendingPlot } from '@/lib/inventory-db';
 import { validateTreeMeasurement, estimateHeight, getTargetSampleSize } from '@/lib/forest-mensuration';
 import {
-  Camera, MapPin, Trees, ChevronRight, ChevronLeft,
+  Camera, MapPin, Trees, ChevronRight, ChevronLeft, X,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
   ClipboardList, User, Loader2, CircleDot, Upload, Sparkles,
 } from 'lucide-react';
@@ -829,6 +829,19 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           <span className="font-semibold text-sm">Forstinventur</span>
           {form.forestName && (
             <span className="text-xs text-slate-400 hidden sm:block">· {form.forestName}</span>
+          )}
+          {/* Abbrechen-Button: nur sichtbar während aktiver Erfassung */}
+          {step !== 'mode' && step !== 'saved' && step !== 'summary' && step !== 'plot-done' && step !== 'task' && (
+            <button
+              onClick={() => {
+                if (window.confirm('Erfassung abbrechen? Nicht gespeicherte Daten gehen verloren.')) {
+                  startNew();
+                }
+              }}
+              className="ml-2 flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors"
+            >
+              <X size={12} /> Abbrechen
+            </button>
           )}
           {plotSession && (
             <span className="flex items-center gap-1 text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">

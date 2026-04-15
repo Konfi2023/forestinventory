@@ -204,9 +204,9 @@ export function AppShell({
         <div className="h-0.5 bg-emerald-500 animate-pulse shrink-0" />
       )}
 
-      {/* Tab Content */}
-      <div className="flex-1 overflow-hidden">
-        {tab === 'tasks' && (
+      {/* Tab Content — alle Tabs bleiben gemounted, inaktive werden versteckt */}
+      <div className="flex-1 overflow-hidden relative">
+        <div className="h-full" style={{ display: tab === 'tasks' ? 'block' : 'none' }}>
           <TasksTab
             tasks={tasks}
             forests={forests}
@@ -215,13 +215,13 @@ export function AppShell({
             currentUserId={currentUserId}
             onTasksChange={refreshTasks}
           />
-        )}
-        {tab === 'inventory' && (
+        </div>
+        <div className="h-full" style={{ display: tab === 'inventory' ? 'block' : 'none' }}>
           <InventoryTab forests={forests} orgSlug={orgSlug} members={members} />
-        )}
-        {tab === 'polter' && (
+        </div>
+        <div className="h-full" style={{ display: tab === 'polter' ? 'block' : 'none' }}>
           <PolterTab forests={forests} orgSlug={orgSlug} />
-        )}
+        </div>
       </div>
 
       {/* Bottom Tab Bar */}

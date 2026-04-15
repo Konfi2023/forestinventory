@@ -3,7 +3,6 @@ package eu.forestmanager.app;
 import android.content.Intent;
 import android.net.Uri;
 import android.webkit.GeolocationPermissions;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.os.Bundle;
@@ -11,8 +10,8 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
 
         WebView webView = getBridge().getWebView();
         WebSettings settings = webView.getSettings();
@@ -23,15 +22,6 @@ public class MainActivity extends BridgeActivity {
 
         // Geolocation in WebView erlauben
         settings.setGeolocationEnabled(true);
-        settings.setJavaScriptCanOpenWindowsAutomatically(true);
-
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-                // Automatisch erlauben — Android Permission Dialog erscheint trotzdem
-                callback.invoke(origin, true, true);
-            }
-        });
 
         // JavaScript-Interface fuer externen Browser-Aufruf
         webView.addJavascriptInterface(new Object() {

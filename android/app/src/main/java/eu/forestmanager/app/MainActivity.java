@@ -3,6 +3,7 @@ package eu.forestmanager.app;
 import android.content.Intent;
 import android.net.Uri;
 import android.webkit.GeolocationPermissions;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.os.Bundle;
@@ -22,6 +23,58 @@ public class MainActivity extends BridgeActivity {
 
         // Geolocation in WebView erlauben
         settings.setGeolocationEnabled(true);
+
+        // Den bestehenden Capacitor ChromeClient wrappen (nicht ersetzen)
+        final WebChromeClient originalClient = webView.getWebChromeClient();
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, true);
+            }
+
+            // Alle anderen Methoden an den Original-Client delegieren
+            @Override
+            public boolean onShowFileChooser(WebView view, android.webkit.ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                if (originalClient != null) {
+                    return originalClient.onShowFileChooser(view, filePathCallback, fileChooserParams);
+                }
+                return super.onShowFileChooser(view, filePathCallback, fileChooserParams);
+            }
+
+            @Override
+            public void onPermissionRequest(android.webkit.PermissionRequest request) {
+                if (originalClient != null) {
+                    originalClient.onPermissionRequest(request);
+                } else {
+                    super.onPermissionRequest(request);
+                }
+            }
+
+            @Override
+            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
+                if (originalClient != null) {
+                    return originalClient.onCreateWindow(view, isDialog, isUserGesture, resultMsg);
+                }
+                return super.onCreateWindow(view, isDialog, isUserGesture, resultMsg);
+            }
+
+            @Override
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
+                if (originalClient != null) {
+                    return originalClient.onConsoleMessage(consoleMessage);
+                }
+                return super.onConsoleMessage(consoleMessage);
+            }
+
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                if (originalClient != null) {
+                    originalClient.onProgressChanged(view, newProgress);
+                } else {
+                    super.onProgressChanged(view, newProgress);
+                }
+            }
+        });
 
         // JavaScript-Interface fuer externen Browser-Aufruf
         webView.addJavascriptInterface(new Object() {

@@ -13,7 +13,7 @@ import {
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 import { ImportInventoryDialog } from './ImportInventoryDialog';
 import { BhdMeasurement } from '@/components/BhdMeasurement';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 const SOIL_CONDITIONS = [
   { id: 'SANDY', tKey: 'soilSandy' },
@@ -148,6 +148,7 @@ const EMPTY_FORM: TreeForm = {
 export function InventoryClient({ forests, orgSlug, members = [], userId = '' }: InventoryClientProps) {
   const t = useTranslations('Inventory');
   const m = useTranslations('MobileApp');
+  const locale = useLocale();
   const [step, setStep] = useState<Step>('mode');
   const [showImport, setShowImport] = useState(false);
   const [mode, setMode] = useState<'single' | 'plot' | null>(null);
@@ -233,7 +234,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     } catch {}
 
     // 2. Vom Server laden
-    fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100`)
+    fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100&lang=${locale}`)
       .then(r => r.json())
       .then(data => {
         const favorites = data.favorites ?? [];
@@ -262,7 +263,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   function searchSpeciesDb(query: string) {
     clearTimeout(speciesSearchTimeout.current);
     if (query.length < 1) {
-      fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100`)
+      fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100&lang=${locale}`)
         .then(r => r.json())
         .then(data => { setSpeciesResults(data.results ?? []); setSpeciesSearchLoading(false); })
         .catch(() => {
@@ -273,7 +274,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     }
     setSpeciesSearchLoading(true);
     speciesSearchTimeout.current = setTimeout(() => {
-      fetch(`/api/tree-species/search?q=${encodeURIComponent(query)}&orgSlug=${orgSlug}`)
+      fetch(`/api/tree-species/search?q=${encodeURIComponent(query)}&orgSlug=${orgSlug}&lang=${locale}`)
         .then(r => r.json())
         .then(data => { setSpeciesResults(data.results ?? []); setSpeciesSearchLoading(false); })
         .catch(() => {
@@ -464,7 +465,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       const res = await fetch('/api/ai/tree-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg' }),
+        body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg', lang: locale }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
@@ -505,7 +506,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       const res = await fetch('/api/ai/crown-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg' }),
+        body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg', lang: locale }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();

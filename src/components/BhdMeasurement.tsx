@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, Check, RotateCcw, Loader2, ZoomIn } from 'lucide-react';
 import { detectCardMarkers, type CardDetectionResult } from '@/lib/card-detection';
+import { useTranslations } from 'next-intl';
 
 /**
  * BHD measurement — redesigned with draggable lines + pinch-to-zoom.
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
+  const m = useTranslations('MobileApp');
   const [mode, setMode] = useState<Mode>('detecting');
   const [phase, setPhase] = useState<Phase>('card');
   const [cardResult, setCardResult] = useState<CardDetectionResult | null>(null);
@@ -366,13 +368,13 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3">
         <div>
-          <h3 className="text-white text-sm font-semibold">BHD messen</h3>
+          <h3 className="text-white text-sm font-semibold">{m('bhdMeasure')}</h3>
           <p className="text-slate-500 text-xs">
-            {mode === 'detecting' && 'Messkarte wird gesucht...'}
-            {mode === 'auto' && phase === 'trunk' && 'Linien an die Stammränder schieben'}
-            {mode === 'manual' && phase === 'card' && 'Linien an die Kartenränder schieben'}
-            {mode === 'manual' && phase === 'trunk' && 'Linien an die Stammränder schieben'}
-            {isResult && `BHD: ${bhdValue} cm`}
+            {mode === 'detecting' && m('searchingCard')}
+            {mode === 'auto' && phase === 'trunk' && m('slideTrunkEdges')}
+            {mode === 'manual' && phase === 'card' && m('slideCardEdges')}
+            {mode === 'manual' && phase === 'trunk' && m('slideTrunkEdges')}
+            {isResult && `${m('bhd')} ${bhdValue} cm`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -390,23 +392,23 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
       <div className="shrink-0 px-4 py-2 text-center min-h-[48px]">
         {mode === 'detecting' && (
           <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
-            <Loader2 size={14} className="animate-spin" /> Suche Messkarte...
+            <Loader2 size={14} className="animate-spin" /> {m('searchingCard')}
           </div>
         )}
         {!isResult && mode !== 'detecting' && (
           <div className="space-y-1">
             {phase === 'card' && (
               <p className="text-sm text-yellow-400">
-                Schiebe <span className="font-bold">K1</span> und <span className="font-bold">K2</span> an die Ränder der Karte
+                {m('slideK1K2')}
               </p>
             )}
             {phase === 'trunk' && (
               <p className="text-sm text-emerald-400">
-                Schiebe <span className="font-bold text-red-400">L</span> und <span className="font-bold text-blue-400">R</span> an die Stammränder
+                {m('slideLR')}
               </p>
             )}
             <p className="text-xs text-slate-600 flex items-center justify-content gap-1">
-              <ZoomIn size={10} /> Zwei-Finger-Zoom für Präzision
+              <ZoomIn size={10} /> {m('pinchZoom')}
             </p>
           </div>
         )}
@@ -414,7 +416,7 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
           <div className="text-emerald-400">
             <p className="text-3xl font-bold">{bhdValue} cm</p>
             <p className="text-xs text-emerald-500 mt-0.5">
-              BHD gemessen {mode === 'auto' ? '(Messkarte)' : '(Kreditkarte)'}
+              {m('bhdMeasured')} {mode === 'auto' ? m('viaCard') : m('viaCreditCard')}
             </p>
           </div>
         )}
@@ -451,7 +453,7 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
         {isResult && mode === 'manual' && (
           <button onClick={toggleCardSide}
             className="w-full py-2 text-xs text-slate-400 hover:text-slate-200 transition-colors">
-            Referenz: {cardMm === CARD_LONG_MM ? 'Breitseite (85,6 mm)' : 'Schmalseite (54 mm)'} — tippen zum Wechseln
+            {cardMm === CARD_LONG_MM ? m('refLong') : m('refShort')} — {m('refTapToSwitch')}
           </button>
         )}
         <div className="flex gap-3">
@@ -463,7 +465,7 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
               </button>
               <button onClick={confirmPhase}
                 className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold">
-                {phase === 'card' ? 'Karte bestätigt — weiter zum Stamm' : 'BHD berechnen'}
+                {phase === 'card' ? m('cardConfirmed') : m('calculateBhd')}
               </button>
             </>
           )}
@@ -475,7 +477,7 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
               </button>
               <button onClick={() => { setPhase('trunk'); setBhdValue(null); }}
                 className="py-3 px-4 bg-slate-800 text-white rounded-xl text-sm font-medium">
-                Korrigieren
+                {m('correct')}
               </button>
               <button onClick={() => bhdValue != null && onMeasured(bhdValue)}
                 className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
@@ -487,7 +489,7 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
         {!isResult && (
           <button onClick={onSkip}
             className="w-full py-2 text-xs text-slate-600 hover:text-slate-400 transition-colors">
-            Ohne Messung weiter
+            {m('withoutMeasurement')}
           </button>
         )}
       </div>

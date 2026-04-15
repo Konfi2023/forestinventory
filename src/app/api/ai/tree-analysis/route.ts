@@ -68,7 +68,8 @@ WICHTIG: diameterCm ist nur eine grobe Schätzung — die exakte Messung erfolgt
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64, mimeType, poiId } = await req.json();
+    const { imageBase64, mimeType, poiId, lang } = await req.json();
+    const responseLang = lang === 'en' ? 'English' : lang === 'es' ? 'Spanish' : lang === 'fr' ? 'French' : 'German';
 
     if (!imageBase64 || !mimeType) {
       return NextResponse.json({ error: 'imageBase64 und mimeType erforderlich' }, { status: 400 });
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest) {
           role: 'user',
           content: [
             { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } },
-            { type: 'text', text: 'Analysiere diesen Baum SORGFÄLTIG. Achte besonders auf die Rindenstruktur. Bestimme Art (wissenschaftlicher Name), BHD und Gesundheit.' },
+            { type: 'text', text: `Analyze this tree CAREFULLY. Pay special attention to bark structure. Determine species (scientific name), DBH and health. Respond with reasoning in ${responseLang}.` },
           ],
         },
       ],

@@ -3320,6 +3320,25 @@
     "photographCrownDesc": "Foto der Baumkrone aufnehmen (optional).",
     "takeCrownPhoto": "Kronenfoto aufnehmen",
     "selectDamageType": "Schadursache wählen",
-    "damageSeverityScreen": "Schadausmaß"
+    "damageSeverityScreen": "Schadausmaß",
+    "bhdMeasure": "BHD messen",
+    "searchingCard": "Messkarte wird gesucht...",
+    "cardDetected": "Messkarte erkannt — nur Stammränder markieren",
+    "slideCardEdges": "Linien an die Kartenränder schieben",
+    "slideTrunkEdges": "Linien an die Stammränder schieben",
+    "slideK1K2": "Schiebe K1 und K2 an die Ränder der Karte",
+    "slideLR": "Schiebe L und R an die Stammränder",
+    "pinchZoom": "Zwei-Finger-Zoom für Präzision",
+    "bhdMeasured": "BHD gemessen",
+    "viaCard": "(Messkarte)",
+    "viaCreditCard": "(Kreditkarte)",
+    "cardConfirmed": "Karte bestätigt — weiter zum Stamm",
+    "calculateBhd": "BHD berechnen",
+    "correct": "Korrigieren",
+    "withoutMeasurement": "Ohne Messung weiter",
+    "refLong": "Breitseite (85,6 mm)",
+    "refShort": "Schmalseite (54 mm)",
+    "refTapToSwitch": "tippen zum Wechseln",
+    "photographCrown": "Kronenfoto"
   }
 }

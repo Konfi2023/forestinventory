@@ -2851,6 +2851,25 @@
     "photographCrownDesc": "Take a photo of the tree crown (optional).",
     "takeCrownPhoto": "Take Crown Photo",
     "selectDamageType": "Select damage type",
-    "damageSeverityScreen": "Damage Severity"
+    "damageSeverityScreen": "Damage Severity",
+    "bhdMeasure": "Measure DBH",
+    "searchingCard": "Searching for measurement card...",
+    "cardDetected": "Card detected — mark trunk edges only",
+    "slideCardEdges": "Slide lines to card edges",
+    "slideTrunkEdges": "Slide lines to trunk edges",
+    "slideK1K2": "Slide K1 and K2 to the card edges",
+    "slideLR": "Slide L and R to the trunk edges",
+    "pinchZoom": "Pinch to zoom for precision",
+    "bhdMeasured": "DBH measured",
+    "viaCard": "(measurement card)",
+    "viaCreditCard": "(credit card)",
+    "cardConfirmed": "Card confirmed — continue to trunk",
+    "calculateBhd": "Calculate DBH",
+    "correct": "Correct",
+    "withoutMeasurement": "Continue without measurement",
+    "refLong": "Long side (85.6 mm)",
+    "refShort": "Short side (54 mm)",
+    "refTapToSwitch": "tap to switch",
+    "photographCrown": "Crown Photo"
   }
 }

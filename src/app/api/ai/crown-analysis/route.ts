@@ -49,7 +49,8 @@ WICHTIG: crownDefoliation + crownCondition müssen zusammen 100% ergeben.`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64, mimeType, poiId } = await req.json();
+    const { imageBase64, mimeType, poiId, lang } = await req.json();
+    const responseLang = lang === 'en' ? 'English' : lang === 'es' ? 'Spanish' : lang === 'fr' ? 'French' : 'German';
 
     if (!imageBase64 || !mimeType) {
       return NextResponse.json({ error: 'imageBase64 und mimeType erforderlich' }, { status: 400 });
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
           role: 'user',
           content: [
             { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } },
-            { type: 'text', text: 'Analysiere diese Baumkrone. Bestimme Kronenverlichtung, Gesundheitsstufe und Schadmerkmale.' },
+            { type: 'text', text: `Analyze this tree crown. Determine crown defoliation, health grade and damage characteristics. Respond with reasoning in ${responseLang}.` },
           ],
         },
       ],

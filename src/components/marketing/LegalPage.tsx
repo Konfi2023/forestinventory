@@ -46,30 +46,46 @@ export function LegalPage({ namespace }: { namespace: 'privacy' | 'imprint' | 't
             {t.has(`sections.${i}.items.0`) && (
               <ul className="list-disc list-inside space-y-1 text-sm">
                 {Array.from({ length: 20 }, (_, j) => {
-                  try {
-                    const item = t(`sections.${i}.items.${j}`);
-                    return <li key={j}>{item}</li>;
-                  } catch { return null; }
+                  if (!t.has(`sections.${i}.items.${j}`)) return null;
+                  return <li key={j}>{t(`sections.${i}.items.${j}`)}</li>;
                 }).filter(Boolean)}
               </ul>
             )}
 
+            {/* Closing text after items */}
+            {t.has(`sections.${i}.closing`) && (
+              <p>{t(`sections.${i}.closing`)}</p>
+            )}
+
             {/* Subsections */}
-            {t.has(`sections.${i}.subsections.0.title`) && (
+            {(t.has(`sections.${i}.subsections.0.title`) || t.has(`sections.${i}.subsections.0.label`)) && (
               <div className="space-y-4 mt-4">
                 {Array.from({ length: 10 }, (_, j) => {
-                  try {
-                    const subTitle = t(`sections.${i}.subsections.${j}.title`);
-                    const subContent = t(`sections.${i}.subsections.${j}.content`);
-                    return (
-                      <div key={j}>
-                        <h3 className="text-sm font-semibold text-slate-300 mb-1">{subTitle}</h3>
-                        <p className="text-sm text-slate-400">{subContent}</p>
-                      </div>
-                    );
-                  } catch { return null; }
+                  if (!t.has(`sections.${i}.subsections.${j}.content`)) return null;
+                  const subTitle = t.has(`sections.${i}.subsections.${j}.title`)
+                    ? t(`sections.${i}.subsections.${j}.title`)
+                    : t.has(`sections.${i}.subsections.${j}.label`)
+                      ? t(`sections.${i}.subsections.${j}.label`)
+                      : null;
+                  return (
+                    <div key={j}>
+                      {subTitle && <h3 className="text-sm font-semibold text-slate-300 mb-1">{subTitle}</h3>}
+                      <p className="text-sm text-slate-400">{t(`sections.${i}.subsections.${j}.content`)}</p>
+                    </div>
+                  );
                 }).filter(Boolean)}
               </div>
+            )}
+
+            {/* Additional fields */}
+            {t.has(`sections.${i}.thirdPartyDisclaimer`) && (
+              <p>{t(`sections.${i}.thirdPartyDisclaimer`)}</p>
+            )}
+            {t.has(`sections.${i}.withdrawalAddress`) && (
+              <p className="font-medium">{t(`sections.${i}.withdrawalAddress`)}</p>
+            )}
+            {t.has(`sections.${i}.severability`) && (
+              <p>{t(`sections.${i}.severability`)}</p>
             )}
           </div>
         </section>

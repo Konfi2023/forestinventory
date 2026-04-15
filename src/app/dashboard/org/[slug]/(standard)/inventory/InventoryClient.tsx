@@ -1803,8 +1803,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Boden</h2>
-            <p className="text-slate-400 text-sm mb-1">Bodenbeschaffenheit und Feuchtigkeit angeben.</p>
-            <p className="text-xs text-red-400 mb-4">DEBUG locale: {debugLocale} | soilSandy: {t('soilSandy')}</p>
+            <p className="text-slate-400 text-sm mb-5">Bodenbeschaffenheit und Feuchtigkeit angeben.</p>
 
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">

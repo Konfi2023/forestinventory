@@ -64,8 +64,15 @@ export default async function AppPage() {
     }),
   ]);
 
-  const locale = await getLocale();
-  const messages = await getMessages();
+  // Sprache aus Organisation nehmen, nicht aus dem Geraet
+  const org = await prisma.organization.findUnique({
+    where: { id: firstOrg.id },
+    select: { defaultLanguage: true },
+  });
+  const orgLocale = org?.defaultLanguage ?? 'de';
+  const supportedLocales = ['de', 'en', 'es', 'fr'];
+  const locale = supportedLocales.includes(orgLocale) ? orgLocale : 'de';
+  const messages = (await import(`@/messages/${locale}.json`)).default;
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>

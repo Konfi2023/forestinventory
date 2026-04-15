@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
-import { getLocale, getMessages } from 'next-intl/server';
+import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { AppShell } from './AppShell';
 
@@ -64,8 +64,17 @@ export default async function AppPage() {
     }),
   ]);
 
-  const locale = await getLocale();
-  const messages = await getMessages();
+  // Locale direkt bestimmen: Cookie > Accept-Language > Default
+  const cookieStore = await cookies();
+  const headerStore = await headers();
+  const supportedLocales = ['de', 'en', 'es', 'fr'];
+  let locale = cookieStore.get('NEXT_LOCALE')?.value ?? '';
+  if (!supportedLocales.includes(locale)) {
+    const acceptLang = headerStore.get('accept-language') ?? '';
+    const browserLang = acceptLang.split(',')[0]?.split('-')[0]?.toLowerCase();
+    locale = supportedLocales.includes(browserLang) ? browserLang : 'de';
+  }
+  const messages = (await import(`@/messages/${locale}.json`)).default;
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>

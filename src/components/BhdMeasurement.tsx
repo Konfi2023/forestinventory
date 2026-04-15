@@ -290,34 +290,7 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
     lastPanPos.current = null;
   }
 
-  // Pinch-to-zoom for touch
-  function handleTouchMove(e: React.TouchEvent) {
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (lastPinchDist.current != null) {
-        const delta = dist / lastPinchDist.current;
-        setZoomScale(prev => Math.max(1, Math.min(8, prev * delta)));
-      }
-      lastPinchDist.current = dist;
-
-      // Pan with two fingers
-      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      if (lastPanPos.current) {
-        setPanX(prev => prev + cx - lastPanPos.current!.x);
-        setPanY(prev => prev + cy - lastPanPos.current!.y);
-      }
-      lastPanPos.current = { x: cx, y: cy };
-    }
-  }
-
-  function handleTouchEnd() {
-    lastPinchDist.current = null;
-    lastPanPos.current = null;
-  }
+  // Zoom disabled — caused crashes on mobile WebView
 
   function confirmPhase() {
     if (phase === 'card') {
@@ -377,15 +350,7 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
             {isResult && `${m('bhd')} ${bhdValue} cm`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {zoomScale > 1 && (
-            <button onClick={() => { setZoomScale(1); setPanX(0); setPanY(0); }}
-              className="text-slate-500 hover:text-white text-xs px-2 py-1 rounded border border-slate-700">
-              1x
-            </button>
-          )}
-          <button onClick={onSkip} className="text-slate-400 hover:text-white p-1"><X size={20} /></button>
-        </div>
+        <button onClick={onSkip} className="text-slate-400 hover:text-white p-1"><X size={20} /></button>
       </div>
 
       {/* Instruction */}
@@ -407,9 +372,6 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
                 {m('slideLR')}
               </p>
             )}
-            <p className="text-xs text-slate-600 flex items-center justify-content gap-1">
-              <ZoomIn size={10} /> {m('pinchZoom')}
-            </p>
           </div>
         )}
         {isResult && (
@@ -431,7 +393,6 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
             position: 'absolute',
             width: '100%', height: '100%',
             objectFit: 'contain',
-            transform: `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`,
             transformOrigin: 'center center',
             pointerEvents: 'none',
           }}
@@ -443,8 +404,6 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         />
       </div>
 

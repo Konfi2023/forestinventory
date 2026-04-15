@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'ForestManager',
   webDir: 'public',
   server: {
-    url: 'https://forest-manager.eu/signin',
+    url: 'https://forest-manager.eu/app',
     cleartext: false,
     allowNavigation: [
       'forest-manager.eu',

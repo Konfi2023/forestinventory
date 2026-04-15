@@ -482,9 +482,10 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     photoFileRef.current = file;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setPhotoPreview(ev.target?.result as string);
-      // Auto-open BHD measurement overlay after photo is loaded
+      // BHD overlay zuerst oeffnen, dann Bild setzen — verhindert
+      // dass der Kamera-Step kurz mit dem Foto sichtbar ist
       setBhdMeasureOpen(true);
+      setPhotoPreview(ev.target?.result as string);
     };
     reader.readAsDataURL(file);
     // Trigger GPS + locate silently in background

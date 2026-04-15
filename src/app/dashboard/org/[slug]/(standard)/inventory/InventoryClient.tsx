@@ -482,9 +482,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     photoFileRef.current = file;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setPhotoPreview(ev.target?.result as string);
-      // Auto-open BHD measurement overlay after photo is loaded
-      setBhdMeasureOpen(true);
+      const dataUrl = ev.target?.result as string;
+      // Pre-load image before showing BHD overlay to prevent flicker
+      const preload = new Image();
+      preload.onload = () => {
+        setPhotoPreview(dataUrl);
+        setBhdMeasureOpen(true);
+      };
+      preload.src = dataUrl;
     };
     reader.readAsDataURL(file);
     // Trigger GPS + locate silently in background
@@ -820,6 +825,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         <div style={{ display: bhdMeasureOpen ? 'contents' : 'none' }}>
           <BhdMeasurement
             photoSrc={photoPreview}
+            t={m}
             onMeasured={(bhdCm) => {
               setForm(f => ({ ...f, diameter: String(bhdCm) }));
               setBhdMethod('CARD');

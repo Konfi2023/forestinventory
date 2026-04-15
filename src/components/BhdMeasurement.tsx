@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, Check, RotateCcw, Loader2 } from 'lucide-react';
 import { detectCardMarkers, type CardDetectionResult } from '@/lib/card-detection';
-import { useTranslations } from 'next-intl';
 
 const CARD_LONG_MM = 85.6;
 const CARD_SHORT_MM = 54.0;
@@ -16,10 +15,10 @@ interface Props {
   photoSrc: string;
   onMeasured: (bhdCm: number) => void;
   onSkip: () => void;
+  t: (key: string) => string;
 }
 
-export function BhdMeasurement({ photoSrc, onMeasured, onSkip }: Props) {
-  const m = useTranslations('MobileApp');
+export function BhdMeasurement({ photoSrc, onMeasured, onSkip, t: m }: Props) {
   const [mode, setMode] = useState<Mode>('detecting');
   const [phase, setPhase] = useState<Phase>('card');
   const [cardResult, setCardResult] = useState<CardDetectionResult | null>(null);

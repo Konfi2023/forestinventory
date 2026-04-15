@@ -2,10 +2,10 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'eu.forestmanager.app',
-  appName: 'Forest Manager',
-  webDir: 'cap-www',
+  appName: 'ForestManager',
+  webDir: 'public',
   server: {
-    url: 'https://forest-manager.eu/app',
+    url: 'https://forest-manager.eu',
     cleartext: false,
     allowNavigation: [
       'forest-manager.eu',
@@ -16,17 +16,23 @@ const config: CapacitorConfig = {
   ios: {
     scheme: 'ForestManager',
     contentInset: 'automatic',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#faf9f6',
     preferredContentMode: 'mobile',
   },
   android: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#faf9f6',
     allowMixedContent: false,
   },
   plugins: {
+    SplashScreen: {
+      launchAutoHide: true,
+      launchShowDuration: 2000,
+      backgroundColor: '#faf9f6',
+      showSpinner: false,
+    },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#0f172a',
+      backgroundColor: '#faf9f6',
     },
   },
 };

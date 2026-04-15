@@ -209,7 +209,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
                     {!pile.synced && <span className="ml-2 text-xs text-amber-500 font-normal">{m('offlineLabel')}</span>}
                   </p>
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-slate-500 mt-1">
-                    {pile.volumeFm  != null && <span>{pile.volumeFm} fm</span>}
+                    {pile.volumeFm  != null && <span>{pile.volumeFm} {locale === 'de' ? 'fm' : 'm³'}</span>}
                     {pile.logLength != null && <span>{pile.logLength} m</span>}
                     {pile.layerCount != null && <span>{pile.layerCount} {m('layers')}</span>}
                     {pile.woodType  && <span>{m(WOOD_TYPE_KEYS.find(w => w.id === pile.woodType)?.tKey ?? 'woodLog')}</span>}

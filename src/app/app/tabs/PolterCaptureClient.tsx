@@ -130,7 +130,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
     reader.onload = ev => setForm(f => ({ ...f, imageFile: file, imageDataUrl: ev.target?.result as string }));
     reader.readAsDataURL(file);
     // GPS automatisch beim Foto erfassen
-    if (form.lat == null) getGPS();
+    getGPS();
   };
 
   const handleSave = async () => {
@@ -300,31 +300,26 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
           )}
         </div>
 
-        {/* GPS */}
-        <div>
-          <p className="text-xs font-medium text-slate-500 mb-2">GPS-Position *</p>
-          <button
-            onClick={getGPS}
-            disabled={gpsLoading}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-200 rounded-xl text-sm font-medium text-slate-700 transition-colors disabled:opacity-50"
-          >
-            {gpsLoading ? <RefreshCw size={16} className="animate-spin" /> : <MapPin size={16} className="text-emerald-400" />}
-            {gpsLoading ? t('detectingGps') : form.lat ? t('recaptureGps') : t('detectGps')}
-          </button>
-          {form.lat != null && (
-            <p className="mt-2 text-xs text-emerald-400 font-mono text-center">
-              {form.lat.toFixed(5)}, {form.lng!.toFixed(5)}
-            </p>
-          )}
-          {gpsError === 'insecure' && <p className="mt-2 text-xs text-red-400 text-center">{t('gpsRequiresHttps')}</p>}
-          {gpsError === 'denied'   && <p className="mt-2 text-xs text-amber-400 text-center">{t('gpsDenied')}</p>}
-          {gpsError === 'timeout'  && <p className="mt-2 text-xs text-amber-400 text-center">{t('gpsTimeout')}</p>}
-          {gpsError === 'unavailable' && <p className="mt-2 text-xs text-amber-400 text-center">{t('gpsUnavailable')}</p>}
-        </div>
+        {/* GPS Status (automatisch beim Foto) */}
+        {gpsLoading && (
+          <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
+            <RefreshCw size={14} className="animate-spin" /> {t('detectingGps')}
+          </div>
+        )}
+        {form.lat != null && (
+          <p className="text-xs text-emerald-400 font-mono text-center">
+            <MapPin size={12} className="inline mr-1" />{form.lat.toFixed(5)}, {form.lng!.toFixed(5)}
+          </p>
+        )}
+        {gpsError && (
+          <p className="text-xs text-amber-400 text-center">
+            {gpsError === 'insecure' ? t('gpsRequiresHttps') : gpsError === 'denied' ? t('gpsDenied') : gpsError === 'timeout' ? t('gpsTimeout') : t('gpsUnavailable')}
+          </p>
+        )}
 
         <button
           onClick={() => setStep('species')}
-          disabled={form.lat == null}
+          disabled={form.lat == null && !gpsLoading}
           className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           {t('continue')} <ChevronRight size={18} />
@@ -484,7 +479,7 @@ export function PolterCaptureClient({ forests, orgSlug }: Props) {
           min={0.5}
           max={100}
           step={0.5}
-          unit="fm"
+          unit={locale === 'de' ? 'fm' : 'm³'}
           label={t('volume')}
           decimals={1}
         />

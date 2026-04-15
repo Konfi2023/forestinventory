@@ -111,12 +111,10 @@
       // Funktion zum Oeffnen im System-Browser (ausserhalb der WebView)
       window.openExternalBrowser = function() {
         var url = 'https://forest-manager.eu/signin';
-        // Versuche Capacitor Browser Plugin
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-          window.Capacitor.Plugins.Browser.open({ url: url });
+        if (window.NativeBridge && window.NativeBridge.openInBrowser) {
+          window.NativeBridge.openInBrowser(url);
         } else {
-          // Fallback: Android Intent URL oeffnet System-Browser
-          window.open('intent://' + url.replace('https://', '') + '#Intent;scheme=https;action=android.intent.action.VIEW;end', '_system');
+          window.location.href = url;
         }
       };
 

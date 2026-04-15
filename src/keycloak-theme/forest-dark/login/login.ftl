@@ -8,8 +8,12 @@
     <title>${msg("loginTitle",(realm.displayName!'Forest Manager'))}</title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
     <link href="${url.resourcesPath}/css/styles.css?v=${.now?long}" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Polygon network background (app only) -->
+    <canvas id="forest-net-bg"></canvas>
+
     <!-- TOP NAVIGATION -->
     <div class="np-top-nav">
         <a href="https://forest-manager.eu" title="${msg('backToHome')}" style="text-decoration: none; display: flex; align-items: center;">
@@ -36,6 +40,12 @@
     <div class="np-auth-page">
         <div class="np-auth-container">
             <div class="np-auth-left">
+                <!-- App-only: Logo + Brand -->
+                <div class="app-logo-section">
+                    <img src="${url.resourcesPath}/img/medeina-logo.svg" alt="ForestManager">
+                    <div class="app-brand">Forest<span>Manager</span></div>
+                </div>
+
                 <div class="np-auth-heading">
                     <h1 class="np-auth-signup-title">${msg("loginWelcome")}</h1>
                     <p class="np-auth-subtitle">${msg("loginSubtitle")}</p>
@@ -86,18 +96,73 @@
         </div>
     </div>
     <script>
-    // Capacitor-App: "Zurück zur Startseite" ausblenden + Keyboard-Fix
     (function() {
       var isApp = navigator.userAgent.indexOf('CapacitorApp') > -1
         || window.Capacitor
         || document.URL.indexOf('capacitor://') === 0
         || document.URL.indexOf('https://localhost') === 0;
+
       if (isApp) {
-        var backLink = document.querySelector('.np-back-link');
-        if (backLink) backLink.style.display = 'none';
-        // Logo-Link auch deaktivieren (soll nicht zur Landingpage führen)
-        var logoLink = document.querySelector('.np-top-nav a[href*="forest-manager.eu"]');
-        if (logoLink) logoLink.removeAttribute('href');
+        document.body.classList.add('is-native-app');
+
+        // Animated polygon network background
+        var canvas = document.getElementById('forest-net-bg');
+        if (canvas) {
+          canvas.style.display = 'block';
+          var ctx = canvas.getContext('2d');
+          var w, h, nodes = [];
+
+          function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+          }
+          window.addEventListener('resize', resize);
+          resize();
+
+          var count = Math.min(80, Math.floor(w * h / 12000));
+          var connectDist = 200;
+
+          for (var i = 0; i < count; i++) {
+            nodes.push({
+              x: Math.random() * w, y: Math.random() * h,
+              vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
+              r: Math.random() * 2 + 1.5, pulse: Math.random() * Math.PI * 2
+            });
+          }
+
+          function draw() {
+            ctx.clearRect(0, 0, w, h);
+            var t = Date.now() * 0.001;
+            for (var i = 0; i < nodes.length; i++) {
+              for (var j = i + 1; j < nodes.length; j++) {
+                var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < connectDist) {
+                  var alpha = (1 - dist / connectDist) * 0.25;
+                  ctx.strokeStyle = 'rgba(43,87,65,' + alpha + ')';
+                  ctx.lineWidth = 0.8;
+                  ctx.beginPath();
+                  ctx.moveTo(nodes[i].x, nodes[i].y);
+                  ctx.lineTo(nodes[j].x, nodes[j].y);
+                  ctx.stroke();
+                }
+              }
+            }
+            for (var k = 0; k < nodes.length; k++) {
+              var n = nodes[k];
+              var p = Math.sin(t + n.pulse) * 0.4 + 0.6;
+              ctx.fillStyle = 'rgba(43,87,65,' + (p * 0.5) + ')';
+              ctx.beginPath();
+              ctx.arc(n.x, n.y, n.r * (0.8 + p * 0.4), 0, Math.PI * 2);
+              ctx.fill();
+              n.x += n.vx; n.y += n.vy;
+              if (n.x < 0 || n.x > w) n.vx *= -1;
+              if (n.y < 0 || n.y > h) n.vy *= -1;
+            }
+            requestAnimationFrame(draw);
+          }
+          draw();
+        }
       }
     })();
     </script>

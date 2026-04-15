@@ -8,8 +8,10 @@
     <title>${msg("registerTitle")}</title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
     <link href="${url.resourcesPath}/css/styles.css?v=${.now?long}" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+    <canvas id="forest-net-bg"></canvas>
     <!-- TOP NAVIGATION -->
     <div class="np-top-nav">
         <a href="https://forest-manager.eu" title="${msg('backToHome')}" style="text-decoration: none; display: flex; align-items: center;">
@@ -36,6 +38,11 @@
     <div class="np-auth-page">
         <div class="np-auth-container">
             <div class="np-auth-left" style="overflow-y: auto; max-height: calc(100vh - 100px);">
+                <div class="app-logo-section">
+                    <img src="${url.resourcesPath}/img/medeina-logo.svg" alt="ForestManager">
+                    <div class="app-brand">Forest<span>Manager</span></div>
+                </div>
+
                 <div class="np-auth-heading">
                     <h1 class="np-auth-signup-title">${msg("registerTitle")}</h1>
                     <p class="np-auth-subtitle">${msg("registerSubtitle")}</p>
@@ -102,10 +109,29 @@
         || document.URL.indexOf('capacitor://') === 0
         || document.URL.indexOf('https://localhost') === 0;
       if (isApp) {
-        var backLink = document.querySelector('.np-back-link');
-        if (backLink) backLink.style.display = 'none';
-        var logoLink = document.querySelector('.np-top-nav a[href*="forest-manager.eu"]');
-        if (logoLink) logoLink.removeAttribute('href');
+        document.body.classList.add('is-native-app');
+        var canvas = document.getElementById('forest-net-bg');
+        if (canvas) {
+          canvas.style.display = 'block';
+          var ctx = canvas.getContext('2d');
+          var w, h, nodes = [];
+          function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+          window.addEventListener('resize', resize); resize();
+          var count = Math.min(80, Math.floor(w * h / 12000));
+          for (var i = 0; i < count; i++) {
+            nodes.push({ x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*0.25, vy: (Math.random()-0.5)*0.25, r: Math.random()*2+1.5, pulse: Math.random()*Math.PI*2 });
+          }
+          function draw() {
+            ctx.clearRect(0,0,w,h); var t=Date.now()*0.001;
+            for(var i=0;i<nodes.length;i++) for(var j=i+1;j<nodes.length;j++) {
+              var dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,dist=Math.sqrt(dx*dx+dy*dy);
+              if(dist<200){ctx.strokeStyle='rgba(43,87,65,'+(1-dist/200)*0.25+')';ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.stroke();}
+            }
+            for(var k=0;k<nodes.length;k++){var n=nodes[k],p=Math.sin(t+n.pulse)*0.4+0.6;ctx.fillStyle='rgba(43,87,65,'+(p*0.5)+')';ctx.beginPath();ctx.arc(n.x,n.y,n.r*(0.8+p*0.4),0,Math.PI*2);ctx.fill();n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>w)n.vx*=-1;if(n.y<0||n.y>h)n.vy*=-1;}
+            requestAnimationFrame(draw);
+          }
+          draw();
+        }
       }
     })();
     </script>

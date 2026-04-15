@@ -119,3 +119,119 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
     .np-auth-page { padding-top: 70px; }
     .np-auth-left { width: 100%; max-width: 460px; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   CAPACITOR APP MODE — clean native-style login
+   ═══════════════════════════════════════════════════════════ */
+
+body.is-native-app {
+    background: #faf9f6 !important;
+    font-family: 'Nunito', 'Inter', sans-serif !important;
+}
+
+body.is-native-app .np-top-nav { display: none !important; }
+body.is-native-app .np-auth-right { display: none !important; }
+
+body.is-native-app .np-auth-page {
+    background: transparent !important;
+    padding-top: 0 !important;
+    position: relative !important;
+}
+
+body.is-native-app .np-auth-container {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    flex-direction: column;
+    gap: 0;
+    padding: 24px;
+}
+
+body.is-native-app .np-auth-left {
+    width: 100%;
+    max-width: 100%;
+    align-items: center;
+}
+
+/* App Logo + Brand */
+body.is-native-app .app-logo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+}
+body.is-native-app .app-logo-section img {
+    height: 72px;
+    margin-bottom: 12px;
+}
+body.is-native-app .app-logo-section .app-brand {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.3px;
+}
+body.is-native-app .app-logo-section .app-brand span {
+    color: #2b5741;
+}
+
+/* Hide original heading in app mode, show app-specific one */
+body.is-native-app .np-auth-heading {
+    text-align: center;
+    margin-bottom: 28px;
+}
+body.is-native-app .np-auth-signup-title {
+    font-size: 22px;
+    font-family: 'Nunito', sans-serif;
+}
+body.is-native-app .np-auth-subtitle {
+    font-size: 14px;
+}
+
+/* Inputs — larger touch targets */
+body.is-native-app .np-input {
+    height: 56px;
+    font-size: 17px;
+    border-radius: 14px;
+    border-color: rgba(0,0,0,0.1);
+    background: #ffffff !important;
+}
+body.is-native-app .np-input:focus {
+    border-color: #2b5741;
+    box-shadow: 0 0 0 3px rgba(43,87,65,0.12);
+}
+
+/* Button — medeina green */
+body.is-native-app .np-primary-button {
+    height: 56px;
+    border-radius: 14px;
+    background: #2b5741;
+    font-size: 17px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+}
+body.is-native-app .np-primary-button:hover {
+    background: #1e4030;
+    box-shadow: 0 4px 20px rgba(43,87,65,0.3);
+}
+
+/* Links */
+body.is-native-app .np-link { color: #2b5741; }
+body.is-native-app .np-link:hover { color: #1e4030; }
+body.is-native-app .np-forgot a { color: #8a8780; }
+body.is-native-app .np-forgot a:hover { color: #2b5741; }
+
+/* Network canvas background */
+body.is-native-app #forest-net-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.5;
+}
+body.is-native-app .np-auth-page {
+    z-index: 1;
+}
+
+/* Hide app-only elements in desktop mode */
+.app-logo-section { display: none; }
+#forest-net-bg { display: none; }

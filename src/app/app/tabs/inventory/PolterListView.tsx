@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { RefreshCw, PackageOpen, ChevronDown, Pencil, Trash2, X, Check } from 'lucide-react';
 import { db, type PendingLogPile } from '@/lib/inventory-db';
 import { TREE_SPECIES } from '@/lib/tree-species';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 const WOOD_TYPE_KEYS: { id: string; tKey: string }[] = [
   { id: 'LOG',        tKey: 'woodLog' },
@@ -49,7 +49,17 @@ interface Props {
 
 export function PolterListView({ orgSlug, forests }: Props) {
   const m = useTranslations('MobileApp');
+  const locale = useLocale();
+  const [speciesList, setSpeciesList] = useState<{ id: string; label: string }[]>([]);
   const [forestId, setForestId]     = useState(forests[0]?.id ?? '');
+
+  // Load species with correct locale
+  useEffect(() => {
+    fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100&lang=${locale}`)
+      .then(r => r.json())
+      .then(data => setSpeciesList(data.results ?? []))
+      .catch(() => {});
+  }, [orgSlug, locale]);
   const [piles, setPiles]           = useState<LogPileRow[]>([]);
   const [total, setTotal]           = useState<number | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -188,7 +198,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
         )}
 
         {piles.map(pile => {
-          const species = TREE_SPECIES.find(s => s.id === pile.treeSpecies);
+          const species = speciesList.find(s => s.id === pile.treeSpecies) ?? TREE_SPECIES.find(s => s.id === pile.treeSpecies);
           return (
             <div key={pile.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
               <div className="flex items-start gap-3 p-4">
@@ -251,6 +261,7 @@ export function PolterListView({ orgSlug, forests }: Props) {
       {editing && (
         <EditSheet
           pile={editing}
+          speciesList={speciesList}
           onClose={() => setEditing(null)}
           onSaved={updated => {
             setPiles(ps => ps.map(p => p.id === updated.id ? { ...p, ...updated } : p));
@@ -271,7 +282,8 @@ export function PolterListView({ orgSlug, forests }: Props) {
 }
 
 // ── EditSheet ──────────────────────────────────────────────────────────────────
-function EditSheet({ pile, onClose, onSaved }: {
+function EditSheet({ pile, speciesList, onClose, onSaved }: {
+  speciesList: { id: string; label: string }[];
   pile: LogPileRow;
   onClose: () => void;
   onSaved: (p: Partial<LogPileRow> & { id: string }) => void;
@@ -288,7 +300,8 @@ function EditSheet({ pile, onClose, onSaved }: {
   const [saveError,   setSaveError]   = useState<string | null>(null);
   const [search,      setSearch]      = useState('');
 
-  const filteredSpecies = TREE_SPECIES.filter(s => s.label.toLowerCase().includes(search.toLowerCase()));
+  const allSpecies = speciesList.length > 0 ? speciesList : TREE_SPECIES;
+  const filteredSpecies = allSpecies.filter(s => s.label.toLowerCase().includes(search.toLowerCase()));
   const tog = (val: string, current: string, set: (v: string) => void) => set(current === val ? '' : val);
 
   async function save() {

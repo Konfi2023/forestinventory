@@ -5,7 +5,7 @@ import { RefreshCw, TreePine, ChevronDown, Pencil, Trash2, X, Check, ClipboardLi
 import { DatePickerSheet, DateTrigger } from '../DatePickerSheet';
 import { db, type PendingTree } from '@/lib/inventory-db';
 import { TREE_SPECIES } from '@/lib/tree-species';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface Forest { id: string; name: string; }
 interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
@@ -82,7 +82,16 @@ interface Props {
 
 export function TreeListView({ orgSlug, forests, members = [] }: Props) {
   const m = useTranslations('MobileApp');
+  const locale = useLocale();
+  const [speciesList, setSpeciesList] = useState<{ id: string; label: string }[]>([]);
   const [forestId, setForestId]   = useState(forests[0]?.id ?? '');
+
+  useEffect(() => {
+    fetch(`/api/tree-species/search?orgSlug=${orgSlug}&limit=100&lang=${locale}`)
+      .then(r => r.json())
+      .then(data => setSpeciesList(data.results ?? []))
+      .catch(() => {});
+  }, [orgSlug, locale]);
   const [trees, setTrees]         = useState<TreeRow[]>([]);
   const [total, setTotal]         = useState<number | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -249,7 +258,7 @@ export function TreeListView({ orgSlug, forests, members = [] }: Props) {
         )}
 
         {trees.map((tree) => {
-          const species = TREE_SPECIES.find(s => s.id === tree.species);
+          const species = (speciesList.length > 0 ? speciesList : TREE_SPECIES).find(s => s.id === tree.species);
           return (
             <div key={tree.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
               {/* Baum-Info */}
@@ -402,7 +411,7 @@ function TaskSheet({ tree, orgSlug, members, onClose }: {
     setSaving(false);
   }
 
-  const species = TREE_SPECIES.find(s => s.id === tree.species);
+  const species = (speciesList.length > 0 ? speciesList : TREE_SPECIES).find(s => s.id === tree.species);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -572,7 +581,7 @@ function EditSheet({ tree, onClose, onSaved }: {
     }
   };
 
-  const filteredSpecies = TREE_SPECIES.filter(s =>
+  const filteredSpecies = (speciesList.length > 0 ? speciesList : TREE_SPECIES).filter(s =>
     s.label.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -814,7 +823,7 @@ function ConfirmDeleteSheet({ tree, onConfirm, onCancel }: {
   onCancel: () => void;
 }) {
   const m = useTranslations('MobileApp');
-  const species = TREE_SPECIES.find(s => s.id === tree.species);
+  const species = (speciesList.length > 0 ? speciesList : TREE_SPECIES).find(s => s.id === tree.species);
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/60" onClick={onCancel} />

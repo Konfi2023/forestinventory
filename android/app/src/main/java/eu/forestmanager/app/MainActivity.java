@@ -36,6 +36,9 @@ public class MainActivity extends BridgeActivity {
         WebView webView = getBridge().getWebView();
         WebSettings settings = webView.getSettings();
 
+        // Kein aggressives Caching — immer frisch vom Server laden
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+
         // Custom User-Agent damit Keycloak-Theme die App erkennt
         String ua = settings.getUserAgentString();
         settings.setUserAgentString(ua + " CapacitorApp/ForestManager");

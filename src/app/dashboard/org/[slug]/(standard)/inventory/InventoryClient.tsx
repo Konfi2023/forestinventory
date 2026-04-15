@@ -1437,6 +1437,35 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
             <h2 className="text-xl font-bold mb-1">Baumart & Maße</h2>
             <p className="text-slate-400 text-sm mb-5">Baumart bestätigen und Durchmesser eingeben.</p>
 
+            {/* KI-Vorschlag Banner */}
+            {aiResult && !form.species && aiResult.speciesLabel && (
+              <button
+                onClick={() => {
+                  const id = aiResult.speciesId ?? aiResult.species ?? '';
+                  setForm(f => ({ ...f, species: id }));
+                  if (aiResult.speciesLabel) setSelectedSpeciesLabel(aiResult.speciesLabel);
+                }}
+                className="w-full mb-4 flex items-center gap-3 bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 text-left hover:bg-violet-100 transition-colors"
+              >
+                <Sparkles size={16} className="text-violet-600 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-violet-800">
+                    KI-Vorschlag: {aiResult.speciesLabel}
+                  </p>
+                  <p className="text-xs text-violet-500">
+                    {aiResult.speciesConfidence != null && `${Math.round(aiResult.speciesConfidence * 100)}% Konfidenz`}
+                    {aiResult.reasoning && ` · ${aiResult.reasoning.substring(0, 80)}…`}
+                  </p>
+                </div>
+                <span className="text-xs font-semibold text-violet-600 shrink-0">Übernehmen</span>
+              </button>
+            )}
+            {aiStatus === 'analyzing' && !form.species && (
+              <div className="mb-4 flex items-center gap-2 bg-violet-50 border border-violet-100 rounded-xl px-4 py-3 text-xs text-violet-600">
+                <Loader2 size={14} className="animate-spin" /> KI analysiert Baumart…
+              </div>
+            )}
+
             {/* Durchmesser */}
             <div className="mb-5">
               <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -1610,9 +1639,32 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
               <ChevronLeft size={16} /> Zurück
             </button>
             <h2 className="text-xl font-bold mb-1">Kronengesundheit</h2>
-            <p className="text-slate-400 text-sm mb-5">
+            <p className="text-slate-400 text-sm mb-4">
               {crownAiResult ? 'KI-Vorschlag prüfen und bei Bedarf anpassen.' : 'Kronenvitalität und Schadmerkmale erfassen.'}
             </p>
+
+            {/* KI-Vorschlag Banner */}
+            {crownAiResult && (
+              <div className="mb-4 bg-violet-50 border border-violet-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700 mb-1">
+                  <Sparkles size={12} /> KI-Ergebnis übernommen
+                </div>
+                <p className="text-sm text-violet-800">
+                  Vitalität: <span className="font-semibold">{crownAiResult.crownCondition}%</span>
+                  <span className="text-violet-400 mx-1">·</span>
+                  {crownAiResult.health === 'HEALTHY' ? 'Gesund' : crownAiResult.health === 'DAMAGED' ? 'Geschädigt' : 'Abgestorben'}
+                  {crownAiResult.damageType && <span className="text-violet-400"> · {crownAiResult.damageType}</span>}
+                </p>
+                {crownAiResult.reasoning && (
+                  <p className="text-[11px] text-violet-500 mt-1">{crownAiResult.reasoning}</p>
+                )}
+              </div>
+            )}
+            {crownAiStatus === 'analyzing' && (
+              <div className="mb-4 flex items-center gap-2 bg-violet-50 border border-violet-100 rounded-xl px-4 py-3 text-xs text-violet-600">
+                <Loader2 size={14} className="animate-spin" /> KI analysiert Kronenzustand…
+              </div>
+            )}
 
             {/* Crown Condition (Vitalität) */}
             <div className="mb-5">

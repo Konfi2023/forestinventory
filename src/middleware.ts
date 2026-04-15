@@ -91,6 +91,11 @@ export function middleware(req: NextRequest) {
     res.headers.set('x-current-path', pathname);
 
     // Sicherstellen dass NEXT_LOCALE Cookie gesetzt ist (fuer /app, /dashboard etc.)
+    if (pathname.startsWith('/app')) {
+      const existingCookie = req.cookies.get('NEXT_LOCALE')?.value;
+      const al = req.headers.get('accept-language') ?? 'NONE';
+      console.log(`[LOCALE DEBUG] path=${pathname} cookie=${existingCookie ?? 'NONE'} accept-language=${al.substring(0, 30)}`);
+    }
     if (!req.cookies.get('NEXT_LOCALE')) {
       const acceptLang = req.headers.get('accept-language') ?? '';
       const browserLang = acceptLang.split(',')[0]?.split('-')[0]?.toLowerCase();

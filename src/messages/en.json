@@ -2870,6 +2870,8 @@
     "refLong": "Long side (85.6 mm)",
     "refShort": "Short side (54 mm)",
     "refTapToSwitch": "tap to switch",
-    "photographCrown": "Crown Photo"
+    "photographCrown": "Crown Photo",
+    "bhdMeasureHint": "Hold the measurement card or a credit card horizontally against the trunk. Diameter is measured after the photo.",
+    "apply": "Apply"
   }
 }

@@ -3339,6 +3339,8 @@
     "refLong": "Breitseite (85,6 mm)",
     "refShort": "Schmalseite (54 mm)",
     "refTapToSwitch": "tippen zum Wechseln",
-    "photographCrown": "Kronenfoto"
+    "photographCrown": "Kronenfoto",
+    "bhdMeasureHint": "Halte die Messkarte oder eine Kreditkarte quer an den Stamm. Nach dem Foto wird der Durchmesser gemessen.",
+    "apply": "Übernehmen"
   }
 }

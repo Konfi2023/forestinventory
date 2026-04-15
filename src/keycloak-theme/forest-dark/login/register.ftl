@@ -108,6 +108,18 @@
         || window.Capacitor
         || document.URL.indexOf('capacitor://') === 0
         || document.URL.indexOf('https://localhost') === 0;
+      // Funktion zum Oeffnen im System-Browser (ausserhalb der WebView)
+      window.openExternalBrowser = function() {
+        var url = 'https://forest-manager.eu/signin';
+        // Versuche Capacitor Browser Plugin
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+          window.Capacitor.Plugins.Browser.open({ url: url });
+        } else {
+          // Fallback: Android Intent URL oeffnet System-Browser
+          window.open('intent://' + url.replace('https://', '') + '#Intent;scheme=https;action=android.intent.action.VIEW;end', '_system');
+        }
+      };
+
       if (isApp) {
         document.body.classList.add('is-native-app');
 
@@ -125,7 +137,7 @@
             + '    Diese App ist die mobile Erweiterung der ForestManager Plattform.<br><br>'
             + '    Um ein Konto zu erstellen, registrieren Sie sich bitte auf unserer Webseite.'
             + '  </p>'
-            + '  <a href="https://forest-manager.eu/signin" target="_blank" rel="noopener"'
+            + '  <a href="#" id="app-register-btn" onclick="openExternalBrowser(); return false;"'
             + '     style="display:inline-block;padding:14px 36px;background:#2b5741;color:white;border-radius:14px;font-size:15px;font-weight:700;text-decoration:none;font-family:Nunito,sans-serif;">'
             + '    Auf forest-manager.eu registrieren'
             + '  </a>'

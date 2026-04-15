@@ -6,8 +6,10 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.webkit.GeolocationPermissions;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.os.Bundle;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -15,6 +17,7 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
+    private static final String BASE_URL = "https://forest-manager.eu";
 
     @Override
     public void onPostCreate(Bundle savedInstanceState) {
@@ -39,6 +42,46 @@ public class MainActivity extends BridgeActivity {
 
         // Geolocation in WebView erlauben
         settings.setGeolocationEnabled(true);
+
+        // WebViewClient: Landingpage abfangen und auf /signin umleiten
+        final WebViewClient originalWebClient = webView.getWebViewClient();
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+
+                // Landingpage abfangen: exakt "/" oder nur die Domain
+                if (url.equals(BASE_URL) || url.equals(BASE_URL + "/") ||
+                    url.equals(BASE_URL + "/de") || url.equals(BASE_URL + "/en") ||
+                    url.equals(BASE_URL + "/es") || url.equals(BASE_URL + "/fr")) {
+                    view.loadUrl(BASE_URL + "/signin?callbackUrl=/app");
+                    return true;
+                }
+
+                // Marketing-Seiten abfangen (Pricing, About, etc.)
+                if (url.startsWith(BASE_URL + "/pricing") ||
+                    url.startsWith(BASE_URL + "/about") ||
+                    url.startsWith(BASE_URL + "/legal") ||
+                    url.startsWith(BASE_URL + "/features")) {
+                    view.loadUrl(BASE_URL + "/app");
+                    return true;
+                }
+
+                return false;
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (originalWebClient != null) {
+                    originalWebClient.onPageFinished(view, url);
+                }
+                // Nochmal pruefen nach Redirect-Ketten
+                if (url.equals(BASE_URL) || url.equals(BASE_URL + "/") ||
+                    url.equals(BASE_URL + "/de") || url.equals(BASE_URL + "/en")) {
+                    view.loadUrl(BASE_URL + "/signin?callbackUrl=/app");
+                }
+            }
+        });
 
         // Den bestehenden Capacitor ChromeClient wrappen
         final WebChromeClient originalClient = webView.getWebChromeClient();

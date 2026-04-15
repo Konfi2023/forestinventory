@@ -2,6 +2,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
+import { getLocale, getMessages } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
 import { AppShell } from './AppShell';
 
 export const metadata = { title: 'ForestManager App' };
@@ -62,14 +64,19 @@ export default async function AppPage() {
     }),
   ]);
 
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <AppShell
-      orgs={orgs}
-      currentUserId={session.user.id}
-      initialOrgSlug={firstOrg.slug}
-      initialTasks={initialTasks as any}
-      initialForests={initialForests}
-      initialMembers={initialMembers.map(m => m.user)}
-    />
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <AppShell
+        orgs={orgs}
+        currentUserId={session.user.id}
+        initialOrgSlug={firstOrg.slug}
+        initialTasks={initialTasks as any}
+        initialForests={initialForests}
+        initialMembers={initialMembers.map(m => m.user)}
+      />
+    </NextIntlClientProvider>
   );
 }

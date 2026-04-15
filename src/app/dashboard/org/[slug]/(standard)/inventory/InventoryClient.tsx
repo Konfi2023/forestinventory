@@ -482,14 +482,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
     photoFileRef.current = file;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      // Pre-load image before showing BHD overlay to prevent flicker
-      const preload = new Image();
-      preload.onload = () => {
-        setPhotoPreview(dataUrl);
-        setBhdMeasureOpen(true);
-      };
-      preload.src = dataUrl;
+      setPhotoPreview(ev.target?.result as string);
+      // Auto-open BHD measurement overlay after photo is loaded
+      setBhdMeasureOpen(true);
     };
     reader.readAsDataURL(file);
     // Trigger GPS + locate silently in background
@@ -821,19 +816,17 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {photoPreview && (
-        <div style={{ display: bhdMeasureOpen ? 'contents' : 'none' }}>
-          <BhdMeasurement
-            photoSrc={photoPreview}
-            t={m}
-            onMeasured={(bhdCm) => {
-              setForm(f => ({ ...f, diameter: String(bhdCm) }));
-              setBhdMethod('CARD');
-              setBhdMeasureOpen(false);
-            }}
-            onSkip={() => setBhdMeasureOpen(false)}
-          />
-        </div>
+      {bhdMeasureOpen && photoPreview && (
+        <BhdMeasurement
+          photoSrc={photoPreview}
+          t={m}
+          onMeasured={(bhdCm) => {
+            setForm(f => ({ ...f, diameter: String(bhdCm) }));
+            setBhdMethod('CARD');
+            setBhdMeasureOpen(false);
+          }}
+          onSkip={() => setBhdMeasureOpen(false)}
+        />
       )}
       {/* Abbrechen-Bestätigung */}
       {showCancelConfirm && (

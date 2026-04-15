@@ -38,33 +38,36 @@ export function BhdMeasurement({ photoSrc, onMeasured, onSkip, t: m }: Props) {
   const imgSizeRef = useRef<{ w: number; h: number }>({ w: 1, h: 1 });
   const imgLoadedRef = useRef(false);
 
-  // Detect markers when image loads — no state change until ready
+  // Detect markers when image loads
   useEffect(() => {
     const img = imgRef.current;
     if (!img) return;
     const run = () => {
       imgSizeRef.current = { w: img.naturalWidth, h: img.naturalHeight };
       imgLoadedRef.current = true;
-      const result = detectCardMarkers(img);
-      setCardResult(result);
 
       const iw = img.naturalWidth;
       const center = iw / 2;
       const spread = iw * 0.1;
 
-      if (result.found) {
-        setTrunkLineL(center - spread);
-        setTrunkLineR(center + spread);
-        setPhase('trunk');
-        setMode('auto');
-      } else {
-        setCardLineL(center - spread * 0.3);
-        setCardLineR(center + spread * 0.3);
-        setTrunkLineL(center - spread);
-        setTrunkLineR(center + spread);
-        setPhase('card');
-        setMode('manual');
-      }
+      // Initialize lines immediately so something is visible
+      setTrunkLineL(center - spread);
+      setTrunkLineR(center + spread);
+      setCardLineL(center - spread * 0.3);
+      setCardLineR(center + spread * 0.3);
+
+      // Defer marker detection so the image renders first
+      requestAnimationFrame(() => {
+        const result = detectCardMarkers(img);
+        setCardResult(result);
+        if (result.found) {
+          setPhase('trunk');
+          setMode('auto');
+        } else {
+          setPhase('card');
+          setMode('manual');
+        }
+      });
     };
     if (img.complete && img.naturalWidth > 0) run();
     else img.onload = run;

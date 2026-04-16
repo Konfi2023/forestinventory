@@ -16,9 +16,10 @@ interface InventoryTabProps {
   forests: Forest[];
   orgSlug: string;
   members: Member[];
+  onCapturingChange?: (capturing: boolean) => void;
 }
 
-export function InventoryTab({ forests, orgSlug, members }: InventoryTabProps) {
+export function InventoryTab({ forests, orgSlug, members, onCapturingChange }: InventoryTabProps) {
   const t = useTranslations('MobileApp');
   const [subTab, setSubTab] = useState<SubTab>('capture');
 
@@ -50,7 +51,7 @@ export function InventoryTab({ forests, orgSlug, members }: InventoryTabProps) {
       <div className="flex-1 overflow-hidden">
         {subTab === 'capture' && (
           <div className="h-full overflow-y-auto">
-            <InventoryClient forests={forests} orgSlug={orgSlug} members={members} />
+            <InventoryClient forests={forests} orgSlug={orgSlug} members={members} onCapturingChange={onCapturingChange} />
           </div>
         )}
         {subTab === 'list' && <TreeListView orgSlug={orgSlug} forests={forests} members={members} />}

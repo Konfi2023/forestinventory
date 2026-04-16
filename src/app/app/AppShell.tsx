@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { ClipboardList, TreePine, PackageOpen, ChevronDown, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { TasksTab } from './tabs/TasksTab';
@@ -40,6 +40,7 @@ export function AppShell({
   const [loading, setLoading] = useState(false);
   const [orgPickerOpen, setOrgPickerOpen] = useState(false);
   const [orgSwitchConfirm, setOrgSwitchConfirm] = useState<string | null>(null);
+  const isCapturingRef = useRef(false);
 
   const currentOrg = orgs.find(o => o.slug === orgSlug) ?? orgs[0];
 
@@ -63,14 +64,14 @@ export function AppShell({
 
   const switchOrg = useCallback((slug: string) => {
     if (slug === orgSlug) { setOrgPickerOpen(false); return; }
-    // Bestätigungsdialog wenn auf Inventory oder Polter Tab
-    if (tab === 'inventory' || tab === 'polter') {
+    // Bestätigungsdialog nur wenn eine Erfassung aktiv ist
+    if (isCapturingRef.current) {
       setOrgSwitchConfirm(slug);
       setOrgPickerOpen(false);
     } else {
       doSwitchOrg(slug);
     }
-  }, [orgSlug, tab, doSwitchOrg]);
+  }, [orgSlug, doSwitchOrg]);
 
   const refreshTasks = useCallback(async () => {
     try {
@@ -257,7 +258,7 @@ export function AppShell({
           />
         </div>
         <div className="h-full" style={{ display: tab === 'inventory' ? 'block' : 'none' }}>
-          <InventoryTab key={`inv-${orgSlug}`} forests={forests} orgSlug={orgSlug} members={members} />
+          <InventoryTab key={`inv-${orgSlug}`} forests={forests} orgSlug={orgSlug} members={members} onCapturingChange={(v: boolean) => { isCapturingRef.current = v; }} />
         </div>
         <div className="h-full" style={{ display: tab === 'polter' ? 'block' : 'none' }}>
           <PolterTab key={`pol-${orgSlug}`} forests={forests} orgSlug={orgSlug} />

@@ -112,6 +112,7 @@ interface InventoryClientProps {
   orgSlug: string;
   members?: Member[];
   userId?: string;
+  onCapturingChange?: (capturing: boolean) => void;
 }
 
 interface TreeForm {
@@ -145,7 +146,7 @@ const EMPTY_FORM: TreeForm = {
   notes: '',
 };
 
-export function InventoryClient({ forests, orgSlug, members = [], userId = '' }: InventoryClientProps) {
+export function InventoryClient({ forests, orgSlug, members = [], userId = '', onCapturingChange }: InventoryClientProps) {
   const t = useTranslations('Inventory');
   const m = useTranslations('MobileApp');
   const locale = useLocale();
@@ -153,6 +154,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const contentRef = useRef<HTMLDivElement>(null);
   const setStep = useCallback((s: Step) => {
     _setStep(s);
+    // Melden ob eine Erfassung aktiv ist (nicht mode/saved/summary/plot-done)
+    const isCapturing = !['mode', 'saved', 'summary', 'plot-done', 'task'].includes(s);
+    onCapturingChange?.(isCapturing);
     requestAnimationFrame(() => {
       // Alle scrollbaren Container zuruecksetzen — eigener + alle Eltern
       if (contentRef.current) contentRef.current.scrollTop = 0;

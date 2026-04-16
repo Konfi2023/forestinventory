@@ -1295,7 +1295,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* BHD (Brusthöhendurchmesser) */}
         {step === 'bhd' && (
           <div className="p-4 flex flex-col items-center justify-center h-full">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1321,7 +1321,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Kronenfoto */}
         {step === 'crown' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('age')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1406,7 +1406,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Crown Vitality */}
         {step === 'crown-vitality' && (
           <div className="p-4 flex flex-col items-center justify-center h-full">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('crown')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1435,7 +1435,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Baumart */}
         {step === 'species' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('bhd')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1563,7 +1563,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Height */}
         {step === 'height' && (
           <div className="p-4 flex flex-col items-center justify-center h-full">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1597,7 +1597,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Age */}
         {step === 'age' && (
           <div className="p-4 flex flex-col items-center justify-center h-full">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('height')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1627,7 +1627,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Health */}
         {step === 'health' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('crown-vitality')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1691,7 +1691,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* DAMAGE: Schadursache + Schadausmass (nur bei Damaged/Dead/Felling) */}
         {step === 'damage' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('health')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1734,7 +1734,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Bestandstyp & Bestockungsgrad */}
         {step === 'stand' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('health')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1779,7 +1779,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 6: Boden */}
         {step === 'soil' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('stand')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1828,7 +1828,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 7: Exposition */}
         {step === 'exposition' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('soil')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1891,7 +1891,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 8: Notizen */}
         {step === 'notes' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('exposition')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -1920,7 +1920,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 9: Zusammenfassung & Speichern */}
         {step === 'review' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('notes')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>
@@ -2164,7 +2164,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 4b: Aufgabe erstellen */}
         {step === 'task' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 w-full">
               <button onClick={() => setStep('saved')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
                 <ChevronLeft size={16} /> {m('back')}
               </button>

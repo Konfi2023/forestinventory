@@ -863,7 +863,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         />
       )}
       {/* Header — versteckt auf Tuner-Screens */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: ['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'none' : undefined }}>
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: step === 'mode' || step === 'saved' || step === 'summary' || step === 'plot-done' ? undefined : 'none' }}>
         <div className="flex items-center gap-2">
           <TreePine size={20} className="text-emerald-600" />
           <span className="font-semibold text-sm">{m('forestInventory')}</span>
@@ -918,6 +918,18 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           )}
         </div>
       </div>
+
+      {/* Cancel-Button — immer sichtbar während aktiver Erfassung */}
+      {step !== 'mode' && step !== 'saved' && step !== 'summary' && step !== 'plot-done' && step !== 'task' && (
+        <div className="flex items-center justify-end px-4 py-1.5 shrink-0">
+          <button
+            onClick={() => setShowCancelConfirm(true)}
+            className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors"
+          >
+            <X size={12} /> {m('cancel')}
+          </button>
+        </div>
+      )}
 
       {/* Aktiver Plot-Banner */}
       {mode === 'plot' && plotSession && step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'summary' && (

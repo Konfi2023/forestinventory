@@ -862,8 +862,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           onImported={() => setShowImport(false)}
         />
       )}
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0">
+      {/* Header — versteckt auf Tuner-Screens */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: ['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'none' : undefined }}
         <div className="flex items-center gap-2">
           <TreePine size={20} className="text-emerald-600" />
           <span className="font-semibold text-sm">{m('forestInventory')}</span>
@@ -932,7 +932,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       )}
 
       {/* Steps Indicator */}
-      {step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'saved' && step !== 'summary' && step !== 'task' && (() => {
+      {step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'saved' && step !== 'summary' && step !== 'task' && step !== 'bhd' && step !== 'height' && step !== 'age' && step !== 'crown-vitality' && (() => {
         const steps = mode === 'plot' ? PLOT_STEPS : SINGLE_STEPS;
         const idx = steps.indexOf(step);
         if (idx < 0) return null;
@@ -945,8 +945,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         );
       })()}
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Content — kein Scroll auf Tuner-Screens */}
+      <div className={`flex-1 ${['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'overflow-hidden' : 'overflow-y-auto'}`}>
 
         {/* MODE: Auswahl */}
         {step === 'mode' && (

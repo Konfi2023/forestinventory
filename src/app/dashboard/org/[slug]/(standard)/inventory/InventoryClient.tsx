@@ -153,7 +153,9 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const contentRef = useRef<HTMLDivElement>(null);
   const setStep = useCallback((s: Step) => {
     _setStep(s);
-    if (contentRef.current) contentRef.current.scrollTop = 0;
+    requestAnimationFrame(() => {
+      if (contentRef.current) contentRef.current.scrollTop = 0;
+    });
   }, []);
   const [showImport, setShowImport] = useState(false);
   const [mode, setMode] = useState<'single' | 'plot' | null>(null);
@@ -867,8 +869,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           onImported={() => setShowImport(false)}
         />
       )}
-      {/* Header — versteckt auf Tuner-Screens */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: step === 'mode' || step === 'saved' || step === 'summary' || step === 'plot-done' ? undefined : 'none' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: ['mode', 'saved', 'summary', 'plot-done'].includes(step) ? undefined : 'none' }}>
         <div className="flex items-center gap-2">
           <TreePine size={20} className="text-emerald-600" />
           <span className="font-semibold text-sm">{m('forestInventory')}</span>
@@ -923,18 +925,6 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
           )}
         </div>
       </div>
-
-      {/* Cancel-Button — immer sichtbar während aktiver Erfassung */}
-      {step !== 'mode' && step !== 'saved' && step !== 'summary' && step !== 'plot-done' && step !== 'task' && (
-        <div className="flex items-center justify-end px-4 py-1.5 shrink-0">
-          <button
-            onClick={() => setShowCancelConfirm(true)}
-            className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors"
-          >
-            <X size={12} /> {m('cancel')}
-          </button>
-        </div>
-      )}
 
       {/* Aktiver Plot-Banner */}
       {mode === 'plot' && plotSession && step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'summary' && (
@@ -1695,9 +1685,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* DAMAGE: Schadursache + Schadausmass (nur bei Damaged/Dead/Felling) */}
         {step === 'damage' && (
           <div className="p-4">
-            <button onClick={() => setStep('health')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('health')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('damageType')}</h2>
             <p className="text-slate-400 text-sm mb-5">{m('selectDamageType')}</p>
 

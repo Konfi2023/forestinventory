@@ -154,7 +154,13 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const setStep = useCallback((s: Step) => {
     _setStep(s);
     requestAnimationFrame(() => {
+      // Alle scrollbaren Container zuruecksetzen — eigener + alle Eltern
       if (contentRef.current) contentRef.current.scrollTop = 0;
+      let el = contentRef.current?.parentElement;
+      while (el) {
+        if (el.scrollTop > 0) el.scrollTop = 0;
+        el = el.parentElement;
+      }
     });
   }, []);
   const [showImport, setShowImport] = useState(false);

@@ -863,7 +863,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         />
       )}
       {/* Header — versteckt auf Tuner-Screens */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: ['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'none' : undefined }}
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: ['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'none' : undefined }}>
         <div className="flex items-center gap-2">
           <TreePine size={20} className="text-emerald-600" />
           <span className="font-semibold text-sm">{m('forestInventory')}</span>

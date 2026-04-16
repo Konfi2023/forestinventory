@@ -932,7 +932,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       )}
 
       {/* Steps Indicator */}
-      {step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'saved' && step !== 'summary' && step !== 'task' && step !== 'bhd' && step !== 'height' && step !== 'age' && step !== 'crown-vitality' && (() => {
+      {step !== 'mode' && step !== 'plot-setup' && step !== 'plot-done' && step !== 'saved' && step !== 'summary' && step !== 'task' && (() => {
         const steps = mode === 'plot' ? PLOT_STEPS : SINGLE_STEPS;
         const idx = steps.indexOf(step);
         if (idx < 0) return null;
@@ -945,8 +945,8 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         );
       })()}
 
-      {/* Content — kein Scroll auf Tuner-Screens */}
-      <div className={`flex-1 ${['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+      {/* Content */}
+      <div className={`flex-1 ${['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'overflow-hidden' : 'overflow-y-auto'}`} style={['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? { touchAction: 'pan-x', overscrollBehavior: 'none' } : undefined}>
 
         {/* MODE: Auswahl */}
         {step === 'mode' && (

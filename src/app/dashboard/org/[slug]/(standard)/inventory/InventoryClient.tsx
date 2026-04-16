@@ -876,7 +876,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         />
       )}
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: ['mode', 'saved', 'summary', 'plot-done'].includes(step) ? undefined : 'none' }}>
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0" style={{ display: ['saved', 'summary', 'plot-done'].includes(step) ? undefined : 'none' }}>
         <div className="flex items-center gap-2">
           <TreePine size={20} className="text-emerald-600" />
           <span className="font-semibold text-sm">{m('forestInventory')}</span>
@@ -963,47 +963,48 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
 
         {/* MODE: Auswahl */}
         {step === 'mode' && (
-          <div className="p-6 flex flex-col gap-4 pt-10">
-            <div className="text-center mb-4">
+          <div className="p-5 flex flex-col gap-3 h-full justify-center">
+            <div className="text-center mb-2">
               <h2 className="text-2xl font-bold mb-1">{m('startCapture')}</h2>
               <p className="text-slate-400 text-sm">{m('howToMeasure')}</p>
             </div>
             <button
               onClick={() => { setMode('single'); setStep('camera'); }}
-              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 rounded-2xl transition-colors text-left shadow-sm"
+              className="w-full flex flex-col items-start gap-1 px-5 py-4 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 rounded-2xl transition-colors text-left shadow-sm"
             >
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2">
                 <TreePine size={22} className="text-emerald-600" />
                 <span className="text-lg font-bold">{m('singleTree')}</span>
               </div>
-              <p className="text-sm text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-400 leading-relaxed">
                 {m('singleTreeDesc')}
               </p>
             </button>
             <button
               onClick={() => { setMode('plot'); setStep('plot-setup'); captureGps(); }}
-              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-white hover:bg-violet-50 border border-slate-200 hover:border-violet-400 rounded-2xl transition-colors text-left shadow-sm"
+              className="w-full flex flex-col items-start gap-1 px-5 py-4 bg-white hover:bg-violet-50 border border-slate-200 hover:border-violet-400 rounded-2xl transition-colors text-left shadow-sm"
             >
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2">
                 <CircleDot size={22} className="text-violet-600" />
                 <span className="text-lg font-bold">{m('plotSample')}</span>
               </div>
-              <p className="text-sm text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-400 leading-relaxed">
                 {m('plotSampleDesc')}
               </p>
             </button>
-            <button
+            {/* Import Data — ausgeblendet, Funktion bleibt erhalten */}
+            {false && <button
               onClick={() => setShowImport(true)}
-              className="w-full flex flex-col items-start gap-1.5 px-5 py-5 bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-400 rounded-2xl transition-colors text-left shadow-sm"
+              className="w-full flex flex-col items-start gap-1 px-5 py-4 bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-400 rounded-2xl transition-colors text-left shadow-sm"
             >
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2">
                 <Upload size={22} className="text-amber-600" />
                 <span className="text-lg font-bold">{m('dataImport')}</span>
               </div>
-              <p className="text-sm text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-400 leading-relaxed">
                 {m('dataImportDesc')}
               </p>
-            </button>
+            </button>}
             {(pendingCount > 0 || sessionTrees.length > 0) && (
               <button onClick={() => setStep('summary')}
                 className="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm text-slate-700 transition-colors">

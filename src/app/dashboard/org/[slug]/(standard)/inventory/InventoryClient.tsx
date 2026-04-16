@@ -149,7 +149,12 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
   const t = useTranslations('Inventory');
   const m = useTranslations('MobileApp');
   const locale = useLocale();
-  const [step, setStep] = useState<Step>('mode');
+  const [step, _setStep] = useState<Step>('mode');
+  const contentRef = useRef<HTMLDivElement>(null);
+  const setStep = useCallback((s: Step) => {
+    _setStep(s);
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  }, []);
   const [showImport, setShowImport] = useState(false);
   const [mode, setMode] = useState<'single' | 'plot' | null>(null);
   const [form, setForm] = useState<TreeForm>(EMPTY_FORM);
@@ -958,7 +963,7 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
       })()}
 
       {/* Content */}
-      <div className={`flex-1 ${['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'overflow-hidden' : 'overflow-y-auto'}`} style={['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? { touchAction: 'pan-x', overscrollBehavior: 'none' } : undefined}>
+      <div ref={contentRef} className={`flex-1 ${['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? 'overflow-hidden' : 'overflow-y-auto'}`} style={['bhd', 'height', 'age', 'crown-vitality'].includes(step) ? { touchAction: 'pan-x', overscrollBehavior: 'none' } : undefined}>
 
         {/* MODE: Auswahl */}
         {step === 'mode' && (

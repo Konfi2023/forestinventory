@@ -1294,9 +1294,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* BHD (Brusthöhendurchmesser) */}
         {step === 'bhd' && (
           <div className="p-4 flex flex-col items-center justify-center h-full">
-            <button onClick={() => setStep('camera')} className="self-start flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('camera')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-2">{m('bhdScreen')}</h2>
             <RotaryTuner
               value={form.diameter ? parseFloat(form.diameter) : 25}
@@ -1315,9 +1320,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Kronenfoto */}
         {step === 'crown' && (
           <div className="p-4">
-            <button onClick={() => setStep('age')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('age')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('photographCrown')}</h2>
             <p className="text-slate-400 text-sm mb-5">{m('photographCrownDesc')}</p>
 
@@ -1395,9 +1405,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Crown Vitality */}
         {step === 'crown-vitality' && (
           <div className="p-4 flex flex-col items-center justify-center h-full">
-            <button onClick={() => setStep('crown')} className="self-start flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('crown')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-2">{m('crownVitalityScreen')}</h2>
             <RotaryTuner
               value={formCrownCondition ? parseInt(formCrownCondition) : (crownAiResult?.crownCondition ?? 85)}
@@ -1419,9 +1434,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Baumart */}
         {step === 'species' && (
           <div className="p-4">
-            <button onClick={() => setStep('bhd')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('bhd')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('speciesAndMeasure')}</h2>
             <p className="text-slate-400 text-sm mb-5">{m('speciesConfirm')}</p>
 
@@ -1542,9 +1562,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Height */}
         {step === 'height' && (
           <div className="p-4 flex flex-col items-center justify-center h-full">
-            <button onClick={() => setStep('species')} className="self-start flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('species')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-2">{m('heightScreen')}</h2>
             <RotaryTuner
               value={form.height ? parseFloat(form.height) : (() => {
@@ -1571,9 +1596,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Age */}
         {step === 'age' && (
           <div className="p-4 flex flex-col items-center justify-center h-full">
-            <button onClick={() => setStep('height')} className="self-start flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('height')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-2">{m('ageScreen')}</h2>
             <RotaryTuner
               value={form.age ? parseInt(form.age) : 50}
@@ -1596,9 +1626,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Health */}
         {step === 'health' && (
           <div className="p-4">
-            <button onClick={() => setStep('crown-vitality')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('crown-vitality')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('crownHealth')}</h2>
             <p className="text-slate-400 text-sm mb-4">
               {crownAiResult ? m('crownHealthAiDesc') : m('crownHealthDesc')}
@@ -1693,9 +1728,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* Bestandstyp & Bestockungsgrad */}
         {step === 'stand' && (
           <div className="p-4">
-            <button onClick={() => setStep('health')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('health')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('standSection')}</h2>
             <p className="text-slate-400 text-sm mb-5">{m('standDesc')}</p>
 
@@ -1733,9 +1773,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 6: Boden */}
         {step === 'soil' && (
           <div className="p-4">
-            <button onClick={() => setStep('stand')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('stand')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('soilSection')}</h2>
             <p className="text-slate-400 text-sm mb-5">{m('soilDesc')}</p>
 
@@ -1777,9 +1822,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 7: Exposition */}
         {step === 'exposition' && (
           <div className="p-4">
-            <button onClick={() => setStep('soil')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('soil')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('exposition')}</h2>
             <p className="text-slate-400 text-sm mb-5">{m('expositionDesc')}</p>
 
@@ -1835,9 +1885,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 8: Notizen */}
         {step === 'notes' && (
           <div className="p-4">
-            <button onClick={() => setStep('exposition')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('exposition')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('notesSection')}</h2>
             <p className="text-slate-400 text-sm mb-5">{m('notesDesc')}</p>
 
@@ -1859,9 +1914,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 9: Zusammenfassung & Speichern */}
         {step === 'review' && (
           <div className="p-4">
-            <button onClick={() => setStep('notes')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('notes')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('review')}</h2>
             <p className="text-slate-400 text-sm mb-5">{m('reviewDesc')}</p>
 
@@ -2098,9 +2158,14 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '' }:
         {/* SCHRITT 4b: Aufgabe erstellen */}
         {step === 'task' && (
           <div className="p-4">
-            <button onClick={() => setStep('saved')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-900">
-              <ChevronLeft size={16} /> {m('back')}
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setStep('saved')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+                <ChevronLeft size={16} /> {m('back')}
+              </button>
+              <button onClick={() => setShowCancelConfirm(true)} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg">
+                <X size={12} /> {m('cancel')}
+              </button>
+            </div>
             <h2 className="text-xl font-bold mb-1">{m('addTask')}</h2>
             <p className="text-slate-400 text-sm mb-5">
               {m('taskDesc')}

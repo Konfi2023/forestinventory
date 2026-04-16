@@ -39,11 +39,13 @@ export function AppShell({
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [loading, setLoading] = useState(false);
   const [orgPickerOpen, setOrgPickerOpen] = useState(false);
+  const [orgSwitchConfirm, setOrgSwitchConfirm] = useState<string | null>(null);
 
   const currentOrg = orgs.find(o => o.slug === orgSlug) ?? orgs[0];
 
-  const switchOrg = useCallback(async (slug: string) => {
+  const doSwitchOrg = useCallback(async (slug: string) => {
     setOrgPickerOpen(false);
+    setOrgSwitchConfirm(null);
     if (slug === orgSlug) return;
     setLoading(true);
     setOrgSlug(slug);
@@ -58,6 +60,17 @@ export function AppShell({
     } catch { /* Offline – alte Daten behalten */ }
     setLoading(false);
   }, [orgSlug]);
+
+  const switchOrg = useCallback((slug: string) => {
+    if (slug === orgSlug) { setOrgPickerOpen(false); return; }
+    // Bestätigungsdialog wenn auf Inventory oder Polter Tab
+    if (tab === 'inventory' || tab === 'polter') {
+      setOrgSwitchConfirm(slug);
+      setOrgPickerOpen(false);
+    } else {
+      doSwitchOrg(slug);
+    }
+  }, [orgSlug, tab, doSwitchOrg]);
 
   const refreshTasks = useCallback(async () => {
     try {
@@ -206,10 +219,35 @@ export function AppShell({
         <div className="h-0.5 bg-emerald-500 animate-pulse shrink-0" />
       )}
 
-      {/* Tab Content — alle Tabs bleiben gemounted, inaktive werden versteckt */}
+      {/* Bestätigungsdialog bei Betriebswechsel während Erfassung */}
+      {orgSwitchConfirm && (
+        <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">{t('cancelConfirmTitle')}</h3>
+            <p className="text-sm text-slate-500 mb-6">{t('cancelConfirmDesc')}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setOrgSwitchConfirm(null)}
+                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-colors"
+              >
+                {t('continueCapture')}
+              </button>
+              <button
+                onClick={() => doSwitchOrg(orgSwitchConfirm)}
+                className="flex-1 py-3 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors"
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Content — key={orgSlug} erzwingt Remount bei Betriebswechsel */}
       <div className="flex-1 overflow-hidden relative">
         <div className="h-full" style={{ display: tab === 'tasks' ? 'block' : 'none' }}>
           <TasksTab
+            key={`tasks-${orgSlug}`}
             tasks={tasks}
             forests={forests}
             members={members}
@@ -219,10 +257,10 @@ export function AppShell({
           />
         </div>
         <div className="h-full" style={{ display: tab === 'inventory' ? 'block' : 'none' }}>
-          <InventoryTab forests={forests} orgSlug={orgSlug} members={members} />
+          <InventoryTab key={`inv-${orgSlug}`} forests={forests} orgSlug={orgSlug} members={members} />
         </div>
         <div className="h-full" style={{ display: tab === 'polter' ? 'block' : 'none' }}>
-          <PolterTab forests={forests} orgSlug={orgSlug} />
+          <PolterTab key={`pol-${orgSlug}`} forests={forests} orgSlug={orgSlug} />
         </div>
       </div>
 

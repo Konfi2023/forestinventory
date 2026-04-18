@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getApiUser } from '@/lib/api-auth';
 import { TaskStatus } from '@prisma/client';
 
 const VALID_STATUSES: TaskStatus[] = ['OPEN', 'IN_PROGRESS', 'BLOCKED', 'REVIEW', 'DONE'];
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const orgSlug = searchParams.get('orgSlug');
@@ -25,7 +24,7 @@ export async function GET(req: Request) {
     where: { slug: orgSlug },
     include: {
       members: {
-        where: { userId: session.user.id },
+        where: { userId: user.id },
         include: { role: true },
       },
     },

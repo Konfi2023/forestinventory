@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
 export async function PATCH(
@@ -8,8 +7,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await getApiUser(req);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id: poiId } = await params;
     const body = await req.json();
@@ -24,7 +23,7 @@ export async function PATCH(
     // Zugriff prüfen
     const poi = await prisma.forestPoi.findUnique({
       where: { id: poiId },
-      include: { forest: { include: { organization: { include: { members: { where: { userId: session.user.id } } } } } } },
+      include: { forest: { include: { organization: { include: { members: { where: { userId: user.id } } } } } } },
     });
 
     if (!poi || !poi.forest.organization.members[0]) {
@@ -61,7 +60,7 @@ export async function PATCH(
       await prisma.treeMeasurement.create({
         data: {
           poiId,
-          measuredById:   session.user.id,
+          measuredById:   user.id,
           diameter:       parsedDiameter  ?? null,
           height:         parsedHeight    ?? null,
           soilMoisture:   soilMoisture    ?? null,
@@ -85,14 +84,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await getApiUser(req);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id: poiId } = await params;
 
     const poi = await prisma.forestPoi.findUnique({
       where: { id: poiId },
-      include: { forest: { include: { organization: { include: { members: { where: { userId: session.user.id } } } } } } },
+      include: { forest: { include: { organization: { include: { members: { where: { userId: user.id } } } } } } },
     });
 
     if (!poi || !poi.forest.organization.members[0]) {

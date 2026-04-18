@@ -3,7 +3,7 @@
 	"appName": "ForestManager",
 	"webDir": "public",
 	"server": {
-		"url": "https://forest-manager.eu/app",
+		"url": "https://forest-manager.eu/app?v=2",
 		"cleartext": false,
 		"allowNavigation": [
 			"forest-manager.eu",

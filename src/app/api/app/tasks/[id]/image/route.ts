@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 import { uploadFile, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '@/lib/storage';
 
@@ -8,15 +7,15 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id: taskId } = await params;
 
   // Prüfen ob Task existiert und User Zugriff hat
   const task = await prisma.task.findUnique({
     where: { id: taskId },
-    include: { forest: { include: { organization: { include: { members: { where: { userId: session.user.id } } } } } } },
+    include: { forest: { include: { organization: { include: { members: { where: { userId: user.id } } } } } } },
   });
 
   if (!task || !task.forest.organization.members[0]) {
@@ -56,11 +55,11 @@ export async function POST(
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id: taskId } = await params;
 
@@ -71,7 +70,7 @@ export async function GET(
       forest: {
         include: {
           organization: {
-            include: { members: { where: { userId: session.user.id } } },
+            include: { members: { where: { userId: user.id } } },
           },
         },
       },

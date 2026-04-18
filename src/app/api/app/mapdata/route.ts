@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await getApiUser(req);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const orgSlug = req.nextUrl.searchParams.get('orgSlug');
     if (!orgSlug) return NextResponse.json({ error: 'orgSlug fehlt' }, { status: 400 });
@@ -15,7 +14,7 @@ export async function GET(req: NextRequest) {
       where: { slug: orgSlug },
       include: {
         members: {
-          where: { userId: session.user.id },
+          where: { userId: user.id },
           include: { role: true },
         },
       },
@@ -117,7 +116,7 @@ export async function GET(req: NextRequest) {
       forests,
       tasks,
       members: [],
-      currentUserId: session.user.id,
+      currentUserId: user.id,
       orgSlug,
       permissions,
     });

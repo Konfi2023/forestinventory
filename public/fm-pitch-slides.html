@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Forest Manager – Pitch Slides</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',system-ui,sans-serif;background:#0a0a0a;color:#fff;}
+  .slide{width:1280px;height:720px;margin:0 auto 40px;position:relative;overflow:hidden;padding:64px 80px;page-break-after:always;}
+  @media print{.slide{margin:0;page-break-after:always;}}
+
+  h1{font-size:44px;font-weight:700;line-height:1.12;letter-spacing:-0.8px;}
+  h2{font-size:18px;font-weight:600;color:#fff;}
+  .green{color:#4ade80;}
+  .label{font-size:10px;text-transform:uppercase;letter-spacing:2.5px;font-weight:600;color:#4ade80;margin-bottom:14px;}
+  .desc{font-size:14px;color:#94a3b8;line-height:1.6;}
+  .desc-sm{font-size:12px;color:#7f8ea3;line-height:1.5;}
+  .stat{font-size:40px;font-weight:700;color:#4ade80;}
+  .stat-label{font-size:11px;color:#64748b;margin-top:2px;}
+  .card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:24px;}
+  .pill{display:inline-flex;font-size:10px;font-weight:500;color:#4ade80;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.15);border-radius:12px;padding:3px 12px;}
+  .footer{position:absolute;bottom:24px;left:80px;right:80px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#475569;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 1: Problem + Vision
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:linear-gradient(135deg,#0a0a0a,#111827);">
+
+  <!-- Logo -->
+  <div style="margin-bottom:48px;">
+    <svg height="28" viewBox="0 0 285 47" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="m0" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="47" height="47"><rect width="47" height="47" fill="#D9D9D9"/></mask>
+      <g mask="url(#m0)"><path d="M23.5116 43.4812C20.42 43.0973 17.6472 42.3101 15.1931 41.1194C12.7386 39.9287 10.6533 38.3753 8.93716 36.4591C7.22134 34.5425 5.90322 32.3142 4.9828 29.7743C4.06271 27.2347 3.587 24.4197 3.55566 21.3295C7.20828 21.6653 10.2886 22.2987 12.7965 23.2295C15.3045 24.1604 17.3453 25.4966 18.9188 27.2382C20.4926 28.9799 21.636 31.1753 22.3488 33.8246C23.0616 36.4742 23.4492 39.6931 23.5116 43.4812ZM23.4998 25.9639C22.7256 24.7902 21.6608 23.6485 20.3053 22.5387C18.9498 21.429 17.4078 20.4523 15.6792 19.6086C15.8829 18.2691 16.221 16.8708 16.6936 15.4138C17.1662 13.9568 17.7405 12.5126 18.4165 11.081C19.0928 9.64947 19.8627 8.26134 20.7263 6.91662C21.5896 5.57222 22.5102 4.33407 23.4881 3.20215C24.4738 4.34941 25.3983 5.59344 26.2616 6.93424C27.1252 8.27505 27.8971 9.66122 28.5773 11.0928C29.2572 12.524 29.8334 13.9663 30.306 15.4197C30.7786 16.8728 31.1168 18.2691 31.3204 19.6086C29.6075 20.4197 28.0773 21.3761 26.7296 22.478C25.3816 23.5799 24.305 24.7419 23.4998 25.9639ZM27.885 42.5573C27.7962 40.0852 27.5994 37.847 27.2946 35.8427C26.9897 33.8383 26.5359 31.975 25.9331 30.2526C27.5138 27.5779 29.7012 25.4335 32.4954 23.8195C35.2896 22.2058 38.9352 21.3758 43.4322 21.3295C43.3869 26.5647 41.9883 31.049 39.2365 34.7822C36.485 38.5155 32.7012 41.1072 27.885 42.5573Z" fill="#16a34a"/></g>
+      <text x="58" y="33" fill="#f8fafc" font-family="Inter,sans-serif" font-weight="600" font-size="26" letter-spacing="-0.5">Forest</text>
+      <text x="148" y="33" fill="#16a34a" font-family="Inter,sans-serif" font-weight="600" font-size="26" letter-spacing="-0.5">Manager</text>
+    </svg>
+  </div>
+
+  <!-- Headline -->
+  <h1 style="max-width:700px;margin-bottom:20px;">Europe's forests are stuck<br>in the <span class="green">digital dark ages.</span></h1>
+  <p class="desc" style="max-width:600px;margin-bottom:48px;">
+    16 million private forest owners manage woodlands with paper, Excel, and gut feeling.
+    Meanwhile, climate change and EU regulation demand data-driven decisions.
+  </p>
+
+  <!-- Three problem cards + stats -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+    <div class="card">
+      <h2 style="color:#f87171;margin-bottom:8px;">Fragmented Tools</h2>
+      <p class="desc-sm">GIS, Excel, paper forms, email. No system spans from satellite imagery to invoicing.</p>
+    </div>
+    <div class="card">
+      <h2 style="color:#fbbf24;margin-bottom:8px;">No Early Warning</h2>
+      <p class="desc-sm">Bark beetle, storm, drought — billions in damage yearly. Owners learn weeks too late.</p>
+    </div>
+    <div class="card">
+      <h2 style="color:#fb923c;margin-bottom:8px;">EUDR Takes Effect Jan 2027</h2>
+      <p class="desc-sm">No digital traceability chain = no timber sales in the EU. Millions of owners need a solution now.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>natureport UG · Hamburg</span>
+    <div style="display:flex;gap:24px;">
+      <span><strong style="color:#4ade80;">€4.8B</strong> TAM</span>
+      <span><strong style="color:#4ade80;">16M</strong> forest owners</span>
+      <span><strong style="color:#4ade80;">&lt;5%</strong> digitized</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 2: Solution + Business Model
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:linear-gradient(135deg,#0a0a0a,#0f1a12);">
+
+  <div style="display:flex;gap:64px;height:100%;">
+
+    <!-- LEFT: Solution -->
+    <div style="flex:1;display:flex;flex-direction:column;">
+      <div class="label">The Solution</div>
+      <h1 style="font-size:36px;margin-bottom:16px;">One platform.<br><span class="green">From satellite to timber sale.</span></h1>
+      <p class="desc" style="margin-bottom:32px;">
+        Forest Manager replaces 5–10 separate tools with a single, AI-powered platform —
+        and collects the ground-level data no satellite can deliver.
+      </p>
+
+      <!-- Features -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;">
+        <div class="card" style="padding:16px;">
+          <h2 style="font-size:14px;margin-bottom:4px;">AI Tree Inventory</h2>
+          <p class="desc-sm" style="font-size:11px;">Photo → species, BHD, crown health via GPT-4o Vision</p>
+        </div>
+        <div class="card" style="padding:16px;">
+          <h2 style="font-size:14px;margin-bottom:4px;">Satellite Monitoring</h2>
+          <p class="desc-sm" style="font-size:11px;">Sentinel-1/2: bark beetle, storm, drought alerts</p>
+        </div>
+        <div class="card" style="padding:16px;">
+          <h2 style="font-size:14px;margin-bottom:4px;">EUDR Compliance</h2>
+          <p class="desc-sm" style="font-size:11px;">Due diligence statements → TRACES NT → one click</p>
+        </div>
+        <div class="card" style="padding:16px;">
+          <h2 style="font-size:14px;margin-bottom:4px;">Mobile App</h2>
+          <p class="desc-sm" style="font-size:11px;">iOS &amp; Android, offline-first, works without signal</p>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div style="margin-top:auto;display:flex;align-items:center;gap:12px;">
+        <span class="pill">Live — 16 modules</span>
+        <span class="pill">forest-manager.eu</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Business Model + Ecosystem -->
+    <div style="width:400px;display:flex;flex-direction:column;">
+
+      <div class="label">Business Model</div>
+      <div class="card" style="margin-bottom:12px;">
+        <h2 style="font-size:15px;margin-bottom:6px;">SaaS Subscriptions</h2>
+        <p class="desc-sm">From €5/month — 10× cheaper than market. Tiered by area and users. ~85% gross margin.</p>
+      </div>
+      <div class="card" style="margin-bottom:32px;">
+        <h2 style="font-size:15px;margin-bottom:6px;">Data &amp; AI Licensing</h2>
+        <p class="desc-sm">Field data + satellite + weather feeds a unique AI model. Licensed to insurers, carbon certifiers, regulators.</p>
+      </div>
+
+      <div class="label">Ecosystem</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:32px;">
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px;border-color:rgba(22,163,74,0.2);">
+          <span style="font-size:20px;">1</span>
+          <div><span style="font-size:13px;font-weight:600;color:#16a34a;">Forest Manager</span><br><span class="desc-sm" style="font-size:11px;">Measure &amp; manage</span></div>
+        </div>
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px;border-color:rgba(153,182,124,0.2);">
+          <span style="font-size:20px;">2</span>
+          <div><span style="font-size:13px;font-weight:600;color:#99b67c;">greenkeeper</span><br><span class="desc-sm" style="font-size:11px;">Certify — 30M tokenized certificates</span></div>
+        </div>
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px;border-color:rgba(89,255,133,0.2);">
+          <span style="font-size:20px;">3</span>
+          <div><span style="font-size:13px;font-weight:600;color:#59FF85;">NaturePort</span><br><span class="desc-sm" style="font-size:11px;">Trade — B2B marketplace</span></div>
+        </div>
+      </div>
+
+      <p class="desc-sm" style="margin-top:auto;text-align:center;color:#4ade80;font-weight:500;">
+        Only company owning the full pipeline:<br>forest floor → corporate balance sheet.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span>natureport UG · Hamburg</span>
+    <span>kontakt@natureport.io</span>
+  </div>
+</div>
+
+</body>
+</html>

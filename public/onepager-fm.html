@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Forest Manager – One Pager</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',system-ui,sans-serif;background:#0a0a0a;color:#fff;display:flex;justify-content:center;padding:20px;}
+  .page{width:1280px;min-height:720px;background:linear-gradient(135deg,#0a0a0a,#111827);border-radius:16px;overflow:hidden;position:relative;padding:56px 64px;}
+
+  /* Logo */
+  .logo{display:flex;align-items:center;gap:10px;margin-bottom:36px;}
+  .logo svg{height:28px;}
+
+  /* Layout */
+  .top{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-bottom:36px;}
+  .bottom{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:20px;}
+
+  h1{font-size:32px;font-weight:700;line-height:1.15;letter-spacing:-0.5px;margin-bottom:12px;}
+  h2{font-size:16px;font-weight:600;margin-bottom:8px;}
+  h3{font-size:12px;font-weight:600;color:#4ade80;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;}
+  p{font-size:13px;color:#94a3b8;line-height:1.6;}
+  .highlight{color:#4ade80;}
+
+  .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;}
+  .stat{font-size:28px;font-weight:700;color:#4ade80;}
+  .stat-sm{font-size:11px;color:#64748b;margin-top:2px;}
+  .module-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+  .module{font-size:11px;color:#cbd5e1;background:rgba(255,255,255,0.04);border-radius:6px;padding:6px 10px;}
+  .pill{display:inline-flex;font-size:10px;font-weight:500;color:#4ade80;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:3px 10px;margin-right:6px;}
+
+  .divider{width:100%;height:1px;background:rgba(255,255,255,0.06);margin:28px 0;}
+
+  .footer{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#475569;margin-top:24px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Logo -->
+  <div class="logo">
+    <svg height="28" viewBox="0 0 285 47" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="m0" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="47" height="47"><rect width="47" height="47" fill="#D9D9D9"/></mask>
+      <g mask="url(#m0)"><path d="M23.5116 43.4812C20.42 43.0973 17.6472 42.3101 15.1931 41.1194C12.7386 39.9287 10.6533 38.3753 8.93716 36.4591C7.22134 34.5425 5.90322 32.3142 4.9828 29.7743C4.06271 27.2347 3.587 24.4197 3.55566 21.3295C7.20828 21.6653 10.2886 22.2987 12.7965 23.2295C15.3045 24.1604 17.3453 25.4966 18.9188 27.2382C20.4926 28.9799 21.636 31.1753 22.3488 33.8246C23.0616 36.4742 23.4492 39.6931 23.5116 43.4812ZM23.4998 25.9639C22.7256 24.7902 21.6608 23.6485 20.3053 22.5387C18.9498 21.429 17.4078 20.4523 15.6792 19.6086C15.8829 18.2691 16.221 16.8708 16.6936 15.4138C17.1662 13.9568 17.7405 12.5126 18.4165 11.081C19.0928 9.64947 19.8627 8.26134 20.7263 6.91662C21.5896 5.57222 22.5102 4.33407 23.4881 3.20215C24.4738 4.34941 25.3983 5.59344 26.2616 6.93424C27.1252 8.27505 27.8971 9.66122 28.5773 11.0928C29.2572 12.524 29.8334 13.9663 30.306 15.4197C30.7786 16.8728 31.1168 18.2691 31.3204 19.6086C29.6075 20.4197 28.0773 21.3761 26.7296 22.478C25.3816 23.5799 24.305 24.7419 23.4998 25.9639ZM27.885 42.5573C27.7962 40.0852 27.5994 37.847 27.2946 35.8427C26.9897 33.8383 26.5359 31.975 25.9331 30.2526C27.5138 27.5779 29.7012 25.4335 32.4954 23.8195C35.2896 22.2058 38.9352 21.3758 43.4322 21.3295C43.3869 26.5647 41.9883 31.049 39.2365 34.7822C36.485 38.5155 32.7012 41.1072 27.885 42.5573Z" fill="#16a34a"/></g>
+      <text x="58" y="33" fill="#f8fafc" font-family="Inter,sans-serif" font-weight="600" font-size="26" letter-spacing="-0.5">Forest</text>
+      <text x="148" y="33" fill="#16a34a" font-family="Inter,sans-serif" font-weight="600" font-size="26" letter-spacing="-0.5">Manager</text>
+    </svg>
+    <span style="color:#334155;font-size:11px;margin-left:8px;">by natureport UG</span>
+  </div>
+
+  <!-- Top section: Left = pitch, Right = product -->
+  <div class="top">
+    <!-- LEFT: Pitch -->
+    <div>
+      <h1>AI-powered forest inventory &amp; management.<br><span class="highlight">From satellite to timber sale.</span></h1>
+      <p style="margin-bottom:20px;">
+        16M private forest owners in Europe manage woodlands with paper and gut feeling. Forest Manager replaces 5–10 separate tools with one end-to-end platform — and collects the ground-level data that no satellite can deliver.
+      </p>
+
+      <h3>The Problem</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px;">
+        <div class="card" style="padding:14px;">
+          <h2 style="font-size:13px;color:#f87171;">Fragmented Tools</h2>
+          <p style="font-size:11px;">GIS, Excel, paper, email — no integrated system from satellite to invoice.</p>
+        </div>
+        <div class="card" style="padding:14px;">
+          <h2 style="font-size:13px;color:#fbbf24;">No Early Warning</h2>
+          <p style="font-size:11px;">Bark beetle, storm, drought — billions in damage. Owners learn weeks too late.</p>
+        </div>
+        <div class="card" style="padding:14px;">
+          <h2 style="font-size:13px;color:#fb923c;">EUDR 2027</h2>
+          <p style="font-size:11px;">No digital traceability = no timber sales in the EU. Millions need compliance now.</p>
+        </div>
+      </div>
+
+      <h3>Business Model</h3>
+      <p style="margin-bottom:8px;"><strong style="color:#fff;">Layer 1 — SaaS:</strong> From €5/mo. 10x cheaper than market. Tiered by area + users. Monthly MRR, ~85% gross margin.</p>
+      <p><strong style="color:#fff;">Layer 2 — Data &amp; AI:</strong> Field data + satellite + weather feeds AI forecasting model. Licensed to insurers, carbon certifiers, regulators.</p>
+    </div>
+
+    <!-- RIGHT: Product + Stats -->
+    <div>
+      <h3>Product — Live, 16 Modules</h3>
+      <div class="module-grid" style="margin-bottom:20px;">
+        <div class="module">GIS Map System</div>
+        <div class="module">AI Tree Inventory (GPT-4o)</div>
+        <div class="module">Satellite Monitoring (Sentinel)</div>
+        <div class="module">Weather &amp; Risk Alerts</div>
+        <div class="module">EUDR Compliance + TRACES NT</div>
+        <div class="module">Timber Sales &amp; Logistics</div>
+        <div class="module">Invoicing &amp; Controlling</div>
+        <div class="module">Mobile App (iOS/Android)</div>
+        <div class="module">Forest Health AI Analysis</div>
+        <div class="module">Crown Health Assessment</div>
+        <div class="module">BHD Measurement (Messkarte)</div>
+        <div class="module">93+ Species (Global DB)</div>
+        <div class="module">Task Management &amp; Calendar</div>
+        <div class="module">Multi-Tenant &amp; Roles</div>
+        <div class="module">Offline-First PWA</div>
+        <div class="module">Plot-Based Sampling</div>
+      </div>
+
+      <h3>Market</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div class="card" style="padding:14px;text-align:center;">
+          <div class="stat" style="font-size:22px;">€4.8B</div>
+          <div class="stat-sm">TAM (16M owners × €300/yr)</div>
+        </div>
+        <div class="card" style="padding:14px;text-align:center;">
+          <div class="stat" style="font-size:22px;">€480M</div>
+          <div class="stat-sm">SAM (EU core markets)</div>
+        </div>
+        <div class="card" style="padding:14px;text-align:center;">
+          <div class="stat" style="font-size:22px;">€2.4M</div>
+          <div class="stat-sm">SOM (10k users, yr 3)</div>
+        </div>
+      </div>
+
+      <h3>Key Metrics</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
+        <div class="card" style="padding:12px;text-align:center;">
+          <div class="stat" style="font-size:20px;">180M ha</div>
+          <div class="stat-sm">EU forest area</div>
+        </div>
+        <div class="card" style="padding:12px;text-align:center;">
+          <div class="stat" style="font-size:20px;">&lt;5%</div>
+          <div class="stat-sm">Digitized today</div>
+        </div>
+        <div class="card" style="padding:12px;text-align:center;">
+          <div class="stat" style="font-size:20px;">16M</div>
+          <div class="stat-sm">Forest owners EU</div>
+        </div>
+        <div class="card" style="padding:12px;text-align:center;">
+          <div class="stat" style="font-size:20px;">Jan 2027</div>
+          <div class="stat-sm">EUDR deadline</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Bottom: GTM + Timing + Data Flywheel + Ecosystem -->
+  <div class="bottom">
+    <div class="card">
+      <h3 style="margin-bottom:8px;">Go-To-Market</h3>
+      <p style="font-size:11px;margin-bottom:8px;"><strong style="color:#fff;">Phase 1:</strong> greenkeeper network — existing forest owner relationships across EU.</p>
+      <p style="font-size:11px;margin-bottom:8px;"><strong style="color:#fff;">Phase 2:</strong> Forest owner associations (WBVen) — each brings 50-200 members.</p>
+      <p style="font-size:11px;"><strong style="color:#fff;">Phase 3:</strong> Marketing, webinars, conferences. EUDR deadline drives urgency.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:8px;">Data Flywheel</h3>
+      <p style="font-size:11px;margin-bottom:6px;">Users capture field data (trees, soil, damage) during daily work.</p>
+      <p style="font-size:11px;margin-bottom:6px;">Fused with Sentinel satellite + weather data.</p>
+      <p style="font-size:11px;margin-bottom:6px;">AI learns correlations → better forecasts.</p>
+      <p style="font-size:11px;"><strong style="color:#4ade80;">Growing data moat. More users = better model.</strong></p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:8px;">Timing</h3>
+      <p style="font-size:11px;margin-bottom:6px;"><span class="pill">EUDR Jan 2027</span></p>
+      <p style="font-size:11px;margin-bottom:6px;">100% of EU timber sales affected. ~9 months remaining. Forest Manager already has TRACES NT API integration.</p>
+      <p style="font-size:11px;"><strong style="color:#4ade80;">EUDR compliance = primary adoption trigger.</strong></p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:8px;">Ecosystem</h3>
+      <p style="font-size:11px;margin-bottom:6px;"><strong style="color:#16a34a;">Forest Manager</strong> — Measure &amp; manage</p>
+      <p style="font-size:11px;margin-bottom:6px;"><strong style="color:#99b67c;">greenkeeper</strong> — Certify (30M tokens)</p>
+      <p style="font-size:11px;margin-bottom:6px;"><strong style="color:#59FF85;">NaturePort</strong> — Trade certificates</p>
+      <p style="font-size:11px;"><strong style="color:#4ade80;">Only company owning the full pipeline.</strong></p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div><span style="color:#fff;">forest-manager.eu</span> &middot; natureport UG &middot; Hamburg, Germany</div>
+    <div>
+      <span class="pill">Product Live</span>
+      <span class="pill">Pre-Seed 2026</span>
+      <span>kontakt@natureport.io</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

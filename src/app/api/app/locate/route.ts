@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
@@ -13,8 +12,8 @@ import { point } from '@turf/helpers';
  */
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await getApiUser(req);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = req.nextUrl;
     const orgSlug = searchParams.get('orgSlug');
@@ -27,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     const org = await prisma.organization.findUnique({
       where: { slug: orgSlug },
-      include: { members: { where: { userId: session.user.id } } },
+      include: { members: { where: { userId: user.id } } },
     });
     if (!org || !org.members[0]) {
       return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 });

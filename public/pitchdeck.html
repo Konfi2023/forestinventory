@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>natureport UG – Investor Pitchdeck</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',system-ui,sans-serif; background:#0a0a0a; color:#fff; }
+  .slide { width:1280px; min-height:720px; margin:0 auto; padding:80px; position:relative; overflow:hidden; page-break-after:always; }
+  @media print { .slide { page-break-after:always; } body { background:#fff; } }
+
+  /* Backgrounds */
+  .bg-dark { background:linear-gradient(135deg,#0a0a0a 0%,#111827 100%); }
+  .bg-green { background:linear-gradient(135deg,#064e3b 0%,#065f46 50%,#047857 100%); }
+  .bg-white { background:#fff; color:#1e293b; }
+  .bg-slate { background:#0f172a; }
+  .bg-nature { background:linear-gradient(135deg,#0a0a0a 0%,#14532d 100%); }
+
+  h1 { font-size:48px; font-weight:700; line-height:1.1; letter-spacing:-1px; }
+  h2 { font-size:36px; font-weight:600; line-height:1.2; letter-spacing:-0.5px; }
+  h3 { font-size:24px; font-weight:600; line-height:1.3; }
+  .subtitle { font-size:20px; font-weight:300; color:#94a3b8; line-height:1.6; }
+  .label { font-size:11px; text-transform:uppercase; letter-spacing:3px; font-weight:500; color:#4ade80; }
+  .small { font-size:14px; color:#94a3b8; line-height:1.7; }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:30px; }
+  .grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:24px; }
+  .flex { display:flex; align-items:center; }
+  .gap-16 { gap:16px; }
+  .gap-24 { gap:24px; }
+  .gap-40 { gap:40px; }
+  .mt-auto { margin-top:auto; }
+  .mt-40 { margin-top:40px; }
+  .mt-24 { margin-top:24px; }
+  .mb-24 { margin-bottom:24px; }
+  .mb-40 { margin-bottom:40px; }
+  .mb-16 { margin-bottom:16px; }
+
+  .card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:32px; }
+  .card-white { background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:32px; color:#1e293b; }
+  .stat { font-size:48px; font-weight:700; color:#4ade80; }
+  .stat-label { font-size:13px; color:#94a3b8; margin-top:4px; }
+
+  .logo-row { display:flex; align-items:center; gap:32px; margin-bottom:48px; }
+  .logo-row svg { height:36px; width:auto; }
+  .divider { width:1px; height:30px; background:rgba(255,255,255,0.2); }
+
+  .pill { display:inline-flex; align-items:center; gap:6px; background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.2); color:#4ade80; font-size:12px; font-weight:500; padding:6px 14px; border-radius:20px; }
+  .number { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:rgba(74,222,128,0.15); color:#4ade80; font-size:14px; font-weight:600; flex-shrink:0; }
+
+  .timeline-item { display:flex; gap:20px; padding:16px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .timeline-item:last-child { border-bottom:none; }
+
+  .product-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  .footer-bar { position:absolute; bottom:0; left:0; right:0; padding:20px 80px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#475569; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 1: Title
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark" style="display:flex;flex-direction:column;justify-content:center;">
+  <div class="logo-row">
+    <!-- NaturePort Logo (simplified text) -->
+    <svg height="36" viewBox="0 0 230 47" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="m1" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="47" height="47"><rect width="47" height="47" fill="#D9D9D9"/></mask>
+      <g mask="url(#m1)"><path d="M23.5116 43.4812C20.42 43.0973 17.6472 42.3101 15.1931 41.1194C12.7386 39.9287 10.6533 38.3753 8.93716 36.4591C7.22134 34.5425 5.90322 32.3142 4.9828 29.7743C4.06271 27.2347 3.587 24.4197 3.55566 21.3295C7.20828 21.6653 10.2886 22.2987 12.7965 23.2295C15.3045 24.1604 17.3453 25.4966 18.9188 27.2382C20.4926 28.9799 21.636 31.1753 22.3488 33.8246C23.0616 36.4742 23.4492 39.6931 23.5116 43.4812ZM23.4998 25.9639C22.7256 24.7902 21.6608 23.6485 20.3053 22.5387C18.9498 21.429 17.4078 20.4523 15.6792 19.6086C15.8829 18.2691 16.221 16.8708 16.6936 15.4138C17.1662 13.9568 17.7405 12.5126 18.4165 11.081C19.0928 9.64947 19.8627 8.26134 20.7263 6.91662C21.5896 5.57222 22.5102 4.33407 23.4881 3.20215C24.4738 4.34941 25.3983 5.59344 26.2616 6.93424C27.1252 8.27505 27.8971 9.66122 28.5773 11.0928C29.2572 12.524 29.8334 13.9663 30.306 15.4197C30.7786 16.8728 31.1168 18.2691 31.3204 19.6086C29.6075 20.4197 28.0773 21.3761 26.7296 22.478C25.3816 23.5799 24.305 24.7419 23.4998 25.9639ZM27.885 42.5573C27.7962 40.0852 27.5994 37.847 27.2946 35.8427C26.9897 33.8383 26.5359 31.975 25.9331 30.2526C27.5138 27.5779 29.7012 25.4335 32.4954 23.8195C35.2896 22.2058 38.9352 21.3758 43.4322 21.3295C43.3869 26.5647 41.9883 31.049 39.2365 34.7822C36.485 38.5155 32.7012 41.1072 27.885 42.5573Z" fill="#59FF85"/></g>
+      <text x="58" y="33" fill="#fff" font-family="Inter,sans-serif" font-weight="600" font-size="26" letter-spacing="-0.5">NaturePort</text>
+    </svg>
+  </div>
+  <h1 style="font-size:56px;max-width:800px;">The Operating System for<br><span style="color:#4ade80;">Natural Capital</span></h1>
+  <p class="subtitle mt-24" style="max-width:640px;">
+    Three integrated products that create, verify, manage and trade ecosystem service certificates — end-to-end, from forest to balance sheet.
+  </p>
+  <div class="flex gap-24 mt-40">
+    <div class="pill">Pre-Seed Round</div>
+    <div class="pill">Hamburg, Germany</div>
+    <div class="pill">Q2 2026</div>
+  </div>
+  <div class="footer-bar">
+    <span>natureport UG &middot; Hamburg, Germany</span>
+    <span>Confidential</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 2: The Problem
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">The Problem</p>
+  <h2 class="mb-40">The Voluntary Carbon Market<br>is broken by design.</h2>
+  <div class="grid-3">
+    <div class="card">
+      <h3 style="color:#f87171;" class="mb-16">No Trust</h3>
+      <p class="small">90% of rainforest offsets are "worthless" (Guardian, 2023). Buyers can't verify what they pay for. Greenwashing is the norm.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:#fbbf24;" class="mb-16">Fragmented Tools</h3>
+      <p class="small">Forest owners use paper &amp; Excel. No digital inventory, no satellite monitoring, no connection to certificate markets.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:#fb923c;" class="mb-16">Regulatory Pressure</h3>
+      <p class="small">CSRD requires 50,000+ EU companies to report on biodiversity and climate. EUDR demands deforestation-free supply chains. No tool covers both.</p>
+    </div>
+  </div>
+  <div class="grid-4 mt-40">
+    <div><div class="stat">$2B</div><div class="stat-label">VCM market size 2023</div></div>
+    <div><div class="stat">50k+</div><div class="stat-label">Companies need CSRD reports</div></div>
+    <div><div class="stat">90%</div><div class="stat-label">of offsets deemed worthless</div></div>
+    <div><div class="stat">0</div><div class="stat-label">End-to-end solutions exist</div></div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>2 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 3: The Solution — Three Products
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Our Solution</p>
+  <h2 class="mb-40">Three products. One ecosystem.</h2>
+  <div class="grid-3">
+    <div class="card" style="border-color:rgba(74,222,128,0.3);">
+      <div class="product-icon" style="background:rgba(22,163,74,0.15);">
+        <svg height="24" viewBox="0 0 47 47" fill="none"><path d="M23.5116 43.4812C20.42 43.0973 17.6472 42.3101 15.1931 41.1194C12.7386 39.9287 10.6533 38.3753 8.93716 36.4591C7.22134 34.5425 5.90322 32.3142 4.9828 29.7743C4.06271 27.2347 3.587 24.4197 3.55566 21.3295C7.20828 21.6653 10.2886 22.2987 12.7965 23.2295C15.3045 24.1604 17.3453 25.4966 18.9188 27.2382C20.4926 28.9799 21.636 31.1753 22.3488 33.8246C23.0616 36.4742 23.4492 39.6931 23.5116 43.4812ZM23.4998 25.9639C22.7256 24.7902 21.6608 23.6485 20.3053 22.5387C18.9498 21.429 17.4078 20.4523 15.6792 19.6086C15.8829 18.2691 16.221 16.8708 16.6936 15.4138C17.1662 13.9568 17.7405 12.5126 18.4165 11.081C19.0928 9.64947 19.8627 8.26134 20.7263 6.91662C21.5896 5.57222 22.5102 4.33407 23.4881 3.20215C24.4738 4.34941 25.3983 5.59344 26.2616 6.93424C27.1252 8.27505 27.8971 9.66122 28.5773 11.0928C29.2572 12.524 29.8334 13.9663 30.306 15.4197C30.7786 16.8728 31.1168 18.2691 31.3204 19.6086C29.6075 20.4197 28.0773 21.3761 26.7296 22.478C25.3816 23.5799 24.305 24.7419 23.4998 25.9639ZM27.885 42.5573C27.7962 40.0852 27.5994 37.847 27.2946 35.8427C26.9897 33.8383 26.5359 31.975 25.9331 30.2526C27.5138 27.5779 29.7012 25.4335 32.4954 23.8195C35.2896 22.2058 38.9352 21.3758 43.4322 21.3295C43.3869 26.5647 41.9883 31.049 39.2365 34.7822C36.485 38.5155 32.7012 41.1072 27.885 42.5573Z" fill="#16a34a"/></svg>
+      </div>
+      <h3 class="mt-24 mb-16" style="color:#4ade80;">Forest Manager</h3>
+      <p class="small" style="color:#cbd5e1;">SaaS platform for forest owners: GIS mapping, AI-powered tree inventory, satellite monitoring, EUDR compliance — desktop &amp; mobile.</p>
+      <p style="font-size:12px;color:#64748b;margin-top:16px;">forest-manager.eu &middot; Live</p>
+    </div>
+    <div class="card" style="border-color:rgba(96,135,70,0.4);">
+      <div class="product-icon" style="background:rgba(96,135,70,0.2);">
+        <svg height="28" viewBox="0 0 320 320" fill="none"><circle cx="160" cy="160" r="74" fill="#99b67c"/><circle cx="160" cy="160" r="71" fill="none" stroke="#608746" stroke-width="6"/></svg>
+      </div>
+      <h3 class="mt-24 mb-16" style="color:#99b67c;">greenkeeper</h3>
+      <p class="small" style="color:#cbd5e1;">Certification &amp; registry platform: verifies sustainably managed forests, issues tokenized CO₂ certificates, self-service portal for companies.</p>
+      <p style="font-size:12px;color:#64748b;margin-top:16px;">greenkeeper.eco &middot; Live &middot; 30M certificates under contract</p>
+    </div>
+    <div class="card" style="border-color:rgba(89,255,133,0.3);">
+      <div class="product-icon" style="background:rgba(89,255,133,0.1);">
+        <svg height="24" viewBox="0 0 47 47" fill="none"><path d="M23.5116 43.4812C20.42 43.0973 17.6472 42.3101 15.1931 41.1194C12.7386 39.9287 10.6533 38.3753 8.93716 36.4591C7.22134 34.5425 5.90322 32.3142 4.9828 29.7743C4.06271 27.2347 3.587 24.4197 3.55566 21.3295C7.20828 21.6653 10.2886 22.2987 12.7965 23.2295C15.3045 24.1604 17.3453 25.4966 18.9188 27.2382C20.4926 28.9799 21.636 31.1753 22.3488 33.8246C23.0616 36.4742 23.4492 39.6931 23.5116 43.4812ZM23.4998 25.9639C22.7256 24.7902 21.6608 23.6485 20.3053 22.5387C18.9498 21.429 17.4078 20.4523 15.6792 19.6086C15.8829 18.2691 16.221 16.8708 16.6936 15.4138C17.1662 13.9568 17.7405 12.5126 18.4165 11.081C19.0928 9.64947 19.8627 8.26134 20.7263 6.91662C21.5896 5.57222 22.5102 4.33407 23.4881 3.20215C24.4738 4.34941 25.3983 5.59344 26.2616 6.93424C27.1252 8.27505 27.8971 9.66122 28.5773 11.0928C29.2572 12.524 29.8334 13.9663 30.306 15.4197C30.7786 16.8728 31.1168 18.2691 31.3204 19.6086C29.6075 20.4197 28.0773 21.3761 26.7296 22.478C25.3816 23.5799 24.305 24.7419 23.4998 25.9639ZM27.885 42.5573C27.7962 40.0852 27.5994 37.847 27.2946 35.8427C26.9897 33.8383 26.5359 31.975 25.9331 30.2526C27.5138 27.5779 29.7012 25.4335 32.4954 23.8195C35.2896 22.2058 38.9352 21.3758 43.4322 21.3295C43.3869 26.5647 41.9883 31.049 39.2365 34.7822C36.485 38.5155 32.7012 41.1072 27.885 42.5573Z" fill="#59FF85"/></svg>
+      </div>
+      <h3 class="mt-24 mb-16" style="color:#59FF85;">NaturePort</h3>
+      <p class="small" style="color:#cbd5e1;">B2B marketplace: satellite-verified trading of ecosystem service certificates with blockchain transparency and 48h settlement.</p>
+      <p style="font-size:12px;color:#64748b;margin-top:16px;">natureport.io &middot; In Development</p>
+    </div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>3 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 4: How It Fits Together
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Integrated Ecosystem</p>
+  <h2 class="mb-40">From forest floor to corporate balance sheet.</h2>
+  <div style="display:flex;gap:24px;align-items:stretch;">
+    <div class="card" style="flex:1;text-align:center;">
+      <div class="number" style="margin:0 auto 16px;">1</div>
+      <h3 style="font-size:18px;" class="mb-16">Measure</h3>
+      <p style="color:#4ade80;font-size:13px;font-weight:500;margin-bottom:8px;">Forest Manager</p>
+      <p class="small">Forest owners digitize their inventory with AI-powered mobile app. GPS, BHD, species, crown health — all captured in minutes.</p>
+    </div>
+    <div style="display:flex;align-items:center;color:#334155;font-size:24px;">&#10132;</div>
+    <div class="card" style="flex:1;text-align:center;">
+      <div class="number" style="margin:0 auto 16px;">2</div>
+      <h3 style="font-size:18px;" class="mb-16">Certify</h3>
+      <p style="color:#99b67c;font-size:13px;font-weight:500;margin-bottom:8px;">greenkeeper</p>
+      <p class="small">Forest data flows into greenkeeper. Satellite monitoring verifies management practices. Tokenized certificates are issued on blockchain.</p>
+    </div>
+    <div style="display:flex;align-items:center;color:#334155;font-size:24px;">&#10132;</div>
+    <div class="card" style="flex:1;text-align:center;">
+      <div class="number" style="margin:0 auto 16px;">3</div>
+      <h3 style="font-size:18px;" class="mb-16">Trade</h3>
+      <p style="color:#59FF85;font-size:13px;font-weight:500;margin-bottom:8px;">NaturePort</p>
+      <p class="small">Verified certificates are listed on the NaturePort marketplace. Companies purchase, retire for CSRD reporting, settle in 48 hours.</p>
+    </div>
+  </div>
+  <div class="card mt-40" style="text-align:center;background:rgba(74,222,128,0.05);border-color:rgba(74,222,128,0.15);">
+    <p style="font-size:16px;color:#94a3b8;">Competitive moat: <span style="color:#4ade80;font-weight:600;">No other company owns the entire pipeline from forest inventory to certificate trading.</span></p>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>4 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 5: Forest Manager Deep Dive
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Product 1</p>
+  <h2 class="mb-40">Forest Manager — Digital Forest Operations</h2>
+  <div class="grid-2">
+    <div>
+      <div class="grid-2" style="gap:16px;">
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">GIS Mapping</h3><p class="small" style="margin-top:8px;">Interactive map with polygons, layers, weather, POIs</p></div>
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">AI Inventory</h3><p class="small" style="margin-top:8px;">Photo → species + BHD + crown health via GPT-4o</p></div>
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">Satellite Monitoring</h3><p class="small" style="margin-top:8px;">Sentinel-1/2: bark beetle, storm, drought alerts</p></div>
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">EUDR Compliance</h3><p class="small" style="margin-top:8px;">Due diligence statements with direct EU submission</p></div>
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">Mobile PWA + App</h3><p class="small" style="margin-top:8px;">Offline-first, iOS &amp; Android (Capacitor)</p></div>
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">Timber Sales</h3><p class="small" style="margin-top:8px;">Log piles, transport tickets, invoicing</p></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="background:rgba(74,222,128,0.05);border-color:rgba(74,222,128,0.15);height:100%;display:flex;flex-direction:column;justify-content:center;">
+        <div class="stat">Live</div><p class="stat-label mb-24">forest-manager.eu</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">SaaS</div><p class="stat-label">B2B subscription model</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">3 Tiers</div><p class="stat-label">4.90 – 39.90 €/month</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">93</div><p class="stat-label">Tree species in DB</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">PWA</div><p class="stat-label">Works offline in forest</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>5 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 6: greenkeeper Deep Dive
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Product 2</p>
+  <h2 class="mb-40">greenkeeper — Certification &amp; Registry</h2>
+  <div class="grid-2">
+    <div>
+      <p class="small mb-24" style="font-size:16px;color:#cbd5e1;">
+        greenkeeper certifies sustainably managed European forests and issues blockchain-backed CO₂ certificates. Companies use the self-service portal to purchase, manage and retire certificates for CSRD compliance.
+      </p>
+      <div class="timeline-item"><div class="number">1</div><div><h3 style="font-size:16px;">Forest Verification</h3><p class="small">Satellite + on-site audit confirms sustainable management practices.</p></div></div>
+      <div class="timeline-item"><div class="number">2</div><div><h3 style="font-size:16px;">Certificate Issuance</h3><p class="small">Tokenized certificates minted on blockchain. Each represents verified CO₂ sequestration.</p></div></div>
+      <div class="timeline-item"><div class="number">3</div><div><h3 style="font-size:16px;">Corporate Self-Service</h3><p class="small">Companies browse, purchase, and retire certificates. Audit-ready documentation included.</p></div></div>
+      <div class="timeline-item"><div class="number">4</div><div><h3 style="font-size:16px;">Registry &amp; Reporting</h3><p class="small">Public registry prevents double-counting. Export data for CSRD reports.</p></div></div>
+    </div>
+    <div>
+      <div class="card" style="background:rgba(153,182,124,0.08);border-color:rgba(153,182,124,0.2);height:100%;display:flex;flex-direction:column;justify-content:center;">
+        <div class="stat" style="color:#99b67c;">30M</div><p class="stat-label mb-24">European tokenized certificates under contract</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">300k ha</div><p class="stat-label">Regional forest area</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">ISO 14064</div><p class="stat-label">Aligned methodology</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">Blockchain</div><p class="stat-label">Tamper-proof registry</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">CSRD</div><p class="stat-label">Ready documentation</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>6 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 7: NaturePort Deep Dive
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Product 3</p>
+  <h2 class="mb-40">NaturePort — B2B Marketplace</h2>
+  <div class="grid-2">
+    <div>
+      <p class="small mb-24" style="font-size:16px;color:#cbd5e1;">
+        The first B2B marketplace for environmental certificates with integrated satellite verification and blockchain settlement. Connects project developers with corporate buyers.
+      </p>
+      <div class="grid-2" style="gap:16px;">
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">Global Marketplace</h3><p class="small" style="margin-top:8px;">Buy &amp; sell verified certificates from worldwide projects</p></div>
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">Satellite Verification</h3><p class="small" style="margin-top:8px;">Real-time monitoring ensures authenticity of every certificate</p></div>
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">48h Settlement</h3><p class="small" style="margin-top:8px;">Blockchain-based transaction with fast, transparent settlement</p></div>
+        <div class="card" style="padding:20px;"><h3 style="font-size:16px;">Portfolio Management</h3><p class="small" style="margin-top:8px;">Track, retire, and report certificates for ESG compliance</p></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="background:rgba(89,255,133,0.05);border-color:rgba(89,255,133,0.15);height:100%;display:flex;flex-direction:column;justify-content:center;">
+        <div class="stat" style="color:#59FF85;">98%</div><p class="stat-label mb-24">Verification rate through satellite monitoring</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">300+</div><p class="stat-label">Active projects</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">48h</div><p class="stat-label">Settlement time</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">ISO</div><p class="stat-label">Compliant certification</p></div>
+          <div><div style="font-size:28px;font-weight:700;color:#fff;">B2B</div><p class="stat-label">Enterprise-ready</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>7 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 8: Market Opportunity
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Market Opportunity</p>
+  <h2 class="mb-40">A €50B+ addressable market by 2030.</h2>
+  <div class="grid-3">
+    <div class="card" style="text-align:center;">
+      <div class="stat">€50B+</div>
+      <p class="stat-label mb-16">Voluntary Carbon Market (2030E)</p>
+      <p class="small">McKinsey projects 15x growth from current $2B. EU regulation is the primary driver.</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat">€4.2B</div>
+      <p class="stat-label mb-16">EU Forest Management Software</p>
+      <p class="small">161M hectares of EU forest. Less than 2% digitally managed. Massive greenfield opportunity.</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat">50k+</div>
+      <p class="stat-label mb-16">Companies Need CSRD Reports</p>
+      <p class="small">Starting 2025, EU mandates sustainability reporting. Every company needs verified certificates.</p>
+    </div>
+  </div>
+  <div class="card mt-40" style="background:rgba(74,222,128,0.05);border-color:rgba(74,222,128,0.15);">
+    <div class="grid-3" style="text-align:center;">
+      <div>
+        <p style="font-size:13px;color:#94a3b8;margin-bottom:8px;">TAM</p>
+        <p style="font-size:28px;font-weight:700;">€54B</p>
+        <p class="small">Total addressable market</p>
+      </div>
+      <div>
+        <p style="font-size:13px;color:#94a3b8;margin-bottom:8px;">SAM</p>
+        <p style="font-size:28px;font-weight:700;">€8B</p>
+        <p class="small">European forest + carbon market</p>
+      </div>
+      <div>
+        <p style="font-size:13px;color:#94a3b8;margin-bottom:8px;">SOM</p>
+        <p style="font-size:28px;font-weight:700;">€200M</p>
+        <p class="small">DACH region, first 5 years</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>8 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 9: Business Model
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Business Model</p>
+  <h2 class="mb-40">Three revenue streams, compounding value.</h2>
+  <div class="grid-3">
+    <div class="card">
+      <p style="color:#4ade80;font-size:13px;font-weight:500;margin-bottom:12px;">Forest Manager</p>
+      <h3 class="mb-16">SaaS Subscriptions</h3>
+      <p class="small mb-24">Monthly subscription per forest owner / organization. Three tiers: Basis (€4.90), Pro (€19.90), Expert (€39.90). Enterprise custom.</p>
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
+        <p class="small"><strong style="color:#fff;">Revenue type:</strong> Recurring MRR</p>
+        <p class="small"><strong style="color:#fff;">Gross margin:</strong> ~85%</p>
+      </div>
+    </div>
+    <div class="card">
+      <p style="color:#99b67c;font-size:13px;font-weight:500;margin-bottom:12px;">greenkeeper</p>
+      <h3 class="mb-16">Certification Fees</h3>
+      <p class="small mb-24">Per-certificate issuance fee + annual registry fee. Volume discounts for large forest portfolios. Revenue scales with hectares certified.</p>
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
+        <p class="small"><strong style="color:#fff;">Revenue type:</strong> Transaction + Recurring</p>
+        <p class="small"><strong style="color:#fff;">Gross margin:</strong> ~90%</p>
+      </div>
+    </div>
+    <div class="card">
+      <p style="color:#59FF85;font-size:13px;font-weight:500;margin-bottom:12px;">NaturePort</p>
+      <h3 class="mb-16">Marketplace Commission</h3>
+      <p class="small mb-24">Transaction fee on every certificate trade (buy-side). Data &amp; analytics subscription for institutional buyers. API access for enterprise integration.</p>
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
+        <p class="small"><strong style="color:#fff;">Revenue type:</strong> Transaction + Data</p>
+        <p class="small"><strong style="color:#fff;">Gross margin:</strong> ~95%</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>9 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 10: Traction & Milestones
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Traction</p>
+  <h2 class="mb-40">Built, launched, and contracting.</h2>
+  <div class="grid-2">
+    <div>
+      <div class="timeline-item"><div class="number" style="background:rgba(74,222,128,0.3);">&#10003;</div><div><h3 style="font-size:16px;">Forest Manager — Live</h3><p class="small">Full SaaS platform: GIS map, AI inventory, satellite monitoring, EUDR module, mobile app (iOS/Android). Production server running.</p></div></div>
+      <div class="timeline-item"><div class="number" style="background:rgba(153,182,124,0.3);color:#99b67c;">&#10003;</div><div><h3 style="font-size:16px;">greenkeeper — 30M Certificates</h3><p class="small">Platform live. 30 million European tokenized certificates under contract. Registry and self-service portal operational.</p></div></div>
+      <div class="timeline-item"><div class="number" style="background:rgba(89,255,133,0.2);color:#59FF85;">&#9679;</div><div><h3 style="font-size:16px;">NaturePort — In Development</h3><p class="small">Landing page live. Marketplace architecture defined. Integration with greenkeeper registry planned for Q3 2026.</p></div></div>
+      <div class="timeline-item"><div class="number">&#9679;</div><div><h3 style="font-size:16px;">Mobile App — Store-Ready</h3><p class="small">Capacitor setup complete. Android APK tested. iOS/Android app store submission in Q2 2026.</p></div></div>
+    </div>
+    <div>
+      <div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;">
+        <h3 class="mb-24">Key Metrics</h3>
+        <div style="display:grid;gap:24px;">
+          <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:16px;">
+            <span class="small">Certificates under contract</span><span style="font-weight:700;color:#4ade80;">30M</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:16px;">
+            <span class="small">Products live in production</span><span style="font-weight:700;color:#fff;">2 of 3</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:16px;">
+            <span class="small">Tree species in global DB</span><span style="font-weight:700;color:#fff;">93+</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:16px;">
+            <span class="small">AI features (species, BHD, crown)</span><span style="font-weight:700;color:#fff;">3</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span class="small">EU forest under contract</span><span style="font-weight:700;color:#fff;">300k ha</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>10 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 11: Roadmap
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-dark">
+  <p class="label mb-24">Roadmap</p>
+  <h2 class="mb-40">Path to market leadership.</h2>
+  <div class="grid-4">
+    <div class="card" style="border-top:3px solid #4ade80;">
+      <p style="font-size:13px;color:#4ade80;font-weight:600;margin-bottom:16px;">Q2 2026</p>
+      <h3 style="font-size:16px;" class="mb-16">Launch</h3>
+      <ul style="list-style:none;padding:0;">
+        <li class="small" style="margin-bottom:8px;">&#10003; Forest Manager SaaS live</li>
+        <li class="small" style="margin-bottom:8px;">&#10003; greenkeeper platform live</li>
+        <li class="small" style="margin-bottom:8px;">&#9679; iOS &amp; Android app stores</li>
+        <li class="small">&#9679; First paying customers</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid #22d3ee;">
+      <p style="font-size:13px;color:#22d3ee;font-weight:600;margin-bottom:16px;">Q3-Q4 2026</p>
+      <h3 style="font-size:16px;" class="mb-16">Scale</h3>
+      <ul style="list-style:none;padding:0;">
+        <li class="small" style="margin-bottom:8px;">&#9679; NaturePort marketplace beta</li>
+        <li class="small" style="margin-bottom:8px;">&#9679; Integration FM ↔ GK</li>
+        <li class="small" style="margin-bottom:8px;">&#9679; i18n (EN, FR, ES)</li>
+        <li class="small">&#9679; 50+ enterprise pilots</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid #a78bfa;">
+      <p style="font-size:13px;color:#a78bfa;font-weight:600;margin-bottom:16px;">2027</p>
+      <h3 style="font-size:16px;" class="mb-16">Expand</h3>
+      <ul style="list-style:none;padding:0;">
+        <li class="small" style="margin-bottom:8px;">&#9679; Pan-European rollout</li>
+        <li class="small" style="margin-bottom:8px;">&#9679; Biodiversity certificates</li>
+        <li class="small" style="margin-bottom:8px;">&#9679; API for enterprise ERP</li>
+        <li class="small">&#9679; Series A preparation</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid #f472b6;">
+      <p style="font-size:13px;color:#f472b6;font-weight:600;margin-bottom:16px;">2028+</p>
+      <h3 style="font-size:16px;" class="mb-16">Dominate</h3>
+      <ul style="list-style:none;padding:0;">
+        <li class="small" style="margin-bottom:8px;">&#9679; Global marketplace</li>
+        <li class="small" style="margin-bottom:8px;">&#9679; Tropical forest integration</li>
+        <li class="small" style="margin-bottom:8px;">&#9679; Institutional trading desk</li>
+        <li class="small">&#9679; €10M+ ARR target</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bar"><span>natureport UG</span><span>11 / 12</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 12: The Ask
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide bg-nature" style="display:flex;flex-direction:column;justify-content:center;">
+  <p class="label mb-24">The Ask</p>
+  <h1 style="font-size:52px;max-width:700px;">Let's build the<br>infrastructure for<br><span style="color:#4ade80;">Natural Capital.</span></h1>
+  <p class="subtitle mt-24" style="max-width:580px;">
+    We're raising a Pre-Seed round to scale Forest Manager, complete NaturePort, and bring 100M+ verified certificates to market.
+  </p>
+  <div class="grid-3 mt-40" style="max-width:800px;">
+    <div class="card" style="text-align:center;">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:8px;">Raising</p>
+      <p style="font-size:32px;font-weight:700;color:#4ade80;">€500K</p>
+      <p class="small">Pre-Seed</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:8px;">Use of Funds</p>
+      <p style="font-size:32px;font-weight:700;">70 / 30</p>
+      <p class="small">Product &amp; Engineering / Sales</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:8px;">Runway</p>
+      <p style="font-size:32px;font-weight:700;">18 mo</p>
+      <p class="small">To Series A metrics</p>
+    </div>
+  </div>
+  <div style="margin-top:48px;">
+    <p style="font-size:16px;color:#94a3b8;">Contact</p>
+    <p style="font-size:20px;font-weight:500;margin-top:8px;">kontakt@natureport.io</p>
+  </div>
+  <div class="footer-bar"><span>natureport UG &middot; Hamburg, Germany</span><span>12 / 12</span></div>
+</div>
+
+</body>
+</html>

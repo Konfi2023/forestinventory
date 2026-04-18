@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const forestId = req.nextUrl.searchParams.get('forestId');
   if (!forestId) return NextResponse.json({ error: 'forestId fehlt' }, { status: 400 });
@@ -19,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   // Zugriff prüfen
   const membership = await prisma.membership.findFirst({
-    where: { userId: session.user.id, organization: { forests: { some: { id: forestId } } } },
+    where: { userId: user.id, organization: { forests: { some: { id: forestId } } } },
   });
   if (!membership) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 });
 

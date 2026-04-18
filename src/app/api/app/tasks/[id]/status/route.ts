@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 import { TaskStatus } from '@prisma/client';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
   const { status } = await req.json();
@@ -21,7 +20,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!task) return NextResponse.json({ error: 'Aufgabe nicht gefunden' }, { status: 404 });
 
   const membership = await prisma.membership.findFirst({
-    where: { userId: session.user.id, organization: { forests: { some: { id: task.forestId } } } },
+    where: { userId: user.id, organization: { forests: { some: { id: task.forestId } } } },
   });
   if (!membership) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 });
 

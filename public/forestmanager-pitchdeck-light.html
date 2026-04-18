@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>ForestManager – Pitch Deck 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:#f7f5f0;color:#1a1a1a;}
+  .slide{width:1280px;height:720px;margin:0 auto 40px;position:relative;overflow:hidden;padding:56px 80px;display:flex;flex-direction:column;page-break-after:always;}
+  @media print{.slide{margin:0;}}
+
+  /* Colors */
+  :root{
+    --bg:#f7f5f0;
+    --bg-warm:#f0ece4;
+    --bg-card:#ffffff;
+    --text:#1a1a1a;
+    --text-secondary:#6b6560;
+    --text-muted:#9c958e;
+    --accent:#2d7a3a;
+    --accent-light:#e8f4ea;
+    --accent-blue:#3b6ea5;
+    --accent-blue-light:#eaf1f8;
+    --accent-peach:#d4845a;
+    --accent-peach-light:#fdf0e8;
+    --accent-red:#c45042;
+    --accent-red-light:#fceae8;
+    --accent-amber:#b08832;
+    --accent-amber-light:#fdf5e6;
+    --border:rgba(0,0,0,0.06);
+    --border-accent:rgba(45,122,58,0.2);
+  }
+
+  .label{font-size:11px;text-transform:uppercase;letter-spacing:2.5px;font-weight:600;margin-bottom:14px;}
+  .desc{font-size:14px;color:var(--text-secondary);line-height:1.65;}
+  .desc-sm{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+  .footer{position:absolute;bottom:20px;left:80px;right:80px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);}
+  h1{font-size:40px;font-weight:800;line-height:1.12;letter-spacing:-0.8px;color:var(--text);}
+  .slide-num{position:absolute;top:28px;right:80px;font-size:10px;color:var(--text-muted);font-weight:500;}
+  .pill{font-size:10px;padding:4px 14px;border-radius:20px;font-weight:500;display:inline-flex;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 1: COVER
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);justify-content:center;align-items:center;text-align:center;">
+
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:52px;">
+    <svg height="38" viewBox="0 0 47 47" fill="none"><mask id="mc" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="47" height="47"><rect width="47" height="47" fill="#D9D9D9"/></mask><g mask="url(#mc)"><path d="M23.5116 43.4812C20.42 43.0973 17.6472 42.3101 15.1931 41.1194C12.7386 39.9287 10.6533 38.3753 8.93716 36.4591C7.22134 34.5425 5.90322 32.3142 4.9828 29.7743C4.06271 27.2347 3.587 24.4197 3.55566 21.3295C7.20828 21.6653 10.2886 22.2987 12.7965 23.2295C15.3045 24.1604 17.3453 25.4966 18.9188 27.2382C20.4926 28.9799 21.636 31.1753 22.3488 33.8246C23.0616 36.4742 23.4492 39.6931 23.5116 43.4812ZM23.4998 25.9639C22.7256 24.7902 21.6608 23.6485 20.3053 22.5387C18.9498 21.429 17.4078 20.4523 15.6792 19.6086C15.8829 18.2691 16.221 16.8708 16.6936 15.4138C17.1662 13.9568 17.7405 12.5126 18.4165 11.081C19.0928 9.64947 19.8627 8.26134 20.7263 6.91662C21.5896 5.57222 22.5102 4.33407 23.4881 3.20215C24.4738 4.34941 25.3983 5.59344 26.2616 6.93424C27.1252 8.27505 27.8971 9.66122 28.5773 11.0928C29.2572 12.524 29.8334 13.9663 30.306 15.4197C30.7786 16.8728 31.1168 18.2691 31.3204 19.6086C29.6075 20.4197 28.0773 21.3761 26.7296 22.478C25.3816 23.5799 24.305 24.7419 23.4998 25.9639ZM27.885 42.5573C27.7962 40.0852 27.5994 37.847 27.2946 35.8427C26.9897 33.8383 26.5359 31.975 25.9331 30.2526C27.5138 27.5779 29.7012 25.4335 32.4954 23.8195C35.2896 22.2058 38.9352 21.3758 43.4322 21.3295C43.3869 26.5647 41.9883 31.049 39.2365 34.7822C36.485 38.5155 32.7012 41.1072 27.885 42.5573Z" fill="#2d7a3a"/></g></svg>
+    <span style="font-size:34px;font-weight:800;color:var(--text);">Forest</span><span style="font-size:34px;font-weight:800;color:var(--accent);">Manager</span>
+  </div>
+
+  <h1 style="font-size:46px;max-width:860px;margin-bottom:20px;">
+    The SaaS platform that turns<br>every forest into a <span style="color:var(--accent);">smart dataset.</span>
+  </h1>
+
+  <p style="font-size:16px;color:var(--text-secondary);max-width:620px;line-height:1.65;margin-bottom:52px;">
+    A full-stack forest management tool for owners and foresters &mdash;<br>
+    and the data aggregation layer for the next generation of forest AI.
+  </p>
+
+  <div style="display:flex;gap:12px;">
+    <span class="pill" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--border-accent);">Seed Round 2026</span>
+    <span class="pill" style="background:var(--bg-warm);color:var(--text-muted);border:1px solid var(--border);">forest-manager.eu</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 2: PROBLEM
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">02</span>
+  <div class="label" style="color:var(--accent-red);">The Problem</div>
+
+  <h1 style="margin-bottom:10px;max-width:900px;">
+    Europe's forests are managed <span style="color:var(--accent-red);">blind.</span>
+  </h1>
+  <p class="desc" style="max-width:760px;margin-bottom:36px;">
+    16 million private forest owners manage 100+ million hectares with paper, Excel, and gut feeling.
+    No digital infrastructure exists to collect, connect, or analyze forest data at scale.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card" style="padding:22px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-red-light);display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:13px;color:var(--accent-red);font-weight:700;">1</span>
+          </div>
+          <span style="font-size:14px;font-weight:700;">No unified tool</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Forest owners juggle 6&ndash;10 disconnected tools: GIS software, paper forms, weather apps, Excel sheets, government portals. Nothing integrates.</p>
+      </div>
+      <div class="card" style="padding:22px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-red-light);display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:13px;color:var(--accent-red);font-weight:700;">2</span>
+          </div>
+          <span style="font-size:14px;font-weight:700;">No data infrastructure</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Ground-truth data &mdash; tree measurements, soil conditions, health status &mdash; exists only in paper folders or a forester's head. Never digitized, never analyzed.</p>
+      </div>
+      <div class="card" style="padding:22px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-red-light);display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:13px;color:var(--accent-red);font-weight:700;">3</span>
+          </div>
+          <span style="font-size:14px;font-weight:700;">Regulation forces action &mdash; now</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);line-height:1.6;">EUDR (Jan 2027) requires digital traceability. CSRD demands nature impact reporting. No digital forest = no compliance.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;justify-content:center;gap:28px;padding:0 20px;">
+      <div>
+        <div style="font-size:52px;font-weight:800;color:var(--accent-red);">16M</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">private forest owners in Europe</div>
+      </div>
+      <div>
+        <div style="font-size:52px;font-weight:800;color:var(--accent-red);">&lt;5%</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">of forests digitally managed</div>
+      </div>
+      <div>
+        <div style="font-size:52px;font-weight:800;color:var(--accent-red);">0</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">platforms connecting ground data + satellite + AI</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>ForestManager &middot; natureport UG</span>
+    <span>Sources: EU Commission, BMEL, Eurostat</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 3: SOLUTION
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">03</span>
+  <div class="label" style="color:var(--accent);">The Solution</div>
+
+  <h1 style="margin-bottom:10px;max-width:900px;">One platform to manage forests. <span style="color:var(--accent);">And the smartest forest dataset on Earth.</span></h1>
+  <p class="desc" style="max-width:760px;margin-bottom:32px;">
+    ForestManager is an affordable SaaS tool that forest owners use every day &mdash;
+    and every interaction feeds a growing, unique dataset that powers AI-driven forest intelligence.
+  </p>
+
+  <div style="display:flex;gap:28px;flex:1;">
+    <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+
+      <div style="flex:1;background:var(--accent-light);border:1px solid var(--border-accent);border-radius:14px;padding:24px;display:flex;flex-direction:column;">
+        <div class="label" style="color:var(--accent);margin-bottom:8px;font-size:10px;">Layer 1 &mdash; The Product</div>
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Full-Stack Forest Management</h2>
+        <p class="desc-sm" style="margin-bottom:16px;">GIS mapping, AI tree inventory, satellite monitoring, timber logistics, EUDR compliance, weather alerts, task management &mdash; 16 modules, one login.</p>
+        <div style="margin-top:auto;display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="pill" style="background:white;color:var(--accent);border:1px solid var(--border-accent);">From &euro;4.90/mo</span>
+          <span class="pill" style="background:white;color:var(--accent);border:1px solid var(--border-accent);">Mobile &amp; Offline</span>
+          <span class="pill" style="background:white;color:var(--accent);border:1px solid var(--border-accent);">4 Languages</span>
+          <span class="pill" style="background:white;color:var(--accent);border:1px solid var(--border-accent);">EUDR-Ready</span>
+        </div>
+      </div>
+
+      <div style="flex:1;background:var(--accent-blue-light);border:1px solid rgba(59,110,165,0.15);border-radius:14px;padding:24px;display:flex;flex-direction:column;">
+        <div class="label" style="color:var(--accent-blue);margin-bottom:8px;font-size:10px;">Layer 2 &mdash; The Intelligence</div>
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Forest Data Aggregation &amp; AI</h2>
+        <p class="desc-sm" style="margin-bottom:16px;">Every user generates ground-truth data: tree measurements, health assessments, plot inventories. Combined with satellite and weather data, this builds a unique dataset for predictive forest models.</p>
+        <div style="margin-top:auto;display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="pill" style="background:white;color:var(--accent-blue);border:1px solid rgba(59,110,165,0.2);">Growth Models</span>
+          <span class="pill" style="background:white;color:var(--accent-blue);border:1px solid rgba(59,110,165,0.2);">CO&#8322; Predictions</span>
+          <span class="pill" style="background:white;color:var(--accent-blue);border:1px solid rgba(59,110,165,0.2);">Risk &amp; Early Warning</span>
+          <span class="pill" style="background:white;color:var(--accent-blue);border:1px solid rgba(59,110,165,0.2);">Harvest Optimization</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:340px;display:flex;flex-direction:column;justify-content:center;">
+      <div class="card" style="padding:32px 28px;border-color:var(--border-accent);">
+        <div class="label" style="color:var(--accent);margin-bottom:14px;font-size:10px;">The Insight</div>
+        <p style="font-size:15px;color:var(--text);line-height:1.6;font-weight:600;margin-bottom:18px;">
+          Users don't pay for the data layer. They pay for the SaaS tool that solves their daily problems.
+        </p>
+        <p class="desc-sm" style="margin-bottom:24px;">
+          Data aggregation happens as a byproduct of normal usage. More users = more data = better AI = better product.
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--border);padding-top:18px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="color:var(--accent);font-weight:700;font-size:12px;">&#8594;</span>
+            <span style="font-size:12px;color:var(--text-secondary);">More users adopt the SaaS</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="color:var(--accent);font-weight:700;font-size:12px;">&#8594;</span>
+            <span style="font-size:12px;color:var(--text-secondary);">More ground-truth data flows in</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="color:var(--accent);font-weight:700;font-size:12px;">&#8594;</span>
+            <span style="font-size:12px;color:var(--text-secondary);">AI models become more accurate</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="color:var(--accent);font-weight:700;font-size:12px;">&#8594;</span>
+            <span style="font-size:12px;color:var(--text-secondary);">Product becomes more valuable</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="color:var(--accent);font-weight:700;font-size:12px;">&#x21bb;</span>
+            <span style="font-size:12px;color:var(--accent);font-weight:600;">Flywheel compounds</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>ForestManager</span>
+    <span style="color:var(--accent);font-weight:500;">Affordable SaaS on top. Data moat underneath.</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 4: PRODUCT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">04</span>
+  <div class="label" style="color:var(--accent);">Product &mdash; Live Today</div>
+
+  <h1 style="font-size:36px;margin-bottom:10px;">16 modules. One platform. <span style="color:var(--accent);">Already live.</span></h1>
+  <p class="desc" style="max-width:680px;margin-bottom:28px;">A full-stack GIS tool for forest owners &mdash; from satellite view to delivery note.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;flex:1;">
+    <div class="card" style="padding:18px;">
+      <div style="font-size:16px;margin-bottom:6px;width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#127758;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Interactive GIS Map</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Forest polygons, POIs, cadastral overlays</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#127794;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">AI Tree Inventory</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Species, BHD, height, health, CO&#8322;</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128752;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Satellite Monitoring</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Sentinel-1 &amp; 2: NDVI, biomass, SAR</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128196;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">EUDR Compliance</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Due diligence, geo-tagged supply chain</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#129685;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Timber &amp; Logistics</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Harvesting, log piles, delivery notes</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#9925;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Weather &amp; Alerts</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Real-time weather, storm &amp; drought alerts</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-blue-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#129302;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">AI Recommendations</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">GPT-4o analysis and action plans</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128241;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Mobile &amp; Offline</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">PWA, syncs when back online</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128466;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Forsteinrichtung</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Plots, stand-level planning</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128101;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Multi-Tenancy</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Teams, cooperatives, roles</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128200;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Controlling</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Time tracking, cost management</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128209;</div>
+      <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;margin-top:8px;">Task Management</h3>
+      <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Plan, assign, document operations</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>forest-manager.eu</span>
+    <div style="display:flex;gap:8px;">
+      <span class="pill" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--border-accent);">Live</span>
+      <span class="pill" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--border-accent);">DE / EN / ES / FR</span>
+      <span class="pill" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--border-accent);">30-day free trial</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 5: DATA AGGREGATION
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">05</span>
+  <div class="label" style="color:var(--accent-blue);">Data Aggregation</div>
+
+  <h1 style="font-size:36px;margin-bottom:10px;">Six data layers. <span style="color:var(--accent-blue);">One unified model.</span></h1>
+  <p class="desc" style="max-width:680px;margin-bottom:28px;">
+    ForestManager merges ground-truth field data with remote sensing &mdash; creating a dataset no satellite alone can deliver.
+  </p>
+
+  <div style="display:flex;gap:24px;flex:1;">
+
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:14px;background:var(--accent-light);border:1px solid var(--border-accent);border-radius:10px;padding:16px 18px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-size:12px;font-weight:700;">Single-Tree Inventory</span><br><span style="font-size:10px;color:var(--text-muted);">Species, BHD, height, crown, health, CO&#8322;</span></div>
+        <span class="pill" style="background:white;color:var(--accent);border:1px solid var(--border-accent);font-size:9px;font-weight:600;">LIVE</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--accent-light);border:1px solid var(--border-accent);border-radius:10px;padding:16px 18px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-size:12px;font-weight:700;">Plot &amp; Stand Data</span><br><span style="font-size:10px;color:var(--text-muted);">Forsteinrichtung, stocking density, age, timber volume</span></div>
+        <span class="pill" style="background:white;color:var(--accent);border:1px solid var(--border-accent);font-size:9px;font-weight:600;">LIVE</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--accent-light);border:1px solid var(--border-accent);border-radius:10px;padding:16px 18px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-size:12px;font-weight:700;">Satellite Imagery (Sentinel I &amp; II)</span><br><span style="font-size:10px;color:var(--text-muted);">NDVI, biomass, SAR storm damage, change detection</span></div>
+        <span class="pill" style="background:white;color:var(--accent);border:1px solid var(--border-accent);font-size:9px;font-weight:600;">LIVE</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--accent-light);border:1px solid var(--border-accent);border-radius:10px;padding:16px 18px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-size:12px;font-weight:700;">Weather &amp; Storm Events</span><br><span style="font-size:10px;color:var(--text-muted);">Historical + real-time, per-forest resolution</span></div>
+        <span class="pill" style="background:white;color:var(--accent);border:1px solid var(--border-accent);font-size:9px;font-weight:600;">LIVE</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--accent-amber-light);border:1px solid rgba(176,136,50,0.15);border-radius:10px;padding:16px 18px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent-amber);flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-size:12px;font-weight:700;">Sub-Canopy Drone Scans</span><br><span style="font-size:10px;color:var(--text-muted);">3D point clouds, automated BHD &amp; height</span></div>
+        <span class="pill" style="background:white;color:var(--accent-amber);border:1px solid rgba(176,136,50,0.2);font-size:9px;font-weight:600;">ROADMAP</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--accent-amber-light);border:1px solid rgba(176,136,50,0.15);border-radius:10px;padding:16px 18px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent-amber);flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-size:12px;font-weight:700;">IoT Soil Sensors</span><br><span style="font-size:10px;color:var(--text-muted);">Moisture, CO&#8322; flux, temperature, pH, N/P/K</span></div>
+        <span class="pill" style="background:white;color:var(--accent-amber);border:1px solid rgba(176,136,50,0.2);font-size:9px;font-weight:600;">ROADMAP</span>
+      </div>
+    </div>
+
+    <div style="width:340px;display:flex;flex-direction:column;gap:10px;">
+      <div class="label" style="color:var(--accent-blue);margin-bottom:2px;font-size:10px;">What This Dataset Enables</div>
+      <div class="card" style="padding:16px;border-color:rgba(59,110,165,0.12);">
+        <h3 style="font-size:12px;font-weight:700;color:var(--accent-blue);margin-bottom:3px;">Growth &amp; Yield Models</h3>
+        <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Predict timber volume, rotation periods, species performance by region.</p>
+      </div>
+      <div class="card" style="padding:16px;border-color:rgba(59,110,165,0.12);">
+        <h3 style="font-size:12px;font-weight:700;color:var(--accent-blue);margin-bottom:3px;">CO&#8322; Sequestration Forecasts</h3>
+        <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Carbon storage predictions based on real measurements, not lookup tables.</p>
+      </div>
+      <div class="card" style="padding:16px;border-color:rgba(59,110,165,0.12);">
+        <h3 style="font-size:12px;font-weight:700;color:var(--accent-blue);margin-bottom:3px;">Calamity Early Warning</h3>
+        <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Bark beetle, drought stress, storm risk &mdash; weeks before visible damage.</p>
+      </div>
+      <div class="card" style="padding:16px;border-color:rgba(59,110,165,0.12);">
+        <h3 style="font-size:12px;font-weight:700;color:var(--accent-blue);margin-bottom:3px;">Economic Optimization</h3>
+        <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Optimal harvest timing, thinning, species mix for long-term value.</p>
+      </div>
+      <div class="card" style="padding:16px;border-color:rgba(59,110,165,0.12);">
+        <h3 style="font-size:12px;font-weight:700;color:var(--accent-blue);margin-bottom:3px;">Research &amp; Policy Data</h3>
+        <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Anonymized datasets for climate research, insurance, regulation.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>ForestManager</span>
+    <span style="color:var(--accent-blue);font-weight:500;">Satellites see canopies. We see individual trees.</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 6: MARKET
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">06</span>
+  <div class="label" style="color:var(--accent);">Market Opportunity</div>
+
+  <h1 style="font-size:36px;margin-bottom:10px;">A massive, untapped market <span style="color:var(--accent);">forced into digitization.</span></h1>
+  <p class="desc" style="max-width:680px;margin-bottom:36px;">
+    159 million hectares of European forest. Less than 5% digitally managed. EU regulation is creating urgency.
+  </p>
+
+  <div style="display:flex;gap:40px;flex:1;">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+      <div style="position:relative;width:370px;height:370px;">
+        <div style="position:absolute;top:0;left:0;width:370px;height:370px;border-radius:50%;border:2px solid rgba(45,122,58,0.1);background:rgba(45,122,58,0.02);display:flex;align-items:flex-start;justify-content:center;padding-top:28px;">
+          <div style="text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);font-weight:600;">TAM</div><div style="font-size:32px;font-weight:800;color:var(--accent);">&#8364;4.8B</div><div style="font-size:10px;color:var(--text-muted);">European forest-tech &amp; NBS</div></div>
+        </div>
+        <div style="position:absolute;top:78px;left:53px;width:264px;height:264px;border-radius:50%;border:2px solid rgba(45,122,58,0.18);background:rgba(45,122,58,0.03);display:flex;align-items:flex-start;justify-content:center;padding-top:26px;">
+          <div style="text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);font-weight:600;">SAM</div><div style="font-size:28px;font-weight:800;color:var(--accent);">&#8364;860M</div><div style="font-size:10px;color:var(--text-muted);">DACH + Nordics + France</div></div>
+        </div>
+        <div style="position:absolute;top:160px;left:112px;width:146px;height:146px;border-radius:50%;border:2px solid rgba(45,122,58,0.3);background:rgba(45,122,58,0.05);display:flex;align-items:center;justify-content:center;">
+          <div style="text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);font-weight:600;">SOM</div><div style="font-size:24px;font-weight:800;color:var(--accent);">&#8364;42M</div><div style="font-size:10px;color:var(--text-muted);">Year 5 target</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:400px;display:flex;flex-direction:column;gap:12px;justify-content:center;">
+      <div class="label" style="color:var(--accent);margin-bottom:2px;font-size:10px;">Market Drivers</div>
+      <div class="card" style="padding:16px;">
+        <h3 style="font-size:13px;font-weight:700;color:var(--accent-red);margin-bottom:3px;">EUDR &mdash; Jan 2027</h3>
+        <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">No digital traceability = no timber sales. Immediate, regulation-driven demand.</p>
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="font-size:13px;font-weight:700;color:var(--accent-amber);margin-bottom:3px;">CSRD Reporting</h3>
+        <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">50,000+ companies must report nature impact. Forest data becomes a compliance requirement.</p>
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:3px;">Carbon Markets</h3>
+        <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">Voluntary carbon market: $50B by 2030. Accurate forest data is the bottleneck.</p>
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="font-size:13px;font-weight:700;color:var(--accent-blue);margin-bottom:3px;">16M Owners, &lt;5% Digitized</h3>
+        <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">60% of EU forests privately owned. A greenfield market for the right product.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>ForestManager</span>
+    <span>Sources: EU Commission, McKinsey, BMEL, Eurostat</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 7: BUSINESS MODEL
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">07</span>
+  <div class="label" style="color:var(--accent);">Business Model</div>
+
+  <h1 style="font-size:36px;margin-bottom:10px;">SaaS revenue today. <span style="color:var(--accent-blue);">Data revenue tomorrow.</span></h1>
+  <p class="desc" style="max-width:680px;margin-bottom:32px;">
+    Predictable subscriptions from day one, with a second engine that unlocks as the dataset grows.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;">
+    <div style="background:var(--accent-light);border:1px solid var(--border-accent);border-radius:14px;padding:28px 24px;display:flex;flex-direction:column;">
+      <div class="label" style="color:var(--accent);font-size:10px;margin-bottom:6px;">Now</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:12px;">SaaS Subscriptions</h2>
+      <p class="desc-sm" style="margin-bottom:24px;">Tiered by forest area and users. Aggressively priced to maximize adoption and data inflow.</p>
+
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid rgba(45,122,58,0.1);">
+          <div><span style="font-size:14px;font-weight:600;">Starter</span><br><span style="font-size:10px;color:var(--text-muted);">up to 50 ha, 1 user</span></div>
+          <span style="font-size:22px;font-weight:800;color:var(--accent);">&euro;4.90<span style="font-size:11px;color:var(--text-muted);font-weight:400;">/mo</span></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid rgba(45,122,58,0.1);">
+          <div><span style="font-size:14px;font-weight:600;">Professional</span><br><span style="font-size:10px;color:var(--text-muted);">up to 1,000 ha, 5 users</span></div>
+          <span style="font-size:22px;font-weight:800;color:var(--accent);">&euro;14.90<span style="font-size:11px;color:var(--text-muted);font-weight:400;">/mo</span></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div><span style="font-size:14px;font-weight:600;">Enterprise</span><br><span style="font-size:10px;color:var(--text-muted);">5,000+ ha, unlimited</span></div>
+          <span style="font-size:22px;font-weight:800;color:var(--accent);">&euro;39.90<span style="font-size:11px;color:var(--text-muted);font-weight:400;">/mo</span></span>
+        </div>
+      </div>
+
+      <div style="margin-top:auto;display:flex;gap:16px;">
+        <div style="text-align:center;flex:1;"><div style="font-size:24px;font-weight:800;color:var(--accent);">~85%</div><div style="font-size:10px;color:var(--text-muted);">Gross Margin</div></div>
+        <div style="text-align:center;flex:1;"><div style="font-size:24px;font-weight:800;color:var(--accent);">10&times;</div><div style="font-size:10px;color:var(--text-muted);">Cheaper Than Market</div></div>
+      </div>
+    </div>
+
+    <div style="background:var(--accent-blue-light);border:1px solid rgba(59,110,165,0.15);border-radius:14px;padding:28px 24px;display:flex;flex-direction:column;">
+      <div class="label" style="color:var(--accent-blue);font-size:10px;margin-bottom:6px;">At Scale</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:12px;">Data &amp; AI Licensing</h2>
+      <p class="desc-sm" style="margin-bottom:24px;">Aggregated forest data + prediction models licensed to industries that need forest intelligence.</p>
+
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--accent-blue);flex-shrink:0;"></div>
+          <div><span style="font-size:13px;font-weight:600;">Insurers &amp; Reinsurers</span><br><span style="font-size:10px;color:var(--text-muted);">Forest risk models, storm damage predictions</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--accent-blue);flex-shrink:0;"></div>
+          <div><span style="font-size:13px;font-weight:600;">Carbon Certifiers</span><br><span style="font-size:10px;color:var(--text-muted);">Ground-truth validated CO&#8322; sequestration</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--accent-blue);flex-shrink:0;"></div>
+          <div><span style="font-size:13px;font-weight:600;">Research &amp; Academia</span><br><span style="font-size:10px;color:var(--text-muted);">Species growth &amp; climate response data</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--accent-blue);flex-shrink:0;"></div>
+          <div><span style="font-size:13px;font-weight:600;">Government &amp; Regulators</span><br><span style="font-size:10px;color:var(--text-muted);">National forest inventory supplements</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:auto;text-align:center;"><div style="font-size:24px;font-weight:800;color:var(--accent-blue);">~95%</div><div style="font-size:10px;color:var(--text-muted);">Gross Margin at Scale</div></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>ForestManager</span>
+    <span style="color:var(--accent);font-weight:500;">Low price drives adoption. Adoption drives data. Data drives the moat.</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 8: TRACTION
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">08</span>
+  <div class="label" style="color:var(--accent);">Traction</div>
+
+  <h1 style="font-size:36px;margin-bottom:10px;">Not a prototype. <span style="color:var(--accent);">A live product.</span></h1>
+  <p class="desc" style="max-width:680px;margin-bottom:32px;">
+    ForestManager is production-ready and deployed. The technology works. Now it's about scaling.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
+    <div class="card" style="align-items:center;text-align:center;padding:24px 16px;">
+      <div style="font-size:36px;font-weight:800;color:var(--accent);">16</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">live modules</div>
+    </div>
+    <div class="card" style="align-items:center;text-align:center;padding:24px 16px;">
+      <div style="font-size:36px;font-weight:800;color:var(--accent);">4</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">languages</div>
+    </div>
+    <div class="card" style="align-items:center;text-align:center;padding:24px 16px;">
+      <div style="font-size:36px;font-weight:800;color:var(--accent);">5</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">satellite data sources</div>
+    </div>
+    <div class="card" style="align-items:center;text-align:center;padding:24px 16px;">
+      <div style="font-size:36px;font-weight:800;color:var(--accent);">30d</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">free trial, no CC</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;">
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>
+        <span style="font-size:13px;font-weight:600;">Full-Stack Platform Shipped</span>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">GIS, satellite, AI, EUDR, timber, weather, mobile &mdash; all live at forest-manager.eu.</p>
+    </div>
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>
+        <span style="font-size:13px;font-weight:600;">Ecosystem Integration Ready</span>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">Data pipeline feeds into greenkeeper certification. 300K ha and 30M t CO&#8322; under contract.</p>
+    </div>
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>
+        <span style="font-size:13px;font-weight:600;">Payments &amp; Subscriptions Live</span>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">Stripe integration, three tiers, monthly/annual billing, GDPR-compliant.</p>
+    </div>
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent-amber);"></div>
+        <span style="font-size:13px;font-weight:600;">Grant Applications Filed</span>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">Multiple EU and national innovation grants in review for AI &amp; hardware R&amp;D.</p>
+    </div>
+  </div>
+
+  <div class="footer"><span>ForestManager</span><span>forest-manager.eu &middot; live since April 2026</span></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 9: COMPETITIVE MOAT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">09</span>
+  <div class="label" style="color:var(--accent);">Competitive Advantage</div>
+
+  <h1 style="font-size:36px;margin-bottom:10px;">Competitors manage forests. <span style="color:var(--accent);">We build the dataset.</span></h1>
+  <p class="desc" style="max-width:700px;margin-bottom:32px;">
+    The only platform combining management, AI, satellite, and ground-truth data aggregation.
+  </p>
+
+  <div style="display:flex;gap:28px;flex:1;">
+    <div style="flex:1;display:flex;flex-direction:column;">
+      <div style="display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:1px;">
+        <div style="padding:12px 14px;"></div>
+        <div style="padding:12px 14px;text-align:center;background:var(--accent-light);border-radius:10px 10px 0 0;border:1px solid var(--border-accent);border-bottom:none;">
+          <span style="font-size:12px;font-weight:700;color:var(--accent);">ForestManager</span>
+        </div>
+        <div style="padding:12px 14px;text-align:center;"><span style="font-size:11px;font-weight:600;color:var(--text-muted);">Legacy GIS</span></div>
+        <div style="padding:12px 14px;text-align:center;"><span style="font-size:11px;font-weight:600;color:var(--text-muted);">Satellite-Only</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <div style="display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:1px;">
+          <div style="padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg-warm);">Forest Management</div>
+          <div style="padding:10px;text-align:center;background:rgba(45,122,58,0.04);border-left:1px solid var(--border-accent);border-right:1px solid var(--border-accent);">&#9989;</div>
+          <div style="padding:10px;text-align:center;">&#9989;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+        </div>
+        <div style="display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:1px;">
+          <div style="padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg-warm);">Satellite Integration</div>
+          <div style="padding:10px;text-align:center;background:rgba(45,122,58,0.04);border-left:1px solid var(--border-accent);border-right:1px solid var(--border-accent);">&#9989;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">~</div>
+          <div style="padding:10px;text-align:center;">&#9989;</div>
+        </div>
+        <div style="display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:1px;">
+          <div style="padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg-warm);">AI Analysis</div>
+          <div style="padding:10px;text-align:center;background:rgba(45,122,58,0.04);border-left:1px solid var(--border-accent);border-right:1px solid var(--border-accent);">&#9989;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">~</div>
+        </div>
+        <div style="display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:1px;">
+          <div style="padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg-warm);">Ground-Truth Data</div>
+          <div style="padding:10px;text-align:center;background:rgba(45,122,58,0.04);border-left:1px solid var(--border-accent);border-right:1px solid var(--border-accent);">&#9989;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">~</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+        </div>
+        <div style="display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:1px;">
+          <div style="padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg-warm);">EUDR Compliance</div>
+          <div style="padding:10px;text-align:center;background:rgba(45,122,58,0.04);border-left:1px solid var(--border-accent);border-right:1px solid var(--border-accent);">&#9989;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+        </div>
+        <div style="display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:1px;">
+          <div style="padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg-warm);">Mobile &amp; Offline</div>
+          <div style="padding:10px;text-align:center;background:rgba(45,122,58,0.04);border-left:1px solid var(--border-accent);border-right:1px solid var(--border-accent);">&#9989;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+        </div>
+        <div style="display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:1px;">
+          <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--accent);background:var(--bg-warm);">Data Aggregation for AI</div>
+          <div style="padding:10px;text-align:center;background:rgba(45,122,58,0.04);border-left:1px solid var(--border-accent);border-right:1px solid var(--border-accent);border-radius:0 0 10px 10px;border-bottom:1px solid var(--border-accent);">&#9989;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+          <div style="padding:10px;text-align:center;color:var(--text-muted);">&mdash;</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:310px;display:flex;flex-direction:column;gap:12px;justify-content:center;">
+      <div class="label" style="color:var(--accent);font-size:10px;margin-bottom:2px;">Our Moat</div>
+      <div class="card" style="padding:18px;">
+        <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;">Data Network Effect</h3>
+        <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Every user deepens the dataset. AI models improve. Competitors can't catch up without the same data.</p>
+      </div>
+      <div class="card" style="padding:18px;">
+        <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;">Price Disruption</h3>
+        <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">At &euro;4.90/mo we're 10&times; cheaper than legacy tools. We remove the price barrier entirely.</p>
+      </div>
+      <div class="card" style="padding:18px;">
+        <h3 style="font-size:12px;font-weight:700;margin-bottom:3px;">Ecosystem Lock-In</h3>
+        <p style="font-size:10px;color:var(--text-muted);line-height:1.5;">Feeds into greenkeeper (certification) and NaturePort (marketplace) &mdash; a full value chain.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><span>ForestManager</span><span style="color:var(--accent);font-weight:500;">The data flywheel is the moat.</span></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 10: TEAM (placeholder)
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);justify-content:center;align-items:center;">
+  <span class="slide-num">10</span>
+  <div style="text-align:center;">
+    <div class="label" style="color:var(--accent);margin-bottom:20px;">Team</div>
+    <h1 style="font-size:36px;margin-bottom:16px;">The team behind <span style="color:var(--accent);">ForestManager.</span></h1>
+    <p class="desc" style="max-width:500px;margin:0 auto;">[Team slide &mdash; to be added]</p>
+  </div>
+  <div class="footer"><span>ForestManager &middot; natureport UG</span><span></span></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 11: ROADMAP
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">11</span>
+  <div class="label" style="color:var(--accent);">Roadmap</div>
+
+  <h1 style="font-size:36px;margin-bottom:10px;">From SaaS tool to <span style="color:var(--accent-blue);">global forest intelligence.</span></h1>
+  <p class="desc" style="max-width:680px;margin-bottom:32px;">
+    Prove product-market fit, grow the dataset organically, then deepen with hardware.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;flex:1;">
+
+    <div style="background:var(--accent-light);border:1px solid var(--border-accent);border-radius:14px;padding:22px 18px;display:flex;flex-direction:column;">
+      <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Phase 1</div>
+      <div style="font-size:20px;font-weight:800;color:var(--accent);margin-bottom:2px;">2026</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;">Launch &amp; Validate</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">SaaS launch &amp; first paying users</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">DACH market focus</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Seed funding round</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Data aggregation layer</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Cooperative partnerships</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:22px 18px;border-radius:14px;">
+      <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Phase 2</div>
+      <div style="font-size:20px;font-weight:800;color:var(--accent);margin-bottom:2px;">2027</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;">Scale &amp; Expand</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">EUDR compliance at scale</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Nordics &amp; France expansion</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">1,000+ active users</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">AI prediction models v1</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Data licensing pilot</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:22px 18px;border-radius:14px;">
+      <div style="font-size:10px;font-weight:700;color:var(--accent-blue);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Phase 3</div>
+      <div style="font-size:20px;font-weight:800;color:var(--accent-blue);margin-bottom:2px;">2028</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;">Deepen the Data</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent-blue);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Sub-canopy drone program</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent-blue);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">IoT soil sensor network</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent-blue);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Advanced AI models v2</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent-blue);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Pan-European coverage</span></div>
+      </div>
+    </div>
+
+    <div style="background:var(--accent-blue-light);border:1px solid rgba(59,110,165,0.15);border-radius:14px;padding:22px 18px;display:flex;flex-direction:column;">
+      <div style="font-size:10px;font-weight:700;color:var(--accent-peach);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Vision</div>
+      <div style="font-size:20px;font-weight:800;color:var(--accent-peach);margin-bottom:2px;">2029+</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;">Global Intelligence</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent-peach);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Global forest dynamics models</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent-peach);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Cross-region data correlation</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent-peach);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">Research data marketplace</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--accent-peach);margin-top:5px;flex-shrink:0;"></div><span style="font-size:11px;color:var(--text-secondary);">The world's forest OS</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><span>ForestManager</span><span></span></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 12: THE ASK
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);">
+  <span class="slide-num">12</span>
+  <div class="label" style="color:var(--accent);">The Ask</div>
+
+  <h1 style="margin-bottom:10px;">Raising <span style="color:var(--accent);">&euro;1.5M Seed</span> to own the forest data layer.</h1>
+  <p class="desc" style="max-width:680px;margin-bottom:32px;">
+    18 months of runway to acquire 1,000 paying users, prove the data flywheel, and prepare for Series A.
+  </p>
+
+  <div style="display:flex;gap:36px;flex:1;">
+
+    <div style="flex:1;display:flex;flex-direction:column;">
+      <div class="label" style="color:var(--accent);font-size:10px;margin-bottom:14px;">Use of Funds</div>
+      <div style="display:flex;flex-direction:column;gap:16px;flex:1;">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:600;">Product &amp; Engineering</span>
+            <span style="font-size:13px;font-weight:700;color:var(--accent);">45%</span>
+          </div>
+          <div style="height:10px;border-radius:5px;background:var(--bg-warm);">
+            <div style="height:100%;width:45%;border-radius:5px;background:linear-gradient(to right,#2d7a3a,#5aad68);"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text-muted);margin-top:4px;display:block;">AI/ML engineers, data pipeline, drone/sensor R&amp;D</span>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:600;">Sales &amp; Growth</span>
+            <span style="font-size:13px;font-weight:700;color:var(--accent);">30%</span>
+          </div>
+          <div style="height:10px;border-radius:5px;background:var(--bg-warm);">
+            <div style="height:100%;width:30%;border-radius:5px;background:linear-gradient(to right,#2d7a3a,#5aad68);"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text-muted);margin-top:4px;display:block;">DACH go-to-market, cooperatives, forestry events</span>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:600;">Infrastructure &amp; Data</span>
+            <span style="font-size:13px;font-weight:700;color:var(--accent);">15%</span>
+          </div>
+          <div style="height:10px;border-radius:5px;background:var(--bg-warm);">
+            <div style="height:100%;width:15%;border-radius:5px;background:linear-gradient(to right,#2d7a3a,#5aad68);"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text-muted);margin-top:4px;display:block;">Cloud, satellite APIs, storage, security</span>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:600;">Operations</span>
+            <span style="font-size:13px;font-weight:700;color:var(--accent);">10%</span>
+          </div>
+          <div style="height:10px;border-radius:5px;background:var(--bg-warm);">
+            <div style="height:100%;width:10%;border-radius:5px;background:linear-gradient(to right,#2d7a3a,#5aad68);"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text-muted);margin-top:4px;display:block;">Legal, accounting, office, travel</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:400px;display:flex;flex-direction:column;">
+      <div class="label" style="color:var(--accent);font-size:10px;margin-bottom:14px;">18-Month Milestones</div>
+      <div style="display:flex;flex-direction:column;gap:14px;flex:1;">
+        <div class="card" style="padding:20px;border-color:var(--border-accent);">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:24px;font-weight:800;color:var(--accent);">1K</span>
+            <div><span style="font-size:13px;font-weight:600;">Paying Users</span><br><span style="font-size:10px;color:var(--text-muted);">Forest owners &amp; cooperatives across DACH</span></div>
+          </div>
+        </div>
+        <div class="card" style="padding:20px;border-color:var(--border-accent);">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:24px;font-weight:800;color:var(--accent);">100K</span>
+            <div><span style="font-size:13px;font-weight:600;">Hectares Digitized</span><br><span style="font-size:10px;color:var(--text-muted);">Ground-truth data flowing into aggregation</span></div>
+          </div>
+        </div>
+        <div class="card" style="padding:20px;border-color:var(--border-accent);">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:24px;font-weight:800;color:var(--accent);">v1</span>
+            <div><span style="font-size:13px;font-weight:600;">AI Prediction Models</span><br><span style="font-size:10px;color:var(--text-muted);">Growth forecasts &amp; calamity risk scoring</span></div>
+          </div>
+        </div>
+        <div class="card" style="padding:20px;border-color:var(--border-accent);">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:24px;font-weight:800;color:var(--accent);">&euro;500K</span>
+            <div><span style="font-size:13px;font-weight:600;">ARR</span><br><span style="font-size:10px;color:var(--text-muted);">On track for Series A readiness</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><span>ForestManager &middot; natureport UG</span><span></span></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 13: CLOSING
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" style="background:var(--bg);justify-content:center;align-items:center;text-align:center;">
+
+  <svg height="44" viewBox="0 0 47 47" fill="none" style="margin-bottom:16px;"><mask id="mf" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="47" height="47"><rect width="47" height="47" fill="#D9D9D9"/></mask><g mask="url(#mf)"><path d="M23.5116 43.4812C20.42 43.0973 17.6472 42.3101 15.1931 41.1194C12.7386 39.9287 10.6533 38.3753 8.93716 36.4591C7.22134 34.5425 5.90322 32.3142 4.9828 29.7743C4.06271 27.2347 3.587 24.4197 3.55566 21.3295C7.20828 21.6653 10.2886 22.2987 12.7965 23.2295C15.3045 24.1604 17.3453 25.4966 18.9188 27.2382C20.4926 28.9799 21.636 31.1753 22.3488 33.8246C23.0616 36.4742 23.4492 39.6931 23.5116 43.4812ZM23.4998 25.9639C22.7256 24.7902 21.6608 23.6485 20.3053 22.5387C18.9498 21.429 17.4078 20.4523 15.6792 19.6086C15.8829 18.2691 16.221 16.8708 16.6936 15.4138C17.1662 13.9568 17.7405 12.5126 18.4165 11.081C19.0928 9.64947 19.8627 8.26134 20.7263 6.91662C21.5896 5.57222 22.5102 4.33407 23.4881 3.20215C24.4738 4.34941 25.3983 5.59344 26.2616 6.93424C27.1252 8.27505 27.8971 9.66122 28.5773 11.0928C29.2572 12.524 29.8334 13.9663 30.306 15.4197C30.7786 16.8728 31.1168 18.2691 31.3204 19.6086C29.6075 20.4197 28.0773 21.3761 26.7296 22.478C25.3816 23.5799 24.305 24.7419 23.4998 25.9639ZM27.885 42.5573C27.7962 40.0852 27.5994 37.847 27.2946 35.8427C26.9897 33.8383 26.5359 31.975 25.9331 30.2526C27.5138 27.5779 29.7012 25.4335 32.4954 23.8195C35.2896 22.2058 38.9352 21.3758 43.4322 21.3295C43.3869 26.5647 41.9883 31.049 39.2365 34.7822C36.485 38.5155 32.7012 41.1072 27.885 42.5573Z" fill="#2d7a3a"/></g></svg>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:44px;">
+    <span style="font-size:38px;font-weight:800;">Forest</span><span style="font-size:38px;font-weight:800;color:var(--accent);">Manager</span>
+  </div>
+
+  <h1 style="font-size:42px;margin-bottom:16px;max-width:800px;">
+    The tool forest owners use.<br>The dataset <span style="color:var(--accent);">the world needs.</span>
+  </h1>
+
+  <p style="font-size:15px;color:var(--text-secondary);max-width:520px;margin-bottom:48px;line-height:1.65;">
+    Affordable SaaS on top. Growing data moat underneath.<br>
+    From individual trees to global forest intelligence.
+  </p>
+
+  <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+    <span style="font-size:14px;color:var(--text);font-weight:500;">forest-manager.eu</span>
+    <span style="font-size:13px;color:var(--text-muted);">natureport UG &middot; Hamburg</span>
+  </div>
+</div>
+
+</body>
+</html>

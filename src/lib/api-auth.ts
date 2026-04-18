@@ -27,6 +27,7 @@ export async function getApiUser(req?: Request): Promise<AuthUser | null> {
   // 2. Try Bearer token (native app)
   if (req) {
     const authHeader = req.headers.get('authorization');
+    console.log('[api-auth] authHeader present:', !!authHeader);
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice(7);
       try {
@@ -36,8 +37,9 @@ export async function getApiUser(req?: Request): Promise<AuthUser | null> {
         );
         const keycloakSub = payload.sub;
         const email = payload.email || payload.preferred_username || '';
+        console.log('[api-auth] JWT decoded — sub:', keycloakSub, 'email:', email);
 
-        if (!keycloakSub) return null;
+        if (!keycloakSub) { console.log('[api-auth] No sub in token'); return null; }
 
         // Find user by keycloakId
         const user = await prisma.user.findFirst({
@@ -46,24 +48,33 @@ export async function getApiUser(req?: Request): Promise<AuthUser | null> {
         });
 
         if (user) {
+          console.log('[api-auth] User found by keycloakId:', user.id);
           return { id: user.id, email: user.email };
         }
+        console.log('[api-auth] No user found by keycloakId:', keycloakSub);
 
-        // Fallback: try to find by email
+        // Fallback: try to find by email and auto-link keycloakId
         if (email) {
           const userByEmail = await prisma.user.findFirst({
             where: { email },
             select: { id: true, email: true },
           });
           if (userByEmail) {
+            console.log('[api-auth] User found by email, auto-linking keycloakId');
+            await prisma.user.update({
+              where: { id: userByEmail.id },
+              data: { keycloakId: keycloakSub },
+            });
             return { id: userByEmail.id, email: userByEmail.email };
           }
+          console.log('[api-auth] No user found by email:', email);
         }
-      } catch {
-        // Invalid token
+      } catch (err: any) {
+        console.error('[api-auth] Token decode error:', err?.message);
       }
     }
   }
 
+  console.log('[api-auth] No auth found, returning null');
   return null;
 }

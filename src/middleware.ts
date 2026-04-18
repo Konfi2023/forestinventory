@@ -42,6 +42,21 @@ export function middleware(req: NextRequest) {
 
   maybeCleanup();
 
+  // ── CORS for native app API calls ──────────────────────────────────
+  if (pathname.startsWith('/api/app/')) {
+    if (req.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
+  }
+
   // ── Rate Limiting (API routes) ─────────────────────────────────────
   if (pathname.startsWith('/api/auth')) {
     const isSystemCall = pathname.startsWith('/api/auth/callback') ||

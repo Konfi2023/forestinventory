@@ -32,19 +32,19 @@ export async function getApiUser(req?: Request): Promise<AuthUser | null> {
   // 2. Try Bearer token (native app)
   if (req) {
     const authHeader = req.headers.get('authorization');
-    dbg('[api-auth] authHeader present:', !!authHeader);
+    dbg('authHeader present: ' + !!authHeader);
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice(7);
       try {
         // Decode JWT payload (Keycloak token)
-        const payload = JSON.parse(
-          Buffer.from(token.split('.')[1], 'base64').toString()
-        );
+        const raw = Buffer.from(token.split('.')[1], 'base64').toString();
+        const payload = JSON.parse(raw);
+        dbg('JWT payload keys: ' + Object.keys(payload).join(', '));
+        dbg('JWT payload: ' + JSON.stringify({ sub: payload.sub, email: payload.email, preferred_username: payload.preferred_username, azp: payload.azp, exp: payload.exp }));
         const keycloakSub = payload.sub;
         const email = payload.email || payload.preferred_username || '';
-        dbg('[api-auth] JWT decoded — sub:', keycloakSub, 'email:', email);
 
-        if (!keycloakSub) { console.log('[api-auth] No sub in token'); return null; }
+        if (!keycloakSub) { dbg('No sub in token — returning null'); return null; }
 
         // Find user by keycloakId
         const user = await prisma.user.findFirst({
@@ -53,10 +53,10 @@ export async function getApiUser(req?: Request): Promise<AuthUser | null> {
         });
 
         if (user) {
-          dbg('[api-auth] User found by keycloakId:', user.id);
+          dbg('User found by keycloakId: ' + user.id + ' / ' + user.email);
           return { id: user.id, email: user.email };
         }
-        dbg('[api-auth] No user found by keycloakId:', keycloakSub);
+        dbg('No user found by keycloakId: ' + keycloakSub);
 
         // Fallback: try to find by email and auto-link keycloakId
         if (email) {
@@ -65,17 +65,17 @@ export async function getApiUser(req?: Request): Promise<AuthUser | null> {
             select: { id: true, email: true },
           });
           if (userByEmail) {
-            dbg('[api-auth] User found by email, auto-linking keycloakId');
+            dbg('User found by email (' + email + '), auto-linking keycloakId ' + keycloakSub);
             await prisma.user.update({
               where: { id: userByEmail.id },
               data: { keycloakId: keycloakSub },
             });
             return { id: userByEmail.id, email: userByEmail.email };
           }
-          dbg('[api-auth] No user found by email:', email);
+          dbg('No user found by email: ' + email);
         }
       } catch (err: any) {
-        dbg('[api-auth] Token decode error:', err?.message);
+        dbg('Token decode error: ' + (err?.message || String(err)));
       }
     }
   }

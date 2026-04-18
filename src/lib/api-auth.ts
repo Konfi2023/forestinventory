@@ -41,35 +41,39 @@ export async function getApiUser(req?: Request): Promise<AuthUser | null> {
         const payload = JSON.parse(raw);
         dbg('JWT payload keys: ' + Object.keys(payload).join(', '));
         dbg('JWT payload: ' + JSON.stringify({ sub: payload.sub, email: payload.email, preferred_username: payload.preferred_username, azp: payload.azp, exp: payload.exp }));
-        const keycloakSub = payload.sub;
+        const keycloakSub = payload.sub || '';
         const email = payload.email || payload.preferred_username || '';
 
-        if (!keycloakSub) { dbg('No sub in token — returning null'); return null; }
+        if (!keycloakSub && !email) { dbg('No sub and no email in token'); return null; }
 
-        // Find user by keycloakId
-        const user = await prisma.user.findFirst({
-          where: { keycloakId: keycloakSub },
-          select: { id: true, email: true },
-        });
-
-        if (user) {
-          dbg('User found by keycloakId: ' + user.id + ' / ' + user.email);
-          return { id: user.id, email: user.email };
+        // Find user by keycloakId (if sub is present)
+        if (keycloakSub) {
+          const user = await prisma.user.findFirst({
+            where: { keycloakId: keycloakSub },
+            select: { id: true, email: true },
+          });
+          if (user) {
+            dbg('User found by keycloakId: ' + user.id + ' / ' + user.email);
+            return { id: user.id, email: user.email };
+          }
+          dbg('No user found by keycloakId: ' + keycloakSub);
         }
-        dbg('No user found by keycloakId: ' + keycloakSub);
 
-        // Fallback: try to find by email and auto-link keycloakId
+        // Fallback: find by email (also covers tokens without sub)
         if (email) {
           const userByEmail = await prisma.user.findFirst({
             where: { email },
             select: { id: true, email: true },
           });
           if (userByEmail) {
-            dbg('User found by email (' + email + '), auto-linking keycloakId ' + keycloakSub);
-            await prisma.user.update({
-              where: { id: userByEmail.id },
-              data: { keycloakId: keycloakSub },
-            });
+            dbg('User found by email: ' + email + ' -> ' + userByEmail.id);
+            // Auto-link keycloakId if sub is present
+            if (keycloakSub) {
+              await prisma.user.update({
+                where: { id: userByEmail.id },
+                data: { keycloakId: keycloakSub },
+              });
+            }
             return { id: userByEmail.id, email: userByEmail.email };
           }
           dbg('No user found by email: ' + email);

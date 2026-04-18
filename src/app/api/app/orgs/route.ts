@@ -3,7 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getApiUser } from '@/lib/api-auth';
 
 export async function GET(req: Request) {
+  console.warn('[orgs] GET called');
   const user = await getApiUser(req);
+  console.warn('[orgs] getApiUser result:', user ? user.id : 'null');
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const memberships = await prisma.membership.findMany({

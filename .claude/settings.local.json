@@ -335,7 +335,8 @@
       "Bash(tar --exclude='node_modules' --exclude='.expo' --exclude='android' --exclude='dist' --exclude='.git' -czf /tmp/fm-mobile.tar.gz .)",
       "WebFetch(domain:expo.dev)",
       "WebFetch(domain:job-logs.eascdn.net)",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(xxd)"
     ]
   }
 }

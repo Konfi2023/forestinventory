@@ -103,7 +103,11 @@
       "step4": {
         "title": "Print delivery note",
         "desc": "The reference number automatically appears on all delivery notes."
-      }
+      },
+      "statCaption": "Due diligence compliance, documented and audit-ready."
+    },
+    "rondel": {
+      "viewLabel": "View"
     },
     "monitoring": {
       "label": "Satellite Monitoring",
@@ -140,7 +144,16 @@
       "unlimited": "Unlimited area",
       "users": "{count} users",
       "tryFree": "Try for free",
-      "enterprise": "Unlimited area · Unlimited users · SLA · API access",
+      "enterprise": {
+        "title1": "For everything",
+        "titleEm": "bigger",
+        "title2": ".",
+        "description": "Cooperatives, service providers, large forestry operations: unlimited area, unlimited users, API access, and a dedicated SLA.",
+        "feat1": "Unlimited area & users",
+        "feat2": "API & data exports",
+        "feat3": "Priority support, dedicated SLA",
+        "feat4": "On-site onboarding & training"
+      },
       "planFeatures": {
         "map": "Interactive forest map",
         "pois": "POIs: hunting stands, paths, huts",

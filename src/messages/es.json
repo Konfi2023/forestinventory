@@ -103,7 +103,11 @@
       "step4": {
         "title": "Imprimir albarán",
         "desc": "El número de referencia aparece automáticamente en todos los albaranes."
-      }
+      },
+      "statCaption": "Cumplimiento de diligencia debida, documentado y auditable."
+    },
+    "rondel": {
+      "viewLabel": "Vista"
     },
     "monitoring": {
       "label": "Vigilancia por satélite",
@@ -140,7 +144,16 @@
       "unlimited": "Superficie ilimitada",
       "users": "{count} usuarios",
       "tryFree": "Prueba gratuita",
-      "enterprise": "Superficie ilimitada · Usuarios ilimitados · SLA · Acceso API",
+      "enterprise": {
+        "title1": "Para todo lo que es",
+        "titleEm": "más grande",
+        "title2": ".",
+        "description": "Cooperativas, proveedores de servicios, grandes explotaciones forestales: superficie ilimitada, usuarios ilimitados, acceso API y SLA dedicado.",
+        "feat1": "Superficie y usuarios ilimitados",
+        "feat2": "API y exportaciones de datos",
+        "feat3": "Soporte prioritario, SLA dedicado",
+        "feat4": "Onboarding y formación in situ"
+      },
       "planFeatures": {
         "map": "Mapa forestal interactivo",
         "pois": "POIs: puestos de caza, caminos, refugios",

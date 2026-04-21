@@ -103,7 +103,11 @@
       "step4": {
         "title": "Imprimer le bon de livraison",
         "desc": "Le numéro de référence apparaît automatiquement sur tous les bons de livraison."
-      }
+      },
+      "statCaption": "Conformité de diligence raisonnable, documentée et auditable."
+    },
+    "rondel": {
+      "viewLabel": "Vue"
     },
     "monitoring": {
       "label": "Surveillance satellitaire",
@@ -140,7 +144,16 @@
       "unlimited": "Surface illimitée",
       "users": "{count} utilisateurs",
       "tryFree": "Essai gratuit",
-      "enterprise": "Surface illimitée · Utilisateurs illimités · SLA · Accès API",
+      "enterprise": {
+        "title1": "Pour tout ce qui est",
+        "titleEm": "plus grand",
+        "title2": ".",
+        "description": "Coopératives, prestataires de services, grandes exploitations forestières : surface illimitée, utilisateurs illimités, accès API et SLA dédié.",
+        "feat1": "Surface et utilisateurs illimités",
+        "feat2": "API et exports de données",
+        "feat3": "Support prioritaire, SLA dédié",
+        "feat4": "Onboarding et formation sur site"
+      },
       "planFeatures": {
         "map": "Carte forestière interactive",
         "pois": "POIs : miradors, chemins, refuges",

@@ -13,10 +13,10 @@ export default async function LegalLayout({
   setRequestLocale(locale);
 
   return (
-    <div className="bg-[#0a0f0a] text-white min-h-screen flex flex-col">
+    <div className="fm-cream min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 pt-28 pb-20 px-6">
-        <div className="max-w-3xl mx-auto">
+      <main className="flex-1 pt-24 pb-24 px-8">
+        <div className="max-w-[780px] mx-auto">
           {children}
         </div>
       </main>

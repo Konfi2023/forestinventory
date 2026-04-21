@@ -1,17 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Map, Leaf, ShieldCheck, PackageOpen,
-  ClipboardList, Trees, Radio, Wifi, Globe, ArrowUpRight,
-  CheckCircle2,
-  TreePine, Mountain, Building2,
-  Crosshair, BarChart3, Satellite, Users,
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { SignInButton } from './SignInButton';
 import { EnterpriseContactButton } from './EnterpriseContactButton';
-import { useTranslations } from 'next-intl';
 
 /* ─── Types ─────────────────────────────────────────────────────────────────── */
 interface DbPlan {
@@ -21,530 +14,105 @@ interface DbPlan {
   maxHectares: number | null;
   maxUsers: number | null;
 }
-interface Props { dbPlans: DbPlan[] }
+interface Props {
+  dbPlans: DbPlan[];
+}
 
-/* ─── Component ─────────────────────────────────────────────────────────────── */
+/* ─── Landing Page (Variant B — cream + forest-green) ───────────────────────── */
 export function LandingPageClient({ dbPlans }: Props) {
   const t = useTranslations('Landing');
 
-  const FEATURES = [
-    { title: t('features.map.title'), description: t('features.map.desc'), icon: Map },
-    { title: t('features.monitoring.title'), description: t('features.monitoring.desc'), icon: Leaf },
-    { title: t('features.compliance.title'), description: t('features.compliance.desc'), icon: ShieldCheck },
-    { title: t('features.harvest.title'), description: t('features.harvest.desc'), icon: PackageOpen },
-    { title: t('features.tasks.title'), description: t('features.tasks.desc'), icon: ClipboardList },
-    { title: t('features.orgs.title'), description: t('features.orgs.desc'), icon: Trees },
-  ];
-
-  const PLAN_FEATURES = [
-    { icon: Map,           label: t('pricing.planFeatures.map') },
-    { icon: Crosshair,     label: t('pricing.planFeatures.pois') },
-    { icon: ClipboardList, label: t('pricing.planFeatures.tasks') },
-    { icon: Leaf,          label: t('pricing.planFeatures.inventory') },
-    { icon: BarChart3,     label: t('pricing.planFeatures.reports') },
-    { icon: Satellite,     label: t('pricing.planFeatures.satellite') },
-    { icon: ShieldCheck,   label: t('pricing.planFeatures.health') },
-    { icon: Users,         label: t('pricing.planFeatures.team') },
-  ];
-
-  const PLANS = [
-    { name: t('pricing.plans.basis.name'), desc: t('pricing.plans.basis.desc'), price: '4,90 €', badge: null, highlight: false, enterprise: false, icon: TreePine },
-    { name: t('pricing.plans.pro.name'), desc: t('pricing.plans.pro.desc'), price: '19,90 €', badge: t('pricing.plans.pro.badge'), highlight: true, enterprise: false, icon: Trees },
-    { name: t('pricing.plans.expert.name'), desc: t('pricing.plans.expert.desc'), price: '39,90 €', badge: null, highlight: false, enterprise: false, icon: Mountain },
-    { name: t('pricing.plans.enterprise.name'), desc: '', price: null, badge: null, highlight: false, enterprise: true, icon: Building2 },
-  ];
-
   return (
     <>
-      {/* ── Hero (2-Spalten: Text links, Scanner rechts) ─────────────────── */}
-      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img src="/landing/satellite-roitzsch.png" alt="" className="w-full h-full object-cover opacity-[0.06]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f0a] via-transparent to-[#0a0f0a]" />
-        </div>
-        <div className="relative z-10 max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left: Text */}
-          <div>
-            <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-              className="text-[13px] text-slate-500 mb-6 font-mono uppercase tracking-widest">
-              {t('hero.badge')}
-            </motion.p>
-            <motion.h1 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="text-4xl sm:text-5xl lg:text-[3.5rem] font-light tracking-tight leading-[1.15] text-white mb-6">
-              {t('hero.title1')}<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">{t('hero.title2')}</span>
-            </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
-              className="text-[15px] text-slate-400 leading-relaxed max-w-lg mb-10">
-              {t('hero.description')}
-            </motion.p>
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
-              className="flex flex-col sm:flex-row items-start gap-4 mb-8">
-              <SignInButton
-                label={t('hero.cta')}
-                className="text-[13px] text-black bg-emerald-400 hover:bg-emerald-300 px-6 py-2.5 rounded-lg transition-colors font-medium"
-              />
-              <a href="#features" className="text-[13px] text-slate-400 hover:text-white transition-colors py-2.5">
-                {t('hero.learnMore')} &darr;
-              </a>
-            </motion.div>
-            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
-              className="flex items-center gap-5 text-[11px] text-slate-500">
-              <span>{t('hero.gdpr')}</span>
-              <span className="w-px h-3 bg-white/10" />
-              <span>{t('hero.eudr')}</span>
-              <span className="w-px h-3 bg-white/10" />
-              <span>{t('hero.servers')}</span>
-            </motion.div>
-          </div>
+      <HeroSection />
+      <FeaturesRail />
+      <Rondel />
+      <EudrSection />
+      <PricingSection dbPlans={dbPlans} />
 
-          {/* Right: Scanner Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
-            className="group relative h-[420px] rounded-2xl overflow-hidden border border-white/10 bg-[#0d1a0d] hidden lg:block"
-          >
-            <div className="absolute inset-0">
-              <img src="/landing/satellite-roitzsch.png" alt="Satellitenbild mit Waldpolygonen"
-                className="w-full h-full object-cover transition-all duration-700 grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-[#0d1a0d]/40 mix-blend-multiply transition-opacity duration-700 group-hover:opacity-0" />
-              <motion.div
-                animate={{ top: ["-10%", "110%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="absolute left-0 right-0 h-1 bg-emerald-500/50 blur-[2px] shadow-[0_0_15px_#4ade80] opacity-50 group-hover:opacity-20 pointer-events-none"
-              />
-            </div>
-            <div className="absolute inset-0 p-5 flex flex-col justify-between z-10">
-              <div className="flex justify-between items-start">
-                <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
-                  <Wifi size={12} className="text-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-mono text-emerald-400 tracking-wider">LIVE</span>
-                </div>
-                <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-mono text-slate-300">
-                  {t('scanner.coords')}
-                </div>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-[#0a0f0a]/80 backdrop-blur-xl border border-white/10 rounded-xl" />
-                <div className="relative z-10 p-4">
-                  <h3 className="text-lg font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">{t('scanner.location')}</h3>
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    <div className="bg-black/20 rounded-lg p-2 border border-white/5">
-                      <div className="text-[9px] text-slate-500 uppercase font-mono mb-1">{t('scanner.areaLabel')}</div>
-                      <div className="text-sm font-bold text-white flex items-center gap-1"><Trees size={13} className="text-emerald-500" /> {t('scanner.area')}</div>
-                    </div>
-                    <div className="bg-black/20 rounded-lg p-2 border border-white/5">
-                      <div className="text-[9px] text-slate-500 uppercase font-mono mb-1">{t('scanner.metricLabel')}</div>
-                      <div className="text-sm font-bold text-emerald-400">{t('scanner.metricValue')}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="absolute top-3 left-3 w-4 h-4 border-l-2 border-t-2 border-white/20 rounded-tl-sm pointer-events-none" />
-            <div className="absolute top-3 right-3 w-4 h-4 border-r-2 border-t-2 border-white/20 rounded-tr-sm pointer-events-none" />
-            <div className="absolute bottom-3 left-3 w-4 h-4 border-l-2 border-b-2 border-white/20 rounded-bl-sm pointer-events-none" />
-            <div className="absolute bottom-3 right-3 w-4 h-4 border-r-2 border-b-2 border-white/20 rounded-br-sm pointer-events-none" />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Features (direkt nach Hero) ─────────────────────────────────── */}
-      <section id="features" className="py-28 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-16">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4"
-            >
-              {t('features.label')}
-            </motion.div>
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-3xl md:text-4xl font-light text-white leading-tight max-w-md"
-            >
-              {t('features.title')}{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
-                {t('features.titleHighlight')}
-              </span>
-            </motion.h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-14">
-            {FEATURES.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, duration: 0.5 }}
-              >
-                <f.icon size={18} className="text-emerald-400 mb-4" strokeWidth={1.5} />
-                <h3 className="text-[15px] font-medium text-white mb-2">{f.title}</h3>
-                <p className="text-[13px] text-slate-400 leading-relaxed">{f.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
-
-      {/* ── Screenshot Carousel ─────────────────────────────────────────── */}
-      <section id="produkt" className="pt-20 pb-0 px-6">
-        <div className="max-w-6xl mx-auto mb-8">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4"
-          >
-            {t('product.label')}
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-light text-white leading-tight max-w-lg"
-          >
-            {t('product.title')}{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
-              {t('product.titleHighlight')}
-            </span>
-          </motion.h2>
-        </div>
-      </section>
-      <ScreenshotCarousel />
-
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
-
-      {/* ── EUDR ──────────────────────────────────────────────────────────── */}
-      <section id="eudr" className="py-28 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
-                {t('eudr.label')}
-              </div>
-              <h2 className="text-3xl md:text-4xl font-light text-white mb-6 leading-tight">
-                {t('eudr.title1')}<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">{t('eudr.title2')}</span>
-              </h2>
-              <p className="text-[15px] text-slate-400 leading-relaxed mb-8">
-                {t('eudr.description')}
-              </p>
-              <ul className="space-y-3">
-                {[t('eudr.check1'), t('eudr.check2'), t('eudr.check3'), t('eudr.check4'), t('eudr.check5')].map(item => (
-                  <li key={item} className="flex items-start gap-3">
-                    <CheckCircle2 size={14} className="text-emerald-400 mt-0.5 shrink-0" strokeWidth={1.5} />
-                    <span className="text-[13px] text-slate-400">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
-              className="space-y-6 lg:pt-10">
-              {[
-                { step: '01', title: t('eudr.step1.title'), desc: t('eudr.step1.desc') },
-                { step: '02', title: t('eudr.step2.title'), desc: t('eudr.step2.desc') },
-                { step: '03', title: t('eudr.step3.title'), desc: t('eudr.step3.desc') },
-                { step: '04', title: t('eudr.step4.title'), desc: t('eudr.step4.desc') },
-              ].map((s, i) => (
-                <motion.div key={s.step} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 + i * 0.08 }}
-                  className="flex gap-5">
-                  <span className="text-[11px] font-mono text-emerald-400/60 mt-0.5 shrink-0 w-5">{s.step}</span>
-                  <div>
-                    <p className="text-[14px] font-medium text-white mb-1">{s.title}</p>
-                    <p className="text-[13px] text-slate-400 leading-relaxed">{s.desc}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
-
-      {/* ── Monitoring ────────────────────────────────────────────────────── */}
-      <section id="monitoring" className="py-28 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
-                <Satellite size={14} className="animate-pulse" />
-                {t('monitoring.label')}
-              </div>
-              <h2 className="text-3xl md:text-4xl font-light text-white mb-6 leading-tight">
-                {t('monitoring.title1')}<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
-                  {t('monitoring.title2')}
-                </span>
-              </h2>
-              <p className="text-[15px] text-slate-400 leading-relaxed mb-8">
-                {t('monitoring.description')}
-              </p>
-              <div className="grid grid-cols-2 gap-6">
-                {[
-                  { label: t('monitoring.radar.title'),   desc: t('monitoring.radar.desc') },
-                  { label: t('monitoring.vitality.title'), desc: t('monitoring.vitality.desc') },
-                  { label: t('monitoring.storm.title'),   desc: t('monitoring.storm.desc') },
-                  { label: t('monitoring.beetle.title'),  desc: t('monitoring.beetle.desc') },
-                ].map(item => (
-                  <div key={item.label}>
-                    <p className="text-[13px] font-medium text-white">{item.label}</p>
-                    <p className="text-[12px] text-slate-500 mt-0.5">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
-              className="lg:pt-10 space-y-4">
-              <div className="rounded-xl overflow-hidden border border-white/10 shadow-lg">
-                <img src="/landing/satellite-roitzsch.png" alt="Satellitenbild mit Waldpolygonen" className="w-full block" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-xl overflow-hidden border border-white/10 shadow-lg">
-                  <img src="/landing/satellite-gutconow.png" alt="Satellitenbild Wald" className="w-full block" />
-                </div>
-                <div className="rounded-xl overflow-hidden border border-white/10 shadow-lg">
-                  <img src="/landing/satellite-bogovic.png" alt="Satellitenbild Wald" className="w-full block" />
-                </div>
-              </div>
-              <p className="text-[10px] text-slate-600 text-center">{t('monitoring.imageCaption')}</p>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
-
-      {/* ── Preise ────────────────────────────────────────────────────────── */}
-      <section id="preise" className="py-28 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-16">
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              className="flex items-center gap-2 text-emerald-400 font-mono text-xs tracking-widest uppercase mb-4">
-              {t('pricing.label')}
-            </motion.div>
-            <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="text-3xl md:text-4xl font-light text-white mb-4 max-w-sm leading-tight">
-              {t('pricing.title')}{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">{t('pricing.titleHighlight')}</span>
-            </motion.h2>
-            <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
-              className="text-[15px] text-slate-400">
-              {t('pricing.subtitle')}
-            </motion.p>
-          </div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12">
-            <p className="text-[11px] text-slate-500 uppercase tracking-widest mb-4">{t('pricing.included')}</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {PLAN_FEATURES.map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-start gap-2">
-                  <Icon size={13} className="text-emerald-400 mt-0.5 shrink-0" strokeWidth={1.5} />
-                  <span className="text-[12px] text-slate-400 leading-snug">{label}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <div className="grid sm:grid-cols-3 gap-6 mb-8">
-            {PLANS.filter(p => !p.enterprise).map((plan, i) => {
-              const db = dbPlans.find(d => d.name === plan.name);
-              const price = db?.monthlyPrice?.toFixed(2).replace('.', ',') ?? plan.price;
-              const maxHa = db?.maxHectares ?? null;
-              const maxU = db?.maxUsers ?? null;
-              return (
-                <motion.div
-                  key={plan.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`rounded-xl p-6 flex flex-col border ${
-                    plan.highlight ? 'border-emerald-500' : 'border-white/10'
-                  }`}
-                >
-                  {plan.badge && (
-                    <span className="text-[10px] text-emerald-400 font-medium mb-4">{plan.badge}</span>
-                  )}
-                  <h3 className="text-[15px] font-medium text-white mb-0.5">{plan.name}</h3>
-                  <p className="text-[12px] text-slate-500 mb-5">{plan.desc}</p>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-2xl font-light text-white">{price} €</span>
-                    <span className="text-[12px] text-slate-500">{t('pricing.perMonth')}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 mb-5">{t('pricing.vat')}</p>
-                  <p className="text-[12px] text-slate-400 mb-6">
-                    {maxHa ? t('pricing.upTo', { ha: maxHa }) : t('pricing.unlimited')}
-                    {maxU ? ` · ${t('pricing.users', { count: maxU })}` : ''}
-                  </p>
-                  <div className="mt-auto">
-                    <SignInButton
-                      label={t('pricing.tryFree')}
-                      className={`w-full py-2 rounded-lg text-[13px] text-center transition-colors ${
-                        plan.highlight
-                          ? 'bg-emerald-500 text-black hover:bg-emerald-400 font-medium'
-                          : 'border border-white/10 text-slate-400 hover:text-white hover:border-white/20'
-                      }`}
-                    />
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="rounded-xl border border-white/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Building2 size={18} className="text-slate-500 shrink-0" strokeWidth={1.5} />
-              <div>
-                <p className="text-[14px] font-medium text-white">{t('pricing.plans.enterprise.name')}</p>
-                <p className="text-[12px] text-slate-500">{t('pricing.enterprise')}</p>
-              </div>
-            </div>
-            <EnterpriseContactButton />
-          </motion.div>
-        </div>
-      </section>
-
-      <div className="max-w-6xl mx-auto px-6"><div className="h-px bg-white/5" /></div>
-
-      {/* ── CTA ───────────────────────────────────────────────────────────── */}
-      <section className="py-28 px-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-          className="max-w-xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-light text-white mb-4">
+      {/* Final CTA — cream, plain */}
+      <section className="border-t border-[#e0dbc9] px-8 py-28">
+        <div className="max-w-[800px] mx-auto text-center">
+          <h2 className="fm-serif text-[clamp(32px,4vw,56px)] leading-[1.02] tracking-[-0.025em] text-[#1a1e17] mb-6">
             {t('cta.title')}
           </h2>
-          <p className="text-[15px] text-slate-400 mb-8">
+          <p className="text-[17px] text-[#4a5148] leading-[1.55] mb-10 max-w-[48ch] mx-auto">
             {t('cta.description')}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <SignInButton
               label={t('cta.button')}
-              className="text-[13px] text-black bg-emerald-400 hover:bg-emerald-300 px-6 py-2.5 rounded-lg transition-colors font-medium"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-[13px] bg-[#1a1e17] text-[#efece2] border border-[#1a1e17] hover:bg-[#2d3d2a] hover:border-[#2d3d2a] transition-colors"
             />
             <a
               href="mailto:kontakt@forest-manager.eu"
-              className="text-[13px] text-slate-400 hover:text-white px-6 py-2.5 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-[13px] text-[#4a5148] border border-[#d4cfbe] hover:text-[#1a1e17] hover:border-[#1a1e17] transition-colors"
             >
               {t('cta.contact')}
             </a>
           </div>
-        </motion.div>
+        </div>
       </section>
     </>
   );
 }
 
-/* ─── Data ──────────────────────────────────────────────────────────────────── */
-
-function ScreenshotCarousel() {
+/* ─── 1. Hero ───────────────────────────────────────────────────────────────── */
+function HeroSection() {
   const t = useTranslations('Landing');
-
-  const CAROUSEL_SLIDES = [
-    { src: t('carousel.s1.image'), num: '01', title: t('carousel.s1.title'), subtitle: t('carousel.s1.subtitle') },
-    { src: t('carousel.s2.image'), num: '02', title: t('carousel.s2.title'), subtitle: t('carousel.s2.subtitle') },
-    { src: t('carousel.s3.image'), num: '03', title: t('carousel.s3.title'), subtitle: t('carousel.s3.subtitle') },
-    { src: t('carousel.s4.image'), num: '04', title: t('carousel.s4.title'), subtitle: t('carousel.s4.subtitle') },
-    { src: t('carousel.s5.image'), num: '05', title: t('carousel.s5.title'), subtitle: t('carousel.s5.subtitle') },
-  ];
-
-  const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(1);
-  const next = useCallback(() => { setDirection(1); setCurrent(i => (i + 1) % CAROUSEL_SLIDES.length); }, [CAROUSEL_SLIDES.length]);
-  const prev = useCallback(() => { setDirection(-1); setCurrent(i => (i - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length); }, [CAROUSEL_SLIDES.length]);
-
-  useEffect(() => {
-    const id = setInterval(next, 6000);
-    return () => clearInterval(id);
-  }, [next]);
-
-  const slide = CAROUSEL_SLIDES[current];
-
   return (
-    <section className="pt-0 pb-20 px-6">
-      <div className="max-w-5xl mx-auto">
-        {/* Image container — fixed 1440x900 aspect */}
-        <div className="relative aspect-[1440/900] rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50">
-          {/* Background image — pixel-perfect */}
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={current}
-              src={slide.src}
-              alt={slide.title}
-              initial={{ opacity: 0, scale: 1.02 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.7, ease: 'easeInOut' }}
-              className="absolute inset-0 w-full h-full object-fill"
+    <section className="pt-16 pb-0">
+      <div className="max-w-[1240px] mx-auto px-8">
+        {/* Meta line */}
+        <div className="flex flex-wrap items-center gap-[10px] font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.04em] text-[#8a8f83] mb-14">
+          <span>Forest Manager</span>
+          <span className="opacity-40">·</span>
+          <span>a medeina.ai product</span>
+          <span className="opacity-40">·</span>
+          <span>v4 · 2026</span>
+        </div>
+
+        {/* Title */}
+        <h1 className="fm-serif text-[clamp(48px,8.5vw,136px)] leading-[0.94] tracking-[-0.03em] text-[#1a1e17] max-w-[14ch] mb-16">
+          {t('hero.title1')}{' '}
+          <em className="fm-em">{t('hero.title2')}</em>
+        </h1>
+
+        {/* Split sub + CTA */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 pt-10 border-t border-[#e0dbc9] pb-24">
+          <p className="text-[19px] leading-[1.55] text-[#4a5148] max-w-[42ch] m-0">
+            {t('hero.description')}
+          </p>
+          <div className="flex flex-wrap gap-3 items-start md:justify-end">
+            <SignInButton
+              label={t('hero.cta')}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full text-[14px] bg-[#1a1e17] text-[#efece2] border border-[#1a1e17] hover:bg-[#2d3d2a] hover:border-[#2d3d2a] transition-colors"
             />
-          </AnimatePresence>
+            <a
+              href="#produkt"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full text-[14px] text-[#4a5148] border border-[#d4cfbe] hover:text-[#1a1e17] hover:border-[#1a1e17] transition-colors"
+            >
+              {t('hero.learnMore')}
+            </a>
+          </div>
+        </div>
+      </div>
 
-          {/* Gradient overlay — left side for text */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-
-          {/* Content overlay */}
-          <div className="absolute inset-0 z-10 flex flex-col justify-end p-8 sm:p-12">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-              >
-                {/* Number */}
-                <span className="text-[6rem] sm:text-[8rem] font-light leading-none text-white/[0.06] absolute top-6 left-8 sm:left-12 select-none pointer-events-none">
-                  {slide.num}
-                </span>
-
-                {/* Title */}
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-light text-white leading-[1.1] whitespace-pre-line mb-3 max-w-md">
-                  {slide.title}
-                </h2>
-
-                {/* Subtitle */}
-                <p className="text-xs sm:text-sm text-white/60 max-w-sm mb-8">
-                  {slide.subtitle}
-                </p>
-
-                {/* Slide indicator + arrows */}
-                <div className="flex items-center gap-4">
-                  {CAROUSEL_SLIDES.map((_, i) => (
-                    <button key={i} onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
-                      className="relative h-[2px] w-10 bg-white/10 overflow-hidden rounded-full">
-                      {current === i && (
-                        <motion.div
-                          initial={{ width: '0%' }}
-                          animate={{ width: '100%' }}
-                          transition={{ duration: 6, ease: 'linear' }}
-                          className="absolute inset-y-0 left-0 bg-emerald-400 rounded-full"
-                        />
-                      )}
-                    </button>
-                  ))}
-                  {/* Arrows inline */}
-                  <div className="ml-4 flex gap-2">
-                    <button onClick={prev} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-full w-8 h-8 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-                    </button>
-                    <button onClick={next} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-full w-8 h-8 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+      {/* Stage — hero image */}
+      <div className="pb-32">
+        <div className="max-w-[1240px] mx-auto px-8">
+          <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-[#d4cfbe] bg-[#e8e4d6]">
+            <Image
+              src="/landing/slide-ndvi.png"
+              alt="Forest Manager — Karte, Biomasse (NDVI)"
+              fill
+              priority
+              sizes="(min-width: 1280px) 1176px, 100vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="mt-5 font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.08em] text-[#8a8f83]">
+            01 · {t('carousel.s1.subtitle')}
           </div>
         </div>
       </div>
@@ -552,26 +120,348 @@ function ScreenshotCarousel() {
   );
 }
 
-const SATELLITE_PROJECTS = [
-  {
-    location: 'Roitzsch, DE',
-    coords: '51.62° N, 12.27° E',
-    area: '340 ha',
-    image: '/landing/satellite-roitzsch.png',
-    metric: { label: 'NDVI Trend', value: '+2.1 %' },
-  },
-  {
-    location: 'Gut Conow, DE',
-    coords: '53.45° N, 11.18° E',
-    area: '221 ha',
-    image: '/landing/satellite-gutconow.png',
-    metric: { label: 'Vitalität', value: 'NDVI 0.74' },
-  },
-  {
-    location: 'Bogovic, HR',
-    coords: '45.32° N, 15.87° E',
-    area: '14 ha',
-    image: '/landing/satellite-bogovic.png',
-    metric: { label: 'CO₂-Speicher', value: '2.200 t' },
-  },
-];
+/* ─── 2. Features Rail ───────────────────────────────────────────────────────── */
+function FeaturesRail() {
+  const t = useTranslations('Landing');
+  const items = [
+    { k: '01', key: 'map' },
+    { k: '02', key: 'monitoring' },
+    { k: '03', key: 'compliance' },
+    { k: '04', key: 'harvest' },
+    { k: '05', key: 'tasks' },
+    { k: '06', key: 'orgs' },
+  ] as const;
+
+  return (
+    <section id="produkt" className="border-t border-[#e0dbc9] py-28">
+      <div className="max-w-[1240px] mx-auto px-8 mb-8">
+        <SectionKicker>{t('features.label')}</SectionKicker>
+        <h2 className="fm-serif text-[clamp(40px,5.5vw,84px)] leading-[1] tracking-[-0.025em] text-[#1a1e17] max-w-[14ch]">
+          {t('features.title')}{' '}
+          <em className="fm-em">{t('features.titleHighlight')}</em>
+        </h2>
+      </div>
+
+      <div className="fm-rail overflow-x-auto px-8 mt-4 [scroll-snap-type:x_mandatory]">
+        <div className="grid grid-flow-col auto-cols-[minmax(300px,360px)] gap-5 max-w-[1272px] mx-auto">
+          {items.map(it => (
+            <article
+              key={it.k}
+              className="[scroll-snap-align:start] p-8 rounded-2xl border border-[#e0dbc9] bg-[#e8e4d6] hover:bg-[#efece2] hover:border-[#d4cfbe] hover:-translate-y-0.5 transition-all grid grid-rows-[auto_auto_1fr_auto] gap-3.5 min-h-[280px]"
+            >
+              <div className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.06em] text-[#8a8f83]">
+                {it.k} / 06
+              </div>
+              <h3 className="fm-serif text-[30px] leading-[1.05] tracking-[-0.02em] text-[#1a1e17]">
+                {t(`features.${it.key}.title`)}
+              </h3>
+              <p className="text-[14px] leading-[1.55] text-[#4a5148]">
+                {t(`features.${it.key}.desc`)}
+              </p>
+              <div className="font-[family-name:var(--font-geist-mono)] text-[14px] text-[#8a8f83] self-end">→</div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 3. Rondel — stacked slides with sticky counter, using real images ─────── */
+function Rondel() {
+  const t = useTranslations('Landing');
+
+  // Map the existing carousel images into the Rondel slides.
+  // Five carousel slides → five stacked slides.
+  const slides = [
+    { n: '01', key: 's1' }, // NDVI / Karte
+    { n: '02', key: 's3' }, // Klima & Borkenkäfer
+    { n: '03', key: 's2' }, // Aufgaben
+    { n: '04', key: 's4' }, // Einzelbäume
+    { n: '05', key: 's5' }, // Forsteinrichtung
+  ] as const;
+
+  const [active, setActive] = useState(0);
+  const refs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            const i = Number((e.target as HTMLElement).dataset.i);
+            setActive(i);
+          }
+        });
+      },
+      { threshold: 0.4 },
+    );
+    refs.current.forEach(el => el && obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <section className="border-t border-[#e0dbc9] pt-32 pb-0">
+      <div className="max-w-[1240px] mx-auto px-8">
+        <SectionKicker>{t('product.label')}</SectionKicker>
+        <h2 className="fm-serif text-[clamp(40px,5.5vw,84px)] leading-[1] tracking-[-0.025em] text-[#1a1e17] max-w-[18ch]">
+          <em className="fm-em">{t('product.title')}</em>
+          <br />
+          {t('product.titleHighlight')}
+        </h2>
+      </div>
+
+      {/* Sticky counter */}
+      <div className="sticky top-[70px] z-30 bg-[#efece2] border-y border-[#e0dbc9] mt-10 py-3">
+        <div className="max-w-[1240px] mx-auto px-8 flex justify-between font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.08em] text-[#8a8f83]">
+          <span>{t('rondel.viewLabel')}</span>
+          <span className="text-[#1a1e17] tabular-nums">
+            {String(active + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+          </span>
+        </div>
+      </div>
+
+      {slides.map((s, i) => {
+        const title = t(`carousel.${s.key}.title`).replace(/\n/g, ' ');
+        const subtitle = t(`carousel.${s.key}.subtitle`);
+        const image = t(`carousel.${s.key}.image`);
+        return (
+          <div
+            key={s.n}
+            ref={el => { refs.current[i] = el; }}
+            data-i={i}
+            className="py-24 border-b border-[#e0dbc9] last:border-b-0 last:pb-32"
+          >
+            <div className="max-w-[1240px] mx-auto px-8">
+              <div className="grid grid-cols-[120px_1fr] max-md:grid-cols-1 gap-8 max-md:gap-4 items-baseline mb-14 max-md:mb-8">
+                <div className="fm-mono text-[72px] max-md:text-[44px] leading-none text-[#8a8f83] tabular-nums tracking-[-0.02em]">
+                  {s.n}
+                </div>
+                <div>
+                  <h3 className="fm-serif text-[clamp(36px,5vw,72px)] leading-[0.98] tracking-[-0.025em] text-[#1a1e17] mb-4">
+                    {title}
+                  </h3>
+                  <p className="text-[17px] leading-[1.55] text-[#4a5148] max-w-[50ch] m-0">
+                    {subtitle}
+                  </p>
+                </div>
+              </div>
+
+              <div className="max-w-[1100px] mx-auto">
+                <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-[#d4cfbe] bg-[#e8e4d6]">
+                  <Image
+                    src={image}
+                    alt={title}
+                    fill
+                    sizes="(min-width: 1100px) 1100px, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+/* ─── 4. EUDR ───────────────────────────────────────────────────────────────── */
+function EudrSection() {
+  const t = useTranslations('Landing');
+  const rows = [
+    { k: '01', key: 'step1' },
+    { k: '02', key: 'step2' },
+    { k: '03', key: 'step3' },
+    { k: '04', key: 'step4' },
+  ] as const;
+
+  return (
+    <section id="eudr" className="border-t border-[#e0dbc9] py-32">
+      <div className="max-w-[1240px] mx-auto px-8 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
+        {/* Left */}
+        <div>
+          <SectionKicker>{t('eudr.label')}</SectionKicker>
+          <h2 className="fm-serif text-[clamp(40px,5.5vw,84px)] leading-[1] tracking-[-0.025em] text-[#1a1e17] max-w-[14ch] mb-10">
+            {t('eudr.title1')}
+            <br />
+            <em className="fm-em">{t('eudr.title2')}</em>
+          </h2>
+          <p className="text-[17px] leading-[1.55] text-[#4a5148] max-w-[42ch] m-0">
+            {t('eudr.description')}
+          </p>
+
+          <div className="mt-14 pt-7 border-t border-[#e0dbc9] flex items-baseline gap-5">
+            <span className="fm-serif text-[64px] leading-none tracking-[-0.02em] text-[#2d3d2a] italic">
+              100%
+            </span>
+            <span className="text-[14px] leading-[1.5] text-[#4a5148] max-w-[30ch]">
+              {t('eudr.statCaption')}
+            </span>
+          </div>
+        </div>
+
+        {/* Right */}
+        <div className="flex flex-col pt-3">
+          {rows.map((r, i) => (
+            <div
+              key={r.k}
+              className={`grid grid-cols-[48px_1fr] gap-6 py-6 border-b border-[#e0dbc9] ${
+                i === 0 ? 'border-t border-[#e0dbc9]' : ''
+              } items-baseline`}
+            >
+              <div className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.04em] text-[#8a8f83]">
+                {r.k}
+              </div>
+              <div>
+                <div className="fm-serif text-[24px] leading-[1.15] tracking-[-0.01em] text-[#1a1e17] mb-1.5">
+                  {t(`eudr.${r.key}.title`)}
+                </div>
+                <div className="text-[15px] leading-[1.5] text-[#4a5148] max-w-[48ch]">
+                  {t(`eudr.${r.key}.desc`)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 5. Pricing + Enterprise ───────────────────────────────────────────────── */
+function PricingSection({ dbPlans }: { dbPlans: DbPlan[] }) {
+  const t = useTranslations('Landing');
+
+  const PLANS = [
+    { id: 'basis',  price: '4,90',  featured: false },
+    { id: 'pro',    price: '19,90', featured: true },
+    { id: 'expert', price: '39,90', featured: false },
+  ] as const;
+
+  return (
+    <section id="preise" className="border-t border-[#e0dbc9] py-32">
+      <div className="max-w-[1240px] mx-auto px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-baseline mb-10">
+          <div>
+            <SectionKicker>{t('pricing.label')}</SectionKicker>
+            <h2 className="fm-serif text-[clamp(40px,5.5vw,84px)] leading-[1] tracking-[-0.025em] text-[#1a1e17] max-w-[14ch]">
+              {t('pricing.title')}{' '}
+              <em className="fm-em">{t('pricing.titleHighlight')}</em>
+            </h2>
+          </div>
+        </div>
+
+        {/* Plan grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+          {PLANS.map(p => {
+            const db = dbPlans.find(d => d.name.toLowerCase() === p.id);
+            const price =
+              db?.monthlyPrice?.toFixed(2).replace('.', ',') ?? p.price;
+            const maxHa = db?.maxHectares ?? null;
+            const maxU = db?.maxUsers ?? null;
+            const featured = p.featured;
+            return (
+              <article
+                key={p.id}
+                className={`relative rounded-xl border flex flex-col gap-2 p-6 group ${
+                  featured
+                    ? 'bg-[#e8e4d6] border-[#2d3d2a]'
+                    : 'bg-[#efece2] border-[#e0dbc9]'
+                }`}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="fm-serif text-[22px] leading-[1.1] tracking-[-0.01em] text-[#1a1e17]">
+                    {t(`pricing.plans.${p.id}.name`)}
+                  </div>
+                  <div className="font-[family-name:var(--font-geist-mono)] text-[11px] text-[#8a8f83]">
+                    {t(`pricing.plans.${p.id}.desc`)}
+                  </div>
+                </div>
+
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="fm-serif text-[38px] leading-none tracking-[-0.015em] text-[#1a1e17]">
+                    {price} €
+                  </span>
+                  <span className="font-[family-name:var(--font-geist-mono)] text-[11px] text-[#8a8f83] ml-1">
+                    {t('pricing.perMonth')}
+                  </span>
+                </div>
+                <div className="font-[family-name:var(--font-geist-mono)] text-[9px] tracking-[0.04em] text-[#8a8f83] -mt-0.5">
+                  {t('pricing.vat')}
+                </div>
+
+                <div className="text-[13px] text-[#4a5148] pt-3 border-t border-[#e0dbc9] mt-2 flex-1">
+                  {maxHa ? t('pricing.upTo', { ha: maxHa }) : t('pricing.unlimited')}
+                  {maxU ? ` · ${t('pricing.users', { count: maxU })}` : ''}
+                </div>
+
+                <SignInButton
+                  label={t('pricing.tryFree')}
+                  className={`mt-3 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-[12px] border transition-colors ${
+                    featured
+                      ? 'bg-[#1a1e17] text-[#efece2] border-[#1a1e17] hover:bg-[#2d3d2a] hover:border-[#2d3d2a]'
+                      : 'bg-transparent text-[#4a5148] border-[#d4cfbe] hover:bg-[#1a1e17] hover:text-[#efece2] hover:border-[#1a1e17]'
+                  }`}
+                />
+              </article>
+            );
+          })}
+        </div>
+
+        {/* Enterprise block */}
+        <div className="relative mt-6 p-10 max-md:p-7 rounded-2xl border border-[#d4cfbe] bg-[#e3dfce] overflow-hidden">
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(ellipse at 85% 50%, rgba(45,61,42,0.08), transparent 55%)',
+            }}
+          />
+          <div className="relative z-10 grid grid-cols-[auto_1fr_auto] max-md:grid-cols-1 items-center gap-12 max-md:gap-6">
+            <div
+              className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.14em] text-[#8a8f83] border-l border-[#d4cfbe] pl-3 py-2 [writing-mode:vertical-rl] [transform:rotate(180deg)] max-md:[writing-mode:horizontal-tb] max-md:[transform:none] max-md:border-l-0 max-md:border-b max-md:border-[#d4cfbe] max-md:pl-0 max-md:pb-3"
+            >
+              04 / Enterprise
+            </div>
+            <div className="max-w-[56ch]">
+              <h3 className="fm-serif text-[clamp(28px,3.2vw,40px)] leading-[1.05] tracking-[-0.02em] text-[#1a1e17] mb-3">
+                {t('pricing.enterprise.title1')}{' '}
+                <em className="fm-em">{t('pricing.enterprise.titleEm')}</em>
+                {t('pricing.enterprise.title2')}
+              </h3>
+              <p className="text-[14px] leading-[1.55] text-[#4a5148] mb-4 max-w-[48ch]">
+                {t('pricing.enterprise.description')}
+              </p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-6 list-none p-0 m-0">
+                {['feat1', 'feat2', 'feat3', 'feat4'].map(key => (
+                  <li
+                    key={key}
+                    className="pl-4 relative font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#4a5148]"
+                  >
+                    <span className="absolute left-0 text-[#2d3d2a]">→</span>
+                    {t(`pricing.enterprise.${key}`)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="justify-self-start md:justify-self-end">
+              <EnterpriseContactButton />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Shared bits ────────────────────────────────────────────────────────────── */
+function SectionKicker({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.04em] text-[#8a8f83] mb-7">
+      <span className="w-1.5 h-1.5 rounded-full bg-[#2d3d2a]" />
+      <span>{children}</span>
+    </div>
+  );
+}

@@ -78,23 +78,23 @@ export function LanguageSwitcher() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-white transition-colors"
+        className="flex items-center gap-1.5 font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#4a5148] hover:text-[#1a1e17] transition-colors"
         aria-label="Language"
       >
-        <Globe size={14} />
+        <Globe size={13} />
         <span className="uppercase">{locale}</span>
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-2 bg-[#0a0f0a] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50 min-w-[80px]">
+        <div className="absolute top-full right-0 mt-2 bg-[#efece2] border border-[#d4cfbe] rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden z-50 min-w-[80px]">
           {LANGUAGES.map(lang => (
             <button
               key={lang.code}
               onClick={() => switchLocale(lang.code)}
-              className={`block w-full px-4 py-2 text-left text-[13px] transition-colors ${
+              className={`block w-full px-4 py-2 text-left font-[family-name:var(--font-geist-mono)] text-[12px] transition-colors ${
                 locale === lang.code
-                  ? 'text-emerald-400 bg-white/5'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'text-[#2d3d2a] bg-[#e8e4d6]'
+                  : 'text-[#4a5148] hover:text-[#1a1e17] hover:bg-[#e8e4d6]'
               }`}
             >
               {lang.label}

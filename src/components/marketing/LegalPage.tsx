@@ -2,97 +2,133 @@
 
 import { useTranslations } from 'next-intl';
 
-interface Section {
-  title: string;
-  content: string;
-  items?: string[];
-  subsections?: { title: string; content: string }[];
-}
-
 export function LegalPage({ namespace }: { namespace: 'privacy' | 'imprint' | 'terms' }) {
   const t = useTranslations(`Legal.${namespace}`);
 
   let sectionCount = 0;
   try {
-    // Count sections by trying to access them
     while (true) {
       t(`sections.${sectionCount}.title`);
       sectionCount++;
-      if (sectionCount > 30) break; // Safety limit
+      if (sectionCount > 30) break;
     }
   } catch {
-    // Expected — we've found all sections
+    // done
   }
 
   return (
-    <article className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold text-white mb-2">{t('title')}</h1>
-      {t.has('lastUpdated') && (
-        <p className="text-sm text-slate-500 mb-2">{t('lastUpdated')}</p>
-      )}
+    <article className="fm-prose">
+      <div className="mb-12 pb-8 border-b border-[#e0dbc9]">
+        <div className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.08em] text-[#8a8f83] uppercase mb-4">
+          {namespace === 'privacy' ? 'Datenschutz' : namespace === 'imprint' ? 'Impressum' : 'AGB'}
+        </div>
+        <h1 className="fm-serif text-[clamp(40px,6vw,80px)] leading-[0.98] tracking-[-0.025em] text-[#1a1e17] mb-4">
+          {t('title')}
+        </h1>
+        {t.has('lastUpdated') && (
+          <p className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.04em] text-[#8a8f83]">
+            {t('lastUpdated')}
+          </p>
+        )}
+      </div>
+
       {t.has('intro') && (
-        <p className="text-slate-400 leading-relaxed mb-10">{t('intro')}</p>
+        <p className="text-[17px] leading-[1.6] text-[#4a5148] mb-14 max-w-[60ch] whitespace-pre-line">
+          {t('intro')}
+        </p>
       )}
 
-      {Array.from({ length: sectionCount }, (_, i) => (
-        <section key={i} className="mb-10">
-          <h2 className="text-base font-semibold text-white mb-3 pb-1 border-b border-white/5">
-            {t(`sections.${i}.title`)}
-          </h2>
-          <div className="text-slate-400 leading-relaxed text-sm space-y-2">
-            <p>{t(`sections.${i}.content`)}</p>
+      <div className="space-y-12">
+        {Array.from({ length: sectionCount }, (_, i) => (
+          <section key={i}>
+            <h2 className="fm-serif text-[26px] leading-[1.15] tracking-[-0.01em] text-[#1a1e17] mb-4 pb-2 border-b border-[#e0dbc9]">
+              {t(`sections.${i}.title`)}
+            </h2>
+            <div className="text-[15px] leading-[1.65] text-[#4a5148] space-y-3">
+              <p className="whitespace-pre-line">{t(`sections.${i}.content`)}</p>
 
-            {/* Items (bullet list) */}
-            {t.has(`sections.${i}.items.0`) && (
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                {Array.from({ length: 20 }, (_, j) => {
-                  if (!t.has(`sections.${i}.items.${j}`)) return null;
-                  return <li key={j}>{t(`sections.${i}.items.${j}`)}</li>;
-                }).filter(Boolean)}
-              </ul>
-            )}
+              {t.has(`sections.${i}.legalBasis`) && (
+                <p className="font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#8a8f83]">
+                  {t(`sections.${i}.legalBasis`)}
+                </p>
+              )}
 
-            {/* Closing text after items */}
-            {t.has(`sections.${i}.closing`) && (
-              <p>{t(`sections.${i}.closing`)}</p>
-            )}
+              {t.has(`sections.${i}.privacyLink`) && (
+                <p className="font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#8a8f83] break-all">
+                  {t(`sections.${i}.privacyLink`)}
+                </p>
+              )}
 
-            {/* Subsections */}
-            {(t.has(`sections.${i}.subsections.0.title`) || t.has(`sections.${i}.subsections.0.label`)) && (
-              <div className="space-y-4 mt-4">
-                {Array.from({ length: 10 }, (_, j) => {
-                  if (!t.has(`sections.${i}.subsections.${j}.content`)) return null;
-                  const subTitle = t.has(`sections.${i}.subsections.${j}.title`)
-                    ? t(`sections.${i}.subsections.${j}.title`)
-                    : t.has(`sections.${i}.subsections.${j}.label`)
-                      ? t(`sections.${i}.subsections.${j}.label`)
-                      : null;
-                  return (
-                    <div key={j}>
-                      {subTitle && <h3 className="text-sm font-semibold text-slate-300 mb-1">{subTitle}</h3>}
-                      <p className="text-sm text-slate-400">{t(`sections.${i}.subsections.${j}.content`)}</p>
-                    </div>
-                  );
-                }).filter(Boolean)}
-              </div>
-            )}
+              {t.has(`sections.${i}.modelInfo`) && (
+                <p className="text-[14px] text-[#4a5148]">{t(`sections.${i}.modelInfo`)}</p>
+              )}
 
-            {/* Additional fields */}
-            {t.has(`sections.${i}.thirdPartyDisclaimer`) && (
-              <p>{t(`sections.${i}.thirdPartyDisclaimer`)}</p>
-            )}
-            {t.has(`sections.${i}.withdrawalAddress`) && (
-              <p className="font-medium">{t(`sections.${i}.withdrawalAddress`)}</p>
-            )}
-            {t.has(`sections.${i}.severability`) && (
-              <p>{t(`sections.${i}.severability`)}</p>
-            )}
-          </div>
-        </section>
-      ))}
+              {t.has(`sections.${i}.items.0`) && (
+                <ul className="space-y-1.5 mt-2 pl-5 list-disc text-[15px] marker:text-[#8a8f83]">
+                  {Array.from({ length: 20 }, (_, j) => {
+                    if (!t.has(`sections.${i}.items.${j}`)) return null;
+                    return <li key={j}>{t(`sections.${i}.items.${j}`)}</li>;
+                  }).filter(Boolean)}
+                </ul>
+              )}
+
+              {t.has(`sections.${i}.closing`) && (
+                <p>{t(`sections.${i}.closing`)}</p>
+              )}
+
+              {(t.has(`sections.${i}.subsections.0.title`) ||
+                t.has(`sections.${i}.subsections.0.label`)) && (
+                <div className="space-y-5 mt-5">
+                  {Array.from({ length: 10 }, (_, j) => {
+                    if (!t.has(`sections.${i}.subsections.${j}.content`)) return null;
+                    const subTitle = t.has(`sections.${i}.subsections.${j}.title`)
+                      ? t(`sections.${i}.subsections.${j}.title`)
+                      : t.has(`sections.${i}.subsections.${j}.label`)
+                        ? t(`sections.${i}.subsections.${j}.label`)
+                        : null;
+                    return (
+                      <div key={j} className="pl-4 border-l-2 border-[#d4cfbe]">
+                        {subTitle && (
+                          <h3 className="fm-serif text-[18px] text-[#1a1e17] mb-1.5">
+                            {subTitle}
+                          </h3>
+                        )}
+                        <p className="text-[14px] text-[#4a5148] leading-[1.6]">
+                          {t(`sections.${i}.subsections.${j}.content`)}
+                        </p>
+                        {t.has(`sections.${i}.subsections.${j}.privacyLink`) && (
+                          <p className="mt-1 font-[family-name:var(--font-geist-mono)] text-[11px] text-[#8a8f83] break-all">
+                            {t(`sections.${i}.subsections.${j}.privacyLink`)}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }).filter(Boolean)}
+                </div>
+              )}
+
+              {t.has(`sections.${i}.thirdPartyDisclaimer`) && (
+                <p className="text-[14px] text-[#4a5148]">
+                  {t(`sections.${i}.thirdPartyDisclaimer`)}
+                </p>
+              )}
+              {t.has(`sections.${i}.withdrawalAddress`) && (
+                <p className="font-medium text-[#1a1e17] whitespace-pre-line">
+                  {t(`sections.${i}.withdrawalAddress`)}
+                </p>
+              )}
+              {t.has(`sections.${i}.severability`) && (
+                <p className="text-[14px] text-[#4a5148]">
+                  {t(`sections.${i}.severability`)}
+                </p>
+              )}
+            </div>
+          </section>
+        ))}
+      </div>
 
       {t.has('footer') && (
-        <p className="mt-12 pt-6 border-t border-white/10 text-xs text-slate-500">
+        <p className="mt-16 pt-8 border-t border-[#e0dbc9] font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.04em] text-[#8a8f83]">
           {t('footer')}
         </p>
       )}

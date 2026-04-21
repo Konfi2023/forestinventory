@@ -50,7 +50,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   }));
 
   return (
-    <div className="bg-[#0a0f0a] text-white min-h-screen">
+    <div className="fm-cream min-h-screen">
       <StructuredData />
       <Header />
       <LandingPageClient dbPlans={plans} />

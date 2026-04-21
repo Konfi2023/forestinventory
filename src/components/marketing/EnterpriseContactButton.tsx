@@ -38,9 +38,9 @@ export function EnterpriseContactButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition"
+        className="group shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-full text-[13px] bg-[#1a1e17] text-[#efece2] border border-[#1a1e17] hover:bg-[#2d3d2a] hover:border-[#2d3d2a] hover:translate-x-1 transition-all whitespace-nowrap"
       >
-        <Mail size={14} /> {t('button')}
+        <Mail size={13} /> {t('button')} <span aria-hidden>→</span>
       </button>
 
       {open && (

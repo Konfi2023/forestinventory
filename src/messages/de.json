@@ -692,7 +692,11 @@
       "step4": {
         "title": "Lieferschein drucken",
         "desc": "Referenznummer erscheint automatisch auf allen Lieferscheinen."
-      }
+      },
+      "statCaption": "Due-Diligence-Konformität, dokumentiert & revisionssicher."
+    },
+    "rondel": {
+      "viewLabel": "Ansicht"
     },
     "monitoring": {
       "label": "Satellitenüberwachung",
@@ -729,7 +733,16 @@
       "unlimited": "Unbegrenzte Fläche",
       "users": "{count} Nutzer",
       "tryFree": "Kostenlos testen",
-      "enterprise": "Unbegrenzte Fläche · Unbegrenzte Nutzer · SLA · API-Zugang",
+      "enterprise": {
+        "title1": "Für alles, was",
+        "titleEm": "größer",
+        "title2": " ist.",
+        "description": "Genossenschaften, Dienstleister, Großwald-Betriebe: unbegrenzte Fläche, beliebig viele Nutzer, API-Zugang und dedizierter SLA.",
+        "feat1": "Unbegrenzte Fläche & Nutzer",
+        "feat2": "API & Datenexporte",
+        "feat3": "Priorisierter Support, dedizierter SLA",
+        "feat4": "Onboarding & Schulung vor Ort"
+      },
       "planFeatures": {
         "map": "Interaktive Forstkarte",
         "pois": "POIs: Hochsitze, Wege, Hütten",

@@ -125,6 +125,36 @@
   }
 }
 
+/* ── Marketing / cream theme (forest-manager.eu — Variant B) ──────────────── */
+.fm-cream {
+  --fm-bg: #efece2;
+  --fm-bg-soft: #e8e4d6;
+  --fm-bg-sunk: #e3dfce;
+  --fm-ink: #1a1e17;
+  --fm-ink-2: #4a5148;
+  --fm-ink-3: #8a8f83;
+  --fm-line: #d4cfbe;
+  --fm-line-soft: #e0dbc9;
+  --fm-accent: #2d3d2a;
+  --fm-accent-2: #5a6b3c;
+  background: var(--fm-bg);
+  color: var(--fm-ink);
+  font-family: var(--font-geist-sans), -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.fm-cream .fm-serif { font-family: var(--font-instrument-serif), Georgia, serif; font-weight: 400; }
+.fm-cream .fm-mono  { font-family: var(--font-geist-mono), ui-monospace, monospace; }
+.fm-cream em.fm-em  { color: var(--fm-accent); font-style: italic; font-family: var(--font-instrument-serif), Georgia, serif; }
+
+/* Features rail — hide scrollbar */
+.fm-rail::-webkit-scrollbar { display: none; }
+.fm-rail { scrollbar-width: none; }
+
+/* Legal (long-form prose) — tuned for cream */
+.fm-prose h2 { font-family: var(--font-instrument-serif), Georgia, serif; letter-spacing: -0.01em; }
+.fm-prose a  { color: var(--fm-accent); text-decoration: underline; text-underline-offset: 3px; }
+
 /* ── Print styles ────────────────────────────────────────────────────────── */
 @media print {
   /* Preserve background colors & images */

@@ -10,8 +10,6 @@ export function Footer() {
         <div className="flex items-center gap-3 font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.03em] text-[#8a8f83]">
           <span>&copy; {new Date().getFullYear()} forest-manager.eu</span>
           <span aria-hidden>·</span>
-          <span>a medeina.ai product</span>
-          <span aria-hidden>·</span>
           <span className="hidden sm:inline">{t('serverLocation')}</span>
         </div>
         <nav className="flex gap-5">

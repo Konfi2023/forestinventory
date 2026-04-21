@@ -6,14 +6,8 @@ export function LegalPage({ namespace }: { namespace: 'privacy' | 'imprint' | 't
   const t = useTranslations(`Legal.${namespace}`);
 
   let sectionCount = 0;
-  try {
-    while (true) {
-      t(`sections.${sectionCount}.title`);
-      sectionCount++;
-      if (sectionCount > 30) break;
-    }
-  } catch {
-    // done
+  while (sectionCount < 30 && t.has(`sections.${sectionCount}.title`)) {
+    sectionCount++;
   }
 
   return (

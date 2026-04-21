@@ -61,7 +61,7 @@ export function LandingPageClient({ dbPlans }: Props) {
 function HeroSection() {
   const t = useTranslations('Landing');
   return (
-    <section className="pt-16 pb-0">
+    <section className="pt-16 pb-24">
       <div className="max-w-[1240px] mx-auto px-8">
         {/* Meta line */}
         <div className="flex flex-wrap items-center gap-[10px] font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.04em] text-[#8a8f83] mb-14">
@@ -79,7 +79,7 @@ function HeroSection() {
         </h1>
 
         {/* Split sub + CTA */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 pt-10 border-t border-[#e0dbc9] pb-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 pt-10 border-t border-[#e0dbc9]">
           <p className="text-[19px] leading-[1.55] text-[#4a5148] max-w-[42ch] m-0">
             {t('hero.description')}
           </p>
@@ -94,25 +94,6 @@ function HeroSection() {
             >
               {t('hero.learnMore')}
             </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Stage — hero image */}
-      <div className="pb-32">
-        <div className="max-w-[1240px] mx-auto px-8">
-          <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-[#d4cfbe] bg-[#e8e4d6]">
-            <Image
-              src="/landing/slide-ndvi.png"
-              alt="Forest Manager — Karte, Biomasse (NDVI)"
-              fill
-              priority
-              sizes="(min-width: 1280px) 1176px, 100vw"
-              className="object-cover"
-            />
-          </div>
-          <div className="mt-5 font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.08em] text-[#8a8f83]">
-            01 · {t('carousel.s1.subtitle')}
           </div>
         </div>
       </div>
@@ -167,12 +148,10 @@ function FeaturesRail() {
   );
 }
 
-/* ─── 3. Rondel — stacked slides with sticky counter, using real images ─────── */
+/* ─── 3. Rondel — horizontal scroll-jack on desktop, stack on mobile ─────────── */
 function Rondel() {
   const t = useTranslations('Landing');
 
-  // Map the existing carousel images into the Rondel slides.
-  // Five carousel slides → five stacked slides.
   const slides = [
     { n: '01', key: 's1' }, // NDVI / Karte
     { n: '02', key: 's3' }, // Klima & Borkenkäfer
@@ -182,9 +161,61 @@ function Rondel() {
   ] as const;
 
   const [active, setActive] = useState(0);
-  const refs = useRef<(HTMLDivElement | null)[]>([]);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const outerRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLDivElement>(null);
+  const mobileRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Track viewport to switch between scroll-jack (desktop) and stack (mobile).
   useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const sync = () => setIsDesktop(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  // Desktop: translate the rail based on scroll progress through the pinned section.
+  useEffect(() => {
+    if (!isDesktop) return;
+    const outer = outerRef.current;
+    const rail = railRef.current;
+    if (!outer || !rail) return;
+
+    const maxIdx = slides.length - 1;
+    let raf = 0;
+
+    const update = () => {
+      raf = 0;
+      const rect = outer.getBoundingClientRect();
+      const scrollable = outer.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+      const scrolled = Math.min(scrollable, Math.max(0, -rect.top));
+      const progress = scrolled / scrollable;
+      rail.style.transform = `translate3d(-${progress * maxIdx * 100}vw, 0, 0)`;
+      setActive(Math.round(progress * maxIdx));
+    };
+
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+      // Reset so it doesn't bleed into mobile layout if breakpoint flips.
+      rail.style.transform = '';
+    };
+  }, [isDesktop, slides.length]);
+
+  // Mobile: IntersectionObserver to drive the sticky counter through the stack.
+  useEffect(() => {
+    if (isDesktop) return;
     const obs = new IntersectionObserver(
       entries => {
         entries.forEach(e => {
@@ -196,13 +227,23 @@ function Rondel() {
       },
       { threshold: 0.4 },
     );
-    refs.current.forEach(el => el && obs.observe(el));
+    mobileRefs.current.forEach(el => el && obs.observe(el));
     return () => obs.disconnect();
-  }, []);
+  }, [isDesktop]);
+
+  const counter = (
+    <>
+      <span>{t('rondel.viewLabel')}</span>
+      <span className="text-[#1a1e17] tabular-nums">
+        {String(active + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+      </span>
+    </>
+  );
 
   return (
-    <section className="border-t border-[#e0dbc9] pt-32 pb-0">
-      <div className="max-w-[1240px] mx-auto px-8">
+    <section className="border-t border-[#e0dbc9]">
+      {/* Section head */}
+      <div className="max-w-[1240px] mx-auto px-8 pt-32 pb-16">
         <SectionKicker>{t('product.label')}</SectionKicker>
         <h2 className="fm-serif text-[clamp(40px,5.5vw,84px)] leading-[1] tracking-[-0.025em] text-[#1a1e17] max-w-[18ch]">
           <em className="fm-em">{t('product.title')}</em>
@@ -211,57 +252,104 @@ function Rondel() {
         </h2>
       </div>
 
-      {/* Sticky counter */}
-      <div className="sticky top-[70px] z-30 bg-[#efece2] border-y border-[#e0dbc9] mt-10 py-3">
-        <div className="max-w-[1240px] mx-auto px-8 flex justify-between font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.08em] text-[#8a8f83]">
-          <span>{t('rondel.viewLabel')}</span>
-          <span className="text-[#1a1e17] tabular-nums">
-            {String(active + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
-          </span>
+      {/* Desktop: scroll-jack */}
+      <div
+        ref={outerRef}
+        className="hidden md:block relative"
+        style={{ height: `${slides.length * 100}vh` }}
+      >
+        <div className="sticky top-0 h-screen overflow-hidden">
+          {/* Counter */}
+          <div className="absolute top-[92px] left-0 right-0 z-10">
+            <div className="max-w-[1240px] mx-auto px-8 flex justify-between font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.08em] text-[#8a8f83]">
+              {counter}
+            </div>
+          </div>
+
+          {/* Rail */}
+          <div
+            ref={railRef}
+            className="flex h-full will-change-transform"
+            style={{ width: `${slides.length * 100}vw` }}
+          >
+            {slides.map(s => {
+              const title = t(`carousel.${s.key}.title`).replace(/\n/g, ' ');
+              const subtitle = t(`carousel.${s.key}.subtitle`);
+              const image = t(`carousel.${s.key}.image`);
+              return (
+                <div key={s.n} className="shrink-0 w-screen h-screen flex items-center">
+                  <div className="max-w-[1240px] mx-auto w-full px-8 grid grid-cols-[minmax(260px,1fr)_1.4fr] gap-12 items-center">
+                    <div>
+                      <div className="font-[family-name:var(--font-geist-mono)] text-[56px] leading-none text-[#8a8f83] tabular-nums tracking-[-0.02em] mb-6">
+                        {s.n}
+                      </div>
+                      <h3 className="fm-serif text-[clamp(32px,4.4vw,64px)] leading-[0.98] tracking-[-0.025em] text-[#1a1e17] mb-4">
+                        {title}
+                      </h3>
+                      <p className="text-[17px] leading-[1.55] text-[#4a5148] max-w-[44ch] m-0">
+                        {subtitle}
+                      </p>
+                    </div>
+                    <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-[#d4cfbe] bg-[#e8e4d6]">
+                      <Image
+                        src={image}
+                        alt={title}
+                        fill
+                        sizes="(min-width: 1240px) 60vw, 100vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {slides.map((s, i) => {
-        const title = t(`carousel.${s.key}.title`).replace(/\n/g, ' ');
-        const subtitle = t(`carousel.${s.key}.subtitle`);
-        const image = t(`carousel.${s.key}.image`);
-        return (
-          <div
-            key={s.n}
-            ref={el => { refs.current[i] = el; }}
-            data-i={i}
-            className="py-24 border-b border-[#e0dbc9] last:border-b-0 last:pb-32"
-          >
-            <div className="max-w-[1240px] mx-auto px-8">
-              <div className="grid grid-cols-[120px_1fr] max-md:grid-cols-1 gap-8 max-md:gap-4 items-baseline mb-14 max-md:mb-8">
-                <div className="fm-mono text-[72px] max-md:text-[44px] leading-none text-[#8a8f83] tabular-nums tracking-[-0.02em]">
+      {/* Mobile: vertical stack */}
+      <div className="md:hidden">
+        <div className="sticky top-[64px] z-30 bg-[#efece2] border-y border-[#e0dbc9] py-3">
+          <div className="max-w-[1240px] mx-auto px-8 flex justify-between font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.08em] text-[#8a8f83]">
+            {counter}
+          </div>
+        </div>
+
+        {slides.map((s, i) => {
+          const title = t(`carousel.${s.key}.title`).replace(/\n/g, ' ');
+          const subtitle = t(`carousel.${s.key}.subtitle`);
+          const image = t(`carousel.${s.key}.image`);
+          return (
+            <div
+              key={s.n}
+              ref={el => { mobileRefs.current[i] = el; }}
+              data-i={i}
+              className="py-16 border-b border-[#e0dbc9] last:border-b-0 last:pb-24"
+            >
+              <div className="max-w-[1240px] mx-auto px-8">
+                <div className="font-[family-name:var(--font-geist-mono)] text-[44px] leading-none text-[#8a8f83] tabular-nums tracking-[-0.02em] mb-4">
                   {s.n}
                 </div>
-                <div>
-                  <h3 className="fm-serif text-[clamp(36px,5vw,72px)] leading-[0.98] tracking-[-0.025em] text-[#1a1e17] mb-4">
-                    {title}
-                  </h3>
-                  <p className="text-[17px] leading-[1.55] text-[#4a5148] max-w-[50ch] m-0">
-                    {subtitle}
-                  </p>
-                </div>
-              </div>
-
-              <div className="max-w-[1100px] mx-auto">
+                <h3 className="fm-serif text-[clamp(32px,8vw,56px)] leading-[0.98] tracking-[-0.025em] text-[#1a1e17] mb-3">
+                  {title}
+                </h3>
+                <p className="text-[16px] leading-[1.55] text-[#4a5148] mb-8">
+                  {subtitle}
+                </p>
                 <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-[#d4cfbe] bg-[#e8e4d6]">
                   <Image
                     src={image}
                     alt={title}
                     fill
-                    sizes="(min-width: 1100px) 1100px, 100vw"
+                    sizes="100vw"
                     className="object-cover"
                   />
                 </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </section>
   );
 }

@@ -113,23 +113,6 @@ function FeaturesRail() {
     { k: '06', key: 'orgs' },
   ] as const;
 
-  const Card = ({ it, extraClass = '' }: { it: (typeof items)[number]; extraClass?: string }) => (
-    <article
-      className={`p-8 rounded-2xl border border-[#e0dbc9] bg-[#e8e4d6] hover:bg-[#efece2] hover:border-[#d4cfbe] hover:-translate-y-0.5 transition-all grid grid-rows-[auto_auto_1fr_auto] gap-3.5 min-h-[280px] ${extraClass}`}
-    >
-      <div className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.06em] text-[#8a8f83]">
-        {it.k} / 06
-      </div>
-      <h3 className="fm-serif text-[30px] leading-[1.05] tracking-[-0.02em] text-[#1a1e17]">
-        {t(`features.${it.key}.title`)}
-      </h3>
-      <p className="text-[14px] leading-[1.55] text-[#4a5148]">
-        {t(`features.${it.key}.desc`)}
-      </p>
-      <div className="font-[family-name:var(--font-geist-mono)] text-[14px] text-[#8a8f83] self-end">→</div>
-    </article>
-  );
-
   return (
     <section id="produkt" className="border-t border-[#e0dbc9] py-28">
       <div className="max-w-[1240px] mx-auto px-8 mb-12">
@@ -140,22 +123,25 @@ function FeaturesRail() {
         </h2>
       </div>
 
-      {/* Mobile: vertical stack */}
-      <div className="md:hidden max-w-[1240px] mx-auto px-8 grid grid-cols-1 gap-4">
-        {items.map(it => <Card key={it.k} it={it} />)}
-      </div>
-
-      {/* Desktop: horizontal scroll rail aligned to content column */}
-      <div className="hidden md:block fm-rail overflow-x-auto [scroll-snap-type:x_mandatory]">
-        <div className="flex gap-5 w-max">
-          {items.map(it => (
-            <Card
-              key={it.k}
-              it={it}
-              extraClass="shrink-0 w-[340px] [scroll-snap-align:start]"
-            />
-          ))}
-        </div>
+      {/* 2×3 responsive grid: 1 col mobile → 2 cols md+ */}
+      <div className="max-w-[1240px] mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+        {items.map(it => (
+          <article
+            key={it.k}
+            className="p-8 rounded-2xl border border-[#e0dbc9] bg-[#e8e4d6] hover:bg-[#efece2] hover:border-[#d4cfbe] hover:-translate-y-0.5 transition-all grid grid-rows-[auto_auto_1fr_auto] gap-3.5 min-h-[240px]"
+          >
+            <div className="font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.06em] text-[#8a8f83]">
+              {it.k} / 06
+            </div>
+            <h3 className="fm-serif text-[30px] leading-[1.05] tracking-[-0.02em] text-[#1a1e17]">
+              {t(`features.${it.key}.title`)}
+            </h3>
+            <p className="text-[14px] leading-[1.55] text-[#4a5148]">
+              {t(`features.${it.key}.desc`)}
+            </p>
+            <div className="font-[family-name:var(--font-geist-mono)] text-[14px] text-[#8a8f83] self-end">→</div>
+          </article>
+        ))}
       </div>
     </section>
   );

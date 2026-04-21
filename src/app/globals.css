@@ -147,13 +147,6 @@
 .fm-cream .fm-mono  { font-family: var(--font-geist-mono), ui-monospace, monospace; }
 .fm-cream em.fm-em  { color: var(--fm-accent); font-style: italic; font-family: var(--font-instrument-serif), Georgia, serif; }
 
-/* Features rail — hide scrollbar + align first card with content column */
-.fm-rail::-webkit-scrollbar { display: none; }
-.fm-rail {
-  scrollbar-width: none;
-  padding-inline: max(2rem, calc((100vw - 1240px) / 2 + 2rem));
-  scroll-padding-inline: max(2rem, calc((100vw - 1240px) / 2 + 2rem));
-}
 
 /* Legal (long-form prose) — tuned for cream */
 .fm-prose h2 { font-family: var(--font-instrument-serif), Georgia, serif; letter-spacing: -0.01em; }

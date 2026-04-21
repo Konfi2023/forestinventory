@@ -67,8 +67,6 @@ function HeroSection() {
         <div className="flex flex-wrap items-center gap-[10px] font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.04em] text-[#8a8f83] mb-14">
           <span>Forest Manager</span>
           <span className="opacity-40">·</span>
-          <span>a medeina.ai product</span>
-          <span className="opacity-40">·</span>
           <span>v4 · 2026</span>
         </div>
 

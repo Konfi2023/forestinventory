@@ -39,18 +39,8 @@ export function LegalPage({ namespace }: { namespace: 'privacy' | 'imprint' | 't
               {t(`sections.${i}.title`)}
             </h2>
             <div className="text-[15px] leading-[1.65] text-[#4a5148] space-y-3">
-              <p className="whitespace-pre-line">{t(`sections.${i}.content`)}</p>
-
-              {t.has(`sections.${i}.legalBasis`) && (
-                <p className="font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#8a8f83]">
-                  {t(`sections.${i}.legalBasis`)}
-                </p>
-              )}
-
-              {t.has(`sections.${i}.privacyLink`) && (
-                <p className="font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#8a8f83] break-all">
-                  {t(`sections.${i}.privacyLink`)}
-                </p>
+              {t.has(`sections.${i}.content`) && (
+                <p className="whitespace-pre-line">{t(`sections.${i}.content`)}</p>
               )}
 
               {t.has(`sections.${i}.modelInfo`) && (
@@ -87,7 +77,7 @@ export function LegalPage({ namespace }: { namespace: 'privacy' | 'imprint' | 't
                             {subTitle}
                           </h3>
                         )}
-                        <p className="text-[14px] text-[#4a5148] leading-[1.6]">
+                        <p className="text-[14px] text-[#4a5148] leading-[1.6] whitespace-pre-line">
                           {t(`sections.${i}.subsections.${j}.content`)}
                         </p>
                         {t.has(`sections.${i}.subsections.${j}.privacyLink`) && (
@@ -114,6 +104,18 @@ export function LegalPage({ namespace }: { namespace: 'privacy' | 'imprint' | 't
               {t.has(`sections.${i}.severability`) && (
                 <p className="text-[14px] text-[#4a5148]">
                   {t(`sections.${i}.severability`)}
+                </p>
+              )}
+
+              {t.has(`sections.${i}.privacyLink`) && (
+                <p className="font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#8a8f83] break-all">
+                  {t(`sections.${i}.privacyLink`)}
+                </p>
+              )}
+
+              {t.has(`sections.${i}.legalBasis`) && (
+                <p className="font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#8a8f83] pt-2">
+                  {t(`sections.${i}.legalBasis`)}
                 </p>
               )}
             </div>

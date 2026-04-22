@@ -514,20 +514,9 @@ function PricingSection({ dbPlans }: { dbPlans: DbPlan[] }) {
                 <em className="fm-em">{t('pricing.enterprise.titleEm')}</em>
                 {t('pricing.enterprise.title2')}
               </h3>
-              <p className="text-[14px] leading-[1.55] text-[#4a5148] mb-4 max-w-[48ch]">
+              <p className="text-[15px] leading-[1.55] text-[#4a5148] max-w-[52ch] m-0">
                 {t('pricing.enterprise.description')}
               </p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-6 list-none p-0 m-0">
-                {['feat1', 'feat2', 'feat3', 'feat4'].map(key => (
-                  <li
-                    key={key}
-                    className="pl-4 relative font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#4a5148]"
-                  >
-                    <span className="absolute left-0 text-[#2d3d2a]">→</span>
-                    {t(`pricing.enterprise.${key}`)}
-                  </li>
-                ))}
-              </ul>
             </div>
             <div className="justify-self-start md:justify-self-end">
               <EnterpriseContactButton />

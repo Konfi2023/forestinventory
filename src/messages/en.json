@@ -7,7 +7,8 @@
       "ogDescription": "GIS mapping, satellite monitoring, EUDR compliance, and AI analytics for forest owners and forestry operations across Europe."
     },
     "hero": {
-      "badge": "Forest Management Software",
+      "tagline": "The software for Europe's modern forestry operations",
+      "badge":"Forest Management Software",
       "title1": "Your forest,",
       "title2": "digitally managed.",
       "description": "Forest inventory, GIS mapping, satellite monitoring, and EUDR compliance — one platform for forest owners, associations, and forestry cooperatives.",

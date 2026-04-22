@@ -63,11 +63,9 @@ function HeroSection() {
   return (
     <section className="pt-16 pb-24">
       <div className="max-w-[1240px] mx-auto px-8">
-        {/* Meta line */}
-        <div className="flex flex-wrap items-center gap-[10px] font-[family-name:var(--font-geist-mono)] text-[11px] tracking-[0.04em] text-[#8a8f83] mb-14">
-          <span>Forest Manager</span>
-          <span className="opacity-40">·</span>
-          <span>v4 · 2026</span>
+        {/* Meta tagline */}
+        <div className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.12em] text-[#8a8f83] mb-14">
+          {t('hero.tagline')}
         </div>
 
         {/* Title */}
@@ -76,12 +74,12 @@ function HeroSection() {
           <em className="fm-em">{t('hero.title2')}</em>
         </h1>
 
-        {/* Split sub + CTA */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 pt-10 border-t border-[#e0dbc9]">
-          <p className="text-[19px] leading-[1.55] text-[#4a5148] max-w-[42ch] m-0">
+        {/* Subtitle + CTAs (stacked left) */}
+        <div className="pt-10 border-t border-[#e0dbc9] max-w-[52ch]">
+          <p className="text-[19px] leading-[1.55] text-[#4a5148] m-0 mb-10">
             {t('hero.description')}
           </p>
-          <div className="flex flex-wrap gap-3 items-start md:justify-end">
+          <div className="flex flex-wrap gap-3">
             <SignInButton
               label={t('hero.cta')}
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full text-[14px] bg-[#1a1e17] text-[#efece2] border border-[#1a1e17] hover:bg-[#2d3d2a] hover:border-[#2d3d2a] transition-colors"

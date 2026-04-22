@@ -37,7 +37,6 @@ export function Header() {
         <Link href="/" className="flex items-center gap-3 text-[#1a1e17]">
           <BrandMark />
           <span className="text-[20px] font-medium tracking-[-0.02em]">ForestManager</span>
-          <span className="font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.08em] text-[#8a8f83] ml-1">eu</span>
         </Link>
 
         {/* Middle nav */}

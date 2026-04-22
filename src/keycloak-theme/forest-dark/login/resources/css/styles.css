@@ -1,237 +1,261 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+/* Forest Manager — Keycloak Login Theme (Cream + Forest-Green, Variant B) */
 
-/* 1. KEYCLOAK RESET */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap');
+
+:root {
+  --fm-bg:        #efece2;
+  --fm-bg-soft:   #e8e4d6;
+  --fm-bg-sunk:   #e3dfce;
+  --fm-ink:       #1a1e17;
+  --fm-ink-2:     #4a5148;
+  --fm-ink-3:     #8a8f83;
+  --fm-line:      #d4cfbe;
+  --fm-line-soft: #e0dbc9;
+  --fm-accent:    #2d3d2a;
+  --fm-error:     #8a3a2a;
+  --fm-error-bg:  #f1e4dd;
+}
+
+/* ── RESET ───────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
 body {
-    background-color: #f8fafc !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-family: 'Inter', sans-serif !important;
+  background-color: var(--fm-bg) !important;
+  margin: 0 !important; padding: 0 !important;
+  font-family: 'Geist', -apple-system, Helvetica, Arial, sans-serif !important;
+  color: var(--fm-ink);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-
-/* Verstecke Standard Keycloak Elemente */
 .login-pf-page-header, #kc-header, #kc-header-wrapper, #kc-content-wrapper .alert { display: none !important; }
+.fm-serif { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
+.fm-mono  { font-family: 'Geist Mono', ui-monospace, monospace; }
+em.fm-em, .fm-em { color: var(--fm-accent); font-style: italic; font-family: 'Instrument Serif', Georgia, serif; }
 
-/* 2. TOP NAVIGATION */
+/* ── TOP NAV ─────────────────────────────────────────────────────────────── */
 .np-top-nav {
-    position: fixed; top: 40px; left: 40px; z-index: 10002;
-    display: flex; align-items: center; gap: 30px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10002;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 32px;
+  background: var(--fm-bg);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
 }
 .np-back-link {
-    color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;
-    display: flex; align-items: center; gap: 8px; transition: all 0.2s;
-    background: rgba(0, 0, 0, 0.04); padding: 8px 16px;
-    border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--fm-ink-2); text-decoration: none;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 12px; font-weight: 400; letter-spacing: 0.02em;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 999px;
+  border: 1px solid var(--fm-line); background: transparent;
+  transition: color 0.2s, border-color 0.2s;
 }
 .np-back-link:hover {
-    color: #0f172a; background: rgba(0, 0, 0, 0.07); border-color: rgba(0, 0, 0, 0.14);
+  color: var(--fm-ink); border-color: var(--fm-ink);
 }
 
-/* 3. LAYOUT */
+/* ── PAGE LAYOUT ─────────────────────────────────────────────────────────── */
 .np-auth-page {
-    position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: #f8fafc; z-index: 9999;
-    display: flex; align-items: center; justify-content: center; overflow-y: auto; color: #0f172a;
-    padding-top: 90px; box-sizing: border-box;
+  position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh;
+  background-color: var(--fm-bg); z-index: 9999;
+  display: flex; align-items: center; justify-content: center; overflow-y: auto;
+  color: var(--fm-ink);
+  padding: 104px 32px 48px;
 }
 .np-auth-container {
-    width: 95%; max-width: 1600px; height: 800px;
-    display: flex; flex-direction: row; align-items: center; justify-content: center;
-    gap: 150px; padding: 0 20px;
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column;
 }
 
-/* Linke Seite */
-.np-auth-left { flex: 1; max-width: 460px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 10000; }
-.np-auth-heading { margin-bottom: 32px; }
-.np-auth-signup-title { font-size: 36px; line-height: 1.1; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; }
-.np-auth-subtitle { font-size: 16px; color: #64748b; margin: 0; }
-.np-auth-form { display: flex; flex-direction: column; gap: 24px; }
+.np-auth-left { width: 100%; display: flex; flex-direction: column; }
 
-/* INPUTS */
-.np-input-group {
-    display: flex; flex-direction: column; width: 100%; margin-bottom: 5px;
+/* Right image panel — hidden in cream theme (typography-first) */
+.np-auth-right,
+.np-image-bg,
+.np-image-overlay,
+.np-image-content { display: none !important; }
+
+/* ── HEADING ─────────────────────────────────────────────────────────────── */
+.np-auth-heading { margin-bottom: 40px; }
+.np-auth-signup-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(38px, 5vw, 56px);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  font-weight: 400;
+  color: var(--fm-ink);
+  margin: 0 0 12px 0;
+  max-width: 14ch;
 }
-.np-input-label-pill-wrapper {
-    position: static; margin-bottom: 8px; margin-left: 4px;
+.np-auth-subtitle {
+  font-size: 16px; line-height: 1.55; color: var(--fm-ink-2); margin: 0;
+  max-width: 44ch;
 }
+
+/* ── FORM ────────────────────────────────────────────────────────────────── */
+.np-auth-form { display: flex; flex-direction: column; gap: 18px; }
+
+.np-input-group { display: flex; flex-direction: column; width: 100%; }
+.np-input-label-pill-wrapper { margin-bottom: 8px; }
 .np-input-label-pill {
-    background: transparent; padding: 0; font-size: 13px; font-weight: 600;
-    color: #475569; text-transform: uppercase; letter-spacing: 0.05em;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 10px; font-weight: 400;
+  color: var(--fm-ink-3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: transparent; padding: 0;
 }
 .np-input {
-    width: 100%; height: 52px; border-radius: 12px; border: 1px solid #e2e8f0;
-    background-color: #ffffff !important; color: #0f172a !important; padding: 0 16px;
-    font-size: 16px; outline: none; box-sizing: border-box; transition: all 0.2s ease;
+  width: 100%; height: 48px;
+  border-radius: 10px;
+  border: 1px solid var(--fm-line);
+  background-color: var(--fm-bg) !important;
+  color: var(--fm-ink) !important;
+  padding: 0 14px;
+  font-family: 'Geist', -apple-system, sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
-.np-input:hover { border-color: #cbd5e1; }
-.np-input:focus { border-color: #15803d; background-color: #ffffff !important; box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.12); }
-
-/* Browser Autofill Fix */
-input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
-    -webkit-text-fill-color: #0f172a !important; caret-color: #0f172a; border: 1px solid #e2e8f0;
+.np-input::placeholder { color: var(--fm-ink-3); }
+.np-input:hover { border-color: var(--fm-ink-3); }
+.np-input:focus {
+  border-color: var(--fm-accent);
+  background-color: var(--fm-bg) !important;
+  box-shadow: 0 0 0 3px rgba(45, 61, 42, 0.15);
 }
 
-/* BUTTON */
+/* Browser autofill — keep cream background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--fm-bg) inset !important;
+  -webkit-text-fill-color: var(--fm-ink) !important;
+  caret-color: var(--fm-ink);
+  border: 1px solid var(--fm-line);
+}
+
+/* ── BUTTON ──────────────────────────────────────────────────────────────── */
 .np-primary-button {
-    margin-top: 10px; width: 100%; height: 56px; border-radius: 12px; border: none;
-    background: #15803d; color: #ffffff; font-size: 16px; font-weight: 700;
-    cursor: pointer; transition: transform 0.1s, background-color 0.2s, box-shadow 0.2s;
+  margin-top: 12px; width: 100%; height: 50px;
+  border-radius: 999px; border: 1px solid var(--fm-ink);
+  background: var(--fm-ink);
+  color: var(--fm-bg);
+  font-family: 'Geist', -apple-system, sans-serif;
+  font-size: 14px; font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
-.np-primary-button:hover { background: #16a34a; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(21, 128, 61, 0.3); }
-
-/* FOOTER */
-.np-auth-footer-text { text-align: center; font-size: 14px; color: #64748b; margin-top: 30px; }
-.np-link { color: #15803d; text-decoration: none; margin-left: 4px; font-weight: 600; }
-.np-link:hover { text-decoration: underline; color: #16a34a; }
-
-/* ERROR */
-.np-error-msg { border: 1px solid #fca5a5; padding: 12px 16px; border-radius: 10px; background: #fef2f2; color: #dc2626; font-size: 14px; }
-
-/* FORGOT */
-.np-forgot { text-align: right; margin-top: -14px; }
-.np-forgot a { font-size: 13px; color: #94a3b8; text-decoration: none; }
-.np-forgot a:hover { color: #15803d; text-decoration: underline; }
-
-/* Rechte Seite (Bild) */
-.np-auth-right {
-    flex: 1.6; height: 100%; position: relative; border-radius: 24px; overflow: hidden;
-    background: #e2e8f0; display: flex; align-items: flex-end;
+.np-primary-button:hover {
+  background: var(--fm-accent);
+  border-color: var(--fm-accent);
 }
-.np-image-bg {
-    width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;
-    background-size: cover; background-position: center; background-repeat: no-repeat;
-    background-image: url('../img/deer.jpg');
-    transition: transform 10s ease;
+.np-primary-button:disabled {
+  opacity: 0.55; cursor: not-allowed;
 }
-.np-auth-right:hover .np-image-bg { transform: scale(1.05); }
-.np-image-overlay { position: absolute; inset: 0; z-index: 2; background: linear-gradient(to bottom, rgba(15,23,42,0) 0%, rgba(15,23,42,0.4) 50%, rgba(15,23,42,0.92) 100%); }
-.np-image-content { position: relative; z-index: 3; padding: 60px; color: #ffffff; }
-.np-quote-icon { font-size: 40px; color: #4ade80; line-height: 1; margin-bottom: 20px; }
-.np-image-title { font-size: 32px; font-weight: 700; line-height: 1.2; margin-bottom: 12px; }
-.np-image-text { font-size: 16px; line-height: 1.6; color: rgba(255, 255, 255, 0.85); max-width: 90%; }
 
-/* Responsive */
-@media (max-width: 1000px) {
-    .np-auth-right { display: none; }
-    .np-auth-container { width: 100%; padding: 40px 20px; gap: 0; }
-    .np-top-nav { top: 20px; left: 20px; }
-    .np-auth-page { padding-top: 70px; }
-    .np-auth-left { width: 100%; max-width: 460px; }
+/* ── FORGOT + FOOTER ─────────────────────────────────────────────────────── */
+.np-forgot { text-align: right; margin-top: -4px; }
+.np-forgot a {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 11px; color: var(--fm-ink-3); text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.np-forgot a:hover { color: var(--fm-ink); }
+
+.np-auth-footer-text {
+  text-align: center;
+  font-size: 13px; color: var(--fm-ink-2);
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--fm-line-soft);
+}
+.np-link {
+  color: var(--fm-accent); text-decoration: none;
+  margin-left: 4px; font-weight: 500;
+}
+.np-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── ERROR ───────────────────────────────────────────────────────────────── */
+.np-error-msg {
+  border: 1px solid var(--fm-error);
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--fm-error-bg);
+  color: var(--fm-error);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+/* ── LOGO SECTION (desktop — hidden, brand is in top-nav) ───────────────── */
+.app-logo-section { display: none; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .np-auth-page { padding: 96px 20px 40px; }
+  .np-top-nav { padding: 16px 20px; }
+  .np-back-link .back-label { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CAPACITOR APP MODE — clean native-style login
+   CAPACITOR NATIVE APP MODE
    ═══════════════════════════════════════════════════════════ */
 
 body.is-native-app {
-    background: #faf9f6 !important;
-    font-family: 'Nunito', 'Inter', sans-serif !important;
+  background: var(--fm-bg) !important;
 }
-
 body.is-native-app .np-top-nav { display: none !important; }
-body.is-native-app .np-auth-right { display: none !important; }
-
 body.is-native-app .np-auth-page {
-    background: transparent !important;
-    padding-top: 0 !important;
-    position: relative !important;
+  background: transparent !important;
+  padding-top: 0 !important;
+  position: relative !important;
 }
-
 body.is-native-app .np-auth-container {
-    width: 100%;
-    max-width: 400px;
-    height: auto;
-    flex-direction: column;
-    gap: 0;
-    padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
 }
-
-body.is-native-app .np-auth-left {
-    width: 100%;
-    max-width: 100%;
-    align-items: center;
-}
-
-/* App Logo + Brand */
 body.is-native-app .app-logo-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 40px;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 48px;
 }
 body.is-native-app .app-logo-section img {
-    height: 72px;
-    margin-bottom: 12px;
+  height: 56px;
+  margin-bottom: 14px;
 }
 body.is-native-app .app-logo-section .app-brand {
-    font-size: 26px;
-    font-weight: 700;
-    color: #1a1a1a;
-    letter-spacing: -0.3px;
+  font-family: 'Geist', sans-serif;
+  font-size: 22px; font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--fm-ink);
 }
 body.is-native-app .app-logo-section .app-brand span {
-    color: #2b5741;
+  color: var(--fm-accent);
 }
 
-/* Hide original heading in app mode, show app-specific one */
 body.is-native-app .np-auth-heading {
-    text-align: center;
-    margin-bottom: 28px;
+  text-align: center;
+  margin-bottom: 32px;
 }
 body.is-native-app .np-auth-signup-title {
-    font-size: 22px;
-    font-family: 'Nunito', sans-serif;
-}
-body.is-native-app .np-auth-subtitle {
-    font-size: 14px;
+  font-size: 32px;
+  max-width: none;
 }
 
-/* Inputs — larger touch targets */
-body.is-native-app .np-input {
-    height: 56px;
-    font-size: 17px;
-    border-radius: 14px;
-    border-color: rgba(0,0,0,0.1);
-    background: #ffffff !important;
-}
-body.is-native-app .np-input:focus {
-    border-color: #2b5741;
-    box-shadow: 0 0 0 3px rgba(43,87,65,0.12);
-}
-
-/* Button — medeina green */
-body.is-native-app .np-primary-button {
-    height: 56px;
-    border-radius: 14px;
-    background: #2b5741;
-    font-size: 17px;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 700;
-}
-body.is-native-app .np-primary-button:hover {
-    background: #1e4030;
-    box-shadow: 0 4px 20px rgba(43,87,65,0.3);
-}
-
-/* Links */
-body.is-native-app .np-link { color: #2b5741; }
-body.is-native-app .np-link:hover { color: #1e4030; }
-body.is-native-app .np-forgot a { color: #8a8780; }
-body.is-native-app .np-forgot a:hover { color: #2b5741; }
-
-/* Network canvas background */
+/* Network canvas background — subtle in cream */
 body.is-native-app #forest-net-bg {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    z-index: 0;
-    opacity: 0.5;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  opacity: 0.35;
 }
-body.is-native-app .np-auth-page {
-    z-index: 1;
-}
+body.is-native-app .np-auth-page { z-index: 1; }
 
-/* Hide app-only elements in desktop mode */
-.app-logo-section { display: none; }
 #forest-net-bg { display: none; }

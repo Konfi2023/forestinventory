@@ -268,7 +268,7 @@ function Rondel() {
             style={{ width: `${slides.length * 100}vw` }}
           >
             {slides.map(s => {
-              const title = t(`carousel.${s.key}.title`).replace(/\n/g, ' ');
+              const title = t(`carousel.${s.key}.title`);
               const subtitle = t(`carousel.${s.key}.subtitle`);
               const image = t(`carousel.${s.key}.image`);
               return (
@@ -311,7 +311,7 @@ function Rondel() {
         </div>
 
         {slides.map((s, i) => {
-          const title = t(`carousel.${s.key}.title`).replace(/\n/g, ' ');
+          const title = t(`carousel.${s.key}.title`);
           const subtitle = t(`carousel.${s.key}.subtitle`);
           const image = t(`carousel.${s.key}.image`);
           return (

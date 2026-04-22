@@ -54,27 +54,27 @@
     },
     "carousel": {
       "s1": {
-        "title": "Monitorización\nde biomasa.",
+        "title": "Monitorización de biomasa.",
         "subtitle": "Mapa NDVI con datos de satélite Sentinel-2 — vitalidad del bosque de un vistazo.",
         "image": "/landing/slide-ndvi.png"
       },
       "s2": {
-        "title": "Tareas\nen el campo.",
+        "title": "Tareas en el campo.",
         "subtitle": "Tareas con ubicación, foto y descripción — directamente en el mapa.",
         "image": "/landing/slide-task.png"
       },
       "s3": {
-        "title": "Clima y\nescolítidos.",
+        "title": "Clima y escolítidos.",
         "subtitle": "Comparación interanual de NDVI, temperatura, precipitación y riesgo de escolítidos.",
         "image": "/landing/slide-monitoring.png"
       },
       "s4": {
-        "title": "Árboles\nindividuales.",
+        "title": "Árboles individuales.",
         "subtitle": "Especie, DAP, altura, foto del fuste y almacenamiento de CO₂ — todo registrado.",
         "image": "/landing/slide-tree.png"
       },
       "s5": {
-        "title": "Inventario\nforestal.",
+        "title": "Inventario forestal.",
         "subtitle": "Evaluación de rodales por compartimento con parcelas de muestreo y tablas de producción.",
         "image": "/landing/slide-forsteinrichtung.png"
       }

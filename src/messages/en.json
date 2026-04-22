@@ -8,7 +8,7 @@
     },
     "hero": {
       "tagline": "The software for Europe's modern forestry operations",
-      "badge":"Forest Management Software",
+      "badge": "Forest Management Software",
       "title1": "Your forest,",
       "title2": "digitally managed.",
       "description": "Forest inventory, GIS mapping, satellite monitoring, and EUDR compliance — one platform for forest owners, associations, and forestry cooperatives.",
@@ -54,27 +54,27 @@
     },
     "carousel": {
       "s1": {
-        "title": "Biomass\nMonitoring.",
+        "title": "Biomass Monitoring.",
         "subtitle": "NDVI map with Sentinel-2 satellite data — forest vitality at a glance.",
         "image": "/landing/slide-ndvi.png"
       },
       "s2": {
-        "title": "Tasks\nin the Field.",
+        "title": "Tasks in the Field.",
         "subtitle": "Tasks with location, photo, and description — right on the map.",
         "image": "/landing/slide-task.png"
       },
       "s3": {
-        "title": "Climate &\nBark Beetle.",
+        "title": "Climate & Bark Beetle.",
         "subtitle": "Year-over-year NDVI comparison, temperature, precipitation, and bark beetle risk.",
         "image": "/landing/slide-monitoring.png"
       },
       "s4": {
-        "title": "Individual\nTrees.",
+        "title": "Individual Trees.",
         "subtitle": "Species, DBH, height, stem photo, and CO₂ storage — all captured.",
         "image": "/landing/slide-tree.png"
       },
       "s5": {
-        "title": "Forest\nInventory.",
+        "title": "Forest Inventory.",
         "subtitle": "Compartment-level stand assessment with sample plots and yield tables.",
         "image": "/landing/slide-forsteinrichtung.png"
       }

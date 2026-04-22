@@ -54,27 +54,27 @@
     },
     "carousel": {
       "s1": {
-        "title": "Suivi de\nla biomasse.",
+        "title": "Suivi de la biomasse.",
         "subtitle": "Carte NDVI avec données satellite Sentinel-2 — vitalité forestière en un coup d'œil.",
         "image": "/landing/slide-ndvi.png"
       },
       "s2": {
-        "title": "Tâches\nsur le terrain.",
+        "title": "Tâches sur le terrain.",
         "subtitle": "Tâches avec localisation, photo et description — directement sur la carte.",
         "image": "/landing/slide-task.png"
       },
       "s3": {
-        "title": "Climat et\nscolytes.",
+        "title": "Climat et scolytes.",
         "subtitle": "Comparaison NDVI d'une année sur l'autre, température, précipitations et risque de scolytes.",
         "image": "/landing/slide-monitoring.png"
       },
       "s4": {
-        "title": "Arbres\nindividuels.",
+        "title": "Arbres individuels.",
         "subtitle": "Essence, DHP, hauteur, photo du tronc et stockage de CO₂ — tout enregistré.",
         "image": "/landing/slide-tree.png"
       },
       "s5": {
-        "title": "Inventaire\nforestier.",
+        "title": "Inventaire forestier.",
         "subtitle": "Évaluation des peuplements par compartiment avec placettes d'échantillonnage et tables de production.",
         "image": "/landing/slide-forsteinrichtung.png"
       }

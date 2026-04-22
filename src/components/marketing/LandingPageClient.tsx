@@ -86,6 +86,10 @@ function HeroSection() {
             />
             <a
               href="#produkt"
+              onClick={e => {
+                e.preventDefault();
+                document.getElementById('produkt')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full text-[14px] text-[#4a5148] border border-[#d4cfbe] hover:text-[#1a1e17] hover:border-[#1a1e17] transition-colors"
             >
               {t('hero.learnMore')}

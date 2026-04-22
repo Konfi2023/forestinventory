@@ -21,10 +21,17 @@ export function Header() {
   }, []);
 
   const NAV_LINKS = [
-    { label: t('product'),    href: '#produkt'   },
-    { label: t('eudr'),       href: '#eudr'      },
-    { label: t('pricing'),    href: '#preise'    },
+    { label: t('product'),    id: 'produkt' },
+    { label: t('eudr'),       id: 'eudr'    },
+    { label: t('pricing'),    id: 'preise'  },
   ];
+
+  const scrollTo = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpen(false);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <header
@@ -43,8 +50,9 @@ export function Header() {
         <nav className="hidden md:flex items-center gap-7">
           {NAV_LINKS.map(link => (
             <a
-              key={link.href}
-              href={link.href}
+              key={link.id}
+              href={`#${link.id}`}
+              onClick={scrollTo(link.id)}
               className="font-[family-name:var(--font-geist-mono)] text-[12px] tracking-[0.02em] text-[#4a5148] hover:text-[#1a1e17] transition-colors"
             >
               {link.label}
@@ -77,9 +85,9 @@ export function Header() {
         <div className="md:hidden bg-[#efece2] border-t border-[#e0dbc9] px-8 py-4 space-y-3">
           {NAV_LINKS.map(link => (
             <a
-              key={link.href}
-              href={link.href}
-              onClick={() => setOpen(false)}
+              key={link.id}
+              href={`#${link.id}`}
+              onClick={scrollTo(link.id)}
               className="block font-[family-name:var(--font-geist-mono)] text-[13px] text-[#4a5148] hover:text-[#1a1e17] py-1"
             >
               {link.label}

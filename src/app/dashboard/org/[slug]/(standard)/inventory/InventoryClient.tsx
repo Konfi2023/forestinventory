@@ -9,6 +9,7 @@ import {
   Camera, MapPin, Trees, ChevronRight, ChevronLeft, X,
   Check, CloudOff, RefreshCw, Leaf, Droplets, TreePine,
   ClipboardList, User, Loader2, CircleDot, Upload, Sparkles,
+  Route,
 } from 'lucide-react';
 import { DatePickerSheet, DateTrigger } from '@/app/app/tabs/DatePickerSheet';
 import { ImportInventoryDialog } from './ImportInventoryDialog';
@@ -113,6 +114,8 @@ interface InventoryClientProps {
   members?: Member[];
   userId?: string;
   onCapturingChange?: (capturing: boolean) => void;
+  enablePathRecording?: boolean;
+  onSelectPathRecording?: () => void;
 }
 
 interface TreeForm {
@@ -146,7 +149,7 @@ const EMPTY_FORM: TreeForm = {
   notes: '',
 };
 
-export function InventoryClient({ forests, orgSlug, members = [], userId = '', onCapturingChange }: InventoryClientProps) {
+export function InventoryClient({ forests, orgSlug, members = [], userId = '', onCapturingChange, enablePathRecording = false, onSelectPathRecording }: InventoryClientProps) {
   const t = useTranslations('Inventory');
   const m = useTranslations('MobileApp');
   const locale = useLocale();
@@ -996,6 +999,20 @@ export function InventoryClient({ forests, orgSlug, members = [], userId = '', o
                 {m('plotSampleDesc')}
               </p>
             </button>
+            {enablePathRecording && (
+              <button
+                onClick={() => onSelectPathRecording?.()}
+                className="w-full flex flex-col items-start gap-1 px-5 py-4 bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-400 rounded-2xl transition-colors text-left shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Route size={22} className="text-amber-600" />
+                  <span className="text-lg font-bold">{m('pathCaptureCard')}</span>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {m('pathCaptureCardDesc')}
+                </p>
+              </button>
+            )}
             {/* Import Data — ausgeblendet, Funktion bleibt erhalten */}
             {false && <button
               onClick={() => setShowImport(true)}

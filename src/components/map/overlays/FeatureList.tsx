@@ -64,6 +64,7 @@ const PATH_META: Record<string, { tKey: string }> = {
   ROAD:       { tKey: 'pathRoad'     },
   SKID_TRAIL: { tKey: 'pathSkidTrail' },
   WATER:      { tKey: 'pathWater'    },
+  PATH:       { tKey: 'pathPath'     },
 };
 
 const MAX_RESULTS = 150;
@@ -158,7 +159,7 @@ function buildFeatureList(forests: any[], t: (key: string) => string): Normalize
         label: p.name ?? pathLabel, subLabel: pathLabel,
         category: 'PATH', featureType: 'PATH',
         icon: Route,
-        color: p.type === 'WATER' ? '#3b82f6' : p.type === 'SKID_TRAIL' ? '#eab308' : '#94a3b8',
+        color: p.type === 'WATER' ? '#3b82f6' : p.type === 'SKID_TRAIL' ? '#eab308' : p.type === 'PATH' ? '#a16207' : '#94a3b8',
         geoJson: p.geoJson,
       });
     });

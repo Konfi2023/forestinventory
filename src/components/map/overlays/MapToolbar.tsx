@@ -64,6 +64,7 @@ export function MapToolbar({ canCreate, orgSlug, currentUserId, onRefresh }: Pro
       { id: 'ROAD',       icon: Route,  tKey: 'pathRoad' as const,      color: 'text-gray-400'   },
       { id: 'SKID_TRAIL', icon: Route,  tKey: 'pathSkidTrail' as const, color: 'text-yellow-400' },
       { id: 'WATER',      icon: Waves,  tKey: 'pathWater' as const,     color: 'text-blue-400'   },
+      { id: 'PATH',       icon: Route,  tKey: 'pathPath' as const,      color: 'text-amber-700'  },
   ];
 
   const handlePrintMap = () => {

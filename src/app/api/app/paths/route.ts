@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
-const ALLOWED_TYPES = new Set(['ROAD', 'SKID_TRAIL', 'WATER']);
+const ALLOWED_TYPES = new Set(['ROAD', 'SKID_TRAIL', 'WATER', 'PATH']);
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
         case 'ROAD':       return 'LKW-Weg';
         case 'SKID_TRAIL': return 'Rückegasse';
         case 'WATER':      return 'Gewässer';
+        case 'PATH':       return 'Pfad';
         default:           return 'Weg';
       }
     })();

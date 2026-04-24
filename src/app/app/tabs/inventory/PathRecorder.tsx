@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Route, Play, Square, MapPin, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react';
+import { Route, Play, Square, MapPin, ChevronLeft, AlertTriangle, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { db } from '@/lib/inventory-db';
 import { usePathRecorder, toGeoJsonLineString, findUnfinishedDraft, type PathType } from '@/lib/path-recording';
@@ -13,6 +13,7 @@ interface Props {
   orgSlug: string;
   forests: Forest[];
   onCapturingChange?: (capturing: boolean) => void;
+  onBack?: () => void;
 }
 
 function formatLength(m: number): string {
@@ -27,7 +28,7 @@ function formatDuration(sec: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export function PathRecorder({ orgSlug, forests, onCapturingChange }: Props) {
+export function PathRecorder({ orgSlug, forests, onCapturingChange, onBack }: Props) {
   const t = useTranslations('MobileApp');
   const [forestId, setForestId]   = useState<string>(forests[0]?.id ?? '');
   const forest = forests.find(f => f.id === forestId) ?? forests[0];
@@ -148,6 +149,18 @@ export function PathRecorder({ orgSlug, forests, onCapturingChange }: Props) {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
+      {/* Header mit Zurück-Button (nur wenn idle und onBack gesetzt) */}
+      {recorder.status === 'idle' && onBack && (
+        <div className="px-4 pt-3">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+          >
+            <ChevronLeft size={16} /> {t('back')}
+          </button>
+        </div>
+      )}
+
       {/* Wald-Auswahl (nur wenn idle) */}
       {recorder.status === 'idle' && (
         <div className="p-4 border-b border-slate-200">

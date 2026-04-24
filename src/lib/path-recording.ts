@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { db, type PendingPath } from './inventory-db';
 import { watchPosition, type WatchedPosition } from './capacitor-bridge';
 
-export type PathType = 'ROAD' | 'SKID_TRAIL' | 'WATER';
+export type PathType = 'ROAD' | 'SKID_TRAIL' | 'WATER' | 'PATH';
 export type RecorderStatus = 'idle' | 'recording' | 'confirming';
 
 export interface RecorderError {

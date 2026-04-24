@@ -24,6 +24,7 @@ const PATH_CONFIG: Record<string, { tKey: string; defaultColor: string; bgClass:
   ROAD:       { tKey: 'pathRoadLabel',      defaultColor: '#94a3b8', bgClass: 'bg-slate-500/20'  },
   SKID_TRAIL: { tKey: 'pathSkidTrailLabel', defaultColor: '#eab308', bgClass: 'bg-yellow-500/20' },
   WATER:      { tKey: 'pathWaterLabel',     defaultColor: '#3b82f6', bgClass: 'bg-blue-500/20'   },
+  PATH:       { tKey: 'pathPathLabel',      defaultColor: '#a16207', bgClass: 'bg-amber-700/20'  },
 };
 
 const PATH_COLORS = [

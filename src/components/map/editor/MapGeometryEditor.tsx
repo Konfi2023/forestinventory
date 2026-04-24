@@ -118,6 +118,7 @@ const PATH_COLORS: Record<string, string> = {
   ROAD:       '#94a3b8',
   SKID_TRAIL: '#eab308',
   WATER:      '#3b82f6',
+  PATH:       '#a16207',
 };
 
 function formatLength(m: number): string {
@@ -487,7 +488,8 @@ export default function MapGeometryEditor({
 
       const name = activePathType === 'ROAD' ? 'LKW-Weg'
                  : activePathType === 'SKID_TRAIL' ? 'Rückegasse'
-                 : 'Gewässer';
+                 : activePathType === 'WATER' ? 'Gewässer'
+                 : 'Pfad';
 
       const result = await createPath({
         forestId,

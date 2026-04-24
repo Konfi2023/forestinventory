@@ -874,6 +874,7 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
           const isHovered  = hoveredId === path.id;
           const defaultColor = path.type === 'SKID_TRAIL' ? '#eab308'
                              : path.type === 'WATER'      ? '#3b82f6'
+                             : path.type === 'PATH'       ? '#a16207'
                              :                              '#94a3b8';
           const color = path.color ?? defaultColor;
           const storedLength = path.lengthM ?? calculatePathLengthM(path.geoJson);
@@ -882,6 +883,7 @@ export function GeoDataHandler({ data, onRefresh, onLongPress }: GeoDataProps) {
             : `${Math.round(storedLength)} m`;
           const typeLabel = path.type === 'SKID_TRAIL' ? t('pathSkidTrailLabel')
                           : path.type === 'WATER'      ? t('pathWaterLabel')
+                          : path.type === 'PATH'       ? t('pathPathLabel')
                           :                              t('pathRoadLabel');
 
           const pathEventHandlers = {

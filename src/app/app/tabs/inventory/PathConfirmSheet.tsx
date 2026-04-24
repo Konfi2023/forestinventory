@@ -15,6 +15,7 @@ const PATH_TYPES: { id: PathType; tKey: string; color: string }[] = [
   { id: 'ROAD',       tKey: 'pathTypeRoad',      color: '#94a3b8' },
   { id: 'SKID_TRAIL', tKey: 'pathTypeSkidTrail', color: '#eab308' },
   { id: 'WATER',      tKey: 'pathTypeWater',     color: '#3b82f6' },
+  { id: 'PATH',       tKey: 'pathTypePath',      color: '#a16207' },
 ];
 
 interface Props {
@@ -110,7 +111,7 @@ export function PathConfirmSheet({
           {/* Wegtyp */}
           <div>
             <p className="text-xs font-medium text-slate-600 mb-2">{t('pathType')}</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {PATH_TYPES.map(p => (
                 <button
                   key={p.id}

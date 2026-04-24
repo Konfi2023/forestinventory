@@ -80,7 +80,7 @@ export interface PendingPath {
   orgSlug: string;
   forestId: string;
   forestName: string;
-  type: 'ROAD' | 'SKID_TRAIL' | 'WATER';
+  type: 'ROAD' | 'SKID_TRAIL' | 'WATER' | 'PATH';
   name: string | null;
   note: string | null;
   // GeoJSON LineString coordinate array: [[lng, lat], ...]

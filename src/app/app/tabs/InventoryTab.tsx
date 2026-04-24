@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { PlusCircle, List, Map, Route } from 'lucide-react';
+import { PlusCircle, List, Map } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { InventoryClient } from '@/app/dashboard/org/[slug]/(standard)/inventory/InventoryClient';
 import { TreeListView } from './inventory/TreeListView';
 import { MobileMapView } from './inventory/MobileMapView';
 import { PathRecorder } from './inventory/PathRecorder';
 
-type SubTab = 'capture' | 'list' | 'map' | 'paths';
+type SubTab = 'capture' | 'list' | 'map';
+type CaptureMode = 'tree' | 'path';
 
 interface Forest { id: string; name: string; }
 interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
@@ -23,6 +24,7 @@ interface InventoryTabProps {
 export function InventoryTab({ forests, orgSlug, members, onCapturingChange }: InventoryTabProps) {
   const t = useTranslations('MobileApp');
   const [subTab, setSubTab] = useState<SubTab>('capture');
+  const [captureMode, setCaptureMode] = useState<CaptureMode>('tree');
 
   return (
     <div className="flex flex-col h-full">
@@ -32,11 +34,10 @@ export function InventoryTab({ forests, orgSlug, members, onCapturingChange }: I
           ['capture', t('subCapture'), PlusCircle],
           ['list',    t('subList'),    List],
           ['map',     t('subMap'),     Map],
-          ['paths',   t('subPaths'),   Route],
         ] as [SubTab, string, any][]).map(([key, label, Icon]) => (
           <button
             key={key}
-            onClick={() => setSubTab(key)}
+            onClick={() => { setSubTab(key); setCaptureMode('tree'); }}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
               subTab === key
                 ? 'text-emerald-400 border-b-2 border-emerald-400'
@@ -51,14 +52,28 @@ export function InventoryTab({ forests, orgSlug, members, onCapturingChange }: I
 
       {/* Inhalt */}
       <div className="flex-1 overflow-hidden">
-        {subTab === 'capture' && (
+        {subTab === 'capture' && captureMode === 'tree' && (
           <div className="h-full overflow-y-auto">
-            <InventoryClient forests={forests} orgSlug={orgSlug} members={members} onCapturingChange={onCapturingChange} />
+            <InventoryClient
+              forests={forests}
+              orgSlug={orgSlug}
+              members={members}
+              onCapturingChange={onCapturingChange}
+              enablePathRecording
+              onSelectPathRecording={() => setCaptureMode('path')}
+            />
           </div>
+        )}
+        {subTab === 'capture' && captureMode === 'path' && (
+          <PathRecorder
+            orgSlug={orgSlug}
+            forests={forests}
+            onCapturingChange={onCapturingChange}
+            onBack={() => setCaptureMode('tree')}
+          />
         )}
         {subTab === 'list' && <TreeListView orgSlug={orgSlug} forests={forests} members={members} />}
         {subTab === 'map'  && <MobileMapView orgSlug={orgSlug} forests={forests} />}
-        {subTab === 'paths' && <PathRecorder orgSlug={orgSlug} forests={forests} onCapturingChange={onCapturingChange} />}
       </div>
     </div>
   );

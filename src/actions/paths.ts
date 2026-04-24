@@ -94,6 +94,7 @@ function getPathName(type: string): string {
     case "ROAD":       return "LKW-Weg";
     case "SKID_TRAIL": return "Rückegasse";
     case "WATER":      return "Gewässer";
+    case "PATH":       return "Pfad";
     default:           return "Weg";
   }
 }

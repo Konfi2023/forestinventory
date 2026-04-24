@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { PlusCircle, List, Map } from 'lucide-react';
+import { PlusCircle, List, Map, Route } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { InventoryClient } from '@/app/dashboard/org/[slug]/(standard)/inventory/InventoryClient';
 import { TreeListView } from './inventory/TreeListView';
 import { MobileMapView } from './inventory/MobileMapView';
+import { PathRecorder } from './inventory/PathRecorder';
 
-type SubTab = 'capture' | 'list' | 'map';
+type SubTab = 'capture' | 'list' | 'map' | 'paths';
 
 interface Forest { id: string; name: string; }
 interface Member { id: string; firstName: string | null; lastName: string | null; email: string; }
@@ -31,6 +32,7 @@ export function InventoryTab({ forests, orgSlug, members, onCapturingChange }: I
           ['capture', t('subCapture'), PlusCircle],
           ['list',    t('subList'),    List],
           ['map',     t('subMap'),     Map],
+          ['paths',   t('subPaths'),   Route],
         ] as [SubTab, string, any][]).map(([key, label, Icon]) => (
           <button
             key={key}
@@ -56,6 +58,7 @@ export function InventoryTab({ forests, orgSlug, members, onCapturingChange }: I
         )}
         {subTab === 'list' && <TreeListView orgSlug={orgSlug} forests={forests} members={members} />}
         {subTab === 'map'  && <MobileMapView orgSlug={orgSlug} forests={forests} />}
+        {subTab === 'paths' && <PathRecorder orgSlug={orgSlug} forests={forests} onCapturingChange={onCapturingChange} />}
       </div>
     </div>
   );

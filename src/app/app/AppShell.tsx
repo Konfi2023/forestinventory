@@ -83,8 +83,37 @@ export function AppShell({
     } catch { /* Offline */ }
   }, [orgSlug]);
 
-  // Hintergrund-Sync: offline erfasste Polter hochladen wenn Netz wiederkommt
+  // Hintergrund-Sync: offline erfasste Polter + Wege hochladen wenn Netz wiederkommt
   const syncPending = useCallback(async () => {
+    // ── Wege ───────────────────────────────────────────────────────────────
+    try {
+      const pendingPaths = await db.pendingPaths
+        .filter(p => p.confirmed && !p.synced)
+        .toArray();
+
+      for (const path of pendingPaths) {
+        try {
+          const res = await fetch('/api/app/paths', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orgSlug: path.orgSlug,
+              forestId: path.forestId,
+              type: path.type,
+              name: path.name,
+              note: path.note,
+              geoJson: { type: 'LineString', coordinates: path.coordinates },
+              lengthM: path.lengthM,
+            }),
+          });
+          if (res.ok && path.id != null) {
+            await db.pendingPaths.delete(path.id);
+          }
+        } catch { /* immer noch offline – beim nächsten Mal */ }
+      }
+    } catch { /* DB-Fehler ignorieren */ }
+
+    // ── Polter ─────────────────────────────────────────────────────────────
     try {
       const pendingPiles = await db.pendingLogPiles
         .filter(p => !p.synced)

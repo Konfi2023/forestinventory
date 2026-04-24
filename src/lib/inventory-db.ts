@@ -75,11 +75,29 @@ export interface CachedSpecies {
   usageCount: number;
 }
 
+export interface PendingPath {
+  id?: number;
+  orgSlug: string;
+  forestId: string;
+  forestName: string;
+  type: 'ROAD' | 'SKID_TRAIL' | 'WATER';
+  name: string | null;
+  note: string | null;
+  // GeoJSON LineString coordinate array: [[lng, lat], ...]
+  coordinates: [number, number][];
+  lengthM: number;
+  startedAt: string;
+  stoppedAt: string | null; // null = noch in Aufnahme
+  confirmed: boolean;       // true sobald User im Bestätigen-Sheet gespeichert hat
+  synced: boolean;
+}
+
 export class InventoryDB extends Dexie {
   pendingTrees!: Table<PendingTree, number>;
   pendingLogPiles!: Table<PendingLogPile, number>;
   pendingPlots!: Table<PendingPlot, number>;
   cachedSpecies!: Table<CachedSpecies, string>;
+  pendingPaths!: Table<PendingPath, number>;
 
   constructor() {
     super('Forest ManagerDB');
@@ -121,6 +139,14 @@ export class InventoryDB extends Dexie {
       pendingLogPiles: '++id, synced, createdAt, forestId',
       pendingPlots:    '++id, synced, createdAt, forestId',
       cachedSpecies:   'id, isFavorite',
+    });
+    // Version 9: Wege-Aufnahme (live + offline)
+    this.version(9).stores({
+      pendingTrees:    '++id, synced, createdAt, forestId, plotId',
+      pendingLogPiles: '++id, synced, createdAt, forestId',
+      pendingPlots:    '++id, synced, createdAt, forestId',
+      cachedSpecies:   'id, isFavorite',
+      pendingPaths:    '++id, synced, confirmed, startedAt, forestId, orgSlug',
     });
   }
 }

@@ -53,6 +53,70 @@ export async function getCurrentPosition(): Promise<{ lat: number; lng: number; 
   });
 }
 
+export interface WatchedPosition {
+  lat: number;
+  lng: number;
+  accuracy: number;
+  timestamp: number;
+}
+
+/**
+ * Startet ein kontinuierliches GPS-Tracking. Liefert eine clear-Funktion zurück.
+ * Funktioniert in Capacitor (nativ) und im Browser (Fallback).
+ */
+export async function watchPosition(
+  callback: (pos: WatchedPosition) => void,
+  onError?: (err: { code: number; message: string }) => void,
+): Promise<() => void> {
+  if (isNativeApp()) {
+    try {
+      const { Geolocation } = await import('@capacitor/geolocation');
+      const watchId = await Geolocation.watchPosition(
+        { enableHighAccuracy: true, timeout: 30000 },
+        (position, err) => {
+          if (err) {
+            onError?.({ code: -1, message: err.message ?? 'GPS-Fehler' });
+            return;
+          }
+          if (!position) return;
+          callback({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: position.timestamp,
+          });
+        },
+      );
+      return async () => {
+        try {
+          await Geolocation.clearWatch({ id: watchId });
+        } catch { /* ignore */ }
+      };
+    } catch (e) {
+      console.warn('[capacitor-bridge] watchPosition error:', e);
+      onError?.({ code: -1, message: 'GPS nicht verfügbar' });
+      return () => {};
+    }
+  }
+
+  // Browser fallback
+  if (!('geolocation' in navigator)) {
+    onError?.({ code: 2, message: 'Geolocation nicht verfügbar' });
+    return () => {};
+  }
+  const watchId = navigator.geolocation.watchPosition(
+    (pos) => callback({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: pos.coords.accuracy,
+      timestamp: pos.timestamp,
+    }),
+    (err) => onError?.({ code: err.code, message: err.message }),
+    { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 },
+  );
+  return () => navigator.geolocation.clearWatch(watchId);
+}
+
 // --- Camera --------------------------------------------------------------
 
 export async function takePhoto(): Promise<{ dataUrl: string; file: File | null } | null> {
